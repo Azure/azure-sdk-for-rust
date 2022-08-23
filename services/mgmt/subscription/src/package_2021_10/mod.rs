@@ -134,8 +134,8 @@ pub mod subscriptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
-            list_locations::Builder {
+        pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::RequestBuilder {
+            list_locations::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -144,26 +144,26 @@ pub mod subscriptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         #[doc = "Gets all subscriptions for a tenant."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list_locations {
         use super::models;
         type Response = models::LocationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -208,11 +208,11 @@ pub mod subscriptions {
         use super::models;
         type Response = models::Subscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -252,10 +252,10 @@ pub mod subscriptions {
         use super::models;
         type Response = models::SubscriptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -323,18 +323,18 @@ pub mod tenants {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the tenants for your account."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::TenantListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -405,8 +405,8 @@ pub mod subscription {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription Id."]
-        pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
-            cancel::Builder {
+        pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::RequestBuilder {
+            cancel::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -416,8 +416,8 @@ pub mod subscription {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription Id."]
         #[doc = "* `body`: Subscription Name"]
-        pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::Builder {
-            rename::Builder {
+        pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::RequestBuilder {
+            rename::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
@@ -427,8 +427,8 @@ pub mod subscription {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription Id."]
-        pub fn enable(&self, subscription_id: impl Into<String>) -> enable::Builder {
-            enable::Builder {
+        pub fn enable(&self, subscription_id: impl Into<String>) -> enable::RequestBuilder {
+            enable::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -441,8 +441,8 @@ pub mod subscription {
             &self,
             subscription_id: impl Into<String>,
             body: impl Into<models::AcceptOwnershipRequest>,
-        ) -> accept_ownership::Builder {
-            accept_ownership::Builder {
+        ) -> accept_ownership::RequestBuilder {
+            accept_ownership::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
@@ -452,8 +452,8 @@ pub mod subscription {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription Id."]
-        pub fn accept_ownership_status(&self, subscription_id: impl Into<String>) -> accept_ownership_status::Builder {
-            accept_ownership_status::Builder {
+        pub fn accept_ownership_status(&self, subscription_id: impl Into<String>) -> accept_ownership_status::RequestBuilder {
+            accept_ownership_status::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -463,11 +463,11 @@ pub mod subscription {
         use super::models;
         type Response = models::CanceledSubscriptionId;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -512,12 +512,12 @@ pub mod subscription {
         use super::models;
         type Response = models::RenamedSubscriptionId;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::SubscriptionName,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -562,11 +562,11 @@ pub mod subscription {
         use super::models;
         type Response = models::EnabledSubscriptionId;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -611,12 +611,12 @@ pub mod subscription {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::AcceptOwnershipRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -658,11 +658,11 @@ pub mod subscription {
         use super::models;
         type Response = models::AcceptOwnershipStatusResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -708,18 +708,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Microsoft.Subscription API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -791,8 +791,8 @@ pub mod alias {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `alias_name`: AliasName is the name for the subscription creation request. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
-        pub fn get(&self, alias_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, alias_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
@@ -801,8 +801,8 @@ pub mod alias {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `alias_name`: AliasName is the name for the subscription creation request. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
-        pub fn create(&self, alias_name: impl Into<String>, body: impl Into<models::PutAliasRequest>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, alias_name: impl Into<String>, body: impl Into<models::PutAliasRequest>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
                 body: body.into(),
@@ -812,26 +812,26 @@ pub mod alias {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `alias_name`: AliasName is the name for the subscription creation request. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
-        pub fn delete(&self, alias_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, alias_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
         #[doc = "List Alias Subscription."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::SubscriptionAliasResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -879,12 +879,12 @@ pub mod alias {
             Created201(models::SubscriptionAliasResponse),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
             pub(crate) body: models::PutAliasRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -939,11 +939,11 @@ pub mod alias {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -984,10 +984,10 @@ pub mod alias {
         use super::models;
         type Response = models::SubscriptionAliasListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1029,32 +1029,32 @@ pub mod subscription_policy {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the subscription tenant policy for the user's tenant."]
-        pub fn get_policy_for_tenant(&self) -> get_policy_for_tenant::Builder {
-            get_policy_for_tenant::Builder { client: self.0.clone() }
+        pub fn get_policy_for_tenant(&self) -> get_policy_for_tenant::RequestBuilder {
+            get_policy_for_tenant::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Create or Update Subscription tenant policy for user's tenant."]
         pub fn add_update_policy_for_tenant(
             &self,
             body: impl Into<models::PutTenantPolicyRequestProperties>,
-        ) -> add_update_policy_for_tenant::Builder {
-            add_update_policy_for_tenant::Builder {
+        ) -> add_update_policy_for_tenant::RequestBuilder {
+            add_update_policy_for_tenant::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
             }
         }
         #[doc = "Get the subscription tenant policy for the user's tenant."]
-        pub fn list_policy_for_tenant(&self) -> list_policy_for_tenant::Builder {
-            list_policy_for_tenant::Builder { client: self.0.clone() }
+        pub fn list_policy_for_tenant(&self) -> list_policy_for_tenant::RequestBuilder {
+            list_policy_for_tenant::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get_policy_for_tenant {
         use super::models;
         type Response = models::GetTenantPolicyResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1097,11 +1097,11 @@ pub mod subscription_policy {
         use super::models;
         type Response = models::GetTenantPolicyResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: models::PutTenantPolicyRequestProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1145,10 +1145,10 @@ pub mod subscription_policy {
         use super::models;
         type Response = models::GetTenantPolicyListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1220,8 +1220,8 @@ pub mod billing_account {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: Billing Account Id."]
-        pub fn get_policy(&self, billing_account_id: impl Into<String>) -> get_policy::Builder {
-            get_policy::Builder {
+        pub fn get_policy(&self, billing_account_id: impl Into<String>) -> get_policy::RequestBuilder {
+            get_policy::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
             }
@@ -1231,11 +1231,11 @@ pub mod billing_account {
         use super::models;
         type Response = models::BillingAccountPoliciesResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

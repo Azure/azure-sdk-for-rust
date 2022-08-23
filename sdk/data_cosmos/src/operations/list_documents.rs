@@ -77,7 +77,7 @@ pub struct ListDocumentsResponseAttributes {
 pub struct ListDocumentsResponse<T> {
     pub rid: String,
     pub documents: Vec<Document<T>>,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,

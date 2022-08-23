@@ -339,10 +339,10 @@ pub struct ConsortiumMember {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Gets the consortium member join date."]
-    #[serde(rename = "joinDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "joinDate", default, with = "azure_core::date::rfc3339::option")]
     pub join_date: Option<time::OffsetDateTime>,
     #[doc = "Gets the consortium member modified date."]
-    #[serde(rename = "dateModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "dateModified", default, with = "azure_core::date::rfc3339::option")]
     pub date_modified: Option<time::OffsetDateTime>,
 }
 impl ConsortiumMember {
@@ -471,10 +471,10 @@ pub struct OperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Gets or sets the operation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the operation end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl OperationResult {

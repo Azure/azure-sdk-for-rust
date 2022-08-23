@@ -115,18 +115,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all operations available through Azure Alerts Management Resource Provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -205,8 +205,8 @@ pub mod migrate_from_smart_detection {
             &self,
             subscription_id: impl Into<String>,
             smart_detection_migration_request: impl Into<models::SmartDetectionMigrationRequest>,
-        ) -> start_migration::Builder {
-            start_migration::Builder {
+        ) -> start_migration::RequestBuilder {
+            start_migration::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 smart_detection_migration_request: smart_detection_migration_request.into(),
@@ -221,12 +221,12 @@ pub mod migrate_from_smart_detection {
             Ok200(models::MigrationStatusResponse),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) smart_detection_migration_request: models::SmartDetectionMigrationRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

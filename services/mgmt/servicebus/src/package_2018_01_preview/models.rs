@@ -472,10 +472,10 @@ pub mod eventhub {
         #[serde(rename = "partitionIds", default, skip_serializing_if = "Vec::is_empty")]
         pub partition_ids: Vec<String>,
         #[doc = "Exact time the Event Hub was created."]
-        #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
         pub created_at: Option<time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
-        #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub updated_at: Option<time::OffsetDateTime>,
         #[doc = "Number of days to retain the events for this Event Hub, value should be 1 to 7 days"]
         #[serde(rename = "messageRetentionInDays", default, skip_serializing_if = "Option::is_none")]
@@ -1450,10 +1450,10 @@ pub struct SbNamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The time the namespace was created"]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The time the namespace was updated."]
-    #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
     #[doc = "Endpoint you can use to perform Service Bus operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -1535,13 +1535,13 @@ pub struct SbQueueProperties {
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
     #[doc = "The exact time the message was created."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The exact time the message was updated."]
-    #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
     #[doc = "Last time a message was sent, or the last time there was a receive request to this queue."]
-    #[serde(rename = "accessedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "accessedAt", default, with = "azure_core::date::rfc3339::option")]
     pub accessed_at: Option<time::OffsetDateTime>,
     #[doc = "The size of the queue, in bytes."]
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
@@ -1680,13 +1680,13 @@ pub struct SbSubscriptionProperties {
     #[serde(rename = "messageCount", default, skip_serializing_if = "Option::is_none")]
     pub message_count: Option<i64>,
     #[doc = "Exact time the message was created."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Last time there was a receive request to this subscription."]
-    #[serde(rename = "accessedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "accessedAt", default, with = "azure_core::date::rfc3339::option")]
     pub accessed_at: Option<time::OffsetDateTime>,
     #[doc = "The exact time the message was updated."]
-    #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
     #[doc = "Message Count Details."]
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1779,13 +1779,13 @@ pub struct SbTopicProperties {
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
     #[doc = "Exact time the message was created."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The exact time the message was updated."]
-    #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
     #[doc = "Last time the message was sent, or a request was received, for this topic."]
-    #[serde(rename = "accessedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "accessedAt", default, with = "azure_core::date::rfc3339::option")]
     pub accessed_at: Option<time::OffsetDateTime>,
     #[doc = "Number of subscriptions."]
     #[serde(rename = "subscriptionCount", default, skip_serializing_if = "Option::is_none")]

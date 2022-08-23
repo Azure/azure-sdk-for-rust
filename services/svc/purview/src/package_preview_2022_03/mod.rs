@@ -133,8 +133,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `entity`: Atlas entity with extended information."]
-        pub fn create_or_update(&self, entity: impl Into<models::AtlasEntityWithExtInfo>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(&self, entity: impl Into<models::AtlasEntityWithExtInfo>) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 entity: entity.into(),
             }
@@ -143,8 +143,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: An array of GUIDs of entities to list."]
-        pub fn list_by_guids(&self, guid: Vec<String>) -> list_by_guids::Builder {
-            list_by_guids::Builder {
+        pub fn list_by_guids(&self, guid: Vec<String>) -> list_by_guids::RequestBuilder {
+            list_by_guids::RequestBuilder {
                 client: self.0.clone(),
                 guid,
                 min_ext_info: None,
@@ -159,8 +159,8 @@ pub mod entity {
         pub fn create_or_update_entities(
             &self,
             entities: impl Into<models::AtlasEntitiesWithExtInfo>,
-        ) -> create_or_update_entities::Builder {
-            create_or_update_entities::Builder {
+        ) -> create_or_update_entities::RequestBuilder {
+            create_or_update_entities::RequestBuilder {
                 client: self.0.clone(),
                 entities: entities.into(),
             }
@@ -169,8 +169,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: An array of GUIDs of entities to delete."]
-        pub fn delete_by_guids(&self, guid: Vec<String>) -> delete_by_guids::Builder {
-            delete_by_guids::Builder {
+        pub fn delete_by_guids(&self, guid: Vec<String>) -> delete_by_guids::RequestBuilder {
+            delete_by_guids::RequestBuilder {
                 client: self.0.clone(),
                 guid,
             }
@@ -179,8 +179,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `request`: The request to associate a classification to multiple entities."]
-        pub fn add_classification(&self, request: impl Into<models::ClassificationAssociateRequest>) -> add_classification::Builder {
-            add_classification::Builder {
+        pub fn add_classification(&self, request: impl Into<models::ClassificationAssociateRequest>) -> add_classification::RequestBuilder {
+            add_classification::RequestBuilder {
                 client: self.0.clone(),
                 request: request.into(),
             }
@@ -189,8 +189,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn get_by_guid(&self, guid: impl Into<String>) -> get_by_guid::Builder {
-            get_by_guid::Builder {
+        pub fn get_by_guid(&self, guid: impl Into<String>) -> get_by_guid::RequestBuilder {
+            get_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 min_ext_info: None,
@@ -208,8 +208,8 @@ pub mod entity {
             guid: impl Into<String>,
             name: impl Into<String>,
             body: impl Into<serde_json::Value>,
-        ) -> partial_update_entity_attribute_by_guid::Builder {
-            partial_update_entity_attribute_by_guid::Builder {
+        ) -> partial_update_entity_attribute_by_guid::RequestBuilder {
+            partial_update_entity_attribute_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 name: name.into(),
@@ -220,8 +220,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn delete_by_guid(&self, guid: impl Into<String>) -> delete_by_guid::Builder {
-            delete_by_guid::Builder {
+        pub fn delete_by_guid(&self, guid: impl Into<String>) -> delete_by_guid::RequestBuilder {
+            delete_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -231,8 +231,12 @@ pub mod entity {
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
         #[doc = "* `classification_name`: The name of the classification."]
-        pub fn get_classification(&self, guid: impl Into<String>, classification_name: impl Into<String>) -> get_classification::Builder {
-            get_classification::Builder {
+        pub fn get_classification(
+            &self,
+            guid: impl Into<String>,
+            classification_name: impl Into<String>,
+        ) -> get_classification::RequestBuilder {
+            get_classification::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 classification_name: classification_name.into(),
@@ -247,8 +251,8 @@ pub mod entity {
             &self,
             guid: impl Into<String>,
             classification_name: impl Into<String>,
-        ) -> delete_classification::Builder {
-            delete_classification::Builder {
+        ) -> delete_classification::RequestBuilder {
+            delete_classification::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 classification_name: classification_name.into(),
@@ -258,8 +262,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn get_classifications(&self, guid: impl Into<String>) -> get_classifications::Builder {
-            get_classifications::Builder {
+        pub fn get_classifications(&self, guid: impl Into<String>) -> get_classifications::RequestBuilder {
+            get_classifications::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -273,8 +277,8 @@ pub mod entity {
             &self,
             guid: impl Into<String>,
             classifications: Vec<models::AtlasClassification>,
-        ) -> add_classifications::Builder {
-            add_classifications::Builder {
+        ) -> add_classifications::RequestBuilder {
+            add_classifications::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 classifications,
@@ -289,8 +293,8 @@ pub mod entity {
             &self,
             guid: impl Into<String>,
             classifications: Vec<models::AtlasClassification>,
-        ) -> update_classifications::Builder {
-            update_classifications::Builder {
+        ) -> update_classifications::RequestBuilder {
+            update_classifications::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 classifications,
@@ -300,8 +304,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `type_name`: The name of the type."]
-        pub fn get_by_unique_attributes(&self, type_name: impl Into<String>) -> get_by_unique_attributes::Builder {
-            get_by_unique_attributes::Builder {
+        pub fn get_by_unique_attributes(&self, type_name: impl Into<String>) -> get_by_unique_attributes::RequestBuilder {
+            get_by_unique_attributes::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 min_ext_info: None,
@@ -318,8 +322,8 @@ pub mod entity {
             &self,
             type_name: impl Into<String>,
             atlas_entity_with_ext_info: impl Into<models::AtlasEntityWithExtInfo>,
-        ) -> partial_update_entity_by_unique_attributes::Builder {
-            partial_update_entity_by_unique_attributes::Builder {
+        ) -> partial_update_entity_by_unique_attributes::RequestBuilder {
+            partial_update_entity_by_unique_attributes::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 atlas_entity_with_ext_info: atlas_entity_with_ext_info.into(),
@@ -330,8 +334,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `type_name`: The name of the type."]
-        pub fn delete_by_unique_attribute(&self, type_name: impl Into<String>) -> delete_by_unique_attribute::Builder {
-            delete_by_unique_attribute::Builder {
+        pub fn delete_by_unique_attribute(&self, type_name: impl Into<String>) -> delete_by_unique_attribute::RequestBuilder {
+            delete_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 attr_qualified_name: None,
@@ -346,8 +350,8 @@ pub mod entity {
             &self,
             type_name: impl Into<String>,
             classification_name: impl Into<String>,
-        ) -> delete_classification_by_unique_attribute::Builder {
-            delete_classification_by_unique_attribute::Builder {
+        ) -> delete_classification_by_unique_attribute::RequestBuilder {
+            delete_classification_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 classification_name: classification_name.into(),
@@ -363,8 +367,8 @@ pub mod entity {
             &self,
             type_name: impl Into<String>,
             atlas_classification_array: Vec<models::AtlasClassification>,
-        ) -> add_classifications_by_unique_attribute::Builder {
-            add_classifications_by_unique_attribute::Builder {
+        ) -> add_classifications_by_unique_attribute::RequestBuilder {
+            add_classifications_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 atlas_classification_array,
@@ -380,8 +384,8 @@ pub mod entity {
             &self,
             type_name: impl Into<String>,
             atlas_classification_array: Vec<models::AtlasClassification>,
-        ) -> update_classifications_by_unique_attribute::Builder {
-            update_classifications_by_unique_attribute::Builder {
+        ) -> update_classifications_by_unique_attribute::RequestBuilder {
+            update_classifications_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 atlas_classification_array,
@@ -392,8 +396,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `entity_headers`: Atlas entity headers."]
-        pub fn set_classifications(&self, entity_headers: impl Into<models::AtlasEntityHeaders>) -> set_classifications::Builder {
-            set_classifications::Builder {
+        pub fn set_classifications(&self, entity_headers: impl Into<models::AtlasEntityHeaders>) -> set_classifications::RequestBuilder {
+            set_classifications::RequestBuilder {
                 client: self.0.clone(),
                 entity_headers: entity_headers.into(),
             }
@@ -402,8 +406,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `type_name`: The name of the type."]
-        pub fn get_entities_by_unique_attributes(&self, type_name: impl Into<String>) -> get_entities_by_unique_attributes::Builder {
-            get_entities_by_unique_attributes::Builder {
+        pub fn get_entities_by_unique_attributes(&self, type_name: impl Into<String>) -> get_entities_by_unique_attributes::RequestBuilder {
+            get_entities_by_unique_attributes::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 min_ext_info: None,
@@ -415,8 +419,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn get_header(&self, guid: impl Into<String>) -> get_header::Builder {
-            get_header::Builder {
+        pub fn get_header(&self, guid: impl Into<String>) -> get_header::RequestBuilder {
+            get_header::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -425,8 +429,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn add_or_update_business_metadata(&self, guid: impl Into<String>) -> add_or_update_business_metadata::Builder {
-            add_or_update_business_metadata::Builder {
+        pub fn add_or_update_business_metadata(&self, guid: impl Into<String>) -> add_or_update_business_metadata::RequestBuilder {
+            add_or_update_business_metadata::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 is_overwrite: None,
@@ -437,8 +441,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn delete_business_metadata(&self, guid: impl Into<String>) -> delete_business_metadata::Builder {
-            delete_business_metadata::Builder {
+        pub fn delete_business_metadata(&self, guid: impl Into<String>) -> delete_business_metadata::RequestBuilder {
+            delete_business_metadata::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 body: None,
@@ -453,8 +457,8 @@ pub mod entity {
             &self,
             bm_name: impl Into<String>,
             guid: impl Into<String>,
-        ) -> add_or_update_business_metadata_attributes::Builder {
-            add_or_update_business_metadata_attributes::Builder {
+        ) -> add_or_update_business_metadata_attributes::RequestBuilder {
+            add_or_update_business_metadata_attributes::RequestBuilder {
                 client: self.0.clone(),
                 bm_name: bm_name.into(),
                 guid: guid.into(),
@@ -470,8 +474,8 @@ pub mod entity {
             &self,
             bm_name: impl Into<String>,
             guid: impl Into<String>,
-        ) -> delete_business_metadata_attributes::Builder {
-            delete_business_metadata_attributes::Builder {
+        ) -> delete_business_metadata_attributes::RequestBuilder {
+            delete_business_metadata_attributes::RequestBuilder {
                 client: self.0.clone(),
                 bm_name: bm_name.into(),
                 guid: guid.into(),
@@ -479,12 +483,12 @@ pub mod entity {
             }
         }
         #[doc = "Get the sample Template for uploading/creating bulk BusinessMetaData"]
-        pub fn get_sample_business_metadata_template(&self) -> get_sample_business_metadata_template::Builder {
-            get_sample_business_metadata_template::Builder { client: self.0.clone() }
+        pub fn get_sample_business_metadata_template(&self) -> get_sample_business_metadata_template::RequestBuilder {
+            get_sample_business_metadata_template::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Upload the file for creating Business Metadata in BULK"]
-        pub fn import_business_metadata(&self) -> import_business_metadata::Builder {
-            import_business_metadata::Builder {
+        pub fn import_business_metadata(&self) -> import_business_metadata::RequestBuilder {
+            import_business_metadata::RequestBuilder {
                 client: self.0.clone(),
                 uploaded_input_stream: None,
             }
@@ -493,8 +497,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn set_labels(&self, guid: impl Into<String>) -> set_labels::Builder {
-            set_labels::Builder {
+        pub fn set_labels(&self, guid: impl Into<String>) -> set_labels::RequestBuilder {
+            set_labels::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 body: Vec::new(),
@@ -504,8 +508,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn add_label(&self, guid: impl Into<String>) -> add_label::Builder {
-            add_label::Builder {
+        pub fn add_label(&self, guid: impl Into<String>) -> add_label::RequestBuilder {
+            add_label::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 body: Vec::new(),
@@ -515,8 +519,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn delete_labels(&self, guid: impl Into<String>) -> delete_labels::Builder {
-            delete_labels::Builder {
+        pub fn delete_labels(&self, guid: impl Into<String>) -> delete_labels::RequestBuilder {
+            delete_labels::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 body: Vec::new(),
@@ -526,8 +530,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `type_name`: The name of the type."]
-        pub fn set_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> set_labels_by_unique_attribute::Builder {
-            set_labels_by_unique_attribute::Builder {
+        pub fn set_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> set_labels_by_unique_attribute::RequestBuilder {
+            set_labels_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 attr_qualified_name: None,
@@ -538,8 +542,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `type_name`: The name of the type."]
-        pub fn add_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> add_labels_by_unique_attribute::Builder {
-            add_labels_by_unique_attribute::Builder {
+        pub fn add_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> add_labels_by_unique_attribute::RequestBuilder {
+            add_labels_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 attr_qualified_name: None,
@@ -550,8 +554,8 @@ pub mod entity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `type_name`: The name of the type."]
-        pub fn delete_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> delete_labels_by_unique_attribute::Builder {
-            delete_labels_by_unique_attribute::Builder {
+        pub fn delete_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> delete_labels_by_unique_attribute::RequestBuilder {
+            delete_labels_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 attr_qualified_name: None,
@@ -563,11 +567,11 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) entity: models::AtlasEntityWithExtInfo,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -605,14 +609,14 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasEntitiesWithExtInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: Vec<String>,
             pub(crate) min_ext_info: Option<bool>,
             pub(crate) ignore_relationships: Option<bool>,
             pub(crate) exclude_relationship_types: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
@@ -682,11 +686,11 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) entities: models::AtlasEntitiesWithExtInfo,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -724,11 +728,11 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -769,11 +773,11 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) request: models::ClassificationAssociateRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -807,13 +811,13 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasEntityWithExtInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) min_ext_info: Option<bool>,
             pub(crate) ignore_relationships: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
@@ -868,13 +872,13 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) name: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -914,11 +918,11 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -955,12 +959,12 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasClassification;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) classification_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1002,12 +1006,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) classification_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1045,11 +1049,11 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasClassifications;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1090,12 +1094,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) classifications: Vec<models::AtlasClassification>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1133,12 +1137,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) classifications: Vec<models::AtlasClassification>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1176,14 +1180,14 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasEntityWithExtInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) min_ext_info: Option<bool>,
             pub(crate) ignore_relationships: Option<bool>,
             pub(crate) attr_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
@@ -1252,13 +1256,13 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) atlas_entity_with_ext_info: models::AtlasEntityWithExtInfo,
             pub(crate) attr_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -1310,12 +1314,12 @@ pub mod entity {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) attr_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -1366,13 +1370,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) classification_name: String,
             pub(crate) attr_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -1420,13 +1424,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) atlas_classification_array: Vec<models::AtlasClassification>,
             pub(crate) attr_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -1474,13 +1478,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) atlas_classification_array: Vec<models::AtlasClassification>,
             pub(crate) attr_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -1528,11 +1532,11 @@ pub mod entity {
         use super::models;
         type Response = Vec<String>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) entity_headers: models::AtlasEntityHeaders,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1570,14 +1574,14 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasEntitiesWithExtInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) min_ext_info: Option<bool>,
             pub(crate) ignore_relationships: Option<bool>,
             pub(crate) attr_n_qualified_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
@@ -1646,11 +1650,11 @@ pub mod entity {
         use super::models;
         type Response = models::AtlasEntityHeader;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1688,13 +1692,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) is_overwrite: Option<bool>,
             pub(crate) body: Option<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to overwrite the existing business metadata on the entity or not, default is false."]
             pub fn is_overwrite(mut self, is_overwrite: bool) -> Self {
                 self.is_overwrite = Some(is_overwrite);
@@ -1751,12 +1755,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) body: Option<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "BusinessMetadata"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
@@ -1803,13 +1807,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) bm_name: String,
             pub(crate) guid: String,
             pub(crate) body: Option<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "BusinessMetadataAttributes"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
@@ -1857,13 +1861,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) bm_name: String,
             pub(crate) guid: String,
             pub(crate) body: Option<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "BusinessMetadataAttributes"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
@@ -1911,10 +1915,10 @@ pub mod entity {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1954,11 +1958,11 @@ pub mod entity {
         use super::models;
         type Response = models::BulkImportResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) uploaded_input_stream: Option<bytes::Bytes>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "InputStream of file"]
             pub fn uploaded_input_stream(mut self, uploaded_input_stream: impl Into<bytes::Bytes>) -> Self {
                 self.uploaded_input_stream = Some(uploaded_input_stream.into());
@@ -2002,12 +2006,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) body: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "set of labels to be set to the entity"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
@@ -2047,12 +2051,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) body: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "set of labels to be added"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
@@ -2092,12 +2096,12 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) body: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "set of labels to be deleted"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
@@ -2137,13 +2141,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) attr_qualified_name: Option<String>,
             pub(crate) body: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity"]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -2196,13 +2200,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) attr_qualified_name: Option<String>,
             pub(crate) body: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity"]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -2255,13 +2259,13 @@ pub mod entity {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) attr_qualified_name: Option<String>,
             pub(crate) body: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The qualified name of the entity"]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
@@ -2316,8 +2320,8 @@ pub mod glossary {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all glossaries registered with Atlas."]
-        pub fn list_glossaries(&self) -> list_glossaries::Builder {
-            list_glossaries::Builder {
+        pub fn list_glossaries(&self) -> list_glossaries::RequestBuilder {
+            list_glossaries::RequestBuilder {
                 client: self.0.clone(),
                 limit: None,
                 offset: None,
@@ -2329,8 +2333,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `atlas_glossary`: Glossary definition, terms & categories can be anchored to a glossary.\nUsing the anchor attribute when creating the Term/Category."]
-        pub fn create_glossary(&self, atlas_glossary: impl Into<models::AtlasGlossary>) -> create_glossary::Builder {
-            create_glossary::Builder {
+        pub fn create_glossary(&self, atlas_glossary: impl Into<models::AtlasGlossary>) -> create_glossary::RequestBuilder {
+            create_glossary::RequestBuilder {
                 client: self.0.clone(),
                 atlas_glossary: atlas_glossary.into(),
             }
@@ -2342,8 +2346,8 @@ pub mod glossary {
         pub fn create_glossary_categories(
             &self,
             glossary_category: Vec<models::AtlasGlossaryCategory>,
-        ) -> create_glossary_categories::Builder {
-            create_glossary_categories::Builder {
+        ) -> create_glossary_categories::RequestBuilder {
+            create_glossary_categories::RequestBuilder {
                 client: self.0.clone(),
                 glossary_category,
             }
@@ -2355,8 +2359,8 @@ pub mod glossary {
         pub fn create_glossary_category(
             &self,
             glossary_category: impl Into<models::AtlasGlossaryCategory>,
-        ) -> create_glossary_category::Builder {
-            create_glossary_category::Builder {
+        ) -> create_glossary_category::RequestBuilder {
+            create_glossary_category::RequestBuilder {
                 client: self.0.clone(),
                 glossary_category: glossary_category.into(),
             }
@@ -2365,8 +2369,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `category_guid`: The globally unique identifier of the category."]
-        pub fn get_glossary_category(&self, category_guid: impl Into<String>) -> get_glossary_category::Builder {
-            get_glossary_category::Builder {
+        pub fn get_glossary_category(&self, category_guid: impl Into<String>) -> get_glossary_category::RequestBuilder {
+            get_glossary_category::RequestBuilder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
             }
@@ -2380,8 +2384,8 @@ pub mod glossary {
             &self,
             category_guid: impl Into<String>,
             glossary_category: impl Into<models::AtlasGlossaryCategory>,
-        ) -> update_glossary_category::Builder {
-            update_glossary_category::Builder {
+        ) -> update_glossary_category::RequestBuilder {
+            update_glossary_category::RequestBuilder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
                 glossary_category: glossary_category.into(),
@@ -2391,8 +2395,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `category_guid`: The globally unique identifier of the category."]
-        pub fn delete_glossary_category(&self, category_guid: impl Into<String>) -> delete_glossary_category::Builder {
-            delete_glossary_category::Builder {
+        pub fn delete_glossary_category(&self, category_guid: impl Into<String>) -> delete_glossary_category::RequestBuilder {
+            delete_glossary_category::RequestBuilder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
             }
@@ -2406,8 +2410,8 @@ pub mod glossary {
             &self,
             category_guid: impl Into<String>,
             partial_updates: impl Into<serde_json::Value>,
-        ) -> partial_update_glossary_category::Builder {
-            partial_update_glossary_category::Builder {
+        ) -> partial_update_glossary_category::RequestBuilder {
+            partial_update_glossary_category::RequestBuilder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
                 partial_updates: partial_updates.into(),
@@ -2417,8 +2421,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `category_guid`: The globally unique identifier of the category."]
-        pub fn list_related_categories(&self, category_guid: impl Into<String>) -> list_related_categories::Builder {
-            list_related_categories::Builder {
+        pub fn list_related_categories(&self, category_guid: impl Into<String>) -> list_related_categories::RequestBuilder {
+            list_related_categories::RequestBuilder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
                 limit: None,
@@ -2430,8 +2434,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `category_guid`: The globally unique identifier of the category."]
-        pub fn list_category_terms(&self, category_guid: impl Into<String>) -> list_category_terms::Builder {
-            list_category_terms::Builder {
+        pub fn list_category_terms(&self, category_guid: impl Into<String>) -> list_category_terms::RequestBuilder {
+            list_category_terms::RequestBuilder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
                 limit: None,
@@ -2443,8 +2447,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_term`: The glossary term definition. A term must be anchored to a Glossary at the time of creation.\nOptionally it can be categorized as well."]
-        pub fn create_glossary_term(&self, glossary_term: impl Into<models::AtlasGlossaryTerm>) -> create_glossary_term::Builder {
-            create_glossary_term::Builder {
+        pub fn create_glossary_term(&self, glossary_term: impl Into<models::AtlasGlossaryTerm>) -> create_glossary_term::RequestBuilder {
+            create_glossary_term::RequestBuilder {
                 client: self.0.clone(),
                 glossary_term: glossary_term.into(),
                 include_term_hierarchy: None,
@@ -2454,8 +2458,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
-        pub fn get_glossary_term(&self, term_guid: impl Into<String>) -> get_glossary_term::Builder {
-            get_glossary_term::Builder {
+        pub fn get_glossary_term(&self, term_guid: impl Into<String>) -> get_glossary_term::RequestBuilder {
+            get_glossary_term::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 include_term_hierarchy: None,
@@ -2471,8 +2475,8 @@ pub mod glossary {
             &self,
             term_guid: impl Into<String>,
             glossary_term: impl Into<models::AtlasGlossaryTerm>,
-        ) -> update_glossary_term::Builder {
-            update_glossary_term::Builder {
+        ) -> update_glossary_term::RequestBuilder {
+            update_glossary_term::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 glossary_term: glossary_term.into(),
@@ -2483,8 +2487,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
-        pub fn delete_glossary_term(&self, term_guid: impl Into<String>) -> delete_glossary_term::Builder {
-            delete_glossary_term::Builder {
+        pub fn delete_glossary_term(&self, term_guid: impl Into<String>) -> delete_glossary_term::RequestBuilder {
+            delete_glossary_term::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
             }
@@ -2498,8 +2502,8 @@ pub mod glossary {
             &self,
             term_guid: impl Into<String>,
             partial_updates: impl Into<serde_json::Value>,
-        ) -> partial_update_glossary_term::Builder {
-            partial_update_glossary_term::Builder {
+        ) -> partial_update_glossary_term::RequestBuilder {
+            partial_update_glossary_term::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 partial_updates: partial_updates.into(),
@@ -2510,8 +2514,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_term`: An array of glossary term definitions to be created in bulk."]
-        pub fn create_glossary_terms(&self, glossary_term: Vec<models::AtlasGlossaryTerm>) -> create_glossary_terms::Builder {
-            create_glossary_terms::Builder {
+        pub fn create_glossary_terms(&self, glossary_term: Vec<models::AtlasGlossaryTerm>) -> create_glossary_terms::RequestBuilder {
+            create_glossary_terms::RequestBuilder {
                 client: self.0.clone(),
                 glossary_term,
                 include_term_hierarchy: None,
@@ -2521,8 +2525,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
-        pub fn get_entities_assigned_with_term(&self, term_guid: impl Into<String>) -> get_entities_assigned_with_term::Builder {
-            get_entities_assigned_with_term::Builder {
+        pub fn get_entities_assigned_with_term(&self, term_guid: impl Into<String>) -> get_entities_assigned_with_term::RequestBuilder {
+            get_entities_assigned_with_term::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 limit: None,
@@ -2539,8 +2543,8 @@ pub mod glossary {
             &self,
             term_guid: impl Into<String>,
             related_object_ids: Vec<models::AtlasRelatedObjectId>,
-        ) -> assign_term_to_entities::Builder {
-            assign_term_to_entities::Builder {
+        ) -> assign_term_to_entities::RequestBuilder {
+            assign_term_to_entities::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 related_object_ids,
@@ -2555,8 +2559,8 @@ pub mod glossary {
             &self,
             term_guid: impl Into<String>,
             related_object_ids: Vec<models::AtlasRelatedObjectId>,
-        ) -> remove_term_assignment_from_entities::Builder {
-            remove_term_assignment_from_entities::Builder {
+        ) -> remove_term_assignment_from_entities::RequestBuilder {
+            remove_term_assignment_from_entities::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 related_object_ids,
@@ -2571,8 +2575,8 @@ pub mod glossary {
             &self,
             term_guid: impl Into<String>,
             related_object_ids: Vec<models::AtlasRelatedObjectId>,
-        ) -> delete_term_assignment_from_entities::Builder {
-            delete_term_assignment_from_entities::Builder {
+        ) -> delete_term_assignment_from_entities::RequestBuilder {
+            delete_term_assignment_from_entities::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 related_object_ids,
@@ -2582,8 +2586,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
-        pub fn list_related_terms(&self, term_guid: impl Into<String>) -> list_related_terms::Builder {
-            list_related_terms::Builder {
+        pub fn list_related_terms(&self, term_guid: impl Into<String>) -> list_related_terms::RequestBuilder {
+            list_related_terms::RequestBuilder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 limit: None,
@@ -2595,8 +2599,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn get_glossary(&self, glossary_guid: impl Into<String>) -> get_glossary::Builder {
-            get_glossary::Builder {
+        pub fn get_glossary(&self, glossary_guid: impl Into<String>) -> get_glossary::RequestBuilder {
+            get_glossary::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
             }
@@ -2610,8 +2614,8 @@ pub mod glossary {
             &self,
             glossary_guid: impl Into<String>,
             updated_glossary: impl Into<models::AtlasGlossary>,
-        ) -> update_glossary::Builder {
-            update_glossary::Builder {
+        ) -> update_glossary::RequestBuilder {
+            update_glossary::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 updated_glossary: updated_glossary.into(),
@@ -2621,8 +2625,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn delete_glossary(&self, glossary_guid: impl Into<String>) -> delete_glossary::Builder {
-            delete_glossary::Builder {
+        pub fn delete_glossary(&self, glossary_guid: impl Into<String>) -> delete_glossary::RequestBuilder {
+            delete_glossary::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
             }
@@ -2631,8 +2635,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn list_glossary_categories(&self, glossary_guid: impl Into<String>) -> list_glossary_categories::Builder {
-            list_glossary_categories::Builder {
+        pub fn list_glossary_categories(&self, glossary_guid: impl Into<String>) -> list_glossary_categories::RequestBuilder {
+            list_glossary_categories::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 limit: None,
@@ -2644,8 +2648,11 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn list_glossary_categories_headers(&self, glossary_guid: impl Into<String>) -> list_glossary_categories_headers::Builder {
-            list_glossary_categories_headers::Builder {
+        pub fn list_glossary_categories_headers(
+            &self,
+            glossary_guid: impl Into<String>,
+        ) -> list_glossary_categories_headers::RequestBuilder {
+            list_glossary_categories_headers::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 limit: None,
@@ -2657,8 +2664,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn get_detailed_glossary(&self, glossary_guid: impl Into<String>) -> get_detailed_glossary::Builder {
-            get_detailed_glossary::Builder {
+        pub fn get_detailed_glossary(&self, glossary_guid: impl Into<String>) -> get_detailed_glossary::RequestBuilder {
+            get_detailed_glossary::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 include_term_hierarchy: None,
@@ -2673,8 +2680,8 @@ pub mod glossary {
             &self,
             glossary_guid: impl Into<String>,
             partial_updates: impl Into<serde_json::Value>,
-        ) -> partial_update_glossary::Builder {
-            partial_update_glossary::Builder {
+        ) -> partial_update_glossary::RequestBuilder {
+            partial_update_glossary::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 partial_updates: partial_updates.into(),
@@ -2685,8 +2692,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn list_glossary_terms(&self, glossary_guid: impl Into<String>) -> list_glossary_terms::Builder {
-            list_glossary_terms::Builder {
+        pub fn list_glossary_terms(&self, glossary_guid: impl Into<String>) -> list_glossary_terms::RequestBuilder {
+            list_glossary_terms::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 include_term_hierarchy: None,
@@ -2699,8 +2706,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
-        pub fn list_glossary_term_headers(&self, glossary_guid: impl Into<String>) -> list_glossary_term_headers::Builder {
-            list_glossary_term_headers::Builder {
+        pub fn list_glossary_term_headers(&self, glossary_guid: impl Into<String>) -> list_glossary_term_headers::RequestBuilder {
+            list_glossary_term_headers::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 limit: None,
@@ -2717,8 +2724,8 @@ pub mod glossary {
             &self,
             glossary_guid: impl Into<String>,
             file: impl Into<bytes::Bytes>,
-        ) -> import_glossary_terms_via_csv::Builder {
-            import_glossary_terms_via_csv::Builder {
+        ) -> import_glossary_terms_via_csv::RequestBuilder {
+            import_glossary_terms_via_csv::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 file: file.into(),
@@ -2734,8 +2741,8 @@ pub mod glossary {
             &self,
             glossary_name: impl Into<String>,
             file: impl Into<bytes::Bytes>,
-        ) -> import_glossary_terms_via_csv_by_glossary_name::Builder {
-            import_glossary_terms_via_csv_by_glossary_name::Builder {
+        ) -> import_glossary_terms_via_csv_by_glossary_name::RequestBuilder {
+            import_glossary_terms_via_csv_by_glossary_name::RequestBuilder {
                 client: self.0.clone(),
                 glossary_name: glossary_name.into(),
                 file: file.into(),
@@ -2746,8 +2753,11 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `operation_guid`: The globally unique identifier for async operation/job."]
-        pub fn get_import_csv_operation_status(&self, operation_guid: impl Into<String>) -> get_import_csv_operation_status::Builder {
-            get_import_csv_operation_status::Builder {
+        pub fn get_import_csv_operation_status(
+            &self,
+            operation_guid: impl Into<String>,
+        ) -> get_import_csv_operation_status::RequestBuilder {
+            get_import_csv_operation_status::RequestBuilder {
                 client: self.0.clone(),
                 operation_guid: operation_guid.into(),
             }
@@ -2761,8 +2771,8 @@ pub mod glossary {
             &self,
             glossary_guid: impl Into<String>,
             term_guids: Vec<models::TermGuid>,
-        ) -> export_glossary_terms_as_csv::Builder {
-            export_glossary_terms_as_csv::Builder {
+        ) -> export_glossary_terms_as_csv::RequestBuilder {
+            export_glossary_terms_as_csv::RequestBuilder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
                 term_guids,
@@ -2773,8 +2783,8 @@ pub mod glossary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `glossary_name`: The name of the glossary."]
-        pub fn list_terms_by_glossary_name(&self, glossary_name: impl Into<String>) -> list_terms_by_glossary_name::Builder {
-            list_terms_by_glossary_name::Builder {
+        pub fn list_terms_by_glossary_name(&self, glossary_name: impl Into<String>) -> list_terms_by_glossary_name::RequestBuilder {
+            list_terms_by_glossary_name::RequestBuilder {
                 client: self.0.clone(),
                 glossary_name: glossary_name.into(),
                 limit: None,
@@ -2787,14 +2797,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasGlossary>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
             pub(crate) ignore_terms_and_categories: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -2865,11 +2875,11 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) atlas_glossary: models::AtlasGlossary,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2907,11 +2917,11 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasGlossaryCategory>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_category: Vec<models::AtlasGlossaryCategory>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2949,11 +2959,11 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryCategory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_category: models::AtlasGlossaryCategory,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2991,11 +3001,11 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryCategory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) category_guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3036,12 +3046,12 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryCategory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) category_guid: String,
             pub(crate) glossary_category: models::AtlasGlossaryCategory,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3083,11 +3093,11 @@ pub mod glossary {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) category_guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3124,12 +3134,12 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryCategory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) category_guid: String,
             pub(crate) partial_updates: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3171,14 +3181,14 @@ pub mod glossary {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) category_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -3243,14 +3253,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasRelatedTermHeader>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) category_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -3315,12 +3325,12 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryTerm;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_term: models::AtlasGlossaryTerm,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -3368,13 +3378,13 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryTerm;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) include_term_hierarchy: Option<bool>,
             pub(crate) exclude_relationship_types: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -3433,13 +3443,13 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryTerm;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) glossary_term: models::AtlasGlossaryTerm,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -3488,11 +3498,11 @@ pub mod glossary {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3526,13 +3536,13 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryTerm;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) partial_updates: serde_json::Value,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -3584,12 +3594,12 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasGlossaryTerm>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_term: Vec<models::AtlasGlossaryTerm>,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -3637,14 +3647,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasRelatedObjectId>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -3709,12 +3719,12 @@ pub mod glossary {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) related_object_ids: Vec<models::AtlasRelatedObjectId>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3752,12 +3762,12 @@ pub mod glossary {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) related_object_ids: Vec<models::AtlasRelatedObjectId>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3795,12 +3805,12 @@ pub mod glossary {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) related_object_ids: Vec<models::AtlasRelatedObjectId>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3838,14 +3848,14 @@ pub mod glossary {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -3910,11 +3920,11 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3951,12 +3961,12 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) updated_glossary: models::AtlasGlossary,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3994,11 +4004,11 @@ pub mod glossary {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4031,14 +4041,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasGlossaryCategory>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -4103,14 +4113,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasRelatedCategoryHeader>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -4175,12 +4185,12 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossaryExtInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -4231,13 +4241,13 @@ pub mod glossary {
         use super::models;
         type Response = models::AtlasGlossary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) partial_updates: serde_json::Value,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -4289,7 +4299,7 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasGlossaryTerm>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) include_term_hierarchy: Option<bool>,
@@ -4297,7 +4307,7 @@ pub mod glossary {
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -4372,14 +4382,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasRelatedTermHeader>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) sort: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -4444,13 +4454,13 @@ pub mod glossary {
         use super::models;
         type Response = models::ImportCsvOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) file: bytes::Bytes,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -4504,13 +4514,13 @@ pub mod glossary {
         use super::models;
         type Response = models::ImportCsvOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_name: String,
             pub(crate) file: bytes::Bytes,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -4567,11 +4577,11 @@ pub mod glossary {
         use super::models;
         type Response = models::ImportCsvOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) operation_guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4615,13 +4625,13 @@ pub mod glossary {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_guid: String,
             pub(crate) term_guids: Vec<models::TermGuid>,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
@@ -4673,14 +4683,14 @@ pub mod glossary {
         use super::models;
         type Response = Vec<models::AtlasGlossaryTerm>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) glossary_name: String,
             pub(crate) limit: Option<i32>,
             pub(crate) offset: Option<i32>,
             pub(crate) include_term_hierarchy: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
@@ -4752,8 +4762,8 @@ pub mod discovery {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `search_request`: An object specifying the search criteria."]
-        pub fn query(&self, search_request: impl Into<models::SearchRequest>) -> query::Builder {
-            query::Builder {
+        pub fn query(&self, search_request: impl Into<models::SearchRequest>) -> query::RequestBuilder {
+            query::RequestBuilder {
                 client: self.0.clone(),
                 search_request: search_request.into(),
             }
@@ -4762,8 +4772,8 @@ pub mod discovery {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `suggest_request`: An object specifying the suggest criteria."]
-        pub fn suggest(&self, suggest_request: impl Into<models::SuggestRequest>) -> suggest::Builder {
-            suggest::Builder {
+        pub fn suggest(&self, suggest_request: impl Into<models::SuggestRequest>) -> suggest::RequestBuilder {
+            suggest::RequestBuilder {
                 client: self.0.clone(),
                 suggest_request: suggest_request.into(),
             }
@@ -4772,8 +4782,8 @@ pub mod discovery {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `browse_request`: An object specifying the browse criteria."]
-        pub fn browse(&self, browse_request: impl Into<models::BrowseRequest>) -> browse::Builder {
-            browse::Builder {
+        pub fn browse(&self, browse_request: impl Into<models::BrowseRequest>) -> browse::RequestBuilder {
+            browse::RequestBuilder {
                 client: self.0.clone(),
                 browse_request: browse_request.into(),
             }
@@ -4782,8 +4792,8 @@ pub mod discovery {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `auto_complete_request`: An object specifying the autocomplete criteria."]
-        pub fn auto_complete(&self, auto_complete_request: impl Into<models::AutoCompleteRequest>) -> auto_complete::Builder {
-            auto_complete::Builder {
+        pub fn auto_complete(&self, auto_complete_request: impl Into<models::AutoCompleteRequest>) -> auto_complete::RequestBuilder {
+            auto_complete::RequestBuilder {
                 client: self.0.clone(),
                 auto_complete_request: auto_complete_request.into(),
             }
@@ -4793,11 +4803,11 @@ pub mod discovery {
         use super::models;
         type Response = models::SearchResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) search_request: models::SearchRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4838,11 +4848,11 @@ pub mod discovery {
         use super::models;
         type Response = models::SuggestResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) suggest_request: models::SuggestRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4883,11 +4893,11 @@ pub mod discovery {
         use super::models;
         type Response = models::BrowseResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) browse_request: models::BrowseRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4928,11 +4938,11 @@ pub mod discovery {
         use super::models;
         type Response = models::AutoCompleteResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) auto_complete_request: models::AutoCompleteRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4979,8 +4989,8 @@ pub mod lineage {
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
         #[doc = "* `direction`: The direction of the lineage, which could be INPUT, OUTPUT or BOTH."]
-        pub fn get_lineage_graph(&self, guid: impl Into<String>, direction: impl Into<String>) -> get_lineage_graph::Builder {
-            get_lineage_graph::Builder {
+        pub fn get_lineage_graph(&self, guid: impl Into<String>, direction: impl Into<String>) -> get_lineage_graph::RequestBuilder {
+            get_lineage_graph::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 direction: direction.into(),
@@ -4995,8 +5005,8 @@ pub mod lineage {
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
         #[doc = "* `direction`: The direction of the lineage, which could be INPUT, OUTPUT or BOTH."]
-        pub fn next_page_lineage(&self, guid: impl Into<String>, direction: impl Into<String>) -> next_page_lineage::Builder {
-            next_page_lineage::Builder {
+        pub fn next_page_lineage(&self, guid: impl Into<String>, direction: impl Into<String>) -> next_page_lineage::RequestBuilder {
+            next_page_lineage::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 direction: direction.into(),
@@ -5014,8 +5024,8 @@ pub mod lineage {
             &self,
             type_name: impl Into<String>,
             direction: impl Into<String>,
-        ) -> get_lineage_by_unique_attribute::Builder {
-            get_lineage_by_unique_attribute::Builder {
+        ) -> get_lineage_by_unique_attribute::RequestBuilder {
+            get_lineage_by_unique_attribute::RequestBuilder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
                 direction: direction.into(),
@@ -5030,7 +5040,7 @@ pub mod lineage {
         use super::models;
         type Response = models::AtlasLineageInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) direction: String,
@@ -5039,7 +5049,7 @@ pub mod lineage {
             pub(crate) include_parent: Option<bool>,
             pub(crate) get_derived_lineage: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The number of hops for lineage."]
             pub fn depth(mut self, depth: i32) -> Self {
                 self.depth = Some(depth);
@@ -5114,7 +5124,7 @@ pub mod lineage {
         use super::models;
         type Response = models::AtlasLineageInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) direction: String,
@@ -5122,7 +5132,7 @@ pub mod lineage {
             pub(crate) offset: Option<i32>,
             pub(crate) limit: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "True to include derived lineage in the response"]
             pub fn get_derived_lineage(mut self, get_derived_lineage: bool) -> Self {
                 self.get_derived_lineage = Some(get_derived_lineage);
@@ -5190,7 +5200,7 @@ pub mod lineage {
         use super::models;
         type Response = models::AtlasLineageInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) type_name: String,
             pub(crate) direction: String,
@@ -5199,7 +5209,7 @@ pub mod lineage {
             pub(crate) include_parent: Option<bool>,
             pub(crate) get_derived_lineage: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The number of hops for lineage."]
             pub fn depth(mut self, depth: i32) -> Self {
                 self.depth = Some(depth);
@@ -5283,8 +5293,8 @@ pub mod relationship {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `relationship`: The AtlasRelationship object containing the information for the relationship to be created."]
-        pub fn create(&self, relationship: impl Into<models::AtlasRelationship>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, relationship: impl Into<models::AtlasRelationship>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 relationship: relationship.into(),
             }
@@ -5293,8 +5303,8 @@ pub mod relationship {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `relationship`: The AtlasRelationship object containing the information for the relationship to be created."]
-        pub fn update(&self, relationship: impl Into<models::AtlasRelationship>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, relationship: impl Into<models::AtlasRelationship>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 relationship: relationship.into(),
             }
@@ -5303,8 +5313,8 @@ pub mod relationship {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the relationship."]
-        pub fn get(&self, guid: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, guid: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
                 extended_info: None,
@@ -5314,8 +5324,8 @@ pub mod relationship {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the relationship."]
-        pub fn delete(&self, guid: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, guid: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5325,11 +5335,11 @@ pub mod relationship {
         use super::models;
         type Response = models::AtlasRelationship;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) relationship: models::AtlasRelationship,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5367,11 +5377,11 @@ pub mod relationship {
         use super::models;
         type Response = models::AtlasRelationship;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) relationship: models::AtlasRelationship,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5409,12 +5419,12 @@ pub mod relationship {
         use super::models;
         type Response = models::AtlasRelationshipWithExtInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
             pub(crate) extended_info: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Limits whether includes extended information."]
             pub fn extended_info(mut self, extended_info: bool) -> Self {
                 self.extended_info = Some(extended_info);
@@ -5461,11 +5471,11 @@ pub mod relationship {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5503,8 +5513,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: businessMetadata guid"]
-        pub fn get_business_metadata_def_by_guid(&self, guid: impl Into<String>) -> get_business_metadata_def_by_guid::Builder {
-            get_business_metadata_def_by_guid::Builder {
+        pub fn get_business_metadata_def_by_guid(&self, guid: impl Into<String>) -> get_business_metadata_def_by_guid::RequestBuilder {
+            get_business_metadata_def_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5513,8 +5523,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: businessMetadata name"]
-        pub fn get_business_metadata_def_by_name(&self, name: impl Into<String>) -> get_business_metadata_def_by_name::Builder {
-            get_business_metadata_def_by_name::Builder {
+        pub fn get_business_metadata_def_by_name(&self, name: impl Into<String>) -> get_business_metadata_def_by_name::RequestBuilder {
+            get_business_metadata_def_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5523,8 +5533,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the classification."]
-        pub fn get_classification_def_by_guid(&self, guid: impl Into<String>) -> get_classification_def_by_guid::Builder {
-            get_classification_def_by_guid::Builder {
+        pub fn get_classification_def_by_guid(&self, guid: impl Into<String>) -> get_classification_def_by_guid::RequestBuilder {
+            get_classification_def_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5533,8 +5543,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the classification."]
-        pub fn get_classification_def_by_name(&self, name: impl Into<String>) -> get_classification_def_by_name::Builder {
-            get_classification_def_by_name::Builder {
+        pub fn get_classification_def_by_name(&self, name: impl Into<String>) -> get_classification_def_by_name::RequestBuilder {
+            get_classification_def_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5543,8 +5553,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the entity."]
-        pub fn get_entity_definition_by_guid(&self, guid: impl Into<String>) -> get_entity_definition_by_guid::Builder {
-            get_entity_definition_by_guid::Builder {
+        pub fn get_entity_definition_by_guid(&self, guid: impl Into<String>) -> get_entity_definition_by_guid::RequestBuilder {
+            get_entity_definition_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5553,8 +5563,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the entity."]
-        pub fn get_entity_definition_by_name(&self, name: impl Into<String>) -> get_entity_definition_by_name::Builder {
-            get_entity_definition_by_name::Builder {
+        pub fn get_entity_definition_by_name(&self, name: impl Into<String>) -> get_entity_definition_by_name::RequestBuilder {
+            get_entity_definition_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5563,8 +5573,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the enum."]
-        pub fn get_enum_def_by_guid(&self, guid: impl Into<String>) -> get_enum_def_by_guid::Builder {
-            get_enum_def_by_guid::Builder {
+        pub fn get_enum_def_by_guid(&self, guid: impl Into<String>) -> get_enum_def_by_guid::RequestBuilder {
+            get_enum_def_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5573,8 +5583,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the enum."]
-        pub fn get_enum_def_by_name(&self, name: impl Into<String>) -> get_enum_def_by_name::Builder {
-            get_enum_def_by_name::Builder {
+        pub fn get_enum_def_by_name(&self, name: impl Into<String>) -> get_enum_def_by_name::RequestBuilder {
+            get_enum_def_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5583,8 +5593,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the relationship."]
-        pub fn get_relationship_def_by_guid(&self, guid: impl Into<String>) -> get_relationship_def_by_guid::Builder {
-            get_relationship_def_by_guid::Builder {
+        pub fn get_relationship_def_by_guid(&self, guid: impl Into<String>) -> get_relationship_def_by_guid::RequestBuilder {
+            get_relationship_def_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5593,8 +5603,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the relationship."]
-        pub fn get_relationship_def_by_name(&self, name: impl Into<String>) -> get_relationship_def_by_name::Builder {
-            get_relationship_def_by_name::Builder {
+        pub fn get_relationship_def_by_name(&self, name: impl Into<String>) -> get_relationship_def_by_name::RequestBuilder {
+            get_relationship_def_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5603,8 +5613,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the struct."]
-        pub fn get_struct_def_by_guid(&self, guid: impl Into<String>) -> get_struct_def_by_guid::Builder {
-            get_struct_def_by_guid::Builder {
+        pub fn get_struct_def_by_guid(&self, guid: impl Into<String>) -> get_struct_def_by_guid::RequestBuilder {
+            get_struct_def_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5613,8 +5623,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the struct."]
-        pub fn get_struct_def_by_name(&self, name: impl Into<String>) -> get_struct_def_by_name::Builder {
-            get_struct_def_by_name::Builder {
+        pub fn get_struct_def_by_name(&self, name: impl Into<String>) -> get_struct_def_by_name::RequestBuilder {
+            get_struct_def_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5623,8 +5633,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the type."]
-        pub fn get_type_definition_by_guid(&self, guid: impl Into<String>) -> get_type_definition_by_guid::Builder {
-            get_type_definition_by_guid::Builder {
+        pub fn get_type_definition_by_guid(&self, guid: impl Into<String>) -> get_type_definition_by_guid::RequestBuilder {
+            get_type_definition_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5633,8 +5643,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the type."]
-        pub fn get_type_definition_by_name(&self, name: impl Into<String>) -> get_type_definition_by_name::Builder {
-            get_type_definition_by_name::Builder {
+        pub fn get_type_definition_by_name(&self, name: impl Into<String>) -> get_type_definition_by_name::RequestBuilder {
+            get_type_definition_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5643,15 +5653,15 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the type."]
-        pub fn delete_type_by_name(&self, name: impl Into<String>) -> delete_type_by_name::Builder {
-            delete_type_by_name::Builder {
+        pub fn delete_type_by_name(&self, name: impl Into<String>) -> delete_type_by_name::RequestBuilder {
+            delete_type_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
         #[doc = "Get all type definitions in Atlas in bulk."]
-        pub fn get_all_type_definitions(&self) -> get_all_type_definitions::Builder {
-            get_all_type_definitions::Builder {
+        pub fn get_all_type_definitions(&self) -> get_all_type_definitions::RequestBuilder {
+            get_all_type_definitions::RequestBuilder {
                 client: self.0.clone(),
                 include_term_template: None,
                 type_: None,
@@ -5661,8 +5671,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `types_def`: A composite wrapper object with corresponding lists of the type definition."]
-        pub fn create_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> create_type_definitions::Builder {
-            create_type_definitions::Builder {
+        pub fn create_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> create_type_definitions::RequestBuilder {
+            create_type_definitions::RequestBuilder {
                 client: self.0.clone(),
                 types_def: types_def.into(),
             }
@@ -5671,8 +5681,11 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `types_def`: A composite object that captures all type definition changes."]
-        pub fn update_atlas_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> update_atlas_type_definitions::Builder {
-            update_atlas_type_definitions::Builder {
+        pub fn update_atlas_type_definitions(
+            &self,
+            types_def: impl Into<models::AtlasTypesDef>,
+        ) -> update_atlas_type_definitions::RequestBuilder {
+            update_atlas_type_definitions::RequestBuilder {
                 client: self.0.clone(),
                 types_def: types_def.into(),
             }
@@ -5681,15 +5694,15 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `types_def`: A composite object that captures all types to be deleted"]
-        pub fn delete_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> delete_type_definitions::Builder {
-            delete_type_definitions::Builder {
+        pub fn delete_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> delete_type_definitions::RequestBuilder {
+            delete_type_definitions::RequestBuilder {
                 client: self.0.clone(),
                 types_def: types_def.into(),
             }
         }
         #[doc = "List all type definitions returned as a list of minimal information header."]
-        pub fn list_type_definition_headers(&self) -> list_type_definition_headers::Builder {
-            list_type_definition_headers::Builder {
+        pub fn list_type_definition_headers(&self) -> list_type_definition_headers::RequestBuilder {
+            list_type_definition_headers::RequestBuilder {
                 client: self.0.clone(),
                 include_term_template: None,
                 type_: None,
@@ -5699,8 +5712,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `guid`: The globally unique identifier of the term template."]
-        pub fn get_term_template_def_by_guid(&self, guid: impl Into<String>) -> get_term_template_def_by_guid::Builder {
-            get_term_template_def_by_guid::Builder {
+        pub fn get_term_template_def_by_guid(&self, guid: impl Into<String>) -> get_term_template_def_by_guid::RequestBuilder {
+            get_term_template_def_by_guid::RequestBuilder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
@@ -5709,8 +5722,8 @@ pub mod types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the term template."]
-        pub fn get_term_template_def_by_name(&self, name: impl Into<String>) -> get_term_template_def_by_name::Builder {
-            get_term_template_def_by_name::Builder {
+        pub fn get_term_template_def_by_name(&self, name: impl Into<String>) -> get_term_template_def_by_name::RequestBuilder {
+            get_term_template_def_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -5720,11 +5733,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasBusinessMetadataDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5765,11 +5778,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasBusinessMetadataDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5810,11 +5823,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasClassificationDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5855,11 +5868,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasClassificationDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5900,11 +5913,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasEntityDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5942,11 +5955,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasEntityDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5984,11 +5997,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasEnumDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6026,11 +6039,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasEnumDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6068,11 +6081,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasRelationshipDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6113,11 +6126,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasRelationshipDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6158,11 +6171,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasStructDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6200,11 +6213,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasStructDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6242,11 +6255,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasTypeDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6284,11 +6297,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasTypeDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6326,11 +6339,11 @@ pub mod types {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6364,12 +6377,12 @@ pub mod types {
         use super::models;
         type Response = models::AtlasTypesDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) include_term_template: Option<bool>,
             pub(crate) type_: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include termtemplatedef when return all typedefs.\nThis is always true when search filter type=term_template"]
             pub fn include_term_template(mut self, include_term_template: bool) -> Self {
                 self.include_term_template = Some(include_term_template);
@@ -6424,11 +6437,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasTypesDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) types_def: models::AtlasTypesDef,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6466,11 +6479,11 @@ pub mod types {
         use super::models;
         type Response = models::AtlasTypesDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) types_def: models::AtlasTypesDef,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6508,11 +6521,11 @@ pub mod types {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) types_def: models::AtlasTypesDef,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6546,12 +6559,12 @@ pub mod types {
         use super::models;
         type Response = Vec<models::AtlasTypeDefHeader>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) include_term_template: Option<bool>,
             pub(crate) type_: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether include termtemplatedef when return all typedefs.\nThis is always true when search filter type=term_template"]
             pub fn include_term_template(mut self, include_term_template: bool) -> Self {
                 self.include_term_template = Some(include_term_template);
@@ -6606,11 +6619,11 @@ pub mod types {
         use super::models;
         type Response = models::TermTemplateDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) guid: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6650,11 +6663,11 @@ pub mod types {
         use super::models;
         type Response = models::TermTemplateDef;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6704,8 +6717,8 @@ pub mod collection {
             &self,
             collection: impl Into<String>,
             entity: impl Into<models::AtlasEntityWithExtInfo>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 collection: collection.into(),
                 entity: entity.into(),
@@ -6720,8 +6733,8 @@ pub mod collection {
             &self,
             collection: impl Into<String>,
             entities: impl Into<models::AtlasEntitiesWithExtInfo>,
-        ) -> create_or_update_bulk::Builder {
-            create_or_update_bulk::Builder {
+        ) -> create_or_update_bulk::RequestBuilder {
+            create_or_update_bulk::RequestBuilder {
                 client: self.0.clone(),
                 collection: collection.into(),
                 entities: entities.into(),
@@ -6736,8 +6749,8 @@ pub mod collection {
             &self,
             collection: impl Into<String>,
             move_entities_request: impl Into<models::MoveEntitiesRequest>,
-        ) -> move_entities_to_collection::Builder {
-            move_entities_to_collection::Builder {
+        ) -> move_entities_to_collection::RequestBuilder {
+            move_entities_to_collection::RequestBuilder {
                 client: self.0.clone(),
                 collection: collection.into(),
                 move_entities_request: move_entities_request.into(),
@@ -6748,12 +6761,12 @@ pub mod collection {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) collection: String,
             pub(crate) entity: models::AtlasEntityWithExtInfo,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6794,12 +6807,12 @@ pub mod collection {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) collection: String,
             pub(crate) entities: models::AtlasEntitiesWithExtInfo,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6841,12 +6854,12 @@ pub mod collection {
         use super::models;
         type Response = models::EntityMutationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) collection: String,
             pub(crate) move_entities_request: models::MoveEntitiesRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

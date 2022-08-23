@@ -1,7 +1,10 @@
+use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
-use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthType, AuthUrl, Scope, TokenUrl};
+use azure_core::HttpClient;
+use oauth2::{basic::BasicClient, AuthType, AuthUrl, Scope, TokenUrl};
 use std::str;
+use std::sync::Arc;
 use time::OffsetDateTime;
 use url::Url;
 
@@ -64,6 +67,7 @@ pub mod tenant_ids {
 /// More information on how to configure a client secret can be found here:
 /// <https://docs.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
 pub struct ClientSecretCredential {
+    http_client: Arc<dyn HttpClient>,
     tenant_id: String,
     client_id: oauth2::ClientId,
     client_secret: Option<oauth2::ClientSecret>,
@@ -73,12 +77,14 @@ pub struct ClientSecretCredential {
 impl ClientSecretCredential {
     /// Create a new ClientSecretCredential
     pub fn new(
+        http_client: Arc<dyn HttpClient>,
         tenant_id: String,
         client_id: String,
         client_secret: String,
         options: TokenCredentialOptions,
     ) -> ClientSecretCredential {
         ClientSecretCredential {
+            http_client,
             tenant_id,
             client_id: oauth2::ClientId::new(client_id),
             client_secret: Some(oauth2::ClientSecret::new(client_secret)),
@@ -132,10 +138,11 @@ impl TokenCredential for ClientSecretCredential {
         )
         .set_auth_type(AuthType::RequestBody);
 
+        let oauth_http_client = Oauth2HttpClient::new(self.http_client.clone());
         let token_result = client
             .exchange_client_credentials()
             .add_scope(Scope::new(format!("{}/.default", resource)))
-            .request_async(async_http_client)
+            .request_async(|request| oauth_http_client.request(request))
             .await
             .map(|r| {
                 use oauth2::TokenResponse as _;

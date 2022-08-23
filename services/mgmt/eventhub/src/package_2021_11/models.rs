@@ -467,10 +467,10 @@ pub mod consumer_group {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Exact time the message was created."]
-        #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
         pub created_at: Option<time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
-        #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub updated_at: Option<time::OffsetDateTime>,
         #[doc = "User Metadata is a placeholder to store user-defined string data with maximum length 1024. e.g. it can be used to store descriptive data, such as list of teams and their contact information also user-defined configuration settings can be stored."]
         #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
@@ -583,10 +583,10 @@ pub mod eh_namespace {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<String>,
         #[doc = "The time the Namespace was created."]
-        #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
         pub created_at: Option<time::OffsetDateTime>,
         #[doc = "The time the Namespace was updated."]
-        #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub updated_at: Option<time::OffsetDateTime>,
         #[doc = "Endpoint you can use to perform Service Bus operations."]
         #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -809,10 +809,10 @@ pub mod eventhub {
         #[serde(rename = "partitionIds", default, skip_serializing_if = "Vec::is_empty")]
         pub partition_ids: Vec<String>,
         #[doc = "Exact time the Event Hub was created."]
-        #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
         pub created_at: Option<time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
-        #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub updated_at: Option<time::OffsetDateTime>,
         #[doc = "Number of days to retain the events for this Event Hub, value should be 1 to 7 days"]
         #[serde(rename = "messageRetentionInDays", default, skip_serializing_if = "Option::is_none")]
@@ -1464,10 +1464,10 @@ pub mod schema_group {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Exact time the Schema Group was updated"]
-        #[serde(rename = "updatedAtUtc", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "updatedAtUtc", default, with = "azure_core::date::rfc3339::option")]
         pub updated_at_utc: Option<time::OffsetDateTime>,
         #[doc = "Exact time the Schema Group was created."]
-        #[serde(rename = "createdAtUtc", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdAtUtc", default, with = "azure_core::date::rfc3339::option")]
         pub created_at_utc: Option<time::OffsetDateTime>,
         #[doc = "The ETag value."]
         #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
@@ -1754,7 +1754,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1763,7 +1763,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -1,12 +1,13 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub(crate) struct MockTransaction {
     pub(crate) name: String,
     pub(crate) number: Arc<AtomicUsize>,
+    workspace_root: Arc<Mutex<Option<String>>>,
 }
 
 impl MockTransaction {
@@ -14,6 +15,7 @@ impl MockTransaction {
         Self {
             name: name.into(),
             number: Arc::new(AtomicUsize::new(0)),
+            workspace_root: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -30,10 +32,21 @@ impl MockTransaction {
     }
 
     pub(crate) fn file_path(&self, create_when_not_exist: bool) -> azure_core::Result<PathBuf> {
-        let mut path = PathBuf::from(workspace_root().context(
-            ErrorKind::MockFramework,
-            "could not read the workspace_root from the cargo metadata",
-        )?);
+        let root_path = {
+            let mut cache = self.workspace_root.lock().unwrap();
+            match &*cache {
+                Some(root) => root.clone(),
+                None => {
+                    let root = workspace_root().context(
+                        ErrorKind::MockFramework,
+                        "could not read the workspace_root from the cargo metadata",
+                    )?;
+                    *cache = Some(root.clone());
+                    root
+                }
+            }
+        };
+        let mut path = PathBuf::from(root_path);
         path.push("test");
         path.push("transactions");
         let name = self.name();

@@ -106,8 +106,8 @@ impl Client {
 }
 impl Client {
     #[doc = "Gets a list of keys."]
-    pub fn get_keys(&self) -> get_keys::Builder {
-        get_keys::Builder {
+    pub fn get_keys(&self) -> get_keys::RequestBuilder {
+        get_keys::RequestBuilder {
             client: self.clone(),
             name: None,
             sync_token: None,
@@ -116,8 +116,8 @@ impl Client {
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
-    pub fn check_keys(&self) -> check_keys::Builder {
-        check_keys::Builder {
+    pub fn check_keys(&self) -> check_keys::RequestBuilder {
+        check_keys::RequestBuilder {
             client: self.clone(),
             name: None,
             sync_token: None,
@@ -126,8 +126,8 @@ impl Client {
         }
     }
     #[doc = "Gets a list of key-values."]
-    pub fn get_key_values(&self) -> get_key_values::Builder {
-        get_key_values::Builder {
+    pub fn get_key_values(&self) -> get_key_values::RequestBuilder {
+        get_key_values::RequestBuilder {
             client: self.clone(),
             key: None,
             label: None,
@@ -138,8 +138,8 @@ impl Client {
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
-    pub fn check_key_values(&self) -> check_key_values::Builder {
-        check_key_values::Builder {
+    pub fn check_key_values(&self) -> check_key_values::RequestBuilder {
+        check_key_values::RequestBuilder {
             client: self.clone(),
             key: None,
             label: None,
@@ -153,8 +153,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key`: The key of the key-value to retrieve."]
-    pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::Builder {
-        get_key_value::Builder {
+    pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::RequestBuilder {
+        get_key_value::RequestBuilder {
             client: self.clone(),
             key: key.into(),
             label: None,
@@ -169,8 +169,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key`: The key of the key-value to create."]
-    pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::Builder {
-        put_key_value::Builder {
+    pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::RequestBuilder {
+        put_key_value::RequestBuilder {
             client: self.clone(),
             key: key.into(),
             label: None,
@@ -184,8 +184,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key`: The key of the key-value to delete."]
-    pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::Builder {
-        delete_key_value::Builder {
+    pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::RequestBuilder {
+        delete_key_value::RequestBuilder {
             client: self.clone(),
             key: key.into(),
             label: None,
@@ -197,8 +197,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key`: The key of the key-value to retrieve."]
-    pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::Builder {
-        check_key_value::Builder {
+    pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::RequestBuilder {
+        check_key_value::RequestBuilder {
             client: self.clone(),
             key: key.into(),
             label: None,
@@ -210,8 +210,8 @@ impl Client {
         }
     }
     #[doc = "Gets a list of labels."]
-    pub fn get_labels(&self) -> get_labels::Builder {
-        get_labels::Builder {
+    pub fn get_labels(&self) -> get_labels::RequestBuilder {
+        get_labels::RequestBuilder {
             client: self.clone(),
             name: None,
             sync_token: None,
@@ -221,8 +221,8 @@ impl Client {
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
-    pub fn check_labels(&self) -> check_labels::Builder {
-        check_labels::Builder {
+    pub fn check_labels(&self) -> check_labels::RequestBuilder {
+        check_labels::RequestBuilder {
             client: self.clone(),
             name: None,
             sync_token: None,
@@ -235,8 +235,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key`: The key of the key-value to lock."]
-    pub fn put_lock(&self, key: impl Into<String>) -> put_lock::Builder {
-        put_lock::Builder {
+    pub fn put_lock(&self, key: impl Into<String>) -> put_lock::RequestBuilder {
+        put_lock::RequestBuilder {
             client: self.clone(),
             key: key.into(),
             label: None,
@@ -249,8 +249,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key`: The key of the key-value to unlock."]
-    pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::Builder {
-        delete_lock::Builder {
+    pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::RequestBuilder {
+        delete_lock::RequestBuilder {
             client: self.clone(),
             key: key.into(),
             label: None,
@@ -260,8 +260,8 @@ impl Client {
         }
     }
     #[doc = "Gets a list of key-value revisions."]
-    pub fn get_revisions(&self) -> get_revisions::Builder {
-        get_revisions::Builder {
+    pub fn get_revisions(&self) -> get_revisions::RequestBuilder {
+        get_revisions::RequestBuilder {
             client: self.clone(),
             key: None,
             label: None,
@@ -272,8 +272,8 @@ impl Client {
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
-    pub fn check_revisions(&self) -> check_revisions::Builder {
-        check_revisions::Builder {
+    pub fn check_revisions(&self) -> check_revisions::RequestBuilder {
+        check_revisions::RequestBuilder {
             client: self.clone(),
             key: None,
             label: None,
@@ -288,14 +288,14 @@ pub mod get_keys {
     use super::models;
     type Response = models::KeyListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
         pub(crate) accept_datetime: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter for the name of the returned keys."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
@@ -393,14 +393,14 @@ pub mod check_keys {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
         pub(crate) accept_datetime: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter for the name of the returned keys."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
@@ -468,7 +468,7 @@ pub mod get_key_values {
     use super::models;
     type Response = models::KeyValueListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
@@ -477,7 +477,7 @@ pub mod get_key_values {
         pub(crate) accept_datetime: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
@@ -588,7 +588,7 @@ pub mod check_key_values {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
@@ -597,7 +597,7 @@ pub mod check_key_values {
         pub(crate) accept_datetime: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
@@ -678,7 +678,7 @@ pub mod get_key_value {
     use super::models;
     type Response = models::KeyValue;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
@@ -688,7 +688,7 @@ pub mod get_key_value {
         pub(crate) if_none_match: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The label of the key-value to retrieve."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
@@ -773,7 +773,7 @@ pub mod put_key_value {
     use super::models;
     type Response = models::KeyValue;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
@@ -782,7 +782,7 @@ pub mod put_key_value {
         pub(crate) if_match: Option<String>,
         pub(crate) if_none_match: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The label of the key-value to create."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
@@ -868,14 +868,14 @@ pub mod delete_key_value {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) if_match: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The label of the key-value to delete."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
@@ -940,7 +940,7 @@ pub mod check_key_value {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
@@ -950,7 +950,7 @@ pub mod check_key_value {
         pub(crate) if_none_match: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The label of the key-value to retrieve."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
@@ -1031,7 +1031,7 @@ pub mod get_labels {
     use super::models;
     type Response = models::LabelListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -1039,7 +1039,7 @@ pub mod get_labels {
         pub(crate) accept_datetime: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter for the name of the returned labels."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
@@ -1142,7 +1142,7 @@ pub mod check_labels {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -1150,7 +1150,7 @@ pub mod check_labels {
         pub(crate) accept_datetime: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter for the name of the returned labels."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
@@ -1223,7 +1223,7 @@ pub mod put_lock {
     use super::models;
     type Response = models::KeyValue;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
@@ -1231,7 +1231,7 @@ pub mod put_lock {
         pub(crate) if_match: Option<String>,
         pub(crate) if_none_match: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The label, if any, of the key-value to lock."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
@@ -1303,7 +1303,7 @@ pub mod delete_lock {
     use super::models;
     type Response = models::KeyValue;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
@@ -1311,7 +1311,7 @@ pub mod delete_lock {
         pub(crate) if_match: Option<String>,
         pub(crate) if_none_match: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The label, if any, of the key-value to unlock."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
@@ -1383,7 +1383,7 @@ pub mod get_revisions {
     use super::models;
     type Response = models::KeyValueListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
@@ -1392,7 +1392,7 @@ pub mod get_revisions {
         pub(crate) accept_datetime: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
@@ -1503,7 +1503,7 @@ pub mod check_revisions {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
@@ -1512,7 +1512,7 @@ pub mod check_revisions {
         pub(crate) accept_datetime: Option<String>,
         pub(crate) select: Vec<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());

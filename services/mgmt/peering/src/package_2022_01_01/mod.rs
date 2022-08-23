@@ -161,8 +161,8 @@ pub mod cdn_peering_prefixes {
         #[doc = "Arguments:"]
         #[doc = "* `peering_location`: The peering location."]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, peering_location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, peering_location: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 peering_location: peering_location.into(),
                 subscription_id: subscription_id.into(),
@@ -173,12 +173,12 @@ pub mod cdn_peering_prefixes {
         use super::models;
         type Response = models::CdnPeeringPrefixListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) peering_location: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -257,8 +257,8 @@ impl Client {
         &self,
         check_service_provider_availability_input: impl Into<models::CheckServiceProviderAvailabilityInput>,
         subscription_id: impl Into<String>,
-    ) -> check_service_provider_availability::Builder {
-        check_service_provider_availability::Builder {
+    ) -> check_service_provider_availability::RequestBuilder {
+        check_service_provider_availability::RequestBuilder {
             client: self.clone(),
             check_service_provider_availability_input: check_service_provider_availability_input.into(),
             subscription_id: subscription_id.into(),
@@ -269,12 +269,12 @@ pub mod check_service_provider_availability {
     use super::models;
     type Response = String;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) check_service_provider_availability_input: models::CheckServiceProviderAvailabilityInput,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -330,8 +330,8 @@ pub mod legacy_peerings {
             peering_location: impl Into<String>,
             kind: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 peering_location: peering_location.into(),
                 kind: kind.into(),
@@ -344,14 +344,14 @@ pub mod legacy_peerings {
         use super::models;
         type Response = models::PeeringListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) peering_location: String,
             pub(crate) kind: String,
             pub(crate) subscription_id: String,
             pub(crate) asn: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ASN number associated with a legacy peering."]
             pub fn asn(mut self, asn: i32) -> Self {
                 self.asn = Some(asn);
@@ -449,8 +449,8 @@ pub mod looking_glass {
             source_location: impl Into<String>,
             destination_ip: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> invoke::Builder {
-            invoke::Builder {
+        ) -> invoke::RequestBuilder {
+            invoke::RequestBuilder {
                 client: self.0.clone(),
                 command: command.into(),
                 source_type: source_type.into(),
@@ -464,7 +464,7 @@ pub mod looking_glass {
         use super::models;
         type Response = models::LookingGlassOutput;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) command: String,
             pub(crate) source_type: String,
@@ -472,7 +472,7 @@ pub mod looking_glass {
             pub(crate) destination_ip: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -527,18 +527,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available API operations for peering resources."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -611,8 +611,8 @@ pub mod peer_asns {
         #[doc = "Arguments:"]
         #[doc = "* `peer_asn_name`: The peer ASN name."]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn get(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 peer_asn_name: peer_asn_name.into(),
                 subscription_id: subscription_id.into(),
@@ -629,8 +629,8 @@ pub mod peer_asns {
             peer_asn_name: impl Into<String>,
             peer_asn: impl Into<models::PeerAsn>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 peer_asn_name: peer_asn_name.into(),
                 peer_asn: peer_asn.into(),
@@ -642,8 +642,8 @@ pub mod peer_asns {
         #[doc = "Arguments:"]
         #[doc = "* `peer_asn_name`: The peer ASN name."]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn delete(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 peer_asn_name: peer_asn_name.into(),
                 subscription_id: subscription_id.into(),
@@ -653,8 +653,8 @@ pub mod peer_asns {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -664,12 +664,12 @@ pub mod peer_asns {
         use super::models;
         type Response = models::PeerAsn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) peer_asn_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -718,13 +718,13 @@ pub mod peer_asns {
             Created201(models::PeerAsn),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) peer_asn_name: String,
             pub(crate) peer_asn: models::PeerAsn,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -779,12 +779,12 @@ pub mod peer_asns {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) peer_asn_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -826,11 +826,11 @@ pub mod peer_asns {
         use super::models;
         type Response = models::PeerAsnListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -906,8 +906,8 @@ pub mod peering_locations {
         #[doc = "Arguments:"]
         #[doc = "* `kind`: The kind of the peering."]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, kind: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, kind: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 kind: kind.into(),
                 subscription_id: subscription_id.into(),
@@ -919,13 +919,13 @@ pub mod peering_locations {
         use super::models;
         type Response = models::PeeringLocationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) kind: String,
             pub(crate) subscription_id: String,
             pub(crate) direct_peering_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The type of direct peering."]
             pub fn direct_peering_type(mut self, direct_peering_type: impl Into<String>) -> Self {
                 self.direct_peering_type = Some(direct_peering_type.into());
@@ -1021,8 +1021,8 @@ pub mod registered_asns {
             peering_name: impl Into<String>,
             registered_asn_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1045,8 +1045,8 @@ pub mod registered_asns {
             registered_asn_name: impl Into<String>,
             registered_asn: impl Into<models::PeeringRegisteredAsn>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1068,8 +1068,8 @@ pub mod registered_asns {
             peering_name: impl Into<String>,
             registered_asn_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1088,8 +1088,8 @@ pub mod registered_asns {
             resource_group_name: impl Into<String>,
             peering_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_peering::Builder {
-            list_by_peering::Builder {
+        ) -> list_by_peering::RequestBuilder {
+            list_by_peering::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1101,14 +1101,14 @@ pub mod registered_asns {
         use super::models;
         type Response = models::PeeringRegisteredAsn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_asn_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1159,7 +1159,7 @@ pub mod registered_asns {
             Created201(models::PeeringRegisteredAsn),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
@@ -1167,7 +1167,7 @@ pub mod registered_asns {
             pub(crate) registered_asn: models::PeeringRegisteredAsn,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1224,14 +1224,14 @@ pub mod registered_asns {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_asn_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1275,13 +1275,13 @@ pub mod registered_asns {
         use super::models;
         type Response = models::PeeringRegisteredAsnListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1367,8 +1367,8 @@ pub mod registered_prefixes {
             peering_name: impl Into<String>,
             registered_prefix_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1391,8 +1391,8 @@ pub mod registered_prefixes {
             registered_prefix_name: impl Into<String>,
             registered_prefix: impl Into<models::PeeringRegisteredPrefix>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1414,8 +1414,8 @@ pub mod registered_prefixes {
             peering_name: impl Into<String>,
             registered_prefix_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1434,8 +1434,8 @@ pub mod registered_prefixes {
             resource_group_name: impl Into<String>,
             peering_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_peering::Builder {
-            list_by_peering::Builder {
+        ) -> list_by_peering::RequestBuilder {
+            list_by_peering::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1447,14 +1447,14 @@ pub mod registered_prefixes {
         use super::models;
         type Response = models::PeeringRegisteredPrefix;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_prefix_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1505,7 +1505,7 @@ pub mod registered_prefixes {
             Created201(models::PeeringRegisteredPrefix),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
@@ -1513,7 +1513,7 @@ pub mod registered_prefixes {
             pub(crate) registered_prefix: models::PeeringRegisteredPrefix,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1570,14 +1570,14 @@ pub mod registered_prefixes {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_prefix_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1621,13 +1621,13 @@ pub mod registered_prefixes {
         use super::models;
         type Response = models::PeeringRegisteredPrefixListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1711,8 +1711,8 @@ pub mod peerings {
             resource_group_name: impl Into<String>,
             peering_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1732,8 +1732,8 @@ pub mod peerings {
             peering_name: impl Into<String>,
             peering: impl Into<models::Peering>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1754,8 +1754,8 @@ pub mod peerings {
             peering_name: impl Into<String>,
             tags: impl Into<models::ResourceTags>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1774,8 +1774,8 @@ pub mod peerings {
             resource_group_name: impl Into<String>,
             peering_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -1791,8 +1791,8 @@ pub mod peerings {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1802,8 +1802,8 @@ pub mod peerings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1813,13 +1813,13 @@ pub mod peerings {
         use super::models;
         type Response = models::Peering;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1869,14 +1869,14 @@ pub mod peerings {
             Created201(models::Peering),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) peering: models::Peering,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1928,14 +1928,14 @@ pub mod peerings {
         use super::models;
         type Response = models::Peering;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) tags: models::ResourceTags,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1986,13 +1986,13 @@ pub mod peerings {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2035,12 +2035,12 @@ pub mod peerings {
         use super::models;
         type Response = models::PeeringListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2111,11 +2111,11 @@ pub mod peerings {
         use super::models;
         type Response = models::PeeringListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2197,8 +2197,8 @@ pub mod received_routes {
             resource_group_name: impl Into<String>,
             peering_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_peering::Builder {
-            list_by_peering::Builder {
+        ) -> list_by_peering::RequestBuilder {
+            list_by_peering::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
@@ -2215,7 +2215,7 @@ pub mod received_routes {
         use super::models;
         type Response = models::PeeringReceivedRouteListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
@@ -2226,7 +2226,7 @@ pub mod received_routes {
             pub(crate) rpki_validation_state: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The optional prefix that can be used to filter the routes."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -2356,8 +2356,8 @@ pub mod connection_monitor_tests {
             peering_service_name: impl Into<String>,
             connection_monitor_test_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2380,8 +2380,8 @@ pub mod connection_monitor_tests {
             connection_monitor_test_name: impl Into<String>,
             connection_monitor_test: impl Into<models::ConnectionMonitorTest>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2403,8 +2403,8 @@ pub mod connection_monitor_tests {
             peering_service_name: impl Into<String>,
             connection_monitor_test_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2423,8 +2423,8 @@ pub mod connection_monitor_tests {
             resource_group_name: impl Into<String>,
             peering_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_peering_service::Builder {
-            list_by_peering_service::Builder {
+        ) -> list_by_peering_service::RequestBuilder {
+            list_by_peering_service::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2436,14 +2436,14 @@ pub mod connection_monitor_tests {
         use super::models;
         type Response = models::ConnectionMonitorTest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) connection_monitor_test_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2487,7 +2487,7 @@ pub mod connection_monitor_tests {
             Created201(models::ConnectionMonitorTest),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
@@ -2495,7 +2495,7 @@ pub mod connection_monitor_tests {
             pub(crate) connection_monitor_test: models::ConnectionMonitorTest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2545,14 +2545,14 @@ pub mod connection_monitor_tests {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) connection_monitor_test_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2589,13 +2589,13 @@ pub mod connection_monitor_tests {
         use super::models;
         type Response = models::ConnectionMonitorTestListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2672,8 +2672,8 @@ pub mod peering_service_countries {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -2683,11 +2683,11 @@ pub mod peering_service_countries {
         use super::models;
         type Response = models::PeeringServiceCountryListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2762,8 +2762,8 @@ pub mod peering_service_locations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 country: None,
@@ -2774,12 +2774,12 @@ pub mod peering_service_locations {
         use super::models;
         type Response = models::PeeringServiceLocationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) country: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The country of interest, in which the locations are to be present."]
             pub fn country(mut self, country: impl Into<String>) -> Self {
                 self.country = Some(country.into());
@@ -2871,8 +2871,8 @@ pub mod prefixes {
             peering_service_name: impl Into<String>,
             prefix_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2896,8 +2896,8 @@ pub mod prefixes {
             prefix_name: impl Into<String>,
             peering_service_prefix: impl Into<models::PeeringServicePrefix>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2919,8 +2919,8 @@ pub mod prefixes {
             peering_service_name: impl Into<String>,
             prefix_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2939,8 +2939,8 @@ pub mod prefixes {
             resource_group_name: impl Into<String>,
             peering_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_peering_service::Builder {
-            list_by_peering_service::Builder {
+        ) -> list_by_peering_service::RequestBuilder {
+            list_by_peering_service::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -2953,7 +2953,7 @@ pub mod prefixes {
         use super::models;
         type Response = models::PeeringServicePrefix;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
@@ -2961,7 +2961,7 @@ pub mod prefixes {
             pub(crate) subscription_id: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The properties to be expanded."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -3020,7 +3020,7 @@ pub mod prefixes {
             Created201(models::PeeringServicePrefix),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
@@ -3028,7 +3028,7 @@ pub mod prefixes {
             pub(crate) peering_service_prefix: models::PeeringServicePrefix,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3085,14 +3085,14 @@ pub mod prefixes {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) prefix_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3136,14 +3136,14 @@ pub mod prefixes {
         use super::models;
         type Response = models::PeeringServicePrefixListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The properties to be expanded."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -3228,8 +3228,8 @@ pub mod peering_service_providers {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -3239,11 +3239,11 @@ pub mod peering_service_providers {
         use super::models;
         type Response = models::PeeringServiceProviderListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3325,8 +3325,8 @@ pub mod peering_services {
             resource_group_name: impl Into<String>,
             peering_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -3346,8 +3346,8 @@ pub mod peering_services {
             peering_service_name: impl Into<String>,
             peering_service: impl Into<models::PeeringService>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -3368,8 +3368,8 @@ pub mod peering_services {
             peering_service_name: impl Into<String>,
             tags: impl Into<models::ResourceTags>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -3388,8 +3388,8 @@ pub mod peering_services {
             resource_group_name: impl Into<String>,
             peering_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
@@ -3405,8 +3405,8 @@ pub mod peering_services {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -3416,8 +3416,8 @@ pub mod peering_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -3426,8 +3426,8 @@ pub mod peering_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn initialize_connection_monitor(&self, subscription_id: impl Into<String>) -> initialize_connection_monitor::Builder {
-            initialize_connection_monitor::Builder {
+        pub fn initialize_connection_monitor(&self, subscription_id: impl Into<String>) -> initialize_connection_monitor::RequestBuilder {
+            initialize_connection_monitor::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -3437,13 +3437,13 @@ pub mod peering_services {
         use super::models;
         type Response = models::PeeringService;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3493,14 +3493,14 @@ pub mod peering_services {
             Created201(models::PeeringService),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) peering_service: models::PeeringService,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3552,14 +3552,14 @@ pub mod peering_services {
         use super::models;
         type Response = models::PeeringService;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) tags: models::ResourceTags,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3610,13 +3610,13 @@ pub mod peering_services {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3659,12 +3659,12 @@ pub mod peering_services {
         use super::models;
         type Response = models::PeeringServiceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3735,11 +3735,11 @@ pub mod peering_services {
         use super::models;
         type Response = models::PeeringServiceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3809,11 +3809,11 @@ pub mod peering_services {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

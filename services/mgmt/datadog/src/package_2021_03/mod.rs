@@ -127,8 +127,8 @@ pub mod marketplace_agreements {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -137,8 +137,8 @@ pub mod marketplace_agreements {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn create_or_update(&self, subscription_id: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(&self, subscription_id: impl Into<String>) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: None,
@@ -149,11 +149,11 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::DatadogAgreementResourceListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -223,12 +223,12 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::DatadogAgreementResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: Option<models::DatadogAgreementResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DatadogAgreementResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -293,8 +293,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> list_api_keys::Builder {
-            list_api_keys::Builder {
+        ) -> list_api_keys::RequestBuilder {
+            list_api_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -312,8 +312,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> get_default_key::Builder {
-            get_default_key::Builder {
+        ) -> get_default_key::RequestBuilder {
+            get_default_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -331,8 +331,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> set_default_key::Builder {
-            set_default_key::Builder {
+        ) -> set_default_key::RequestBuilder {
+            set_default_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -351,8 +351,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> list_hosts::Builder {
-            list_hosts::Builder {
+        ) -> list_hosts::RequestBuilder {
+            list_hosts::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -370,8 +370,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> list_linked_resources::Builder {
-            list_linked_resources::Builder {
+        ) -> list_linked_resources::RequestBuilder {
+            list_linked_resources::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -389,8 +389,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> list_monitored_resources::Builder {
-            list_monitored_resources::Builder {
+        ) -> list_monitored_resources::RequestBuilder {
+            list_monitored_resources::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -401,8 +401,8 @@ pub mod monitors {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -416,8 +416,8 @@ pub mod monitors {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -434,8 +434,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -453,8 +453,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -473,8 +473,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -493,8 +493,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -512,8 +512,8 @@ pub mod monitors {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> refresh_set_password_link::Builder {
-            refresh_set_password_link::Builder {
+        ) -> refresh_set_password_link::RequestBuilder {
+            refresh_set_password_link::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -525,13 +525,13 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogApiKeyListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -604,13 +604,13 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogApiKey;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -657,14 +657,14 @@ pub mod monitors {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
             pub(crate) body: Option<models::DatadogApiKey>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DatadogApiKey>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -715,13 +715,13 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogHostListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -794,13 +794,13 @@ pub mod monitors {
         use super::models;
         type Response = models::LinkedResourceListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -873,13 +873,13 @@ pub mod monitors {
         use super::models;
         type Response = models::MonitoredResourceListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -952,11 +952,11 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogMonitorResourceListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1026,12 +1026,12 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogMonitorResourceListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1102,13 +1102,13 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogMonitorResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1158,14 +1158,14 @@ pub mod monitors {
             Created201(models::DatadogMonitorResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
             pub(crate) body: Option<models::DatadogMonitorResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DatadogMonitorResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1230,14 +1230,14 @@ pub mod monitors {
             Created201(models::DatadogMonitorResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
             pub(crate) body: Option<models::DatadogMonitorResourceUpdateParameters>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DatadogMonitorResourceUpdateParameters>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1303,13 +1303,13 @@ pub mod monitors {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1354,13 +1354,13 @@ pub mod monitors {
         use super::models;
         type Response = models::DatadogSetPasswordLink;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1409,18 +1409,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all operations provided by Microsoft.Datadog for the 2021-03-01 api version."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1499,8 +1499,8 @@ pub mod tag_rules {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1520,8 +1520,8 @@ pub mod tag_rules {
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
             rule_set_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1542,8 +1542,8 @@ pub mod tag_rules {
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
             rule_set_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1557,13 +1557,13 @@ pub mod tag_rules {
         use super::models;
         type Response = models::MonitoringTagRulesListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1635,14 +1635,14 @@ pub mod tag_rules {
         use super::models;
         type Response = models::MonitoringTagRules;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
             pub(crate) rule_set_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1689,7 +1689,7 @@ pub mod tag_rules {
         use super::models;
         type Response = models::MonitoringTagRules;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1697,7 +1697,7 @@ pub mod tag_rules {
             pub(crate) rule_set_name: String,
             pub(crate) body: Option<models::MonitoringTagRules>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::MonitoringTagRules>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1765,8 +1765,8 @@ pub mod single_sign_on_configurations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1786,8 +1786,8 @@ pub mod single_sign_on_configurations {
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
             configuration_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1808,8 +1808,8 @@ pub mod single_sign_on_configurations {
             resource_group_name: impl Into<String>,
             monitor_name: impl Into<String>,
             configuration_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1823,13 +1823,13 @@ pub mod single_sign_on_configurations {
         use super::models;
         type Response = models::DatadogSingleSignOnResourceListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1901,14 +1901,14 @@ pub mod single_sign_on_configurations {
         use super::models;
         type Response = models::DatadogSingleSignOnResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) monitor_name: String,
             pub(crate) configuration_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1959,7 +1959,7 @@ pub mod single_sign_on_configurations {
             Created201(models::DatadogSingleSignOnResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1967,7 +1967,7 @@ pub mod single_sign_on_configurations {
             pub(crate) configuration_name: String,
             pub(crate) body: Option<models::DatadogSingleSignOnResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DatadogSingleSignOnResource>) -> Self {
                 self.body = Some(body.into());
                 self

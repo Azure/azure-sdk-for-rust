@@ -2,10 +2,12 @@
 //!
 //! You can learn more about the OAuth2 authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
+use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::HttpClient;
 use oauth2::basic::BasicClient;
-use oauth2::reqwest::async_http_client;
 use oauth2::{ClientId, ClientSecret};
+use std::sync::Arc;
 use url::Url;
 
 /// Start an authorization code flow.
@@ -77,15 +79,17 @@ impl AuthorizationCodeFlow {
     /// Exchange an authorization code for a token.
     pub async fn exchange(
         self,
+        http_client: Arc<dyn HttpClient>,
         code: oauth2::AuthorizationCode,
     ) -> azure_core::Result<
         oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
     > {
+        let oauth_http_client = Oauth2HttpClient::new(http_client.clone());
         self.client
             .exchange_code(code)
             // Send the PKCE code verifier in the token request
             .set_pkce_verifier(self.pkce_code_verifier)
-            .request_async(async_http_client)
+            .request_async(|request| oauth_http_client.request(request))
             .await
             .context(
                 ErrorKind::Credential,

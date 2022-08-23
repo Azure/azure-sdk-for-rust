@@ -523,7 +523,7 @@ pub mod aml_compute {
         #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
         pub allocation_state: Option<properties::AllocationState>,
         #[doc = "The time at which the compute entered its current allocation state."]
-        #[serde(rename = "allocationStateTransitionTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
         pub allocation_state_transition_time: Option<time::OffsetDateTime>,
         #[doc = "Collection of errors encountered by various compute nodes during node setup."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -899,10 +899,10 @@ pub struct Compute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The date and time when the compute was created."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "The date and time when the compute was last modified."]
-    #[serde(rename = "modifiedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "ARM resource id of the underlying compute"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2043,10 +2043,10 @@ pub struct Model {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The Model creation time (UTC)."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The Model last modified time (UTC)."]
-    #[serde(rename = "modifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub modified_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates whether we need to unpack the Model during docker Image creation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3803,7 +3803,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "The creation time of the machine learning workspace in ISO8601 format."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "ARM id of the key vault associated with this workspace. This cannot be changed once the workspace has been created"]
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]

@@ -112,18 +112,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the available Advisor REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationEntityListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -197,8 +197,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         prediction_request: impl Into<models::PredictionRequest>,
-    ) -> predict::Builder {
-        predict::Builder {
+    ) -> predict::RequestBuilder {
+        predict::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             prediction_request: prediction_request.into(),
@@ -209,12 +209,12 @@ pub mod predict {
     use super::models;
     type Response = models::PredictionResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) prediction_request: models::PredictionRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();

@@ -121,8 +121,8 @@ pub mod instances {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `metadata`: This must be set to 'true'."]
-        pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::Builder {
-            get_metadata::Builder {
+        pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::RequestBuilder {
+            get_metadata::RequestBuilder {
                 client: self.0.clone(),
                 metadata: metadata.into(),
             }
@@ -132,11 +132,11 @@ pub mod instances {
         use super::models;
         type Response = models::Instance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -182,8 +182,8 @@ pub mod attested {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `metadata`: This must be set to 'true'."]
-        pub fn get_document(&self, metadata: impl Into<String>) -> get_document::Builder {
-            get_document::Builder {
+        pub fn get_document(&self, metadata: impl Into<String>) -> get_document::RequestBuilder {
+            get_document::RequestBuilder {
                 client: self.0.clone(),
                 metadata: metadata.into(),
                 nonce: None,
@@ -194,12 +194,12 @@ pub mod attested {
         use super::models;
         type Response = models::AttestedData;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
             pub(crate) nonce: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "This is a string of up to 32 random alphanumeric characters."]
             pub fn nonce(mut self, nonce: impl Into<String>) -> Self {
                 self.nonce = Some(nonce.into());
@@ -254,8 +254,8 @@ pub mod identity {
         #[doc = "Arguments:"]
         #[doc = "* `metadata`: This must be set to 'true'."]
         #[doc = "* `resource`: This is the urlencoded identifier URI of the sink resource for the requested Azure AD token. The resulting token contains the corresponding aud for this resource."]
-        pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::Builder {
-            get_token::Builder {
+        pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::RequestBuilder {
+            get_token::RequestBuilder {
                 client: self.0.clone(),
                 metadata: metadata.into(),
                 resource: resource.into(),
@@ -270,8 +270,8 @@ pub mod identity {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `metadata`: This must be set to 'true'."]
-        pub fn get_info(&self, metadata: impl Into<String>) -> get_info::Builder {
-            get_info::Builder {
+        pub fn get_info(&self, metadata: impl Into<String>) -> get_info::RequestBuilder {
+            get_info::RequestBuilder {
                 client: self.0.clone(),
                 metadata: metadata.into(),
             }
@@ -281,7 +281,7 @@ pub mod identity {
         use super::models;
         type Response = models::IdentityTokenResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
             pub(crate) resource: String,
@@ -291,7 +291,7 @@ pub mod identity {
             pub(crate) authority: Option<String>,
             pub(crate) bypass_cache: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "This identifies, by Azure AD client id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with object_id and msi_res_id."]
             pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
                 self.client_id = Some(client_id.into());
@@ -374,11 +374,11 @@ pub mod identity {
         use super::models;
         type Response = models::IdentityInfoResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

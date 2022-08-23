@@ -19,13 +19,13 @@ async fn get_certficate(
     certificate_name: &str,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let creds = DefaultAzureCredential::default();
-    let mut client = KeyvaultClient::new(
+    let client = KeyvaultClient::new(
         format!("https://{}.vault.azure.net", vault_name).as_str(),
         std::sync::Arc::new(creds),
     )?
-    .secret_client(certificate_name);
-    let secret = client.get().into_future().await?;
-    let cert = base64::decode(secret.value())?;
+    .secret_client();
+    let secret = client.get(certificate_name).into_future().await?;
+    let cert = base64::decode(secret.value)?;
     Ok(cert)
 }
 

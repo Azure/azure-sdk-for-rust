@@ -50,10 +50,10 @@ pub struct ActionRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Creation time of action rule. Date-Time in ISO-8601 format."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Last updated time of action rule. Date-Time in ISO-8601 format."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
     #[doc = "Created by user name."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -937,13 +937,13 @@ pub struct Essentials {
     #[serde(rename = "smartGroupingReason", default, skip_serializing_if = "Option::is_none")]
     pub smart_grouping_reason: Option<String>,
     #[doc = "Creation time(ISO-8601 format) of alert instance."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "Last modification time(ISO-8601 format) of alert instance."]
-    #[serde(rename = "lastModifiedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "Resolved time(ISO-8601 format) of alert instance. This will be updated when monitor service resolves the alert instance because the rule condition is no longer met."]
-    #[serde(rename = "monitorConditionResolvedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "monitorConditionResolvedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub monitor_condition_resolved_date_time: Option<time::OffsetDateTime>,
     #[doc = "User who last modified the alert, in case of monitor service updates user would be 'system', otherwise name of the user."]
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
@@ -1368,10 +1368,10 @@ pub struct SmartGroupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<smart_group_properties::Severity>,
     #[doc = "Creation time of smart group. Date-Time in ISO-8601 format."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "Last updated time of smart group. Date-Time in ISO-8601 format."]
-    #[serde(rename = "lastModifiedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "Last modified by user name."]
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]

@@ -490,7 +490,7 @@ pub struct DedicatedCloudNodeProperties {
     #[serde(rename = "cloudRackName", default, skip_serializing_if = "Option::is_none")]
     pub cloud_rack_name: Option<String>,
     #[doc = "date time the resource was created"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "count of nodes to create"]
     #[serde(rename = "nodesCount")]
@@ -730,7 +730,7 @@ impl OperationError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResource {
     #[doc = "End time of the operation"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Operation error model"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -742,7 +742,7 @@ pub struct OperationResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Start time of the operation"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Operation status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -835,7 +835,7 @@ pub struct PrivateCloudProperties {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "When private cloud was created"]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "Array of DNS servers"]
     #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]

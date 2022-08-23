@@ -185,10 +185,10 @@ pub struct DeletedManagedHsmProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The deleted date."]
-    #[serde(rename = "deletionDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletionDate", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_date: Option<time::OffsetDateTime>,
     #[doc = "The scheduled purged date."]
-    #[serde(rename = "scheduledPurgeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_purge_date: Option<time::OffsetDateTime>,
     #[doc = "Purge protection status of the original managed HSM."]
     #[serde(rename = "purgeProtectionEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -254,10 +254,10 @@ pub struct DeletedVaultProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The deleted date."]
-    #[serde(rename = "deletionDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletionDate", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_date: Option<time::OffsetDateTime>,
     #[doc = "The scheduled purged date."]
-    #[serde(rename = "scheduledPurgeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_purge_date: Option<time::OffsetDateTime>,
     #[doc = "Tags of the original vault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1141,7 +1141,7 @@ pub struct ManagedHsmProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<managed_hsm_properties::PublicNetworkAccess>,
     #[doc = "The scheduled purge date in UTC."]
-    #[serde(rename = "scheduledPurgeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_purge_date: Option<time::OffsetDateTime>,
 }
 impl ManagedHsmProperties {
@@ -2110,7 +2110,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of the key vault resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the key vault resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2119,7 +2119,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of the key vault resource last modification (UTC)."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

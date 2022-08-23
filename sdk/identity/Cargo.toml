@@ -19,10 +19,9 @@ oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
-time = { version = "0.3.10", features = ["serde", "macros", "local-offset"] }
+time = { version = "0.3.10", features = ["local-offset"] }
 serde_json = "1.0"
 log = "0.4"
-async-timer = "1.0.0-beta.7"
 async-trait = "0.1"
 openssl = { version = "0.10",  optional=true }
 base64 = "0.13.0"
@@ -32,7 +31,7 @@ fix-hidden-lifetime-bug = "0.2"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }
-tokio = { version = "1.0", features = ["macros"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.9"
 serde_test = "1"
 azure_security_keyvault = { path = "../security_keyvault", default_features = false }
@@ -40,11 +39,9 @@ azure_security_keyvault = { path = "../security_keyvault", default_features = fa
 [features]
 default = ["development", "enable_reqwest"]
 enable_reqwest = [
-  "oauth2/native-tls",
   "azure_core/enable_reqwest",
 ]
 enable_reqwest_rustls = [
-  "oauth2/rustls-tls",
   "azure_core/enable_reqwest_rustls",
 ]
 development = []

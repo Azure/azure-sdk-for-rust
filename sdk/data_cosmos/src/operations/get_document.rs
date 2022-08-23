@@ -124,7 +124,7 @@ where
 #[derive(Debug, Clone)]
 pub struct FoundDocumentResponse<T> {
     pub document: Document<T>,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub last_state_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
@@ -184,7 +184,7 @@ where
 
 #[derive(Debug, Clone)]
 pub struct NotFoundDocumentResponse {
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub last_state_change: OffsetDateTime,
     pub lsn: u64,
     pub schema_version: String,

@@ -133,8 +133,8 @@ pub mod availability_group_listeners {
             sql_virtual_machine_group_name: impl Into<String>,
             availability_group_listener_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -157,8 +157,8 @@ pub mod availability_group_listeners {
             availability_group_listener_name: impl Into<String>,
             parameters: impl Into<models::AvailabilityGroupListener>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -180,8 +180,8 @@ pub mod availability_group_listeners {
             sql_virtual_machine_group_name: impl Into<String>,
             availability_group_listener_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -200,8 +200,8 @@ pub mod availability_group_listeners {
             resource_group_name: impl Into<String>,
             sql_virtual_machine_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_group::Builder {
-            list_by_group::Builder {
+        ) -> list_by_group::RequestBuilder {
+            list_by_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -213,14 +213,14 @@ pub mod availability_group_listeners {
         use super::models;
         type Response = models::AvailabilityGroupListener;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) availability_group_listener_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -264,7 +264,7 @@ pub mod availability_group_listeners {
             Created201(models::AvailabilityGroupListener),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
@@ -272,7 +272,7 @@ pub mod availability_group_listeners {
             pub(crate) parameters: models::AvailabilityGroupListener,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -324,14 +324,14 @@ pub mod availability_group_listeners {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) availability_group_listener_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -370,13 +370,13 @@ pub mod availability_group_listeners {
         use super::models;
         type Response = models::AvailabilityGroupListenerListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -444,18 +444,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available SQL Rest API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -536,8 +536,8 @@ pub mod sql_virtual_machine_groups {
             resource_group_name: impl Into<String>,
             sql_virtual_machine_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -557,8 +557,8 @@ pub mod sql_virtual_machine_groups {
             sql_virtual_machine_group_name: impl Into<String>,
             parameters: impl Into<models::SqlVirtualMachineGroup>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -579,8 +579,8 @@ pub mod sql_virtual_machine_groups {
             sql_virtual_machine_group_name: impl Into<String>,
             parameters: impl Into<models::SqlVirtualMachineGroupUpdate>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -599,8 +599,8 @@ pub mod sql_virtual_machine_groups {
             resource_group_name: impl Into<String>,
             sql_virtual_machine_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -616,8 +616,8 @@ pub mod sql_virtual_machine_groups {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -627,8 +627,8 @@ pub mod sql_virtual_machine_groups {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -638,13 +638,13 @@ pub mod sql_virtual_machine_groups {
         use super::models;
         type Response = models::SqlVirtualMachineGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -694,14 +694,14 @@ pub mod sql_virtual_machine_groups {
             Created201(models::SqlVirtualMachineGroup),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) parameters: models::SqlVirtualMachineGroup,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -754,14 +754,14 @@ pub mod sql_virtual_machine_groups {
         use super::models;
         type Response = models::SqlVirtualMachineGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) parameters: models::SqlVirtualMachineGroupUpdate,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -814,13 +814,13 @@ pub mod sql_virtual_machine_groups {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -865,12 +865,12 @@ pub mod sql_virtual_machine_groups {
         use super::models;
         type Response = models::SqlVirtualMachineGroupListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -941,11 +941,11 @@ pub mod sql_virtual_machine_groups {
         use super::models;
         type Response = models::SqlVirtualMachineGroupListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1027,8 +1027,8 @@ pub mod sql_virtual_machines {
             resource_group_name: impl Into<String>,
             sql_virtual_machine_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_sql_vm_group::Builder {
-            list_by_sql_vm_group::Builder {
+        ) -> list_by_sql_vm_group::RequestBuilder {
+            list_by_sql_vm_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_group_name: sql_virtual_machine_group_name.into(),
@@ -1039,8 +1039,8 @@ pub mod sql_virtual_machines {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1056,8 +1056,8 @@ pub mod sql_virtual_machines {
             resource_group_name: impl Into<String>,
             sql_virtual_machine_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_name: sql_virtual_machine_name.into(),
@@ -1078,8 +1078,8 @@ pub mod sql_virtual_machines {
             sql_virtual_machine_name: impl Into<String>,
             parameters: impl Into<models::SqlVirtualMachine>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_name: sql_virtual_machine_name.into(),
@@ -1100,8 +1100,8 @@ pub mod sql_virtual_machines {
             sql_virtual_machine_name: impl Into<String>,
             parameters: impl Into<models::SqlVirtualMachineUpdate>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_name: sql_virtual_machine_name.into(),
@@ -1120,8 +1120,8 @@ pub mod sql_virtual_machines {
             resource_group_name: impl Into<String>,
             sql_virtual_machine_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 sql_virtual_machine_name: sql_virtual_machine_name.into(),
@@ -1137,8 +1137,8 @@ pub mod sql_virtual_machines {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1149,13 +1149,13 @@ pub mod sql_virtual_machines {
         use super::models;
         type Response = models::SqlVirtualMachineListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1221,11 +1221,11 @@ pub mod sql_virtual_machines {
         use super::models;
         type Response = models::SqlVirtualMachineListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1295,14 +1295,14 @@ pub mod sql_virtual_machines {
         use super::models;
         type Response = models::SqlVirtualMachine;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_name: String,
             pub(crate) subscription_id: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The child resources to include in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -1360,14 +1360,14 @@ pub mod sql_virtual_machines {
             Created201(models::SqlVirtualMachine),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_name: String,
             pub(crate) parameters: models::SqlVirtualMachine,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1420,14 +1420,14 @@ pub mod sql_virtual_machines {
         use super::models;
         type Response = models::SqlVirtualMachine;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_name: String,
             pub(crate) parameters: models::SqlVirtualMachineUpdate,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1480,13 +1480,13 @@ pub mod sql_virtual_machines {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) sql_virtual_machine_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1531,12 +1531,12 @@ pub mod sql_virtual_machines {
         use super::models;
         type Response = models::SqlVirtualMachineListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

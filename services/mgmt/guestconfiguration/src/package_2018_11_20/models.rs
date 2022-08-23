@@ -25,10 +25,10 @@ pub struct AssignmentReportDetails {
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report_details::ComplianceStatus>,
     #[doc = "Start date and time of the guest configuration assignment compliance status check."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End date and time of the guest configuration assignment compliance status check."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "GUID of the report."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
@@ -411,7 +411,7 @@ pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<guest_configuration_assignment_properties::ComplianceStatus>,
     #[doc = "Date and time when last compliance status was checked."]
-    #[serde(rename = "lastComplianceStatusChecked", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastComplianceStatusChecked", default, with = "azure_core::date::rfc3339::option")]
     pub last_compliance_status_checked: Option<time::OffsetDateTime>,
     #[doc = "Id of the latest report for the guest configuration assignment. "]
     #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
@@ -569,10 +569,10 @@ pub struct GuestConfigurationAssignmentReportProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vm: Option<VmInfo>,
     #[doc = "Start date and time of the guest configuration assignment compliance status check."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End date and time of the guest configuration assignment compliance status check."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Details of the guest configuration assignment report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -882,7 +882,7 @@ pub struct VmssvmInfo {
     #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
     pub latest_report_id: Option<String>,
     #[doc = "Date and time when last compliance status was checked."]
-    #[serde(rename = "lastComplianceChecked", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastComplianceChecked", default, with = "azure_core::date::rfc3339::option")]
     pub last_compliance_checked: Option<time::OffsetDateTime>,
 }
 impl VmssvmInfo {

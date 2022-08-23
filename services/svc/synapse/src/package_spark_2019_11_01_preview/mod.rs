@@ -115,8 +115,8 @@ pub mod spark_batch {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all spark batch jobs which are running under a particular spark pool."]
-        pub fn get_spark_batch_jobs(&self) -> get_spark_batch_jobs::Builder {
-            get_spark_batch_jobs::Builder {
+        pub fn get_spark_batch_jobs(&self) -> get_spark_batch_jobs::RequestBuilder {
+            get_spark_batch_jobs::RequestBuilder {
                 client: self.0.clone(),
                 from: None,
                 size: None,
@@ -130,8 +130,8 @@ pub mod spark_batch {
         pub fn create_spark_batch_job(
             &self,
             spark_batch_job_options: impl Into<models::SparkBatchJobOptions>,
-        ) -> create_spark_batch_job::Builder {
-            create_spark_batch_job::Builder {
+        ) -> create_spark_batch_job::RequestBuilder {
+            create_spark_batch_job::RequestBuilder {
                 client: self.0.clone(),
                 spark_batch_job_options: spark_batch_job_options.into(),
                 detailed: None,
@@ -141,8 +141,8 @@ pub mod spark_batch {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `batch_id`: Identifier for the batch job."]
-        pub fn get_spark_batch_job(&self, batch_id: i32) -> get_spark_batch_job::Builder {
-            get_spark_batch_job::Builder {
+        pub fn get_spark_batch_job(&self, batch_id: i32) -> get_spark_batch_job::RequestBuilder {
+            get_spark_batch_job::RequestBuilder {
                 client: self.0.clone(),
                 batch_id,
                 detailed: None,
@@ -152,8 +152,8 @@ pub mod spark_batch {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `batch_id`: Identifier for the batch job."]
-        pub fn cancel_spark_batch_job(&self, batch_id: i32) -> cancel_spark_batch_job::Builder {
-            cancel_spark_batch_job::Builder {
+        pub fn cancel_spark_batch_job(&self, batch_id: i32) -> cancel_spark_batch_job::RequestBuilder {
+            cancel_spark_batch_job::RequestBuilder {
                 client: self.0.clone(),
                 batch_id,
             }
@@ -163,13 +163,13 @@ pub mod spark_batch {
         use super::models;
         type Response = models::SparkBatchJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) from: Option<i32>,
             pub(crate) size: Option<i32>,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
@@ -230,12 +230,12 @@ pub mod spark_batch {
         use super::models;
         type Response = models::SparkBatchJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) spark_batch_job_options: models::SparkBatchJobOptions,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
@@ -281,12 +281,12 @@ pub mod spark_batch {
         use super::models;
         type Response = models::SparkBatchJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) batch_id: i32,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
@@ -331,11 +331,11 @@ pub mod spark_batch {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) batch_id: i32,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -370,8 +370,8 @@ pub mod spark_session {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all spark sessions which are running under a particular spark pool."]
-        pub fn get_spark_sessions(&self) -> get_spark_sessions::Builder {
-            get_spark_sessions::Builder {
+        pub fn get_spark_sessions(&self) -> get_spark_sessions::RequestBuilder {
+            get_spark_sessions::RequestBuilder {
                 client: self.0.clone(),
                 from: None,
                 size: None,
@@ -382,8 +382,11 @@ pub mod spark_session {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `spark_session_options`: Livy compatible batch job request payload."]
-        pub fn create_spark_session(&self, spark_session_options: impl Into<models::SparkSessionOptions>) -> create_spark_session::Builder {
-            create_spark_session::Builder {
+        pub fn create_spark_session(
+            &self,
+            spark_session_options: impl Into<models::SparkSessionOptions>,
+        ) -> create_spark_session::RequestBuilder {
+            create_spark_session::RequestBuilder {
                 client: self.0.clone(),
                 spark_session_options: spark_session_options.into(),
                 detailed: None,
@@ -393,8 +396,8 @@ pub mod spark_session {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `session_id`: Identifier for the session."]
-        pub fn get_spark_session(&self, session_id: i32) -> get_spark_session::Builder {
-            get_spark_session::Builder {
+        pub fn get_spark_session(&self, session_id: i32) -> get_spark_session::RequestBuilder {
+            get_spark_session::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
                 detailed: None,
@@ -404,8 +407,8 @@ pub mod spark_session {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `session_id`: Identifier for the session."]
-        pub fn cancel_spark_session(&self, session_id: i32) -> cancel_spark_session::Builder {
-            cancel_spark_session::Builder {
+        pub fn cancel_spark_session(&self, session_id: i32) -> cancel_spark_session::RequestBuilder {
+            cancel_spark_session::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
             }
@@ -414,8 +417,8 @@ pub mod spark_session {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `session_id`: Identifier for the session."]
-        pub fn reset_spark_session_timeout(&self, session_id: i32) -> reset_spark_session_timeout::Builder {
-            reset_spark_session_timeout::Builder {
+        pub fn reset_spark_session_timeout(&self, session_id: i32) -> reset_spark_session_timeout::RequestBuilder {
+            reset_spark_session_timeout::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
             }
@@ -424,8 +427,8 @@ pub mod spark_session {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `session_id`: Identifier for the session."]
-        pub fn get_spark_statements(&self, session_id: i32) -> get_spark_statements::Builder {
-            get_spark_statements::Builder {
+        pub fn get_spark_statements(&self, session_id: i32) -> get_spark_statements::RequestBuilder {
+            get_spark_statements::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
             }
@@ -439,8 +442,8 @@ pub mod spark_session {
             &self,
             session_id: i32,
             spark_statement_options: impl Into<models::SparkStatementOptions>,
-        ) -> create_spark_statement::Builder {
-            create_spark_statement::Builder {
+        ) -> create_spark_statement::RequestBuilder {
+            create_spark_statement::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
                 spark_statement_options: spark_statement_options.into(),
@@ -451,8 +454,8 @@ pub mod spark_session {
         #[doc = "Arguments:"]
         #[doc = "* `session_id`: Identifier for the session."]
         #[doc = "* `statement_id`: Identifier for the statement."]
-        pub fn get_spark_statement(&self, session_id: i32, statement_id: i32) -> get_spark_statement::Builder {
-            get_spark_statement::Builder {
+        pub fn get_spark_statement(&self, session_id: i32, statement_id: i32) -> get_spark_statement::RequestBuilder {
+            get_spark_statement::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
                 statement_id,
@@ -463,8 +466,8 @@ pub mod spark_session {
         #[doc = "Arguments:"]
         #[doc = "* `session_id`: Identifier for the session."]
         #[doc = "* `statement_id`: Identifier for the statement."]
-        pub fn cancel_spark_statement(&self, session_id: i32, statement_id: i32) -> cancel_spark_statement::Builder {
-            cancel_spark_statement::Builder {
+        pub fn cancel_spark_statement(&self, session_id: i32, statement_id: i32) -> cancel_spark_statement::RequestBuilder {
+            cancel_spark_statement::RequestBuilder {
                 client: self.0.clone(),
                 session_id,
                 statement_id,
@@ -475,13 +478,13 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkSessionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) from: Option<i32>,
             pub(crate) size: Option<i32>,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
@@ -542,12 +545,12 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkSession;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) spark_session_options: models::SparkSessionOptions,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
@@ -593,12 +596,12 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkSession;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
@@ -643,11 +646,11 @@ pub mod spark_session {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -680,11 +683,11 @@ pub mod spark_session {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -718,11 +721,11 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkStatementCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -759,12 +762,12 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkStatement;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
             pub(crate) spark_statement_options: models::SparkStatementOptions,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -802,12 +805,12 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkStatement;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
             pub(crate) statement_id: i32,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -849,12 +852,12 @@ pub mod spark_session {
         use super::models;
         type Response = models::SparkStatementCancellationResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) session_id: i32,
             pub(crate) statement_id: i32,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

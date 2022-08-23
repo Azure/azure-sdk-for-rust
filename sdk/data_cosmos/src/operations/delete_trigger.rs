@@ -37,7 +37,7 @@ impl DeleteTriggerBuilder {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteTriggerResponse {
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub server: String,
     pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,

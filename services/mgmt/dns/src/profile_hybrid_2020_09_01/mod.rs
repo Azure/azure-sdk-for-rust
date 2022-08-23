@@ -129,8 +129,8 @@ pub mod record_sets {
             relative_record_set_name: impl Into<String>,
             record_type: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -156,8 +156,8 @@ pub mod record_sets {
             record_type: impl Into<String>,
             parameters: impl Into<models::RecordSet>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -186,8 +186,8 @@ pub mod record_sets {
             record_type: impl Into<String>,
             parameters: impl Into<models::RecordSet>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -213,8 +213,8 @@ pub mod record_sets {
             relative_record_set_name: impl Into<String>,
             record_type: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -237,8 +237,8 @@ pub mod record_sets {
             zone_name: impl Into<String>,
             record_type: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_type::Builder {
-            list_by_type::Builder {
+        ) -> list_by_type::RequestBuilder {
+            list_by_type::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -259,8 +259,8 @@ pub mod record_sets {
             resource_group_name: impl Into<String>,
             zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_dns_zone::Builder {
-            list_by_dns_zone::Builder {
+        ) -> list_by_dns_zone::RequestBuilder {
+            list_by_dns_zone::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -274,7 +274,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSet;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -282,7 +282,7 @@ pub mod record_sets {
             pub(crate) record_type: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -334,7 +334,7 @@ pub mod record_sets {
             Ok200(models::RecordSet),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -345,7 +345,7 @@ pub mod record_sets {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The etag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen etag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -415,7 +415,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSet;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -425,7 +425,7 @@ pub mod record_sets {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The etag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen etag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -486,7 +486,7 @@ pub mod record_sets {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -495,7 +495,7 @@ pub mod record_sets {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The etag of the record set. Omit this value to always delete the current record set. Specify the last-seen etag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -548,7 +548,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -557,7 +557,7 @@ pub mod record_sets {
             pub(crate) top: Option<i32>,
             pub(crate) recordsetnamesuffix: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -648,7 +648,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -656,7 +656,7 @@ pub mod record_sets {
             pub(crate) top: Option<i32>,
             pub(crate) recordsetnamesuffix: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -758,8 +758,8 @@ pub mod zones {
             resource_group_name: impl Into<String>,
             zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -779,8 +779,8 @@ pub mod zones {
             zone_name: impl Into<String>,
             parameters: impl Into<models::Zone>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -801,8 +801,8 @@ pub mod zones {
             resource_group_name: impl Into<String>,
             zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 zone_name: zone_name.into(),
@@ -819,8 +819,8 @@ pub mod zones {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -831,8 +831,8 @@ pub mod zones {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -843,13 +843,13 @@ pub mod zones {
         use super::models;
         type Response = models::Zone;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -899,7 +899,7 @@ pub mod zones {
             Created201(models::Zone),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
@@ -908,7 +908,7 @@ pub mod zones {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The etag of the DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen etag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -981,14 +981,14 @@ pub mod zones {
             Ok200(models::ZoneDeleteResult),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) zone_name: String,
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The etag of the DNS zone. Omit this value to always delete the current zone. Specify the last-seen etag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1045,13 +1045,13 @@ pub mod zones {
         use super::models;
         type Response = models::ZoneListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1130,12 +1130,12 @@ pub mod zones {
         use super::models;
         type Response = models::ZoneListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of DNS zones to return. If not specified, returns up to 100 zones."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);

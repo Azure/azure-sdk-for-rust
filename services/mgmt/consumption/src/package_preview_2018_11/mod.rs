@@ -136,18 +136,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available consumption REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -220,8 +220,8 @@ pub mod credit_summary_by_billing_profile {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: BillingAccount ID"]
         #[doc = "* `billing_profile_id`: Billing Profile Id."]
-        pub fn get(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 billing_profile_id: billing_profile_id.into(),
@@ -232,12 +232,12 @@ pub mod credit_summary_by_billing_profile {
         use super::models;
         type Response = models::CreditSummary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) billing_profile_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -291,8 +291,8 @@ pub mod events_by_billing_profile {
             billing_profile_id: impl Into<String>,
             start_date: impl Into<String>,
             end_date: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 billing_profile_id: billing_profile_id.into(),
@@ -305,14 +305,14 @@ pub mod events_by_billing_profile {
         use super::models;
         type Response = models::Events;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) billing_profile_id: String,
             pub(crate) start_date: String,
             pub(crate) end_date: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -367,8 +367,8 @@ pub mod lots_by_billing_profile {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: BillingAccount ID"]
         #[doc = "* `billing_profile_id`: Billing Profile Id."]
-        pub fn list(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 billing_profile_id: billing_profile_id.into(),
@@ -379,12 +379,12 @@ pub mod lots_by_billing_profile {
         use super::models;
         type Response = models::Lots;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) billing_profile_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -435,8 +435,8 @@ pub mod invoice_pricesheet {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: Azure Billing Account Id."]
         #[doc = "* `invoice_name`: The name of an invoice resource."]
-        pub fn download(&self, billing_account_id: impl Into<String>, invoice_name: impl Into<String>) -> download::Builder {
-            download::Builder {
+        pub fn download(&self, billing_account_id: impl Into<String>, invoice_name: impl Into<String>) -> download::RequestBuilder {
+            download::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 invoice_name: invoice_name.into(),
@@ -451,12 +451,12 @@ pub mod invoice_pricesheet {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) invoice_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -510,8 +510,8 @@ pub mod billing_profile_pricesheet {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: Azure Billing Account Id."]
         #[doc = "* `billing_profile_id`: Azure Billing Profile Id."]
-        pub fn download(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> download::Builder {
-            download::Builder {
+        pub fn download(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> download::RequestBuilder {
+            download::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 billing_profile_id: billing_profile_id.into(),
@@ -526,12 +526,12 @@ pub mod billing_profile_pricesheet {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) billing_profile_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -591,8 +591,8 @@ pub mod charges_by_billing_account {
             billing_account_id: impl Into<String>,
             start_date: impl Into<String>,
             end_date: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 start_date: start_date.into(),
@@ -605,14 +605,14 @@ pub mod charges_by_billing_account {
         use super::models;
         type Response = models::ChargesListByBillingAccount;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) start_date: String,
             pub(crate) end_date: String,
             pub(crate) apply: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to group charges by properties/billingProfileId, or properties/invoiceSectionId."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
@@ -682,8 +682,8 @@ pub mod charges_by_billing_profile {
             billing_profile_id: impl Into<String>,
             start_date: impl Into<String>,
             end_date: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 billing_profile_id: billing_profile_id.into(),
@@ -696,14 +696,14 @@ pub mod charges_by_billing_profile {
         use super::models;
         type Response = models::ChargesListByBillingProfile;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) billing_profile_id: String,
             pub(crate) start_date: String,
             pub(crate) end_date: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -766,8 +766,8 @@ pub mod charges_by_invoice_section {
             invoice_section_id: impl Into<String>,
             start_date: impl Into<String>,
             end_date: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 invoice_section_id: invoice_section_id.into(),
@@ -781,7 +781,7 @@ pub mod charges_by_invoice_section {
         use super::models;
         type Response = models::ChargesListByInvoiceSection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) invoice_section_id: String,
@@ -789,7 +789,7 @@ pub mod charges_by_invoice_section {
             pub(crate) end_date: String,
             pub(crate) apply: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to group charges by properties/productName."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());

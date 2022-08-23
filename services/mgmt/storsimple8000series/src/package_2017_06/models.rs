@@ -124,7 +124,7 @@ pub struct AlertFilter {
     #[serde(rename = "sourceName", default, skip_serializing_if = "Option::is_none")]
     pub source_name: Option<String>,
     #[doc = "Specifies the appeared time (in UTC) of the alerts to be filtered. Only 'Greater-Than' and 'Lesser-Than' operators are supported for this property."]
-    #[serde(rename = "appearedOnTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "appearedOnTime", default, with = "azure_core::date::rfc3339::option")]
     pub appeared_on_time: Option<time::OffsetDateTime>,
 }
 impl AlertFilter {
@@ -232,10 +232,10 @@ pub struct AlertProperties {
     #[serde(rename = "appearedAtSourceTime", with = "azure_core::date::rfc3339")]
     pub appeared_at_source_time: time::OffsetDateTime,
     #[doc = "The UTC time at which the alert was cleared"]
-    #[serde(rename = "clearedAtTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "clearedAtTime", default, with = "azure_core::date::rfc3339::option")]
     pub cleared_at_time: Option<time::OffsetDateTime>,
     #[doc = "The source time at which the alert was cleared"]
-    #[serde(rename = "clearedAtSourceTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "clearedAtSourceTime", default, with = "azure_core::date::rfc3339::option")]
     pub cleared_at_source_time: Option<time::OffsetDateTime>,
     #[doc = "The source details at which the alert was raised"]
     pub source: AlertSource,
@@ -534,7 +534,7 @@ pub struct BackupFilter {
     #[serde(rename = "volumeId", default, skip_serializing_if = "Option::is_none")]
     pub volume_id: Option<String>,
     #[doc = "Specifies the creation time of the backups to be filtered. Only 'Greater Than or Equal To' and 'Lesser Than or Equal To' operators are supported for this property."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
 }
 impl BackupFilter {
@@ -602,10 +602,10 @@ pub struct BackupPolicyProperties {
     #[serde(rename = "volumeIds")]
     pub volume_ids: Vec<String>,
     #[doc = "The time of the next backup for the backup policy."]
-    #[serde(rename = "nextBackupTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextBackupTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_backup_time: Option<time::OffsetDateTime>,
     #[doc = "The time of the last backup for the backup policy."]
-    #[serde(rename = "lastBackupTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastBackupTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_backup_time: Option<time::OffsetDateTime>,
     #[doc = "The count of schedules the backup policy contains."]
     #[serde(rename = "schedulesCount", default, skip_serializing_if = "Option::is_none")]
@@ -755,7 +755,7 @@ pub struct BackupScheduleProperties {
     #[serde(rename = "scheduleStatus")]
     pub schedule_status: backup_schedule_properties::ScheduleStatus,
     #[doc = "The last successful backup run which was triggered for the schedule."]
-    #[serde(rename = "lastSuccessfulRun", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSuccessfulRun", default, with = "azure_core::date::rfc3339::option")]
     pub last_successful_run: Option<time::OffsetDateTime>,
 }
 impl BackupScheduleProperties {
@@ -1928,10 +1928,10 @@ pub struct Job {
     #[doc = "The current status of the job."]
     pub status: job::Status,
     #[doc = "The UTC time at which the job was started."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The UTC time at which the job completed."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The percentage of the job that is already complete."]
     #[serde(rename = "percentComplete")]
@@ -2017,7 +2017,7 @@ pub struct JobFilter {
     #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
     pub job_type: Option<String>,
     #[doc = "Specifies the start time of the jobs to be filtered.  Only 'Greater Than or Equal To' and 'Lesser Than or Equal To' operators are supported for this property."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
 }
 impl JobFilter {
@@ -2076,7 +2076,7 @@ pub struct JobProperties {
     #[serde(rename = "sourceDeviceId", default, skip_serializing_if = "Option::is_none")]
     pub source_device_id: Option<String>,
     #[doc = "The time of the backup used for the failover."]
-    #[serde(rename = "backupPointInTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "backupPointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub backup_point_in_time: Option<time::OffsetDateTime>,
 }
 impl JobProperties {
@@ -2356,7 +2356,7 @@ impl MetricAvailablity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricData {
     #[doc = "The time stamp of the metric data."]
-    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "The sum of all samples at the time stamp."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2475,10 +2475,10 @@ pub struct MetricFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricNameFilter>,
     #[doc = "Specifies the start time of the time range to be queried. Only 'Greater Than Or Equal To' operator is supported for this property."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Specifies the end time of the time range to be queried. Only 'Less Than Or Equal To' operator is supported for this property."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Specifies the time granularity of the metrics to be returned. E.g., \"P1D\". Valid values are the ones returned as the field \"timeGrain\" in the ListMetricDefinitions call. Only 'Equality' operator is supported for this property."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
@@ -2553,10 +2553,10 @@ pub struct Metrics {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "The start time of the metric data."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the metric data."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The time granularity of the metric data."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
@@ -3288,7 +3288,7 @@ pub struct UpdatesProperties {
     #[serde(rename = "isUpdateInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_update_in_progress: Option<bool>,
     #[doc = "The time when the last update was completed."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
 }
 impl UpdatesProperties {
@@ -3455,7 +3455,7 @@ pub struct VolumeFailoverMetadata {
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
     #[doc = "The date at which the snapshot was taken."]
-    #[serde(rename = "backupCreatedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "backupCreatedDate", default, with = "azure_core::date::rfc3339::option")]
     pub backup_created_date: Option<time::OffsetDateTime>,
     #[doc = "The path ID of the backup-element for this volume, inside the backup set."]
     #[serde(rename = "backupElementId", default, skip_serializing_if = "Option::is_none")]

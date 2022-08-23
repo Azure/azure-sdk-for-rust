@@ -1809,13 +1809,13 @@ pub struct ScriptExecutionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retention: Option<String>,
     #[doc = "Time the script execution was submitted"]
-    #[serde(rename = "submittedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "submittedAt", default, with = "azure_core::date::rfc3339::option")]
     pub submitted_at: Option<time::OffsetDateTime>,
     #[doc = "Time the script execution was started"]
-    #[serde(rename = "startedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startedAt", default, with = "azure_core::date::rfc3339::option")]
     pub started_at: Option<time::OffsetDateTime>,
     #[doc = "Time the script execution was finished"]
-    #[serde(rename = "finishedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "finishedAt", default, with = "azure_core::date::rfc3339::option")]
     pub finished_at: Option<time::OffsetDateTime>,
     #[doc = "The state of the script execution resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

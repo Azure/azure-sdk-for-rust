@@ -124,8 +124,8 @@ pub mod management_groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List management groups for the authenticated user.\n"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 cache_control: None,
                 skiptoken: None,
@@ -135,8 +135,8 @@ pub mod management_groups {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
-        pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, group_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 expand: None,
@@ -154,8 +154,8 @@ pub mod management_groups {
             &self,
             group_id: impl Into<String>,
             create_management_group_request: impl Into<models::CreateManagementGroupRequest>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 create_management_group_request: create_management_group_request.into(),
@@ -171,8 +171,8 @@ pub mod management_groups {
             &self,
             group_id: impl Into<String>,
             patch_group_request: impl Into<models::PatchManagementGroupRequest>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 patch_group_request: patch_group_request.into(),
@@ -183,8 +183,8 @@ pub mod management_groups {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
-        pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, group_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 cache_control: None,
@@ -194,8 +194,8 @@ pub mod management_groups {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
-        pub fn get_descendants(&self, group_id: impl Into<String>) -> get_descendants::Builder {
-            get_descendants::Builder {
+        pub fn get_descendants(&self, group_id: impl Into<String>) -> get_descendants::RequestBuilder {
+            get_descendants::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 skiptoken: None,
@@ -207,12 +207,12 @@ pub mod management_groups {
         use super::models;
         type Response = models::ManagementGroupListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) cache_control: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -297,7 +297,7 @@ pub mod management_groups {
         use super::models;
         type Response = models::ManagementGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) expand: Option<String>,
@@ -305,7 +305,7 @@ pub mod management_groups {
             pub(crate) filter: Option<String>,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The $expand=children query string parameter allows clients to request inclusion of children in the response payload.  $expand=path includes the path from the root group to the current group.  $expand=ancestors includes the ancestor Ids of the current group."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -385,13 +385,13 @@ pub mod management_groups {
             Accepted202(models::AzureAsyncOperationResults),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) create_management_group_request: models::CreateManagementGroupRequest,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -450,13 +450,13 @@ pub mod management_groups {
         use super::models;
         type Response = models::ManagementGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) patch_group_request: models::PatchManagementGroupRequest,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -513,12 +513,12 @@ pub mod management_groups {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -572,13 +572,13 @@ pub mod management_groups {
         use super::models;
         type Response = models::DescendantListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) skiptoken: Option<String>,
             pub(crate) top: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
@@ -670,8 +670,12 @@ pub mod management_group_subscriptions {
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
         #[doc = "* `subscription_id`: Subscription ID."]
-        pub fn get_subscription(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> get_subscription::Builder {
-            get_subscription::Builder {
+        pub fn get_subscription(
+            &self,
+            group_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_subscription::RequestBuilder {
+            get_subscription::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
@@ -683,8 +687,8 @@ pub mod management_group_subscriptions {
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
         #[doc = "* `subscription_id`: Subscription ID."]
-        pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
@@ -696,8 +700,8 @@ pub mod management_group_subscriptions {
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
         #[doc = "* `subscription_id`: Subscription ID."]
-        pub fn delete(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
@@ -711,8 +715,8 @@ pub mod management_group_subscriptions {
         pub fn get_subscriptions_under_management_group(
             &self,
             group_id: impl Into<String>,
-        ) -> get_subscriptions_under_management_group::Builder {
-            get_subscriptions_under_management_group::Builder {
+        ) -> get_subscriptions_under_management_group::RequestBuilder {
+            get_subscriptions_under_management_group::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 skiptoken: None,
@@ -723,13 +727,13 @@ pub mod management_group_subscriptions {
         use super::models;
         type Response = models::SubscriptionUnderManagementGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -782,13 +786,13 @@ pub mod management_group_subscriptions {
         use super::models;
         type Response = models::SubscriptionUnderManagementGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -845,13 +849,13 @@ pub mod management_group_subscriptions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
@@ -901,12 +905,12 @@ pub mod management_group_subscriptions {
         use super::models;
         type Response = models::ListSubscriptionUnderManagementGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
@@ -989,8 +993,8 @@ pub mod hierarchy_settings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
-        pub fn list(&self, group_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, group_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
             }
@@ -999,8 +1003,8 @@ pub mod hierarchy_settings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
-        pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, group_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
             }
@@ -1014,8 +1018,8 @@ pub mod hierarchy_settings {
             &self,
             group_id: impl Into<String>,
             create_tenant_settings_request: impl Into<models::CreateOrUpdateSettingsRequest>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 create_tenant_settings_request: create_tenant_settings_request.into(),
@@ -1030,8 +1034,8 @@ pub mod hierarchy_settings {
             &self,
             group_id: impl Into<String>,
             create_tenant_settings_request: impl Into<models::CreateOrUpdateSettingsRequest>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
                 create_tenant_settings_request: create_tenant_settings_request.into(),
@@ -1041,8 +1045,8 @@ pub mod hierarchy_settings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `group_id`: Management Group ID."]
-        pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, group_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
             }
@@ -1052,11 +1056,11 @@ pub mod hierarchy_settings {
         use super::models;
         type Response = models::HierarchySettingsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1100,11 +1104,11 @@ pub mod hierarchy_settings {
         use super::models;
         type Response = models::HierarchySettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1148,12 +1152,12 @@ pub mod hierarchy_settings {
         use super::models;
         type Response = models::HierarchySettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) create_tenant_settings_request: models::CreateOrUpdateSettingsRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1198,12 +1202,12 @@ pub mod hierarchy_settings {
         use super::models;
         type Response = models::HierarchySettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) create_tenant_settings_request: models::CreateOrUpdateSettingsRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1248,11 +1252,11 @@ pub mod hierarchy_settings {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1294,18 +1298,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Management REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1377,30 +1381,30 @@ impl Client {
     pub fn check_name_availability(
         &self,
         check_name_availability_request: impl Into<models::CheckNameAvailabilityRequest>,
-    ) -> check_name_availability::Builder {
-        check_name_availability::Builder {
+    ) -> check_name_availability::RequestBuilder {
+        check_name_availability::RequestBuilder {
             client: self.clone(),
             check_name_availability_request: check_name_availability_request.into(),
         }
     }
     #[doc = "Starts backfilling subscriptions for the Tenant."]
-    pub fn start_tenant_backfill(&self) -> start_tenant_backfill::Builder {
-        start_tenant_backfill::Builder { client: self.clone() }
+    pub fn start_tenant_backfill(&self) -> start_tenant_backfill::RequestBuilder {
+        start_tenant_backfill::RequestBuilder { client: self.clone() }
     }
     #[doc = "Gets tenant backfill status"]
-    pub fn tenant_backfill_status(&self) -> tenant_backfill_status::Builder {
-        tenant_backfill_status::Builder { client: self.clone() }
+    pub fn tenant_backfill_status(&self) -> tenant_backfill_status::RequestBuilder {
+        tenant_backfill_status::RequestBuilder { client: self.clone() }
     }
 }
 pub mod check_name_availability {
     use super::models;
     type Response = models::CheckNameAvailabilityResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) check_name_availability_request: models::CheckNameAvailabilityRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1444,10 +1448,10 @@ pub mod start_tenant_backfill {
     use super::models;
     type Response = models::TenantBackfillStatusResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1491,10 +1495,10 @@ pub mod tenant_backfill_status {
     use super::models;
     type Response = models::TenantBackfillStatusResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1539,8 +1543,8 @@ pub mod entities {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all entities (Management Groups, Subscriptions, etc.) for the authenticated user.\n"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skiptoken: None,
                 skip: None,
@@ -1558,7 +1562,7 @@ pub mod entities {
         use super::models;
         type Response = models::EntityListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skiptoken: Option<String>,
             pub(crate) skip: Option<i64>,
@@ -1570,7 +1574,7 @@ pub mod entities {
             pub(crate) group_name: Option<String>,
             pub(crate) cache_control: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());

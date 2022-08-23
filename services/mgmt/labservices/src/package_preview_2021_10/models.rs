@@ -653,10 +653,10 @@ pub struct OperationResult {
     #[doc = "The operation status"]
     pub status: operation_result::Status,
     #[doc = "Start time"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Percent completion"]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
@@ -987,10 +987,10 @@ impl ScheduleUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleUpdateProperties {
     #[doc = "When lab user virtual machines will be started. Timestamp offsets will be ignored and timeZoneId is used instead."]
-    #[serde(rename = "startAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startAt", default, with = "azure_core::date::rfc3339::option")]
     pub start_at: Option<time::OffsetDateTime>,
     #[doc = "When lab user virtual machines will be stopped. Timestamp offsets will be ignored and timeZoneId is used instead."]
-    #[serde(rename = "stopAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "stopAt", default, with = "azure_core::date::rfc3339::option")]
     pub stop_at: Option<time::OffsetDateTime>,
     #[doc = "Recurrence pattern of a lab schedule."]
     #[serde(rename = "recurrencePattern", default, skip_serializing_if = "Option::is_none")]
@@ -1155,7 +1155,7 @@ pub struct UserProperties {
     #[serde(rename = "invitationState", default, skip_serializing_if = "Option::is_none")]
     pub invitation_state: Option<InvitationState>,
     #[doc = "Date and time when the invitation message was sent to the user."]
-    #[serde(rename = "invitationSent", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "invitationSent", default, with = "azure_core::date::rfc3339::option")]
     pub invitation_sent: Option<time::OffsetDateTime>,
     #[doc = "How long the user has used their virtual machines in this lab."]
     #[serde(rename = "totalUsage", default, skip_serializing_if = "Option::is_none")]
@@ -1428,7 +1428,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1437,7 +1437,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

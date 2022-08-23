@@ -215,7 +215,7 @@ pub struct DeviceRegistrationState {
     #[serde(rename = "registrationId", default, skip_serializing_if = "Option::is_none")]
     pub registration_id: Option<String>,
     #[doc = "Registration create date time (in UTC)."]
-    #[serde(rename = "createdDateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Assigned Azure IoT Hub."]
     #[serde(rename = "assignedHub", default, skip_serializing_if = "Option::is_none")]
@@ -236,7 +236,7 @@ pub struct DeviceRegistrationState {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
     #[doc = "Last updated date time (in UTC)."]
-    #[serde(rename = "lastUpdatedDateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The entity tag associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -306,10 +306,10 @@ pub struct EnrollmentGroup {
     #[serde(rename = "reprovisionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub reprovision_policy: Option<ReprovisionPolicy>,
     #[doc = "The DateTime this resource was created."]
-    #[serde(rename = "createdDateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The DateTime this resource was last updated."]
-    #[serde(rename = "lastUpdatedDateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -404,10 +404,10 @@ pub struct IndividualEnrollment {
     #[serde(rename = "reprovisionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub reprovision_policy: Option<ReprovisionPolicy>,
     #[doc = "The DateTime this resource was created."]
-    #[serde(rename = "createdDateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The DateTime this resource was last updated."]
-    #[serde(rename = "lastUpdatedDateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -500,7 +500,7 @@ impl InitialTwinProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metadata {
     #[doc = "Last time the TwinCollection was updated"]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "This is null for reported properties metadata and is not null for desired properties metadata."]
     #[serde(rename = "lastUpdatedVersion", default, skip_serializing_if = "Option::is_none")]
@@ -522,7 +522,7 @@ pub struct ProvisioningServiceErrorDetails {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
-    #[serde(rename = "timestampUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timestampUtc", default, with = "azure_core::date::rfc3339::option")]
     pub timestamp_utc: Option<time::OffsetDateTime>,
 }
 impl ProvisioningServiceErrorDetails {

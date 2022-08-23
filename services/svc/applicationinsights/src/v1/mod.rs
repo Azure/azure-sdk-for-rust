@@ -126,8 +126,8 @@ pub mod metrics {
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         #[doc = "* `metric_id`: ID of the metric. This is either a standard AI metric, or an application-specific custom metric."]
-        pub fn get(&self, app_id: impl Into<String>, metric_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, app_id: impl Into<String>, metric_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
                 metric_id: metric_id.into(),
@@ -146,8 +146,8 @@ pub mod metrics {
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         #[doc = "* `body`: The batched metrics query."]
-        pub fn get_multiple(&self, app_id: impl Into<String>, body: impl Into<models::MetricsPostBody>) -> get_multiple::Builder {
-            get_multiple::Builder {
+        pub fn get_multiple(&self, app_id: impl Into<String>, body: impl Into<models::MetricsPostBody>) -> get_multiple::RequestBuilder {
+            get_multiple::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
                 body: body.into(),
@@ -158,8 +158,8 @@ pub mod metrics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
-        pub fn get_metadata(&self, app_id: impl Into<String>) -> get_metadata::Builder {
-            get_metadata::Builder {
+        pub fn get_metadata(&self, app_id: impl Into<String>) -> get_metadata::RequestBuilder {
+            get_metadata::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
             }
@@ -169,7 +169,7 @@ pub mod metrics {
         use super::models;
         type Response = models::MetricsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) metric_id: String,
@@ -181,7 +181,7 @@ pub mod metrics {
             pub(crate) orderby: Option<String>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timespan over which to retrieve metric values. This is an ISO8601 time period value. If timespan is omitted, a default time range of `PT12H` (\"last 12 hours\") is used. The actual timespan that is queried may be adjusted by the server based. In all cases, the actual time span used for the query is included in the response."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
@@ -273,12 +273,12 @@ pub mod metrics {
         use super::models;
         type Response = models::MetricsResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) body: models::MetricsPostBody,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -316,11 +316,11 @@ pub mod metrics {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -364,8 +364,8 @@ pub mod events {
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         #[doc = "* `event_type`: The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
-        pub fn get_by_type(&self, app_id: impl Into<String>, event_type: impl Into<String>) -> get_by_type::Builder {
-            get_by_type::Builder {
+        pub fn get_by_type(&self, app_id: impl Into<String>, event_type: impl Into<String>) -> get_by_type::RequestBuilder {
+            get_by_type::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
                 event_type: event_type.into(),
@@ -388,8 +388,8 @@ pub mod events {
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         #[doc = "* `event_type`: The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
         #[doc = "* `event_id`: ID of event."]
-        pub fn get(&self, app_id: impl Into<String>, event_type: impl Into<String>, event_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, app_id: impl Into<String>, event_type: impl Into<String>, event_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
                 event_type: event_type.into(),
@@ -402,8 +402,8 @@ pub mod events {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
-        pub fn get_odata_metadata(&self, app_id: impl Into<String>) -> get_odata_metadata::Builder {
-            get_odata_metadata::Builder {
+        pub fn get_odata_metadata(&self, app_id: impl Into<String>) -> get_odata_metadata::RequestBuilder {
+            get_odata_metadata::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
             }
@@ -413,7 +413,7 @@ pub mod events {
         use super::models;
         type Response = models::EventsResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) event_type: String,
@@ -428,7 +428,7 @@ pub mod events {
             pub(crate) count: Option<bool>,
             pub(crate) apply: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. The timespan over which to retrieve events. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the Odata expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
@@ -550,14 +550,14 @@ pub mod events {
         use super::models;
         type Response = models::EventsResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) event_type: String,
             pub(crate) event_id: String,
             pub(crate) timespan: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. The timespan over which to retrieve events. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the Odata expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
@@ -608,11 +608,11 @@ pub mod events {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -656,8 +656,8 @@ pub mod query {
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
-        pub fn get(&self, app_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, app_id: impl Into<String>, query: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
                 query: query.into(),
@@ -670,8 +670,8 @@ pub mod query {
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
-        pub fn execute(&self, app_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
-            execute::Builder {
+        pub fn execute(&self, app_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::RequestBuilder {
+            execute::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
                 body: body.into(),
@@ -682,13 +682,13 @@ pub mod query {
         use super::models;
         type Response = models::QueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) query: String,
             pub(crate) timespan: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
@@ -735,12 +735,12 @@ pub mod query {
         use super::models;
         type Response = models::QueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) body: models::QueryBody,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -784,8 +784,8 @@ pub mod metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
-        pub fn get(&self, app_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, app_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
             }
@@ -795,8 +795,8 @@ pub mod metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
-        pub fn post(&self, app_id: impl Into<String>) -> post::Builder {
-            post::Builder {
+        pub fn post(&self, app_id: impl Into<String>) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
             }
@@ -806,11 +806,11 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -847,11 +847,11 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

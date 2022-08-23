@@ -152,8 +152,10 @@ pub(crate) fn service_version_from_headers(headers: &Headers) -> azure_core::Res
     headers.get_as(&HEADER_SERVICE_VERSION)
 }
 
-pub(crate) fn content_location_from_headers(headers: &Headers) -> azure_core::Result<String> {
-    headers.get_as(&headers::CONTENT_LOCATION)
+pub(crate) fn content_location_from_headers(
+    headers: &Headers,
+) -> azure_core::Result<Option<String>> {
+    headers.get_optional_as(&headers::CONTENT_LOCATION)
 }
 
 pub(crate) fn gateway_version_from_headers(headers: &Headers) -> azure_core::Result<String> {

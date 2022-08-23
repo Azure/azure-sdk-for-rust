@@ -124,8 +124,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -141,8 +141,8 @@ pub mod service {
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
             x_ms_version: impl Into<String>,
-        ) -> set_properties::Builder {
-            set_properties::Builder {
+        ) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 storage_service_properties: storage_service_properties.into(),
                 x_ms_version: x_ms_version.into(),
@@ -154,8 +154,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::Builder {
-            get_statistics::Builder {
+        pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::RequestBuilder {
+            get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -166,8 +166,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_queues_segment(&self, x_ms_version: impl Into<String>) -> list_queues_segment::Builder {
-            list_queues_segment::Builder {
+        pub fn list_queues_segment(&self, x_ms_version: impl Into<String>) -> list_queues_segment::RequestBuilder {
+            list_queues_segment::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -183,13 +183,13 @@ pub mod service {
         use super::models;
         type Response = models::StorageServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -243,14 +243,14 @@ pub mod service {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -301,13 +301,13 @@ pub mod service {
         use super::models;
         type Response = models::StorageServiceStats;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -361,7 +361,7 @@ pub mod service {
         use super::models;
         type Response = models::ListQueuesSegmentResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -371,7 +371,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters the results to return only queues whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -479,8 +479,8 @@ pub mod queue {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -494,8 +494,8 @@ pub mod queue {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -508,8 +508,8 @@ pub mod queue {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -522,8 +522,8 @@ pub mod queue {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_metadata(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
-            set_metadata::Builder {
+        pub fn set_metadata(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::RequestBuilder {
+            set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -537,8 +537,12 @@ pub mod queue {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_access_policy(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
-            get_access_policy::Builder {
+        pub fn get_access_policy(
+            &self,
+            queue_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_access_policy::RequestBuilder {
+            get_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -551,8 +555,12 @@ pub mod queue {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_access_policy(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
-            set_access_policy::Builder {
+        pub fn set_access_policy(
+            &self,
+            queue_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_access_policy::RequestBuilder {
+            set_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -570,7 +578,7 @@ pub mod queue {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
@@ -578,7 +586,7 @@ pub mod queue {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -637,14 +645,14 @@ pub mod queue {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -694,14 +702,14 @@ pub mod queue {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -751,7 +759,7 @@ pub mod queue {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
@@ -759,7 +767,7 @@ pub mod queue {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -817,14 +825,14 @@ pub mod queue {
         use super::models;
         type Response = models::SignedIdentifiers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -878,7 +886,7 @@ pub mod queue {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
@@ -886,7 +894,7 @@ pub mod queue {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "the acls for the queue"]
             pub fn queue_acl(mut self, queue_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.queue_acl = Some(queue_acl.into());
@@ -952,8 +960,8 @@ pub mod messages {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn dequeue(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> dequeue::Builder {
-            dequeue::Builder {
+        pub fn dequeue(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> dequeue::RequestBuilder {
+            dequeue::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -974,8 +982,8 @@ pub mod messages {
             queue_name: impl Into<String>,
             queue_message: impl Into<models::QueueMessage>,
             x_ms_version: impl Into<String>,
-        ) -> enqueue::Builder {
-            enqueue::Builder {
+        ) -> enqueue::RequestBuilder {
+            enqueue::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 queue_message: queue_message.into(),
@@ -991,8 +999,8 @@ pub mod messages {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn clear(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> clear::Builder {
-            clear::Builder {
+        pub fn clear(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> clear::RequestBuilder {
+            clear::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1005,8 +1013,8 @@ pub mod messages {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn peek(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> peek::Builder {
-            peek::Builder {
+        pub fn peek(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> peek::RequestBuilder {
+            peek::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1020,7 +1028,7 @@ pub mod messages {
         use super::models;
         type Response = models::DequeuedMessagesList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
@@ -1029,7 +1037,7 @@ pub mod messages {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. A nonzero integer value that specifies the number of messages to retrieve from the queue, up to a maximum of 32. If fewer are visible, the visible messages are returned. By default, a single message is retrieved from the queue with this operation."]
             pub fn numofmessages(mut self, numofmessages: i64) -> Self {
                 self.numofmessages = Some(numofmessages);
@@ -1103,7 +1111,7 @@ pub mod messages {
         use super::models;
         type Response = models::EnqueuedMessageList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) queue_message: models::QueueMessage,
@@ -1113,7 +1121,7 @@ pub mod messages {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. If specified, the request must be made using an x-ms-version of 2011-08-18 or later. If not specified, the default value is 0. Specifies the new visibility timeout value, in seconds, relative to server time. The new value must be larger than or equal to 0, and cannot be larger than 7 days. The visibility timeout of a message cannot be set to a value later than the expiry time. visibilitytimeout should be set to a value smaller than the time-to-live value."]
             pub fn visibilitytimeout(mut self, visibilitytimeout: i64) -> Self {
                 self.visibilitytimeout = Some(visibilitytimeout);
@@ -1186,14 +1194,14 @@ pub mod messages {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1243,7 +1251,7 @@ pub mod messages {
         use super::models;
         type Response = models::PeekedMessagesList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
@@ -1251,7 +1259,7 @@ pub mod messages {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. A nonzero integer value that specifies the number of messages to retrieve from the queue, up to a maximum of 32. If fewer are visible, the visible messages are returned. By default, a single message is retrieved from the queue with this operation."]
             pub fn numofmessages(mut self, numofmessages: i64) -> Self {
                 self.numofmessages = Some(numofmessages);
@@ -1332,8 +1340,8 @@ pub mod message_id {
             popreceipt: impl Into<String>,
             visibilitytimeout: i64,
             x_ms_version: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 messageid: messageid.into(),
@@ -1358,8 +1366,8 @@ pub mod message_id {
             messageid: impl Into<String>,
             popreceipt: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 messageid: messageid.into(),
@@ -1374,7 +1382,7 @@ pub mod message_id {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) messageid: String,
@@ -1385,7 +1393,7 @@ pub mod message_id {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A Message object which can be stored in a Queue"]
             pub fn queue_message(mut self, queue_message: impl Into<models::QueueMessage>) -> Self {
                 self.queue_message = Some(queue_message.into());
@@ -1456,7 +1464,7 @@ pub mod message_id {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) messageid: String,
@@ -1465,7 +1473,7 @@ pub mod message_id {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);

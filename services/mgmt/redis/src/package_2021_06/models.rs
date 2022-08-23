@@ -291,10 +291,10 @@ pub struct OperationStatusResult {
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1498,7 +1498,7 @@ pub struct UpgradeNotification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Timestamp when upgrade notification occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Details about this upgrade notification"]
     #[serde(rename = "upsellNotification", default, skip_serializing_if = "Option::is_none")]

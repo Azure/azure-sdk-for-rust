@@ -242,10 +242,10 @@ pub struct LogFileProperties {
     #[serde(rename = "sizeInKB", default, skip_serializing_if = "Option::is_none")]
     pub size_in_kb: Option<i64>,
     #[doc = "Creation timestamp of the log file."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Last modified timestamp of the log file."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Type of the log file."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -779,7 +779,7 @@ pub struct ServerProperties {
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub fully_qualified_domain_name: Option<String>,
     #[doc = "Earliest restore point creation time (ISO8601 format)"]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
     #[doc = "Storage Profile properties of a server"]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]

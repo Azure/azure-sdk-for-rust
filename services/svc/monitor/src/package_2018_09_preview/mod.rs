@@ -134,8 +134,8 @@ pub mod metrics {
             resource_type_name: impl Into<String>,
             resource_name: impl Into<String>,
             body: impl Into<models::AzureMetricsDocument>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 content_type: content_type.into(),
                 content_length,
@@ -153,7 +153,7 @@ pub mod metrics {
         use super::models;
         type Response = models::AzureMetricsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) content_type: String,
             pub(crate) content_length: i32,
@@ -165,7 +165,7 @@ pub mod metrics {
             pub(crate) resource_name: String,
             pub(crate) body: models::AzureMetricsDocument,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

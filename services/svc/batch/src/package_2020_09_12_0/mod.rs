@@ -137,8 +137,8 @@ pub mod application {
     impl Client {
         #[doc = "Lists all of the applications available in the specified Account."]
         #[doc = "This operation returns only Applications and versions that are available for use on Compute Nodes; that is, that can be used in an Package reference. For administrator information about applications and versions that are not yet available to Compute Nodes, use the Azure portal or the Azure Resource Manager API."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 maxresults: None,
                 timeout: None,
@@ -152,8 +152,8 @@ pub mod application {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `application_id`: The ID of the Application."]
-        pub fn get(&self, application_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, application_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 application_id: application_id.into(),
                 timeout: None,
@@ -167,7 +167,7 @@ pub mod application {
         use super::models;
         type Response = models::ApplicationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) maxresults: Option<i32>,
             pub(crate) timeout: Option<i32>,
@@ -175,7 +175,7 @@ pub mod application {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of items to return in the response. A maximum of 1000 applications can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
@@ -281,7 +281,7 @@ pub mod application {
         use super::models;
         type Response = models::ApplicationSummary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_id: String,
             pub(crate) timeout: Option<i32>,
@@ -289,7 +289,7 @@ pub mod application {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -364,8 +364,8 @@ pub mod pool {
     impl Client {
         #[doc = "Lists the usage metrics, aggregated by Pool across individual time intervals, for the specified Account."]
         #[doc = "If you do not specify a $filter clause including a poolId, the response includes all Pools that existed in the Account in the time range of the returned aggregation intervals. If you do not specify a $filter clause including a startTime or endTime these filters default to the start and end times of the last aggregation interval currently available; that is, only the last aggregation interval is returned."]
-        pub fn list_usage_metrics(&self) -> list_usage_metrics::Builder {
-            list_usage_metrics::Builder {
+        pub fn list_usage_metrics(&self) -> list_usage_metrics::RequestBuilder {
+            list_usage_metrics::RequestBuilder {
                 client: self.0.clone(),
                 starttime: None,
                 endtime: None,
@@ -379,8 +379,8 @@ pub mod pool {
         }
         #[doc = "Gets lifetime summary statistics for all of the Pools in the specified Account."]
         #[doc = "Statistics are aggregated across all Pools that have ever existed in the Account, from Account creation to the last update time of the statistics. The statistics may not be immediately available. The Batch service performs periodic roll-up of statistics. The typical delay is about 30 minutes."]
-        pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
-            get_all_lifetime_statistics::Builder {
+        pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::RequestBuilder {
+            get_all_lifetime_statistics::RequestBuilder {
                 client: self.0.clone(),
                 timeout: None,
                 client_request_id: None,
@@ -389,8 +389,8 @@ pub mod pool {
             }
         }
         #[doc = "Lists all of the Pools in the specified Account."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 select: None,
@@ -407,8 +407,8 @@ pub mod pool {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool`: The Pool to be added."]
-        pub fn add(&self, pool: impl Into<models::PoolAddParameter>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, pool: impl Into<models::PoolAddParameter>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 pool: pool.into(),
                 timeout: None,
@@ -421,8 +421,8 @@ pub mod pool {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool to get."]
-        pub fn get(&self, pool_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, pool_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 select: None,
@@ -443,8 +443,12 @@ pub mod pool {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool to update."]
         #[doc = "* `pool_patch_parameter`: The parameters for the request."]
-        pub fn patch(&self, pool_id: impl Into<String>, pool_patch_parameter: impl Into<models::PoolPatchParameter>) -> patch::Builder {
-            patch::Builder {
+        pub fn patch(
+            &self,
+            pool_id: impl Into<String>,
+            pool_patch_parameter: impl Into<models::PoolPatchParameter>,
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 pool_patch_parameter: pool_patch_parameter.into(),
@@ -463,8 +467,8 @@ pub mod pool {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool to delete."]
-        pub fn delete(&self, pool_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, pool_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
@@ -481,8 +485,8 @@ pub mod pool {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool to get."]
-        pub fn exists(&self, pool_id: impl Into<String>) -> exists::Builder {
-            exists::Builder {
+        pub fn exists(&self, pool_id: impl Into<String>) -> exists::RequestBuilder {
+            exists::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
@@ -499,8 +503,8 @@ pub mod pool {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool on which to disable automatic scaling."]
-        pub fn disable_auto_scale(&self, pool_id: impl Into<String>) -> disable_auto_scale::Builder {
-            disable_auto_scale::Builder {
+        pub fn disable_auto_scale(&self, pool_id: impl Into<String>) -> disable_auto_scale::RequestBuilder {
+            disable_auto_scale::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
@@ -519,8 +523,8 @@ pub mod pool {
             &self,
             pool_id: impl Into<String>,
             pool_enable_auto_scale_parameter: impl Into<models::PoolEnableAutoScaleParameter>,
-        ) -> enable_auto_scale::Builder {
-            enable_auto_scale::Builder {
+        ) -> enable_auto_scale::RequestBuilder {
+            enable_auto_scale::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 pool_enable_auto_scale_parameter: pool_enable_auto_scale_parameter.into(),
@@ -544,8 +548,8 @@ pub mod pool {
             &self,
             pool_id: impl Into<String>,
             pool_evaluate_auto_scale_parameter: impl Into<models::PoolEvaluateAutoScaleParameter>,
-        ) -> evaluate_auto_scale::Builder {
-            evaluate_auto_scale::Builder {
+        ) -> evaluate_auto_scale::RequestBuilder {
+            evaluate_auto_scale::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 pool_evaluate_auto_scale_parameter: pool_evaluate_auto_scale_parameter.into(),
@@ -561,8 +565,12 @@ pub mod pool {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool to resize."]
         #[doc = "* `pool_resize_parameter`: The parameters for the request."]
-        pub fn resize(&self, pool_id: impl Into<String>, pool_resize_parameter: impl Into<models::PoolResizeParameter>) -> resize::Builder {
-            resize::Builder {
+        pub fn resize(
+            &self,
+            pool_id: impl Into<String>,
+            pool_resize_parameter: impl Into<models::PoolResizeParameter>,
+        ) -> resize::RequestBuilder {
+            resize::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 pool_resize_parameter: pool_resize_parameter.into(),
@@ -581,8 +589,8 @@ pub mod pool {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool whose resizing you want to stop."]
-        pub fn stop_resize(&self, pool_id: impl Into<String>) -> stop_resize::Builder {
-            stop_resize::Builder {
+        pub fn stop_resize(&self, pool_id: impl Into<String>) -> stop_resize::RequestBuilder {
+            stop_resize::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
@@ -605,8 +613,8 @@ pub mod pool {
             &self,
             pool_id: impl Into<String>,
             pool_update_properties_parameter: impl Into<models::PoolUpdatePropertiesParameter>,
-        ) -> update_properties::Builder {
-            update_properties::Builder {
+        ) -> update_properties::RequestBuilder {
+            update_properties::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 pool_update_properties_parameter: pool_update_properties_parameter.into(),
@@ -626,8 +634,8 @@ pub mod pool {
             &self,
             pool_id: impl Into<String>,
             node_remove_parameter: impl Into<models::NodeRemoveParameter>,
-        ) -> remove_nodes::Builder {
-            remove_nodes::Builder {
+        ) -> remove_nodes::RequestBuilder {
+            remove_nodes::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_remove_parameter: node_remove_parameter.into(),
@@ -646,7 +654,7 @@ pub mod pool {
         use super::models;
         type Response = models::PoolListUsageMetricsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) starttime: Option<time::OffsetDateTime>,
             pub(crate) endtime: Option<time::OffsetDateTime>,
@@ -657,7 +665,7 @@ pub mod pool {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The earliest time from which to include metrics. This must be at least two and a half hours before the current time. If not specified this defaults to the start time of the last aggregation interval currently available."]
             pub fn starttime(mut self, starttime: impl Into<time::OffsetDateTime>) -> Self {
                 self.starttime = Some(starttime.into());
@@ -787,14 +795,14 @@ pub mod pool {
         use super::models;
         type Response = models::PoolStatistics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -866,7 +874,7 @@ pub mod pool {
         use super::models;
         type Response = models::CloudPoolListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) select: Option<String>,
@@ -877,7 +885,7 @@ pub mod pool {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-pools."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1007,7 +1015,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool: models::PoolAddParameter,
             pub(crate) timeout: Option<i32>,
@@ -1015,7 +1023,7 @@ pub mod pool {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1084,7 +1092,7 @@ pub mod pool {
         use super::models;
         type Response = models::CloudPool;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) select: Option<String>,
@@ -1098,7 +1106,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -1218,7 +1226,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) pool_patch_parameter: models::PoolPatchParameter,
@@ -1231,7 +1239,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1332,7 +1340,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) timeout: Option<i32>,
@@ -1344,7 +1352,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1444,7 +1452,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) timeout: Option<i32>,
@@ -1456,7 +1464,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1556,7 +1564,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) timeout: Option<i32>,
@@ -1564,7 +1572,7 @@ pub mod pool {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1633,7 +1641,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) pool_enable_auto_scale_parameter: models::PoolEnableAutoScaleParameter,
@@ -1646,7 +1654,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1747,7 +1755,7 @@ pub mod pool {
         use super::models;
         type Response = models::AutoScaleRun;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) pool_evaluate_auto_scale_parameter: models::PoolEvaluateAutoScaleParameter,
@@ -1756,7 +1764,7 @@ pub mod pool {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1829,7 +1837,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) pool_resize_parameter: models::PoolResizeParameter,
@@ -1842,7 +1850,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -1943,7 +1951,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) timeout: Option<i32>,
@@ -1955,7 +1963,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -2056,7 +2064,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) pool_update_properties_parameter: models::PoolUpdatePropertiesParameter,
@@ -2065,7 +2073,7 @@ pub mod pool {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -2134,7 +2142,7 @@ pub mod pool {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_remove_parameter: models::NodeRemoveParameter,
@@ -2147,7 +2155,7 @@ pub mod pool {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -2250,8 +2258,8 @@ pub mod account {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all Virtual Machine Images supported by the Azure Batch service."]
-        pub fn list_supported_images(&self) -> list_supported_images::Builder {
-            list_supported_images::Builder {
+        pub fn list_supported_images(&self) -> list_supported_images::RequestBuilder {
+            list_supported_images::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 maxresults: None,
@@ -2262,8 +2270,8 @@ pub mod account {
             }
         }
         #[doc = "Gets the number of Compute Nodes in each state, grouped by Pool. Note that the numbers returned may not always be up to date. If you need exact node counts, use a list query."]
-        pub fn list_pool_node_counts(&self) -> list_pool_node_counts::Builder {
-            list_pool_node_counts::Builder {
+        pub fn list_pool_node_counts(&self) -> list_pool_node_counts::RequestBuilder {
+            list_pool_node_counts::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 maxresults: None,
@@ -2278,7 +2286,7 @@ pub mod account {
         use super::models;
         type Response = models::AccountListSupportedImagesResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) maxresults: Option<i32>,
@@ -2287,7 +2295,7 @@ pub mod account {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-support-images."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2401,7 +2409,7 @@ pub mod account {
         use super::models;
         type Response = models::PoolNodeCountsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) maxresults: Option<i32>,
@@ -2410,7 +2418,7 @@ pub mod account {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2527,8 +2535,8 @@ pub mod job {
     impl Client {
         #[doc = "Gets lifetime summary statistics for all of the Jobs in the specified Account."]
         #[doc = "Statistics are aggregated across all Jobs that have ever existed in the Account, from Account creation to the last update time of the statistics. The statistics may not be immediately available. The Batch service performs periodic roll-up of statistics. The typical delay is about 30 minutes."]
-        pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
-            get_all_lifetime_statistics::Builder {
+        pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::RequestBuilder {
+            get_all_lifetime_statistics::RequestBuilder {
                 client: self.0.clone(),
                 timeout: None,
                 client_request_id: None,
@@ -2540,8 +2548,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job."]
-        pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, job_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 select: None,
@@ -2562,8 +2570,12 @@ pub mod job {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job whose properties you want to update."]
         #[doc = "* `job_update_parameter`: The parameters for the request."]
-        pub fn update(&self, job_id: impl Into<String>, job_update_parameter: impl Into<models::JobUpdateParameter>) -> update::Builder {
-            update::Builder {
+        pub fn update(
+            &self,
+            job_id: impl Into<String>,
+            job_update_parameter: impl Into<models::JobUpdateParameter>,
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 job_update_parameter: job_update_parameter.into(),
@@ -2583,8 +2595,8 @@ pub mod job {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job whose properties you want to update."]
         #[doc = "* `job_patch_parameter`: The parameters for the request."]
-        pub fn patch(&self, job_id: impl Into<String>, job_patch_parameter: impl Into<models::JobPatchParameter>) -> patch::Builder {
-            patch::Builder {
+        pub fn patch(&self, job_id: impl Into<String>, job_patch_parameter: impl Into<models::JobPatchParameter>) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 job_patch_parameter: job_patch_parameter.into(),
@@ -2603,8 +2615,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job to delete."]
-        pub fn delete(&self, job_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, job_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 timeout: None,
@@ -2627,8 +2639,8 @@ pub mod job {
             &self,
             job_id: impl Into<String>,
             job_disable_parameter: impl Into<models::JobDisableParameter>,
-        ) -> disable::Builder {
-            disable::Builder {
+        ) -> disable::RequestBuilder {
+            disable::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 job_disable_parameter: job_disable_parameter.into(),
@@ -2647,8 +2659,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job to enable."]
-        pub fn enable(&self, job_id: impl Into<String>) -> enable::Builder {
-            enable::Builder {
+        pub fn enable(&self, job_id: impl Into<String>) -> enable::RequestBuilder {
+            enable::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 timeout: None,
@@ -2666,8 +2678,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job to terminate."]
-        pub fn terminate(&self, job_id: impl Into<String>) -> terminate::Builder {
-            terminate::Builder {
+        pub fn terminate(&self, job_id: impl Into<String>) -> terminate::RequestBuilder {
+            terminate::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 job_terminate_parameter: None,
@@ -2682,8 +2694,8 @@ pub mod job {
             }
         }
         #[doc = "Lists all of the Jobs in the specified Account."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 select: None,
@@ -2700,8 +2712,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job`: The Job to be added."]
-        pub fn add(&self, job: impl Into<models::JobAddParameter>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, job: impl Into<models::JobAddParameter>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 job: job.into(),
                 timeout: None,
@@ -2714,8 +2726,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule from which you want to get a list of Jobs."]
-        pub fn list_from_job_schedule(&self, job_schedule_id: impl Into<String>) -> list_from_job_schedule::Builder {
-            list_from_job_schedule::Builder {
+        pub fn list_from_job_schedule(&self, job_schedule_id: impl Into<String>) -> list_from_job_schedule::RequestBuilder {
+            list_from_job_schedule::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 filter: None,
@@ -2736,8 +2748,8 @@ pub mod job {
         pub fn list_preparation_and_release_task_status(
             &self,
             job_id: impl Into<String>,
-        ) -> list_preparation_and_release_task_status::Builder {
-            list_preparation_and_release_task_status::Builder {
+        ) -> list_preparation_and_release_task_status::RequestBuilder {
+            list_preparation_and_release_task_status::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 filter: None,
@@ -2754,8 +2766,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job."]
-        pub fn get_task_counts(&self, job_id: impl Into<String>) -> get_task_counts::Builder {
-            get_task_counts::Builder {
+        pub fn get_task_counts(&self, job_id: impl Into<String>) -> get_task_counts::RequestBuilder {
+            get_task_counts::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 timeout: None,
@@ -2769,14 +2781,14 @@ pub mod job {
         use super::models;
         type Response = models::JobStatistics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -2848,7 +2860,7 @@ pub mod job {
         use super::models;
         type Response = models::CloudJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) select: Option<String>,
@@ -2862,7 +2874,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -2982,7 +2994,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) job_update_parameter: models::JobUpdateParameter,
@@ -2995,7 +3007,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -3096,7 +3108,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) job_patch_parameter: models::JobPatchParameter,
@@ -3109,7 +3121,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -3210,7 +3222,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) timeout: Option<i32>,
@@ -3222,7 +3234,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -3322,7 +3334,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) job_disable_parameter: models::JobDisableParameter,
@@ -3335,7 +3347,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -3436,7 +3448,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) timeout: Option<i32>,
@@ -3448,7 +3460,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -3549,7 +3561,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) job_terminate_parameter: Option<models::JobTerminateParameter>,
@@ -3562,7 +3574,7 @@ pub mod job {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The parameters for the request."]
             pub fn job_terminate_parameter(mut self, job_terminate_parameter: impl Into<models::JobTerminateParameter>) -> Self {
                 self.job_terminate_parameter = Some(job_terminate_parameter.into());
@@ -3672,7 +3684,7 @@ pub mod job {
         use super::models;
         type Response = models::CloudJobListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) select: Option<String>,
@@ -3683,7 +3695,7 @@ pub mod job {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-jobs."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3813,7 +3825,7 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job: models::JobAddParameter,
             pub(crate) timeout: Option<i32>,
@@ -3821,7 +3833,7 @@ pub mod job {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -3890,7 +3902,7 @@ pub mod job {
         use super::models;
         type Response = models::CloudJobListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) filter: Option<String>,
@@ -3902,7 +3914,7 @@ pub mod job {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-jobs-in-a-job-schedule."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4033,7 +4045,7 @@ pub mod job {
         use super::models;
         type Response = models::CloudJobListPreparationAndReleaseTaskStatusResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) filter: Option<String>,
@@ -4044,7 +4056,7 @@ pub mod job {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-preparation-and-release-status."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4171,7 +4183,7 @@ pub mod job {
         use super::models;
         type Response = models::TaskCountsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) timeout: Option<i32>,
@@ -4179,7 +4191,7 @@ pub mod job {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -4253,8 +4265,8 @@ pub mod certificate {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the Certificates that have been added to the specified Account."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 select: None,
@@ -4269,8 +4281,8 @@ pub mod certificate {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `certificate`: The Certificate to be added."]
-        pub fn add(&self, certificate: impl Into<models::CertificateAddParameter>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, certificate: impl Into<models::CertificateAddParameter>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 certificate: certificate.into(),
                 timeout: None,
@@ -4285,8 +4297,12 @@ pub mod certificate {
         #[doc = "Arguments:"]
         #[doc = "* `thumbprint_algorithm`: The algorithm used to derive the thumbprint parameter. This must be sha1."]
         #[doc = "* `thumbprint`: The thumbprint of the Certificate being deleted."]
-        pub fn cancel_deletion(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> cancel_deletion::Builder {
-            cancel_deletion::Builder {
+        pub fn cancel_deletion(
+            &self,
+            thumbprint_algorithm: impl Into<String>,
+            thumbprint: impl Into<String>,
+        ) -> cancel_deletion::RequestBuilder {
+            cancel_deletion::RequestBuilder {
                 client: self.0.clone(),
                 thumbprint_algorithm: thumbprint_algorithm.into(),
                 thumbprint: thumbprint.into(),
@@ -4301,8 +4317,8 @@ pub mod certificate {
         #[doc = "Arguments:"]
         #[doc = "* `thumbprint_algorithm`: The algorithm used to derive the thumbprint parameter. This must be sha1."]
         #[doc = "* `thumbprint`: The thumbprint of the Certificate to get."]
-        pub fn get(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 thumbprint_algorithm: thumbprint_algorithm.into(),
                 thumbprint: thumbprint.into(),
@@ -4319,8 +4335,8 @@ pub mod certificate {
         #[doc = "Arguments:"]
         #[doc = "* `thumbprint_algorithm`: The algorithm used to derive the thumbprint parameter. This must be sha1."]
         #[doc = "* `thumbprint`: The thumbprint of the Certificate to be deleted."]
-        pub fn delete(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 thumbprint_algorithm: thumbprint_algorithm.into(),
                 thumbprint: thumbprint.into(),
@@ -4335,7 +4351,7 @@ pub mod certificate {
         use super::models;
         type Response = models::CertificateListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) select: Option<String>,
@@ -4345,7 +4361,7 @@ pub mod certificate {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-certificates."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4467,7 +4483,7 @@ pub mod certificate {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) certificate: models::CertificateAddParameter,
             pub(crate) timeout: Option<i32>,
@@ -4475,7 +4491,7 @@ pub mod certificate {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -4544,7 +4560,7 @@ pub mod certificate {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) thumbprint_algorithm: String,
             pub(crate) thumbprint: String,
@@ -4553,7 +4569,7 @@ pub mod certificate {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -4627,7 +4643,7 @@ pub mod certificate {
         use super::models;
         type Response = models::Certificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) thumbprint_algorithm: String,
             pub(crate) thumbprint: String,
@@ -4637,7 +4653,7 @@ pub mod certificate {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -4722,7 +4738,7 @@ pub mod certificate {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) thumbprint_algorithm: String,
             pub(crate) thumbprint: String,
@@ -4731,7 +4747,7 @@ pub mod certificate {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -4816,8 +4832,8 @@ pub mod file {
             job_id: impl Into<String>,
             task_id: impl Into<String>,
             file_path: impl Into<String>,
-        ) -> get_from_task::Builder {
-            get_from_task::Builder {
+        ) -> get_from_task::RequestBuilder {
+            get_from_task::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -4842,8 +4858,8 @@ pub mod file {
             job_id: impl Into<String>,
             task_id: impl Into<String>,
             file_path: impl Into<String>,
-        ) -> delete_from_task::Builder {
-            delete_from_task::Builder {
+        ) -> delete_from_task::RequestBuilder {
+            delete_from_task::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -4866,8 +4882,8 @@ pub mod file {
             job_id: impl Into<String>,
             task_id: impl Into<String>,
             file_path: impl Into<String>,
-        ) -> get_properties_from_task::Builder {
-            get_properties_from_task::Builder {
+        ) -> get_properties_from_task::RequestBuilder {
+            get_properties_from_task::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -4891,8 +4907,8 @@ pub mod file {
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
             file_path: impl Into<String>,
-        ) -> get_from_compute_node::Builder {
-            get_from_compute_node::Builder {
+        ) -> get_from_compute_node::RequestBuilder {
+            get_from_compute_node::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -4917,8 +4933,8 @@ pub mod file {
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
             file_path: impl Into<String>,
-        ) -> delete_from_compute_node::Builder {
-            delete_from_compute_node::Builder {
+        ) -> delete_from_compute_node::RequestBuilder {
+            delete_from_compute_node::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -4941,8 +4957,8 @@ pub mod file {
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
             file_path: impl Into<String>,
-        ) -> get_properties_from_compute_node::Builder {
-            get_properties_from_compute_node::Builder {
+        ) -> get_properties_from_compute_node::RequestBuilder {
+            get_properties_from_compute_node::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -4960,8 +4976,8 @@ pub mod file {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job that contains the Task."]
         #[doc = "* `task_id`: The ID of the Task whose files you want to list."]
-        pub fn list_from_task(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_from_task::Builder {
-            list_from_task::Builder {
+        pub fn list_from_task(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_from_task::RequestBuilder {
+            list_from_task::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -4979,8 +4995,12 @@ pub mod file {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node whose files you want to list."]
-        pub fn list_from_compute_node(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> list_from_compute_node::Builder {
-            list_from_compute_node::Builder {
+        pub fn list_from_compute_node(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+        ) -> list_from_compute_node::RequestBuilder {
+            list_from_compute_node::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -4998,7 +5018,7 @@ pub mod file {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -5011,7 +5031,7 @@ pub mod file {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -5113,7 +5133,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -5124,7 +5144,7 @@ pub mod file {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to delete children of a directory. If the filePath parameter represents a directory instead of a file, you can set recursive to true to delete the directory and all of the files and subdirectories in it. If recursive is false then the directory must be empty or deletion will fail."]
             pub fn recursive(mut self, recursive: bool) -> Self {
                 self.recursive = Some(recursive);
@@ -5206,7 +5226,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -5218,7 +5238,7 @@ pub mod file {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -5308,7 +5328,7 @@ pub mod file {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -5321,7 +5341,7 @@ pub mod file {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -5423,7 +5443,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -5434,7 +5454,7 @@ pub mod file {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to delete children of a directory. If the filePath parameter represents a directory instead of a file, you can set recursive to true to delete the directory and all of the files and subdirectories in it. If recursive is false then the directory must be empty or deletion will fail."]
             pub fn recursive(mut self, recursive: bool) -> Self {
                 self.recursive = Some(recursive);
@@ -5516,7 +5536,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -5528,7 +5548,7 @@ pub mod file {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -5618,7 +5638,7 @@ pub mod file {
         use super::models;
         type Response = models::NodeFileListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -5630,7 +5650,7 @@ pub mod file {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-task-files."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5757,7 +5777,7 @@ pub mod file {
         use super::models;
         type Response = models::NodeFileListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -5769,7 +5789,7 @@ pub mod file {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-compute-node-files."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5901,8 +5921,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule to get."]
-        pub fn get(&self, job_schedule_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, job_schedule_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 select: None,
@@ -5927,8 +5947,8 @@ pub mod job_schedule {
             &self,
             job_schedule_id: impl Into<String>,
             job_schedule_update_parameter: impl Into<models::JobScheduleUpdateParameter>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 job_schedule_update_parameter: job_schedule_update_parameter.into(),
@@ -5952,8 +5972,8 @@ pub mod job_schedule {
             &self,
             job_schedule_id: impl Into<String>,
             job_schedule_patch_parameter: impl Into<models::JobSchedulePatchParameter>,
-        ) -> patch::Builder {
-            patch::Builder {
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 job_schedule_patch_parameter: job_schedule_patch_parameter.into(),
@@ -5972,8 +5992,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule to delete."]
-        pub fn delete(&self, job_schedule_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, job_schedule_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
@@ -5990,8 +6010,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule which you want to check."]
-        pub fn exists(&self, job_schedule_id: impl Into<String>) -> exists::Builder {
-            exists::Builder {
+        pub fn exists(&self, job_schedule_id: impl Into<String>) -> exists::RequestBuilder {
+            exists::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
@@ -6009,8 +6029,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule to disable."]
-        pub fn disable(&self, job_schedule_id: impl Into<String>) -> disable::Builder {
-            disable::Builder {
+        pub fn disable(&self, job_schedule_id: impl Into<String>) -> disable::RequestBuilder {
+            disable::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
@@ -6027,8 +6047,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule to enable."]
-        pub fn enable(&self, job_schedule_id: impl Into<String>) -> enable::Builder {
-            enable::Builder {
+        pub fn enable(&self, job_schedule_id: impl Into<String>) -> enable::RequestBuilder {
+            enable::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
@@ -6045,8 +6065,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_schedule_id`: The ID of the Job Schedule to terminates."]
-        pub fn terminate(&self, job_schedule_id: impl Into<String>) -> terminate::Builder {
-            terminate::Builder {
+        pub fn terminate(&self, job_schedule_id: impl Into<String>) -> terminate::RequestBuilder {
+            terminate::RequestBuilder {
                 client: self.0.clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
@@ -6060,8 +6080,8 @@ pub mod job_schedule {
             }
         }
         #[doc = "Lists all of the Job Schedules in the specified Account."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 select: None,
@@ -6077,8 +6097,8 @@ pub mod job_schedule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `cloud_job_schedule`: The Job Schedule to be added."]
-        pub fn add(&self, cloud_job_schedule: impl Into<models::JobScheduleAddParameter>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, cloud_job_schedule: impl Into<models::JobScheduleAddParameter>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 cloud_job_schedule: cloud_job_schedule.into(),
                 timeout: None,
@@ -6092,7 +6112,7 @@ pub mod job_schedule {
         use super::models;
         type Response = models::CloudJobSchedule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) select: Option<String>,
@@ -6106,7 +6126,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -6226,7 +6246,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) job_schedule_update_parameter: models::JobScheduleUpdateParameter,
@@ -6239,7 +6259,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -6340,7 +6360,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) job_schedule_patch_parameter: models::JobSchedulePatchParameter,
@@ -6353,7 +6373,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -6454,7 +6474,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) timeout: Option<i32>,
@@ -6466,7 +6486,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -6566,7 +6586,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) timeout: Option<i32>,
@@ -6578,7 +6598,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -6678,7 +6698,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) timeout: Option<i32>,
@@ -6690,7 +6710,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -6795,7 +6815,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) timeout: Option<i32>,
@@ -6807,7 +6827,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -6909,7 +6929,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_schedule_id: String,
             pub(crate) timeout: Option<i32>,
@@ -6921,7 +6941,7 @@ pub mod job_schedule {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -7026,7 +7046,7 @@ pub mod job_schedule {
         use super::models;
         type Response = models::CloudJobScheduleListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) select: Option<String>,
@@ -7037,7 +7057,7 @@ pub mod job_schedule {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-schedules."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -7167,7 +7187,7 @@ pub mod job_schedule {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) cloud_job_schedule: models::JobScheduleAddParameter,
             pub(crate) timeout: Option<i32>,
@@ -7175,7 +7195,7 @@ pub mod job_schedule {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -7250,8 +7270,8 @@ pub mod task {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job."]
-        pub fn list(&self, job_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, job_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 filter: None,
@@ -7270,8 +7290,8 @@ pub mod task {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job to which the Task is to be added."]
         #[doc = "* `task`: The Task to be added."]
-        pub fn add(&self, job_id: impl Into<String>, task: impl Into<models::TaskAddParameter>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, job_id: impl Into<String>, task: impl Into<models::TaskAddParameter>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task: task.into(),
@@ -7291,8 +7311,8 @@ pub mod task {
             &self,
             job_id: impl Into<String>,
             task_collection: impl Into<models::TaskAddCollectionParameter>,
-        ) -> add_collection::Builder {
-            add_collection::Builder {
+        ) -> add_collection::RequestBuilder {
+            add_collection::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_collection: task_collection.into(),
@@ -7308,8 +7328,8 @@ pub mod task {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job that contains the Task."]
         #[doc = "* `task_id`: The ID of the Task to get information about."]
-        pub fn get(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -7336,8 +7356,8 @@ pub mod task {
             job_id: impl Into<String>,
             task_id: impl Into<String>,
             task_update_parameter: impl Into<models::TaskUpdateParameter>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -7358,8 +7378,8 @@ pub mod task {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job from which to delete the Task."]
         #[doc = "* `task_id`: The ID of the Task to delete."]
-        pub fn delete(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -7379,8 +7399,8 @@ pub mod task {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job."]
         #[doc = "* `task_id`: The ID of the Task."]
-        pub fn list_subtasks(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_subtasks::Builder {
-            list_subtasks::Builder {
+        pub fn list_subtasks(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_subtasks::RequestBuilder {
+            list_subtasks::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -7397,8 +7417,8 @@ pub mod task {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job containing the Task."]
         #[doc = "* `task_id`: The ID of the Task to terminate."]
-        pub fn terminate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> terminate::Builder {
-            terminate::Builder {
+        pub fn terminate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> terminate::RequestBuilder {
+            terminate::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -7418,8 +7438,8 @@ pub mod task {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: The ID of the Job containing the Task."]
         #[doc = "* `task_id`: The ID of the Task to reactivate."]
-        pub fn reactivate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> reactivate::Builder {
-            reactivate::Builder {
+        pub fn reactivate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> reactivate::RequestBuilder {
+            reactivate::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
@@ -7438,7 +7458,7 @@ pub mod task {
         use super::models;
         type Response = models::CloudTaskListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) filter: Option<String>,
@@ -7450,7 +7470,7 @@ pub mod task {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-tasks."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -7580,7 +7600,7 @@ pub mod task {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task: models::TaskAddParameter,
@@ -7589,7 +7609,7 @@ pub mod task {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -7658,7 +7678,7 @@ pub mod task {
         use super::models;
         type Response = models::TaskAddCollectionResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_collection: models::TaskAddCollectionParameter,
@@ -7667,7 +7687,7 @@ pub mod task {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -7740,7 +7760,7 @@ pub mod task {
         use super::models;
         type Response = models::CloudTask;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -7755,7 +7775,7 @@ pub mod task {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -7876,7 +7896,7 @@ pub mod task {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -7890,7 +7910,7 @@ pub mod task {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -7992,7 +8012,7 @@ pub mod task {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -8005,7 +8025,7 @@ pub mod task {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -8106,7 +8126,7 @@ pub mod task {
         use super::models;
         type Response = models::CloudTaskListSubtasksResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -8116,7 +8136,7 @@ pub mod task {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -8201,7 +8221,7 @@ pub mod task {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -8214,7 +8234,7 @@ pub mod task {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -8320,7 +8340,7 @@ pub mod task {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) task_id: String,
@@ -8333,7 +8353,7 @@ pub mod task {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -8452,8 +8472,8 @@ pub mod compute_node {
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
             user: impl Into<models::ComputeNodeUser>,
-        ) -> add_user::Builder {
-            add_user::Builder {
+        ) -> add_user::RequestBuilder {
+            add_user::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8478,8 +8498,8 @@ pub mod compute_node {
             node_id: impl Into<String>,
             user_name: impl Into<String>,
             node_update_user_parameter: impl Into<models::NodeUpdateUserParameter>,
-        ) -> update_user::Builder {
-            update_user::Builder {
+        ) -> update_user::RequestBuilder {
+            update_user::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8503,8 +8523,8 @@ pub mod compute_node {
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
             user_name: impl Into<String>,
-        ) -> delete_user::Builder {
-            delete_user::Builder {
+        ) -> delete_user::RequestBuilder {
+            delete_user::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8520,8 +8540,8 @@ pub mod compute_node {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node that you want to get information about."]
-        pub fn get(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8538,8 +8558,8 @@ pub mod compute_node {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node that you want to restart."]
-        pub fn reboot(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reboot::Builder {
-            reboot::Builder {
+        pub fn reboot(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reboot::RequestBuilder {
+            reboot::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8556,8 +8576,8 @@ pub mod compute_node {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node that you want to restart."]
-        pub fn reimage(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reimage::Builder {
-            reimage::Builder {
+        pub fn reimage(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reimage::RequestBuilder {
+            reimage::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8574,8 +8594,8 @@ pub mod compute_node {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node on which you want to disable Task scheduling."]
-        pub fn disable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> disable_scheduling::Builder {
-            disable_scheduling::Builder {
+        pub fn disable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> disable_scheduling::RequestBuilder {
+            disable_scheduling::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8592,8 +8612,8 @@ pub mod compute_node {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node on which you want to enable Task scheduling."]
-        pub fn enable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> enable_scheduling::Builder {
-            enable_scheduling::Builder {
+        pub fn enable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> enable_scheduling::RequestBuilder {
+            enable_scheduling::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8613,8 +8633,8 @@ pub mod compute_node {
             &self,
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
-        ) -> get_remote_login_settings::Builder {
-            get_remote_login_settings::Builder {
+        ) -> get_remote_login_settings::RequestBuilder {
+            get_remote_login_settings::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8630,8 +8650,8 @@ pub mod compute_node {
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool that contains the Compute Node."]
         #[doc = "* `node_id`: The ID of the Compute Node for which you want to get the Remote Desktop Protocol file."]
-        pub fn get_remote_desktop(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get_remote_desktop::Builder {
-            get_remote_desktop::Builder {
+        pub fn get_remote_desktop(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get_remote_desktop::RequestBuilder {
+            get_remote_desktop::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8653,8 +8673,8 @@ pub mod compute_node {
             pool_id: impl Into<String>,
             node_id: impl Into<String>,
             upload_batch_service_logs_configuration: impl Into<models::UploadBatchServiceLogsConfiguration>,
-        ) -> upload_batch_service_logs::Builder {
-            upload_batch_service_logs::Builder {
+        ) -> upload_batch_service_logs::RequestBuilder {
+            upload_batch_service_logs::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
@@ -8669,8 +8689,8 @@ pub mod compute_node {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `pool_id`: The ID of the Pool from which you want to list Compute Nodes."]
-        pub fn list(&self, pool_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, pool_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 pool_id: pool_id.into(),
                 filter: None,
@@ -8687,7 +8707,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -8697,7 +8717,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -8771,7 +8791,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -8782,7 +8802,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -8857,7 +8877,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -8867,7 +8887,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -8941,7 +8961,7 @@ pub mod compute_node {
         use super::models;
         type Response = models::ComputeNode;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -8951,7 +8971,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -9036,7 +9056,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9046,7 +9066,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The parameters for the request."]
             pub fn node_reboot_parameter(mut self, node_reboot_parameter: impl Into<models::NodeRebootParameter>) -> Self {
                 self.node_reboot_parameter = Some(node_reboot_parameter.into());
@@ -9129,7 +9149,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9139,7 +9159,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The parameters for the request."]
             pub fn node_reimage_parameter(mut self, node_reimage_parameter: impl Into<models::NodeReimageParameter>) -> Self {
                 self.node_reimage_parameter = Some(node_reimage_parameter.into());
@@ -9222,7 +9242,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9232,7 +9252,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The parameters for the request."]
             pub fn node_disable_scheduling_parameter(
                 mut self,
@@ -9318,7 +9338,7 @@ pub mod compute_node {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9327,7 +9347,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -9401,7 +9421,7 @@ pub mod compute_node {
         use super::models;
         type Response = models::ComputeNodeGetRemoteLoginSettingsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9410,7 +9430,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -9487,7 +9507,7 @@ pub mod compute_node {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9496,7 +9516,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -9573,7 +9593,7 @@ pub mod compute_node {
         use super::models;
         type Response = models::UploadBatchServiceLogsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) node_id: String,
@@ -9583,7 +9603,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
@@ -9661,7 +9681,7 @@ pub mod compute_node {
         use super::models;
         type Response = models::ComputeNodeListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pool_id: String,
             pub(crate) filter: Option<String>,
@@ -9672,7 +9692,7 @@ pub mod compute_node {
             pub(crate) return_client_request_id: Option<bool>,
             pub(crate) ocp_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-nodes-in-a-pool."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());

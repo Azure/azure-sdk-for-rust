@@ -144,7 +144,7 @@ pub struct ComplianceStatus {
     #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<compliance_status::ComplianceState>,
     #[doc = "Datetime the configuration was last applied."]
-    #[serde(rename = "lastConfigApplied", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastConfigApplied", default, with = "azure_core::date::rfc3339::option")]
     pub last_config_applied: Option<time::OffsetDateTime>,
     #[doc = "Message from when the configuration was applied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -612,10 +612,10 @@ pub mod flux_configuration {
         #[serde(rename = "sourceSyncedCommitId", default, skip_serializing_if = "Option::is_none")]
         pub source_synced_commit_id: Option<String>,
         #[doc = "Datetime the fluxConfiguration synced its source on the cluster."]
-        #[serde(rename = "sourceUpdatedAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "sourceUpdatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub source_updated_at: Option<time::OffsetDateTime>,
         #[doc = "Datetime the fluxConfiguration synced its status on the cluster with Azure."]
-        #[serde(rename = "statusUpdatedAt", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "statusUpdatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub status_updated_at: Option<time::OffsetDateTime>,
         #[doc = "Compliance state of the cluster object."]
         #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
@@ -983,7 +983,7 @@ impl ObjectReferenceDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectStatusConditionDefinition {
     #[doc = "Last time this status condition has changed"]
-    #[serde(rename = "lastTransitionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_transition_time: Option<time::OffsetDateTime>,
     #[doc = "A more verbose description of the object status condition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1683,7 +1683,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1692,7 +1692,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

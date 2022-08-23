@@ -13,7 +13,7 @@ pub struct Backup {
     #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<EnableStatusEnum>,
     #[doc = "Earliest restore point creation time (ISO8601 format)"]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl Backup {
@@ -821,13 +821,13 @@ pub struct LogFileProperties {
     #[serde(rename = "sizeInKB", default, skip_serializing_if = "Option::is_none")]
     pub size_in_kb: Option<i64>,
     #[doc = "Creation timestamp of the log file."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Type of the log file."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "Last modified timestamp of the log file."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The url to download the log file from."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1114,7 +1114,7 @@ pub struct ServerBackupProperties {
     #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
     pub backup_type: Option<String>,
     #[doc = "Backup completed time (ISO8601 format)."]
-    #[serde(rename = "completedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "completedTime", default, with = "azure_core::date::rfc3339::option")]
     pub completed_time: Option<time::OffsetDateTime>,
     #[doc = "Backup source"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1207,7 +1207,7 @@ pub struct ServerProperties {
     #[serde(rename = "sourceServerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_server_resource_id: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from."]
-    #[serde(rename = "restorePointInTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "restorePointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub restore_point_in_time: Option<time::OffsetDateTime>,
     #[doc = "The replication role."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
@@ -1634,7 +1634,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1643,7 +1643,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

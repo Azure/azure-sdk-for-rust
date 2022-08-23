@@ -121,8 +121,8 @@ pub mod digital_twin_models {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves model metadata and, optionally, model definitions.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The model id is invalid.\n  * LimitExceeded - The maximum number of model ids allowed in 'dependenciesFor' has been reached.\n* 404 Not Found\n  * ModelNotFound - The model was not found."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
@@ -132,8 +132,8 @@ pub mod digital_twin_models {
             }
         }
         #[doc = "Uploads one or more models. When any error occurs, no models are uploaded.\nStatus codes:\n* 201 Created\n* 400 Bad Request\n  * DTDLParserError - The models provided are not valid DTDL.\n  * InvalidArgument - The model id is invalid.\n  * LimitExceeded - The maximum number of model ids allowed in 'dependenciesFor' has been reached.\n  * ModelVersionNotSupported - The version of DTDL used is not supported.\n* 409 Conflict\n  * ModelAlreadyExists - The model provided already exists."]
-        pub fn add(&self) -> add::Builder {
-            add::Builder {
+        pub fn add(&self) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
@@ -144,8 +144,8 @@ pub mod digital_twin_models {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -158,8 +158,8 @@ pub mod digital_twin_models {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
         #[doc = "* `update_model`: An update specification described by JSON Patch. Only the decommissioned property can be replaced."]
-        pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 update_model,
@@ -171,8 +171,8 @@ pub mod digital_twin_models {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -184,7 +184,7 @@ pub mod digital_twin_models {
         use super::models;
         type Response = models::PagedDigitalTwinsModelDataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -192,7 +192,7 @@ pub mod digital_twin_models {
             pub(crate) include_model_definition: Option<bool>,
             pub(crate) max_items_per_page: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -301,13 +301,13 @@ pub mod digital_twin_models {
         use super::models;
         type Response = models::NonPagedDigitalTwinsModelDataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) models: Vec<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -369,14 +369,14 @@ pub mod digital_twin_models {
         use super::models;
         type Response = models::DigitalTwinsModelData;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) include_model_definition: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -442,14 +442,14 @@ pub mod digital_twin_models {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) update_model: Vec<serde_json::Value>,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -502,13 +502,13 @@ pub mod digital_twin_models {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -565,8 +565,8 @@ pub mod query {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `query_specification`: The query specification to execute."]
-        pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
-            query_twins::Builder {
+        pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::RequestBuilder {
+            query_twins::RequestBuilder {
                 client: self.0.clone(),
                 query_specification: query_specification.into(),
                 traceparent: None,
@@ -579,14 +579,14 @@ pub mod query {
         use super::models;
         type Response = models::QueryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) max_items_per_page: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -656,8 +656,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -669,8 +669,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `twin`: The digital twin instance being added. If provided, the $dtId property is ignored."]
-        pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 twin: twin.into(),
@@ -684,8 +684,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `patch_document`: An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
-        pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 patch_document,
@@ -698,8 +698,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -712,8 +712,12 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
-        pub fn get_relationship_by_id(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship_by_id::Builder {
-            get_relationship_by_id::Builder {
+        pub fn get_relationship_by_id(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+        ) -> get_relationship_by_id::RequestBuilder {
+            get_relationship_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -732,8 +736,8 @@ pub mod digital_twins {
             id: impl Into<String>,
             relationship_id: impl Into<String>,
             relationship: impl Into<serde_json::Value>,
-        ) -> add_relationship::Builder {
-            add_relationship::Builder {
+        ) -> add_relationship::RequestBuilder {
+            add_relationship::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -754,8 +758,8 @@ pub mod digital_twins {
             id: impl Into<String>,
             relationship_id: impl Into<String>,
             patch_document: Vec<serde_json::Value>,
-        ) -> update_relationship::Builder {
-            update_relationship::Builder {
+        ) -> update_relationship::RequestBuilder {
+            update_relationship::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -770,8 +774,12 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
-        pub fn delete_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> delete_relationship::Builder {
-            delete_relationship::Builder {
+        pub fn delete_relationship(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+        ) -> delete_relationship::RequestBuilder {
+            delete_relationship::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -784,8 +792,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::Builder {
-            list_relationships::Builder {
+        pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::RequestBuilder {
+            list_relationships::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -797,8 +805,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::Builder {
-            list_incoming_relationships::Builder {
+        pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::RequestBuilder {
+            list_incoming_relationships::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -816,8 +824,8 @@ pub mod digital_twins {
             id: impl Into<String>,
             telemetry: impl Into<serde_json::Value>,
             message_id: impl Into<String>,
-        ) -> send_telemetry::Builder {
-            send_telemetry::Builder {
+        ) -> send_telemetry::RequestBuilder {
+            send_telemetry::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 telemetry: telemetry.into(),
@@ -840,8 +848,8 @@ pub mod digital_twins {
             component_path: impl Into<String>,
             telemetry: impl Into<serde_json::Value>,
             message_id: impl Into<String>,
-        ) -> send_component_telemetry::Builder {
-            send_component_telemetry::Builder {
+        ) -> send_component_telemetry::RequestBuilder {
+            send_component_telemetry::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
@@ -857,8 +865,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `component_path`: The name of the DTDL component."]
-        pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::Builder {
-            get_component::Builder {
+        pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::RequestBuilder {
+            get_component::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
@@ -877,8 +885,8 @@ pub mod digital_twins {
             id: impl Into<String>,
             component_path: impl Into<String>,
             patch_document: Vec<serde_json::Value>,
-        ) -> update_component::Builder {
-            update_component::Builder {
+        ) -> update_component::RequestBuilder {
+            update_component::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
@@ -893,13 +901,13 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -959,7 +967,7 @@ pub mod digital_twins {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) twin: serde_json::Value,
@@ -967,7 +975,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1037,7 +1045,7 @@ pub mod digital_twins {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
@@ -1045,7 +1053,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1107,14 +1115,14 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1174,14 +1182,14 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1242,7 +1250,7 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
@@ -1251,7 +1259,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1321,7 +1329,7 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
@@ -1330,7 +1338,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1396,7 +1404,7 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
@@ -1404,7 +1412,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1469,14 +1477,14 @@ pub mod digital_twins {
         use super::models;
         type Response = models::RelationshipCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) relationship_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1567,13 +1575,13 @@ pub mod digital_twins {
         use super::models;
         type Response = models::IncomingRelationshipCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1659,7 +1667,7 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) telemetry: serde_json::Value,
@@ -1668,7 +1676,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) telemetry_source_time: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1730,7 +1738,7 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
@@ -1740,7 +1748,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) telemetry_source_time: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1807,14 +1815,14 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1879,7 +1887,7 @@ pub mod digital_twins {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
@@ -1888,7 +1896,7 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -1957,8 +1965,8 @@ pub mod event_routes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves all event routes.\nStatus codes:\n* 200 OK"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
@@ -1969,8 +1977,8 @@ pub mod event_routes {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -1981,8 +1989,8 @@ pub mod event_routes {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
-        pub fn add(&self, id: impl Into<String>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, id: impl Into<String>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -1994,8 +2002,8 @@ pub mod event_routes {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
@@ -2007,13 +2015,13 @@ pub mod event_routes {
         use super::models;
         type Response = models::EventRouteCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) max_items_per_page: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -2103,13 +2111,13 @@ pub mod event_routes {
         use super::models;
         type Response = models::EventRoute;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -2165,14 +2173,14 @@ pub mod event_routes {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) event_route: Option<models::EventRoute>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
@@ -2234,13 +2242,13 @@ pub mod event_routes {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());

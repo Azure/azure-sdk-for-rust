@@ -361,7 +361,7 @@ impl EdgeModuleProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleProvisioningToken {
     #[doc = "The expiration date of the registration token. The Azure Video Analyzer IoT edge module must be initialized and connected to the Internet prior to the token expiration date."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The token blob to be provided to the Azure Video Analyzer IoT edge module through the Azure IoT Edge module twin properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1331,7 +1331,7 @@ impl VideoStreaming {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoStreamingToken {
     #[doc = "The streaming token expiration date in ISO8601 format (eg. 2021-01-01T00:00:00Z)."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The streaming token value to be added to the video streaming URL as the value for a \"token\" query string parameter. The token is specific to a single video."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1352,7 +1352,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1361,7 +1361,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

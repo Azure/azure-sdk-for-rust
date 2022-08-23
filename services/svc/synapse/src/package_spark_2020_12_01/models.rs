@@ -305,25 +305,25 @@ impl SparkBatchJobOptions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkBatchJobState {
     #[doc = "the time that at which \"not_started\" livy state was first seen."]
-    #[serde(rename = "notStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "notStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub not_started_at: Option<time::OffsetDateTime>,
     #[doc = "the time that at which \"starting\" livy state was first seen."]
-    #[serde(rename = "startingAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startingAt", default, with = "azure_core::date::rfc3339::option")]
     pub starting_at: Option<time::OffsetDateTime>,
     #[doc = "the time that at which \"running\" livy state was first seen."]
-    #[serde(rename = "runningAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "runningAt", default, with = "azure_core::date::rfc3339::option")]
     pub running_at: Option<time::OffsetDateTime>,
     #[doc = "time that at which \"dead\" livy state was first seen."]
-    #[serde(rename = "deadAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deadAt", default, with = "azure_core::date::rfc3339::option")]
     pub dead_at: Option<time::OffsetDateTime>,
     #[doc = "the time that at which \"success\" livy state was first seen."]
-    #[serde(rename = "successAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "successAt", default, with = "azure_core::date::rfc3339::option")]
     pub success_at: Option<time::OffsetDateTime>,
     #[doc = "the time that at which \"killed\" livy state was first seen."]
-    #[serde(rename = "killedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "killedAt", default, with = "azure_core::date::rfc3339::option")]
     pub killed_at: Option<time::OffsetDateTime>,
     #[doc = "the time that at which \"recovering\" livy state was first seen."]
-    #[serde(rename = "recoveringAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveringAt", default, with = "azure_core::date::rfc3339::option")]
     pub recovering_at: Option<time::OffsetDateTime>,
     #[doc = "the Spark job state."]
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
@@ -374,13 +374,13 @@ impl SparkRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkScheduler {
-    #[serde(rename = "submittedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "submittedAt", default, with = "azure_core::date::rfc3339::option")]
     pub submitted_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "scheduledAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledAt", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "endedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endedAt", default, with = "azure_core::date::rfc3339::option")]
     pub ended_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "cancellationRequestedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "cancellationRequestedAt", default, with = "azure_core::date::rfc3339::option")]
     pub cancellation_requested_at: Option<time::OffsetDateTime>,
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
     pub current_state: Option<spark_scheduler::CurrentState>,
@@ -490,15 +490,15 @@ pub mod spark_service_error {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkServicePlugin {
-    #[serde(rename = "preparationStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "preparationStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub preparation_started_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "resourceAcquisitionStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "resourceAcquisitionStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub resource_acquisition_started_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "submissionStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "submissionStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub submission_started_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "monitoringStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "monitoringStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub monitoring_started_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "cleanupStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "cleanupStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub cleanup_started_at: Option<time::OffsetDateTime>,
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
     pub current_state: Option<spark_service_plugin::CurrentState>,
@@ -839,23 +839,23 @@ impl SparkSessionOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkSessionState {
-    #[serde(rename = "notStartedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "notStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub not_started_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "startingAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startingAt", default, with = "azure_core::date::rfc3339::option")]
     pub starting_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "idleAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "idleAt", default, with = "azure_core::date::rfc3339::option")]
     pub idle_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "deadAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deadAt", default, with = "azure_core::date::rfc3339::option")]
     pub dead_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "shuttingDownAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "shuttingDownAt", default, with = "azure_core::date::rfc3339::option")]
     pub shutting_down_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "killedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "killedAt", default, with = "azure_core::date::rfc3339::option")]
     pub killed_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "recoveringAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveringAt", default, with = "azure_core::date::rfc3339::option")]
     pub recovering_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "busyAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "busyAt", default, with = "azure_core::date::rfc3339::option")]
     pub busy_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "errorAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "errorAt", default, with = "azure_core::date::rfc3339::option")]
     pub error_at: Option<time::OffsetDateTime>,
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
     pub current_state: Option<String>,

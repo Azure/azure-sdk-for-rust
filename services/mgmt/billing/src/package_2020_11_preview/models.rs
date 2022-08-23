@@ -157,10 +157,10 @@ pub struct AgreementProperties {
     #[serde(rename = "billingProfileInfo", default, skip_serializing_if = "Option::is_none")]
     pub billing_profile_info: Option<BillingProfileInfo>,
     #[doc = "The date from which the agreement is effective."]
-    #[serde(rename = "effectiveDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "The date when the agreement expires."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The list of participants that participates in acceptance of an agreement."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1616,7 +1616,7 @@ pub mod document {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DownloadUrl {
     #[doc = "The time in UTC when the download URL will expire."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "The URL to the PDF file."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1631,10 +1631,10 @@ impl DownloadUrl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Enrollment {
     #[doc = "The start date of the enrollment."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "The end date of the enrollment."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "The billing currency for the enrollment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1684,10 +1684,10 @@ pub struct EnrollmentAccountContext {
     #[serde(rename = "costCenter", default, skip_serializing_if = "Option::is_none")]
     pub cost_center: Option<String>,
     #[doc = "The start date of the enrollment account."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "The end date of the enrollment account."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "The ID of the enrollment account."]
     #[serde(rename = "enrollmentAccountName", default, skip_serializing_if = "Option::is_none")]
@@ -1717,10 +1717,10 @@ pub struct EnrollmentAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The start date of the enrollment account."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "The end date of the enrollment account."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "A department."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1856,7 +1856,7 @@ pub struct InstructionProperties {
     #[serde(rename = "endDate", with = "azure_core::date::rfc3339")]
     pub end_date: time::OffsetDateTime,
     #[doc = "The date this billing instruction was created."]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
 }
 impl InstructionProperties {
@@ -1911,10 +1911,10 @@ impl InvoiceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvoiceProperties {
     #[doc = "The due date for the invoice."]
-    #[serde(rename = "dueDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "dueDate", default, with = "azure_core::date::rfc3339::option")]
     pub due_date: Option<time::OffsetDateTime>,
     #[doc = "The date when the invoice was generated."]
-    #[serde(rename = "invoiceDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "invoiceDate", default, with = "azure_core::date::rfc3339::option")]
     pub invoice_date: Option<time::OffsetDateTime>,
     #[doc = "The current status of the invoice."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1944,10 +1944,10 @@ pub struct InvoiceProperties {
     #[serde(rename = "totalAmount", default, skip_serializing_if = "Option::is_none")]
     pub total_amount: Option<Amount>,
     #[doc = "The start date of the billing period for which the invoice is generated."]
-    #[serde(rename = "invoicePeriodStartDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "invoicePeriodStartDate", default, with = "azure_core::date::rfc3339::option")]
     pub invoice_period_start_date: Option<time::OffsetDateTime>,
     #[doc = "The end date of the billing period for which the invoice is generated."]
-    #[serde(rename = "invoicePeriodEndDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "invoicePeriodEndDate", default, with = "azure_core::date::rfc3339::option")]
     pub invoice_period_end_date: Option<time::OffsetDateTime>,
     #[doc = "Invoice type."]
     #[serde(rename = "invoiceType", default, skip_serializing_if = "Option::is_none")]
@@ -2532,7 +2532,7 @@ pub struct Participants {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The date when the status got changed."]
-    #[serde(rename = "statusDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "statusDate", default, with = "azure_core::date::rfc3339::option")]
     pub status_date: Option<time::OffsetDateTime>,
     #[doc = "The email address of the participant."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2553,7 +2553,7 @@ pub struct PaymentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub amount: Option<Amount>,
     #[doc = "The date when the payment was made."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub date: Option<time::OffsetDateTime>,
     #[doc = "The family of payment method."]
     #[serde(rename = "paymentMethodFamily", default, skip_serializing_if = "Option::is_none")]
@@ -2783,7 +2783,7 @@ pub struct ProductProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The date when the product was purchased."]
-    #[serde(rename = "purchaseDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "purchaseDate", default, with = "azure_core::date::rfc3339::option")]
     pub purchase_date: Option<time::OffsetDateTime>,
     #[doc = "The ID of the type of product."]
     #[serde(rename = "productTypeId", default, skip_serializing_if = "Option::is_none")]
@@ -2795,7 +2795,7 @@ pub struct ProductProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<product_properties::Status>,
     #[doc = "The date when the product will be renewed or canceled."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "The frequency at which the product will be billed."]
     #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
@@ -2804,7 +2804,7 @@ pub struct ProductProperties {
     #[serde(rename = "lastCharge", default, skip_serializing_if = "Option::is_none")]
     pub last_charge: Option<Amount>,
     #[doc = "The date of the last charge."]
-    #[serde(rename = "lastChargeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastChargeDate", default, with = "azure_core::date::rfc3339::option")]
     pub last_charge_date: Option<time::OffsetDateTime>,
     #[doc = "The quantity purchased for the product."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3191,10 +3191,10 @@ pub struct PromotionResponseProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "This is the DateTime when the promotion would come in effect"]
-    #[serde(rename = "effectiveDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date_time: Option<time::OffsetDateTime>,
     #[doc = "Last update time of the promotion resource."]
-    #[serde(rename = "lastUpdatedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time: Option<time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
@@ -3650,7 +3650,7 @@ pub struct TransactionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<transaction_properties::Kind>,
     #[doc = "The date of transaction."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub date: Option<time::OffsetDateTime>,
     #[doc = "Invoice on which the transaction was billed or 'pending' if the transaction is not billed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3734,10 +3734,10 @@ pub struct TransactionProperties {
     #[serde(rename = "pricingCurrency", default, skip_serializing_if = "Option::is_none")]
     pub pricing_currency: Option<String>,
     #[doc = "The date of the purchase of the product, or the start date of the month in which usage started."]
-    #[serde(rename = "servicePeriodStartDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "servicePeriodStartDate", default, with = "azure_core::date::rfc3339::option")]
     pub service_period_start_date: Option<time::OffsetDateTime>,
     #[doc = "The end date of the product term, or the end date of the month in which usage ended."]
-    #[serde(rename = "servicePeriodEndDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "servicePeriodEndDate", default, with = "azure_core::date::rfc3339::option")]
     pub service_period_end_date: Option<time::OffsetDateTime>,
     #[doc = "The amount."]
     #[serde(rename = "subTotal", default, skip_serializing_if = "Option::is_none")]

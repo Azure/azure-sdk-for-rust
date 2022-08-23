@@ -115,8 +115,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_identity`: JobInfo ID."]
-        pub fn get_statistics(&self, job_identity: impl Into<String>) -> get_statistics::Builder {
-            get_statistics::Builder {
+        pub fn get_statistics(&self, job_identity: impl Into<String>) -> get_statistics::RequestBuilder {
+            get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
@@ -125,8 +125,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_identity`: JobInfo ID."]
-        pub fn get_debug_data_path(&self, job_identity: impl Into<String>) -> get_debug_data_path::Builder {
-            get_debug_data_path::Builder {
+        pub fn get_debug_data_path(&self, job_identity: impl Into<String>) -> get_debug_data_path::RequestBuilder {
+            get_debug_data_path::RequestBuilder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
@@ -135,8 +135,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: The parameters to build a job."]
-        pub fn build(&self, parameters: impl Into<models::JobInformation>) -> build::Builder {
-            build::Builder {
+        pub fn build(&self, parameters: impl Into<models::JobInformation>) -> build::RequestBuilder {
+            build::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
@@ -145,8 +145,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_identity`: JobInfo ID to cancel."]
-        pub fn cancel(&self, job_identity: impl Into<String>) -> cancel::Builder {
-            cancel::Builder {
+        pub fn cancel(&self, job_identity: impl Into<String>) -> cancel::RequestBuilder {
+            cancel::RequestBuilder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
@@ -155,8 +155,8 @@ pub mod job {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_identity`: JobInfo ID."]
-        pub fn get(&self, job_identity: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, job_identity: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
@@ -166,16 +166,16 @@ pub mod job {
         #[doc = "Arguments:"]
         #[doc = "* `job_identity`: The job ID (a GUID) for the job being submitted."]
         #[doc = "* `parameters`: The parameters to submit a job."]
-        pub fn create(&self, job_identity: impl Into<String>, parameters: impl Into<models::JobInformation>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, job_identity: impl Into<String>, parameters: impl Into<models::JobInformation>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
                 parameters: parameters.into(),
             }
         }
         #[doc = "Lists the jobs, if any, associated with the specified Data Lake Analytics account. The response includes a link to the next page of results, if any."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 top: None,
@@ -193,11 +193,11 @@ pub mod job {
         use super::models;
         type Response = models::JobStatistics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -238,11 +238,11 @@ pub mod job {
         use super::models;
         type Response = models::JobDataPath;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -284,11 +284,11 @@ pub mod job {
         use super::models;
         type Response = models::JobInformation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::JobInformation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -329,11 +329,11 @@ pub mod job {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -370,11 +370,11 @@ pub mod job {
         use super::models;
         type Response = models::JobInformation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -414,12 +414,12 @@ pub mod job {
         use super::models;
         type Response = models::JobInformation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
             pub(crate) parameters: models::JobInformation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -460,7 +460,7 @@ pub mod job {
         use super::models;
         type Response = models::JobInfoListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -472,7 +472,7 @@ pub mod job {
             pub(crate) search: Option<String>,
             pub(crate) format: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());

@@ -577,7 +577,7 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
     #[doc = "Date and time in UTC when the error occurred."]
-    #[serde(rename = "occurredDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "occurredDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub occurred_date_time: Option<time::OffsetDateTime>,
 }
 impl Error {

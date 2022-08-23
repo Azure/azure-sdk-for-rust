@@ -141,7 +141,19 @@ pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde::{Deserialize, Serialize};
+    use serde_json;
     use time::macros::datetime;
+
+    #[derive(Serialize, Deserialize)]
+    struct ExampleState {
+        #[serde(with = "crate::date::rfc3339")]
+        created_time: time::OffsetDateTime,
+
+        // Note: Must specify "default" in serde options when using "with"
+        #[serde(default, with = "crate::date::rfc3339::option")]
+        deleted_time: Option<time::OffsetDateTime>,
+    }
 
     #[test]
     fn test_roundtrip_rfc3339() -> crate::Result<()> {
@@ -190,6 +202,38 @@ mod tests {
             datetime!(2021-07-01 10:45:02 UTC),
             parse_rfc1123(creation_time)?
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_serde_rfc3339_none_optional() -> crate::Result<()> {
+        let json_state = r#"{
+            "created_time": "2021-07-01T10:45:02Z"
+        }"#;
+
+        let state: ExampleState = serde_json::from_str(json_state).unwrap();
+
+        assert_eq!(parse_rfc3339("2021-07-01T10:45:02Z")?, state.created_time);
+        assert_eq!(state.deleted_time, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_serde_rfc3339_some_optional() -> crate::Result<()> {
+        let json_state = r#"{
+            "created_time": "2021-07-01T10:45:02Z",
+            "deleted_time": "2022-03-28T11:05:31Z"
+        }"#;
+
+        let state: ExampleState = serde_json::from_str(json_state).unwrap();
+
+        assert_eq!(parse_rfc3339("2021-07-01T10:45:02Z")?, state.created_time);
+        assert_eq!(
+            state.deleted_time,
+            Some(parse_rfc3339("2022-03-28T11:05:31Z").unwrap())
+        );
+
         Ok(())
     }
 }

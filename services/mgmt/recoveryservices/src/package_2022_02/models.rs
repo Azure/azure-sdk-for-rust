@@ -369,7 +369,7 @@ impl NameInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResource {
     #[doc = "End time of the operation"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -384,7 +384,7 @@ pub struct OperationResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Start time of the operation"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
 }
 impl OperationResource {
@@ -877,10 +877,10 @@ pub struct ResourceCertificateDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[doc = "Certificate Validity start Date time."]
-    #[serde(rename = "validFrom", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "validFrom", default, with = "azure_core::date::rfc3339::option")]
     pub valid_from: Option<time::OffsetDateTime>,
     #[doc = "Certificate Validity End Date time."]
-    #[serde(rename = "validTo", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "validTo", default, with = "azure_core::date::rfc3339::option")]
     pub valid_to: Option<time::OffsetDateTime>,
 }
 impl ResourceCertificateDetails {
@@ -995,13 +995,13 @@ pub struct UpgradeDetails {
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
     #[doc = "UTC time at which the upgrade operation has started."]
-    #[serde(rename = "startTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub start_time_utc: Option<time::OffsetDateTime>,
     #[doc = "UTC time at which the upgrade operation status was last updated."]
-    #[serde(rename = "lastUpdatedTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time_utc: Option<time::OffsetDateTime>,
     #[doc = "UTC time at which the upgrade operation has ended."]
-    #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Status of the vault upgrade operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1401,10 +1401,10 @@ pub mod vault_properties {
         #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
         pub operation_id: Option<String>,
         #[doc = "Start Time of the Resource Move Operation"]
-        #[serde(rename = "startTimeUtc", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
         pub start_time_utc: Option<time::OffsetDateTime>,
         #[doc = "End Time of the Resource Move Operation"]
-        #[serde(rename = "completionTimeUtc", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "completionTimeUtc", default, with = "azure_core::date::rfc3339::option")]
         pub completion_time_utc: Option<time::OffsetDateTime>,
         #[doc = "Source Resource of the Resource Move Operation"]
         #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1521,7 +1521,7 @@ pub struct VaultUsage {
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
     pub quota_period: Option<String>,
     #[doc = "Next reset time of usage."]
-    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_reset_time: Option<time::OffsetDateTime>,
     #[doc = "Current value of usage."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
@@ -1614,7 +1614,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1623,7 +1623,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

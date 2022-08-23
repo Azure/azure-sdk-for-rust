@@ -61,7 +61,7 @@ pub type ListTriggers = Pageable<ListTriggersResponse, azure_core::error::Error>
 pub struct ListTriggersResponse {
     pub rid: String,
     pub triggers: Vec<Trigger>,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub server: String,
     pub last_state_change: OffsetDateTime,
     pub continuation_token: Option<Continuation>,

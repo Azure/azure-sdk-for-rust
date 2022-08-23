@@ -124,18 +124,18 @@ pub mod network_function {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available NetworkFunction Rest API operations."]
-        pub fn list_operations(&self) -> list_operations::Builder {
-            list_operations::Builder { client: self.0.clone() }
+        pub fn list_operations(&self) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list_operations {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -184,8 +184,8 @@ pub mod azure_traffic_collectors_by_subscription {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure Subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -195,11 +195,11 @@ pub mod azure_traffic_collectors_by_subscription {
         use super::models;
         type Response = models::AzureTrafficCollectorListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -275,8 +275,8 @@ pub mod azure_traffic_collectors_by_resource_group {
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the resource group."]
         #[doc = "* `subscription_id`: Azure Subscription ID."]
-        pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -287,12 +287,12 @@ pub mod azure_traffic_collectors_by_resource_group {
         use super::models;
         type Response = models::AzureTrafficCollectorListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -375,8 +375,8 @@ pub mod azure_traffic_collectors {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -396,8 +396,8 @@ pub mod azure_traffic_collectors {
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
             parameters: impl Into<models::AzureTrafficCollector>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -418,8 +418,8 @@ pub mod azure_traffic_collectors {
             parameters: impl Into<models::TagsObject>,
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
-        ) -> update_tags::Builder {
-            update_tags::Builder {
+        ) -> update_tags::RequestBuilder {
+            update_tags::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 parameters: parameters.into(),
@@ -438,8 +438,8 @@ pub mod azure_traffic_collectors {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -451,13 +451,13 @@ pub mod azure_traffic_collectors {
         use super::models;
         type Response = models::AzureTrafficCollector;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -507,14 +507,14 @@ pub mod azure_traffic_collectors {
             Created201(models::AzureTrafficCollector),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
             pub(crate) parameters: models::AzureTrafficCollector,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -567,14 +567,14 @@ pub mod azure_traffic_collectors {
         use super::models;
         type Response = models::AzureTrafficCollector;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) parameters: models::TagsObject,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -626,13 +626,13 @@ pub mod azure_traffic_collectors {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -689,8 +689,8 @@ pub mod collector_policies {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -710,8 +710,8 @@ pub mod collector_policies {
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
             collector_policy_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -734,8 +734,8 @@ pub mod collector_policies {
             azure_traffic_collector_name: impl Into<String>,
             collector_policy_name: impl Into<String>,
             parameters: impl Into<models::CollectorPolicy>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -757,8 +757,8 @@ pub mod collector_policies {
             subscription_id: impl Into<String>,
             azure_traffic_collector_name: impl Into<String>,
             collector_policy_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -771,13 +771,13 @@ pub mod collector_policies {
         use super::models;
         type Response = models::CollectorPolicyListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -843,14 +843,14 @@ pub mod collector_policies {
         use super::models;
         type Response = models::CollectorPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
             pub(crate) collector_policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -894,7 +894,7 @@ pub mod collector_policies {
             Created201(models::CollectorPolicy),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -902,7 +902,7 @@ pub mod collector_policies {
             pub(crate) collector_policy_name: String,
             pub(crate) parameters: models::CollectorPolicy,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -954,14 +954,14 @@ pub mod collector_policies {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) azure_traffic_collector_name: String,
             pub(crate) collector_policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

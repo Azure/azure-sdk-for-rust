@@ -1029,7 +1029,7 @@ pub struct ResourceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The time the resource was created."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
 }
 impl ResourceProperties {

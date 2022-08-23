@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sub_id = AzureCliCredential::get_subscription()?;
     println!("Azure cli subscription: {}", sub_id);
 
-    let creds = AzureCliCredential {};
+    let creds = AzureCliCredential::new();
     let res = creds.get_token("https://management.azure.com/").await?;
     println!("Azure cli response == {:?}", res);
     // Let's enumerate the Azure storage accounts

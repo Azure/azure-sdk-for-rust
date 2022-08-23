@@ -173,7 +173,7 @@ impl DeploymentDeviceStatesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentOrderBy {
     #[doc = "The deployment start datetime."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
 }
 impl DeploymentOrderBy {
@@ -910,7 +910,7 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
     #[doc = "Date and time in UTC when the error occurred."]
-    #[serde(rename = "occurredDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "occurredDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub occurred_date_time: Option<time::OffsetDateTime>,
 }
 impl Error {

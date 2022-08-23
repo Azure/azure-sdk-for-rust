@@ -115,18 +115,18 @@ pub mod health_api {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get service health status."]
-        pub fn get_service_status(&self) -> get_service_status::Builder {
-            get_service_status::Builder { client: self.0.clone() }
+        pub fn get_service_status(&self) -> get_service_status::RequestBuilder {
+            get_service_status::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get_service_status {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -168,8 +168,8 @@ pub mod web_pub_sub {
         #[doc = "Arguments:"]
         #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
         #[doc = "* `message`: The payload body."]
-        pub fn send_to_all(&self, hub: impl Into<String>, message: impl Into<String>) -> send_to_all::Builder {
-            send_to_all::Builder {
+        pub fn send_to_all(&self, hub: impl Into<String>, message: impl Into<String>) -> send_to_all::RequestBuilder {
+            send_to_all::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 message: message.into(),
@@ -181,8 +181,8 @@ pub mod web_pub_sub {
         #[doc = "Arguments:"]
         #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
         #[doc = "* `connection_id`: Target connection Id."]
-        pub fn close_connection(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> close_connection::Builder {
-            close_connection::Builder {
+        pub fn close_connection(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> close_connection::RequestBuilder {
+            close_connection::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 connection_id: connection_id.into(),
@@ -194,8 +194,8 @@ pub mod web_pub_sub {
         #[doc = "Arguments:"]
         #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
         #[doc = "* `connection_id`: The connection Id."]
-        pub fn connection_exists(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> connection_exists::Builder {
-            connection_exists::Builder {
+        pub fn connection_exists(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> connection_exists::RequestBuilder {
+            connection_exists::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 connection_id: connection_id.into(),
@@ -212,8 +212,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             connection_id: impl Into<String>,
             message: impl Into<String>,
-        ) -> send_to_connection::Builder {
-            send_to_connection::Builder {
+        ) -> send_to_connection::RequestBuilder {
+            send_to_connection::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 connection_id: connection_id.into(),
@@ -225,8 +225,8 @@ pub mod web_pub_sub {
         #[doc = "Arguments:"]
         #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
         #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
-        pub fn group_exists(&self, hub: impl Into<String>, group: impl Into<String>) -> group_exists::Builder {
-            group_exists::Builder {
+        pub fn group_exists(&self, hub: impl Into<String>, group: impl Into<String>) -> group_exists::RequestBuilder {
+            group_exists::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
@@ -243,8 +243,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             group: impl Into<String>,
             message: impl Into<String>,
-        ) -> send_to_group::Builder {
-            send_to_group::Builder {
+        ) -> send_to_group::RequestBuilder {
+            send_to_group::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
@@ -263,8 +263,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             group: impl Into<String>,
             connection_id: impl Into<String>,
-        ) -> add_connection_to_group::Builder {
-            add_connection_to_group::Builder {
+        ) -> add_connection_to_group::RequestBuilder {
+            add_connection_to_group::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
@@ -282,8 +282,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             group: impl Into<String>,
             connection_id: impl Into<String>,
-        ) -> remove_connection_from_group::Builder {
-            remove_connection_from_group::Builder {
+        ) -> remove_connection_from_group::RequestBuilder {
+            remove_connection_from_group::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
@@ -295,8 +295,8 @@ pub mod web_pub_sub {
         #[doc = "Arguments:"]
         #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
         #[doc = "* `user_id`: Target user Id."]
-        pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::Builder {
-            user_exists::Builder {
+        pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::RequestBuilder {
+            user_exists::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
@@ -313,8 +313,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             user_id: impl Into<String>,
             message: impl Into<String>,
-        ) -> send_to_user::Builder {
-            send_to_user::Builder {
+        ) -> send_to_user::RequestBuilder {
+            send_to_user::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
@@ -332,8 +332,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             group: impl Into<String>,
             user_id: impl Into<String>,
-        ) -> add_user_to_group::Builder {
-            add_user_to_group::Builder {
+        ) -> add_user_to_group::RequestBuilder {
+            add_user_to_group::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
@@ -351,8 +351,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             group: impl Into<String>,
             user_id: impl Into<String>,
-        ) -> remove_user_from_group::Builder {
-            remove_user_from_group::Builder {
+        ) -> remove_user_from_group::RequestBuilder {
+            remove_user_from_group::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
@@ -368,8 +368,8 @@ pub mod web_pub_sub {
             &self,
             hub: impl Into<String>,
             user_id: impl Into<String>,
-        ) -> remove_user_from_all_groups::Builder {
-            remove_user_from_all_groups::Builder {
+        ) -> remove_user_from_all_groups::RequestBuilder {
+            remove_user_from_all_groups::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
@@ -386,8 +386,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             permission: impl Into<String>,
             connection_id: impl Into<String>,
-        ) -> grant_permission::Builder {
-            grant_permission::Builder {
+        ) -> grant_permission::RequestBuilder {
+            grant_permission::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 permission: permission.into(),
@@ -406,8 +406,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             permission: impl Into<String>,
             connection_id: impl Into<String>,
-        ) -> revoke_permission::Builder {
-            revoke_permission::Builder {
+        ) -> revoke_permission::RequestBuilder {
+            revoke_permission::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 permission: permission.into(),
@@ -426,8 +426,8 @@ pub mod web_pub_sub {
             hub: impl Into<String>,
             permission: impl Into<String>,
             connection_id: impl Into<String>,
-        ) -> check_permission::Builder {
-            check_permission::Builder {
+        ) -> check_permission::RequestBuilder {
+            check_permission::RequestBuilder {
                 client: self.0.clone(),
                 hub: hub.into(),
                 permission: permission.into(),
@@ -440,13 +440,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) message: String,
             pub(crate) excluded: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Excluded connection Ids."]
             pub fn excluded(mut self, excluded: Vec<String>) -> Self {
                 self.excluded = excluded;
@@ -492,13 +492,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) connection_id: String,
             pub(crate) reason: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The reason closing the client connection."]
             pub fn reason(mut self, reason: impl Into<String>) -> Self {
                 self.reason = Some(reason.into());
@@ -547,12 +547,12 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) connection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -593,13 +593,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) connection_id: String,
             pub(crate) message: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -641,12 +641,12 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -683,14 +683,14 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) message: String,
             pub(crate) excluded: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Excluded connection Ids"]
             pub fn excluded(mut self, excluded: Vec<String>) -> Self {
                 self.excluded = excluded;
@@ -741,13 +741,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) connection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -789,13 +789,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) connection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -837,12 +837,12 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -883,13 +883,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
             pub(crate) message: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -931,13 +931,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) user_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -979,13 +979,13 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) user_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1027,12 +1027,12 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1073,14 +1073,14 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) permission: String,
             pub(crate) connection_id: String,
             pub(crate) target_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
@@ -1130,14 +1130,14 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) permission: String,
             pub(crate) connection_id: String,
             pub(crate) target_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
@@ -1187,14 +1187,14 @@ pub mod web_pub_sub {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) permission: String,
             pub(crate) connection_id: String,
             pub(crate) target_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());

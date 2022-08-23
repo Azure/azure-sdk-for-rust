@@ -2301,7 +2301,7 @@ pub mod classification_rule_pattern {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectionReference {
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
@@ -2414,9 +2414,9 @@ pub struct CustomClassificationRuleProperties {
     pub classification_name: Option<String>,
     #[serde(rename = "ruleStatus", default, skip_serializing_if = "Option::is_none")]
     pub rule_status: Option<custom_classification_rule_properties::RuleStatus>,
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl CustomClassificationRuleProperties {
@@ -2786,9 +2786,9 @@ impl DataSourceList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceProperties {
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collection: Option<serde_json::Value>,
@@ -2977,9 +2977,9 @@ impl Notification {
 pub struct OperationResponse {
     #[serde(rename = "scanResultId", default, skip_serializing_if = "Option::is_none")]
     pub scan_result_id: Option<String>,
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_response::Status>,
@@ -3937,9 +3937,9 @@ pub struct ScanProperties {
     pub collection: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workers: Option<i32>,
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
     #[serde(rename = "connectedVia", default, skip_serializing_if = "Option::is_none")]
     pub connected_via: Option<serde_json::Value>,
@@ -4004,13 +4004,13 @@ pub struct ScanResult {
     pub assets_classified: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<serde_json::Value>,
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "queuedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "queuedTime", default, with = "azure_core::date::rfc3339::option")]
     pub queued_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "pipelineStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pipelineStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub pipeline_start_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[serde(rename = "scanRulesetVersion", default, skip_serializing_if = "Option::is_none")]
     pub scan_ruleset_version: Option<i32>,
@@ -4320,7 +4320,7 @@ impl ScanRulesetList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanRulesetProperties {
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -4328,7 +4328,7 @@ pub struct ScanRulesetProperties {
     pub excluded_system_classifications: Vec<String>,
     #[serde(rename = "includedCustomClassificationRuleNames", default, skip_serializing_if = "Vec::is_empty")]
     pub included_custom_classification_rule_names: Vec<String>,
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl ScanRulesetProperties {
@@ -4474,9 +4474,9 @@ pub struct SystemClassificationRuleProperties {
     pub classification_name: Option<String>,
     #[serde(rename = "ruleStatus", default, skip_serializing_if = "Option::is_none")]
     pub rule_status: Option<system_classification_rule_properties::RuleStatus>,
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemClassificationRuleProperties {
@@ -4816,15 +4816,15 @@ pub struct TriggerProperties {
     pub recurrence: Option<serde_json::Value>,
     #[serde(rename = "recurrenceInterval", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_interval: Option<String>,
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "lastScheduled", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastScheduled", default, with = "azure_core::date::rfc3339::option")]
     pub last_scheduled: Option<time::OffsetDateTime>,
     #[serde(rename = "scanLevel", default, skip_serializing_if = "Option::is_none")]
     pub scan_level: Option<trigger_properties::ScanLevel>,
-    #[serde(rename = "incrementalScanStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "incrementalScanStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub incremental_scan_start_time: Option<time::OffsetDateTime>,
 }
 impl TriggerProperties {
@@ -4877,9 +4877,9 @@ pub struct TriggerRecurrence {
     pub frequency: Option<trigger_recurrence::Frequency>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<i32>,
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<serde_json::Value>,

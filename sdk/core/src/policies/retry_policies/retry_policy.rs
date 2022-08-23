@@ -3,6 +3,7 @@ use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::{Context, StatusCode};
 
+use async_trait::async_trait;
 use time::OffsetDateTime;
 
 use std::sync::Arc;
@@ -10,9 +11,13 @@ use std::time::Duration;
 
 /// A retry policy.
 ///
-/// All retry policies follow a similar pattern only differing in how
+/// In the simple form, the policies need only differ in how
 /// they determine if the retry has expired and for how long they should
 /// sleep between retries.
+///
+/// `wait` can be implemented in more complex cases where a simple test of time
+/// is not enough.
+#[async_trait]
 pub trait RetryPolicy {
     /// Determine if no more retries should be performed.
     ///
@@ -20,6 +25,11 @@ pub trait RetryPolicy {
     fn is_expired(&self, duration_since_start: Duration, retry_count: u32) -> bool;
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
+    /// A Future that will wait until the request can be retried.
+    /// `error` is the [`Error`] value the led to a retry attempt.
+    async fn wait(&self, _error: &Error, retry_count: u32) {
+        sleep(self.sleep_duration(retry_count)).await;
+    }
 }
 
 /// The status codes where a retry should be attempted.
@@ -53,7 +63,7 @@ where
             let result = next[0].send(ctx, request, &next[1..]).await;
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
-            let error = match result {
+            let last_error = match result {
                 Ok(response) if response.status().is_success() => {
                     log::trace!(
                         "Successful response. Request={:?} response={:?}",
@@ -67,13 +77,9 @@ where
                     let status = response.status();
                     let http_error = HttpError::new(response).await;
 
-                    let error = Error::full(
-                        ErrorKind::http_response(
-                            status,
-                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                        ),
-                        http_error,
-                        format!("server returned error status which will not be retried: {status}"),
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
                     );
 
                     if !RETRY_STATUSES.contains(&status) {
@@ -82,13 +88,20 @@ where
                             status
                         );
                         // Server didn't return a status we retry on so return early
+                        let error = Error::full(
+                            error_kind,
+                            http_error,
+                            format!(
+                                "server returned error status which will not be retried: {status}"
+                            ),
+                        );
                         return Err(error);
                     }
                     log::debug!(
                         "server returned error status which requires retry: {}",
                         status
                     );
-                    error
+                    Error::new(error_kind, http_error)
                 }
                 Err(error) => {
                     if error.kind() == &ErrorKind::Io {
@@ -108,11 +121,12 @@ where
                 .try_into()
                 .unwrap_or_default();
             if self.is_expired(time_since_start, retry_count) {
-                return Err(error);
+                return Err(last_error
+                    .context("retry policy expired and the request will no longer be retried"));
             }
             retry_count += 1;
 
-            sleep(self.sleep_duration(retry_count)).await;
+            self.wait(&last_error, retry_count).await;
         }
     }
 }

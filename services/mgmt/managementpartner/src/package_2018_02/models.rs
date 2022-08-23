@@ -159,10 +159,10 @@ pub struct PartnerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
     #[doc = "This is the DateTime when the partner was updated."]
-    #[serde(rename = "updatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub updated_time: Option<time::OffsetDateTime>,
     #[doc = "This is the DateTime when the partner was created."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "this is the management partner state: Active or Deleted"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

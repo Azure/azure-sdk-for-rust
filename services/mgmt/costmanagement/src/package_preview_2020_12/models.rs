@@ -497,7 +497,7 @@ pub struct CommonExportProperties {
     #[serde(rename = "runHistory", default, skip_serializing_if = "Option::is_none")]
     pub run_history: Option<ExportExecutionListResult>,
     #[doc = "If the export has an active schedule, provides an estimate of the next execution time."]
-    #[serde(rename = "nextRunTimeEstimate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextRunTimeEstimate", default, with = "azure_core::date::rfc3339::option")]
     pub next_run_time_estimate: Option<time::OffsetDateTime>,
 }
 impl CommonExportProperties {
@@ -581,10 +581,10 @@ pub struct DimensionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "Usage start."]
-    #[serde(rename = "usageStart", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageStart", default, with = "azure_core::date::rfc3339::option")]
     pub usage_start: Option<time::OffsetDateTime>,
     #[doc = "Usage end."]
-    #[serde(rename = "usageEnd", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageEnd", default, with = "azure_core::date::rfc3339::option")]
     pub usage_end: Option<time::OffsetDateTime>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -631,7 +631,7 @@ pub struct DownloadUrl {
     #[serde(rename = "downloadUrl", default, skip_serializing_if = "Option::is_none")]
     pub download_url: Option<String>,
     #[doc = "The time at which report URL becomes invalid/expires in UTC e.g. 2020-12-08T05:55:59.4394737Z."]
-    #[serde(rename = "validTill", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "validTill", default, with = "azure_core::date::rfc3339::option")]
     pub valid_till: Option<time::OffsetDateTime>,
 }
 impl DownloadUrl {
@@ -942,13 +942,13 @@ pub struct ExportExecutionProperties {
     #[serde(rename = "submittedBy", default, skip_serializing_if = "Option::is_none")]
     pub submitted_by: Option<String>,
     #[doc = "The time when export was queued to be executed."]
-    #[serde(rename = "submittedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "submittedTime", default, with = "azure_core::date::rfc3339::option")]
     pub submitted_time: Option<time::OffsetDateTime>,
     #[doc = "The time when export was picked up to be executed."]
-    #[serde(rename = "processingStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "processingStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub processing_start_time: Option<time::OffsetDateTime>,
     #[doc = "The time when the export execution finished."]
-    #[serde(rename = "processingEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "processingEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub processing_end_time: Option<time::OffsetDateTime>,
     #[doc = "The name of the exported file."]
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
@@ -1088,7 +1088,7 @@ pub struct ExportRecurrencePeriod {
     #[serde(with = "azure_core::date::rfc3339")]
     pub from: time::OffsetDateTime,
     #[doc = "The end date of recurrence."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub to: Option<time::OffsetDateTime>,
 }
 impl ExportRecurrencePeriod {
@@ -2669,10 +2669,10 @@ pub struct ViewProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[doc = "Date the user created this view."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "Date when the user last modified this view."]
-    #[serde(rename = "modifiedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "The definition of a report config."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

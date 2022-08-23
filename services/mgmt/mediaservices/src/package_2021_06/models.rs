@@ -253,7 +253,7 @@ pub struct AkamaiSignatureHeaderAuthenticationKey {
     #[serde(rename = "base64Key", default, skip_serializing_if = "Option::is_none")]
     pub base64_key: Option<String>,
     #[doc = "The expiration time of the authentication key."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiration: Option<time::OffsetDateTime>,
 }
 impl AkamaiSignatureHeaderAuthenticationKey {
@@ -378,10 +378,10 @@ pub struct AssetProperties {
     #[serde(rename = "assetId", default, skip_serializing_if = "Option::is_none")]
     pub asset_id: Option<String>,
     #[doc = "The creation date of the Asset."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The last modified date of the Asset."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "The alternate ID of the Asset."]
     #[serde(rename = "alternateId", default, skip_serializing_if = "Option::is_none")]
@@ -456,13 +456,13 @@ pub struct AssetStreamingLocator {
     #[serde(rename = "assetName", default, skip_serializing_if = "Option::is_none")]
     pub asset_name: Option<String>,
     #[doc = "The creation time of the Streaming Locator."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The start time of the Streaming Locator."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the Streaming Locator."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "StreamingLocatorId of the Streaming Locator."]
     #[serde(rename = "streamingLocatorId", default, skip_serializing_if = "Option::is_none")]
@@ -1152,10 +1152,10 @@ pub struct ContentKeyPolicyPlayReadyLicense {
     #[serde(rename = "allowTestDevices")]
     pub allow_test_devices: bool,
     #[doc = "The begin date of license"]
-    #[serde(rename = "beginDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "beginDate", default, with = "azure_core::date::rfc3339::option")]
     pub begin_date: Option<time::OffsetDateTime>,
     #[doc = "The expiration date of license."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The relative begin date of license."]
     #[serde(rename = "relativeBeginDate", default, skip_serializing_if = "Option::is_none")]
@@ -1407,10 +1407,10 @@ pub struct ContentKeyPolicyProperties {
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
     #[doc = "The creation date of the Policy"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The last modified date of the Policy"]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "A description for the Policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3173,10 +3173,10 @@ pub struct JobOutput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[doc = "The UTC date and time at which this Job Output began processing."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The UTC date and time at which this Job Output finished processing."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl JobOutput {
@@ -3261,7 +3261,7 @@ impl JobOutputAsset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[doc = "The UTC date and time when the customer has created the Job, in 'YYYY-MM-DDThh:mm:ssZ' format."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The current state of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3272,7 +3272,7 @@ pub struct JobProperties {
     #[doc = "Base class for inputs to a Job."]
     pub input: JobInput,
     #[doc = "The UTC date and time when the customer has last updated the Job, in 'YYYY-MM-DDThh:mm:ssZ' format."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "The outputs for the Job."]
     pub outputs: Vec<JobOutput>,
@@ -3283,10 +3283,10 @@ pub struct JobProperties {
     #[serde(rename = "correlationData", default, skip_serializing_if = "Option::is_none")]
     pub correlation_data: Option<serde_json::Value>,
     #[doc = "The UTC date and time at which this Job began processing."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The UTC date and time at which this Job finished processing."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl JobProperties {
@@ -3497,7 +3497,7 @@ pub struct ListContainerSasInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<list_container_sas_input::Permissions>,
     #[doc = "The SAS URL expiration time.  This must be less than 24 hours from the current time."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
 }
 impl ListContainerSasInput {
@@ -3961,10 +3961,10 @@ pub struct LiveEventProperties {
     #[serde(rename = "streamOptions", default, skip_serializing_if = "Vec::is_empty")]
     pub stream_options: Vec<String>,
     #[doc = "The creation time for the live event"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The last modified time of the live event."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
 }
 impl LiveEventProperties {
@@ -4117,10 +4117,10 @@ pub struct LiveOutputProperties {
     #[serde(rename = "outputSnapTime", default, skip_serializing_if = "Option::is_none")]
     pub output_snap_time: Option<i64>,
     #[doc = "The creation time the live output."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The time the live output was last modified."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the live output."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -5725,13 +5725,13 @@ pub struct StreamingEndpointProperties {
     #[serde(rename = "crossSiteAccessPolicies", default, skip_serializing_if = "Option::is_none")]
     pub cross_site_access_policies: Option<CrossSiteAccessPolicies>,
     #[doc = "The free trial expiration time."]
-    #[serde(rename = "freeTrialEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "freeTrialEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub free_trial_end_time: Option<time::OffsetDateTime>,
     #[doc = "The exact time the streaming endpoint was created."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The exact time the streaming endpoint was last modified."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
 }
 impl StreamingEndpointProperties {
@@ -5936,13 +5936,13 @@ pub struct StreamingLocatorProperties {
     #[serde(rename = "assetName")]
     pub asset_name: String,
     #[doc = "The creation time of the Streaming Locator."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The start time of the Streaming Locator."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the Streaming Locator."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The StreamingLocatorId of the Streaming Locator."]
     #[serde(rename = "streamingLocatorId", default, skip_serializing_if = "Option::is_none")]
@@ -6194,7 +6194,7 @@ impl StreamingPolicyPlayReadyConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyProperties {
     #[doc = "Creation time of Streaming Policy"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "Default ContentKey used by current Streaming Policy"]
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
@@ -6525,13 +6525,13 @@ pub mod transform_output {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformProperties {
     #[doc = "The UTC date and time when the Transform was created, in 'YYYY-MM-DDThh:mm:ssZ' format."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "An optional verbose description of the Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The UTC date and time when the Transform was last updated, in 'YYYY-MM-DDThh:mm:ssZ' format."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "An array of one or more TransformOutputs that the Transform should generate."]
     pub outputs: Vec<TransformOutput>,
@@ -6842,7 +6842,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -6851,7 +6851,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -143,8 +143,8 @@ pub mod policy_tracked_resources {
             management_groups_namespace: impl Into<String>,
             management_group_name: impl Into<String>,
             policy_tracked_resources_resource: impl Into<String>,
-        ) -> list_query_results_for_management_group::Builder {
-            list_query_results_for_management_group::Builder {
+        ) -> list_query_results_for_management_group::RequestBuilder {
+            list_query_results_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_name: management_group_name.into(),
@@ -162,8 +162,8 @@ pub mod policy_tracked_resources {
             &self,
             policy_tracked_resources_resource: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_query_results_for_subscription::Builder {
-            list_query_results_for_subscription::Builder {
+        ) -> list_query_results_for_subscription::RequestBuilder {
+            list_query_results_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 policy_tracked_resources_resource: policy_tracked_resources_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -182,8 +182,8 @@ pub mod policy_tracked_resources {
             resource_group_name: impl Into<String>,
             policy_tracked_resources_resource: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_query_results_for_resource_group::Builder {
-            list_query_results_for_resource_group::Builder {
+        ) -> list_query_results_for_resource_group::RequestBuilder {
+            list_query_results_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 policy_tracked_resources_resource: policy_tracked_resources_resource.into(),
@@ -201,8 +201,8 @@ pub mod policy_tracked_resources {
             &self,
             resource_id: impl Into<String>,
             policy_tracked_resources_resource: impl Into<String>,
-        ) -> list_query_results_for_resource::Builder {
-            list_query_results_for_resource::Builder {
+        ) -> list_query_results_for_resource::RequestBuilder {
+            list_query_results_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 policy_tracked_resources_resource: policy_tracked_resources_resource.into(),
@@ -215,7 +215,7 @@ pub mod policy_tracked_resources {
         use super::models;
         type Response = models::PolicyTrackedResourcesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_name: String,
@@ -223,7 +223,7 @@ pub mod policy_tracked_resources {
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -312,14 +312,14 @@ pub mod policy_tracked_resources {
         use super::models;
         type Response = models::PolicyTrackedResourcesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_tracked_resources_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -407,7 +407,7 @@ pub mod policy_tracked_resources {
         use super::models;
         type Response = models::PolicyTrackedResourcesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) policy_tracked_resources_resource: String,
@@ -415,7 +415,7 @@ pub mod policy_tracked_resources {
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -498,14 +498,14 @@ pub mod policy_tracked_resources {
         use super::models;
         type Response = models::PolicyTrackedResourcesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) policy_tracked_resources_resource: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -605,8 +605,8 @@ pub mod remediations {
             management_groups_namespace: impl Into<String>,
             management_group_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> list_deployments_at_management_group::Builder {
-            list_deployments_at_management_group::Builder {
+        ) -> list_deployments_at_management_group::RequestBuilder {
+            list_deployments_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -625,8 +625,8 @@ pub mod remediations {
             management_groups_namespace: impl Into<String>,
             management_group_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> cancel_at_management_group::Builder {
-            cancel_at_management_group::Builder {
+        ) -> cancel_at_management_group::RequestBuilder {
+            cancel_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -642,8 +642,8 @@ pub mod remediations {
             &self,
             management_groups_namespace: impl Into<String>,
             management_group_id: impl Into<String>,
-        ) -> list_for_management_group::Builder {
-            list_for_management_group::Builder {
+        ) -> list_for_management_group::RequestBuilder {
+            list_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -662,8 +662,8 @@ pub mod remediations {
             management_groups_namespace: impl Into<String>,
             management_group_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> get_at_management_group::Builder {
-            get_at_management_group::Builder {
+        ) -> get_at_management_group::RequestBuilder {
+            get_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -683,8 +683,8 @@ pub mod remediations {
             management_group_id: impl Into<String>,
             remediation_name: impl Into<String>,
             parameters: impl Into<models::Remediation>,
-        ) -> create_or_update_at_management_group::Builder {
-            create_or_update_at_management_group::Builder {
+        ) -> create_or_update_at_management_group::RequestBuilder {
+            create_or_update_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -703,8 +703,8 @@ pub mod remediations {
             management_groups_namespace: impl Into<String>,
             management_group_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> delete_at_management_group::Builder {
-            delete_at_management_group::Builder {
+        ) -> delete_at_management_group::RequestBuilder {
+            delete_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -720,8 +720,8 @@ pub mod remediations {
             &self,
             subscription_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> list_deployments_at_subscription::Builder {
-            list_deployments_at_subscription::Builder {
+        ) -> list_deployments_at_subscription::RequestBuilder {
+            list_deployments_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 remediation_name: remediation_name.into(),
@@ -737,8 +737,8 @@ pub mod remediations {
             &self,
             subscription_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> cancel_at_subscription::Builder {
-            cancel_at_subscription::Builder {
+        ) -> cancel_at_subscription::RequestBuilder {
+            cancel_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 remediation_name: remediation_name.into(),
@@ -748,8 +748,8 @@ pub mod remediations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
-        pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::Builder {
-            list_for_subscription::Builder {
+        pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::RequestBuilder {
+            list_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -765,8 +765,8 @@ pub mod remediations {
             &self,
             subscription_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> get_at_subscription::Builder {
-            get_at_subscription::Builder {
+        ) -> get_at_subscription::RequestBuilder {
+            get_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 remediation_name: remediation_name.into(),
@@ -783,8 +783,8 @@ pub mod remediations {
             subscription_id: impl Into<String>,
             remediation_name: impl Into<String>,
             parameters: impl Into<models::Remediation>,
-        ) -> create_or_update_at_subscription::Builder {
-            create_or_update_at_subscription::Builder {
+        ) -> create_or_update_at_subscription::RequestBuilder {
+            create_or_update_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 remediation_name: remediation_name.into(),
@@ -800,8 +800,8 @@ pub mod remediations {
             &self,
             subscription_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> delete_at_subscription::Builder {
-            delete_at_subscription::Builder {
+        ) -> delete_at_subscription::RequestBuilder {
+            delete_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 remediation_name: remediation_name.into(),
@@ -818,8 +818,8 @@ pub mod remediations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> list_deployments_at_resource_group::Builder {
-            list_deployments_at_resource_group::Builder {
+        ) -> list_deployments_at_resource_group::RequestBuilder {
+            list_deployments_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -838,8 +838,8 @@ pub mod remediations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> cancel_at_resource_group::Builder {
-            cancel_at_resource_group::Builder {
+        ) -> cancel_at_resource_group::RequestBuilder {
+            cancel_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -855,8 +855,8 @@ pub mod remediations {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -875,8 +875,8 @@ pub mod remediations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> get_at_resource_group::Builder {
-            get_at_resource_group::Builder {
+        ) -> get_at_resource_group::RequestBuilder {
+            get_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -896,8 +896,8 @@ pub mod remediations {
             resource_group_name: impl Into<String>,
             remediation_name: impl Into<String>,
             parameters: impl Into<models::Remediation>,
-        ) -> create_or_update_at_resource_group::Builder {
-            create_or_update_at_resource_group::Builder {
+        ) -> create_or_update_at_resource_group::RequestBuilder {
+            create_or_update_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -916,8 +916,8 @@ pub mod remediations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> delete_at_resource_group::Builder {
-            delete_at_resource_group::Builder {
+        ) -> delete_at_resource_group::RequestBuilder {
+            delete_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -933,8 +933,8 @@ pub mod remediations {
             &self,
             resource_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> list_deployments_at_resource::Builder {
-            list_deployments_at_resource::Builder {
+        ) -> list_deployments_at_resource::RequestBuilder {
+            list_deployments_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 remediation_name: remediation_name.into(),
@@ -950,8 +950,8 @@ pub mod remediations {
             &self,
             resource_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> cancel_at_resource::Builder {
-            cancel_at_resource::Builder {
+        ) -> cancel_at_resource::RequestBuilder {
+            cancel_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 remediation_name: remediation_name.into(),
@@ -961,8 +961,8 @@ pub mod remediations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: Resource ID."]
-        pub fn list_for_resource(&self, resource_id: impl Into<String>) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        pub fn list_for_resource(&self, resource_id: impl Into<String>) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 top: None,
@@ -974,8 +974,12 @@ pub mod remediations {
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: Resource ID."]
         #[doc = "* `remediation_name`: The name of the remediation."]
-        pub fn get_at_resource(&self, resource_id: impl Into<String>, remediation_name: impl Into<String>) -> get_at_resource::Builder {
-            get_at_resource::Builder {
+        pub fn get_at_resource(
+            &self,
+            resource_id: impl Into<String>,
+            remediation_name: impl Into<String>,
+        ) -> get_at_resource::RequestBuilder {
+            get_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 remediation_name: remediation_name.into(),
@@ -992,8 +996,8 @@ pub mod remediations {
             resource_id: impl Into<String>,
             remediation_name: impl Into<String>,
             parameters: impl Into<models::Remediation>,
-        ) -> create_or_update_at_resource::Builder {
-            create_or_update_at_resource::Builder {
+        ) -> create_or_update_at_resource::RequestBuilder {
+            create_or_update_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 remediation_name: remediation_name.into(),
@@ -1009,8 +1013,8 @@ pub mod remediations {
             &self,
             resource_id: impl Into<String>,
             remediation_name: impl Into<String>,
-        ) -> delete_at_resource::Builder {
-            delete_at_resource::Builder {
+        ) -> delete_at_resource::RequestBuilder {
+            delete_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 remediation_name: remediation_name.into(),
@@ -1021,14 +1025,14 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationDeploymentsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) remediation_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1109,13 +1113,13 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1162,14 +1166,14 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1256,13 +1260,13 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1312,14 +1316,14 @@ pub mod remediations {
             Created201(models::Remediation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) remediation_name: String,
             pub(crate) parameters: models::Remediation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1375,13 +1379,13 @@ pub mod remediations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1428,13 +1432,13 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationDeploymentsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) remediation_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1514,12 +1518,12 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1565,13 +1569,13 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1657,12 +1661,12 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1711,13 +1715,13 @@ pub mod remediations {
             Created201(models::Remediation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) remediation_name: String,
             pub(crate) parameters: models::Remediation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1772,12 +1776,12 @@ pub mod remediations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1823,14 +1827,14 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationDeploymentsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) remediation_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1911,13 +1915,13 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1964,14 +1968,14 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2058,13 +2062,13 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2114,14 +2118,14 @@ pub mod remediations {
             Created201(models::Remediation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) remediation_name: String,
             pub(crate) parameters: models::Remediation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2177,13 +2181,13 @@ pub mod remediations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2230,13 +2234,13 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationDeploymentsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) remediation_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2316,12 +2320,12 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2367,13 +2371,13 @@ pub mod remediations {
         use super::models;
         type Response = models::RemediationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2459,12 +2463,12 @@ pub mod remediations {
         use super::models;
         type Response = models::Remediation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2513,13 +2517,13 @@ pub mod remediations {
             Created201(models::Remediation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) remediation_name: String,
             pub(crate) parameters: models::Remediation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2574,12 +2578,12 @@ pub mod remediations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) remediation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2630,8 +2634,8 @@ pub mod policy_events {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for list operation."]
-        pub fn next_link(&self, next_link: impl Into<String>) -> next_link::Builder {
-            next_link::Builder {
+        pub fn next_link(&self, next_link: impl Into<String>) -> next_link::RequestBuilder {
+            next_link::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 skiptoken: None,
@@ -2648,8 +2652,8 @@ pub mod policy_events {
             policy_events_resource: impl Into<String>,
             management_groups_namespace: impl Into<String>,
             management_group_name: impl Into<String>,
-        ) -> list_query_results_for_management_group::Builder {
-            list_query_results_for_management_group::Builder {
+        ) -> list_query_results_for_management_group::RequestBuilder {
+            list_query_results_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 management_groups_namespace: management_groups_namespace.into(),
@@ -2673,8 +2677,8 @@ pub mod policy_events {
             &self,
             policy_events_resource: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_query_results_for_subscription::Builder {
-            list_query_results_for_subscription::Builder {
+        ) -> list_query_results_for_subscription::RequestBuilder {
+            list_query_results_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -2699,8 +2703,8 @@ pub mod policy_events {
             policy_events_resource: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_query_results_for_resource_group::Builder {
-            list_query_results_for_resource_group::Builder {
+        ) -> list_query_results_for_resource_group::RequestBuilder {
+            list_query_results_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -2724,8 +2728,8 @@ pub mod policy_events {
             &self,
             policy_events_resource: impl Into<String>,
             resource_id: impl Into<String>,
-        ) -> list_query_results_for_resource::Builder {
-            list_query_results_for_resource::Builder {
+        ) -> list_query_results_for_resource::RequestBuilder {
+            list_query_results_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 resource_id: resource_id.into(),
@@ -2753,8 +2757,8 @@ pub mod policy_events {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_set_definition_name: impl Into<String>,
-        ) -> list_query_results_for_policy_set_definition::Builder {
-            list_query_results_for_policy_set_definition::Builder {
+        ) -> list_query_results_for_policy_set_definition::RequestBuilder {
+            list_query_results_for_policy_set_definition::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -2783,8 +2787,8 @@ pub mod policy_events {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_definition_name: impl Into<String>,
-        ) -> list_query_results_for_policy_definition::Builder {
-            list_query_results_for_policy_definition::Builder {
+        ) -> list_query_results_for_policy_definition::RequestBuilder {
+            list_query_results_for_policy_definition::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -2813,8 +2817,8 @@ pub mod policy_events {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_assignment_name: impl Into<String>,
-        ) -> list_query_results_for_subscription_level_policy_assignment::Builder {
-            list_query_results_for_subscription_level_policy_assignment::Builder {
+        ) -> list_query_results_for_subscription_level_policy_assignment::RequestBuilder {
+            list_query_results_for_subscription_level_policy_assignment::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -2845,8 +2849,8 @@ pub mod policy_events {
             resource_group_name: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_assignment_name: impl Into<String>,
-        ) -> list_query_results_for_resource_group_level_policy_assignment::Builder {
-            list_query_results_for_resource_group_level_policy_assignment::Builder {
+        ) -> list_query_results_for_resource_group_level_policy_assignment::RequestBuilder {
+            list_query_results_for_resource_group_level_policy_assignment::RequestBuilder {
                 client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -2868,12 +2872,12 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
@@ -2926,7 +2930,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) management_groups_namespace: String,
@@ -2940,7 +2944,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3077,7 +3081,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
@@ -3090,7 +3094,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3226,7 +3230,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
@@ -3240,7 +3244,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3377,7 +3381,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) resource_id: String,
@@ -3391,7 +3395,7 @@ pub mod policy_events {
             pub(crate) expand: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3535,7 +3539,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
@@ -3550,7 +3554,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3681,7 +3685,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
@@ -3696,7 +3700,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3827,7 +3831,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
@@ -3842,7 +3846,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -3973,7 +3977,7 @@ pub mod policy_events {
         use super::models;
         type Response = models::PolicyEventsQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
@@ -3989,7 +3993,7 @@ pub mod policy_events {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -4125,8 +4129,8 @@ pub mod policy_states {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for list operation."]
-        pub fn next_link(&self, next_link: impl Into<String>) -> next_link::Builder {
-            next_link::Builder {
+        pub fn next_link(&self, next_link: impl Into<String>) -> next_link::RequestBuilder {
+            next_link::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 skiptoken: None,
@@ -4143,8 +4147,8 @@ pub mod policy_states {
             policy_states_resource: impl Into<String>,
             management_groups_namespace: impl Into<String>,
             management_group_name: impl Into<String>,
-        ) -> list_query_results_for_management_group::Builder {
-            list_query_results_for_management_group::Builder {
+        ) -> list_query_results_for_management_group::RequestBuilder {
+            list_query_results_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 management_groups_namespace: management_groups_namespace.into(),
@@ -4170,8 +4174,8 @@ pub mod policy_states {
             policy_states_summary_resource: impl Into<String>,
             management_groups_namespace: impl Into<String>,
             management_group_name: impl Into<String>,
-        ) -> summarize_for_management_group::Builder {
-            summarize_for_management_group::Builder {
+        ) -> summarize_for_management_group::RequestBuilder {
+            summarize_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 management_groups_namespace: management_groups_namespace.into(),
@@ -4191,8 +4195,8 @@ pub mod policy_states {
             &self,
             policy_states_resource: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_query_results_for_subscription::Builder {
-            list_query_results_for_subscription::Builder {
+        ) -> list_query_results_for_subscription::RequestBuilder {
+            list_query_results_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4215,8 +4219,8 @@ pub mod policy_states {
             &self,
             policy_states_summary_resource: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> summarize_for_subscription::Builder {
-            summarize_for_subscription::Builder {
+        ) -> summarize_for_subscription::RequestBuilder {
+            summarize_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4237,8 +4241,8 @@ pub mod policy_states {
             policy_states_resource: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_query_results_for_resource_group::Builder {
-            list_query_results_for_resource_group::Builder {
+        ) -> list_query_results_for_resource_group::RequestBuilder {
+            list_query_results_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4264,8 +4268,8 @@ pub mod policy_states {
             policy_states_summary_resource: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> summarize_for_resource_group::Builder {
-            summarize_for_resource_group::Builder {
+        ) -> summarize_for_resource_group::RequestBuilder {
+            summarize_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4285,8 +4289,8 @@ pub mod policy_states {
             &self,
             policy_states_resource: impl Into<String>,
             resource_id: impl Into<String>,
-        ) -> list_query_results_for_resource::Builder {
-            list_query_results_for_resource::Builder {
+        ) -> list_query_results_for_resource::RequestBuilder {
+            list_query_results_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 resource_id: resource_id.into(),
@@ -4310,8 +4314,8 @@ pub mod policy_states {
             &self,
             policy_states_summary_resource: impl Into<String>,
             resource_id: impl Into<String>,
-        ) -> summarize_for_resource::Builder {
-            summarize_for_resource::Builder {
+        ) -> summarize_for_resource::RequestBuilder {
+            summarize_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 resource_id: resource_id.into(),
@@ -4325,8 +4329,11 @@ pub mod policy_states {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
-        pub fn trigger_subscription_evaluation(&self, subscription_id: impl Into<String>) -> trigger_subscription_evaluation::Builder {
-            trigger_subscription_evaluation::Builder {
+        pub fn trigger_subscription_evaluation(
+            &self,
+            subscription_id: impl Into<String>,
+        ) -> trigger_subscription_evaluation::RequestBuilder {
+            trigger_subscription_evaluation::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -4340,8 +4347,8 @@ pub mod policy_states {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> trigger_resource_group_evaluation::Builder {
-            trigger_resource_group_evaluation::Builder {
+        ) -> trigger_resource_group_evaluation::RequestBuilder {
+            trigger_resource_group_evaluation::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4360,8 +4367,8 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_set_definition_name: impl Into<String>,
-        ) -> list_query_results_for_policy_set_definition::Builder {
-            list_query_results_for_policy_set_definition::Builder {
+        ) -> list_query_results_for_policy_set_definition::RequestBuilder {
+            list_query_results_for_policy_set_definition::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4390,8 +4397,8 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_set_definition_name: impl Into<String>,
-        ) -> summarize_for_policy_set_definition::Builder {
-            summarize_for_policy_set_definition::Builder {
+        ) -> summarize_for_policy_set_definition::RequestBuilder {
+            summarize_for_policy_set_definition::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4416,8 +4423,8 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_definition_name: impl Into<String>,
-        ) -> list_query_results_for_policy_definition::Builder {
-            list_query_results_for_policy_definition::Builder {
+        ) -> list_query_results_for_policy_definition::RequestBuilder {
+            list_query_results_for_policy_definition::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4446,8 +4453,8 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_definition_name: impl Into<String>,
-        ) -> summarize_for_policy_definition::Builder {
-            summarize_for_policy_definition::Builder {
+        ) -> summarize_for_policy_definition::RequestBuilder {
+            summarize_for_policy_definition::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4472,8 +4479,8 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_assignment_name: impl Into<String>,
-        ) -> list_query_results_for_subscription_level_policy_assignment::Builder {
-            list_query_results_for_subscription_level_policy_assignment::Builder {
+        ) -> list_query_results_for_subscription_level_policy_assignment::RequestBuilder {
+            list_query_results_for_subscription_level_policy_assignment::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4502,8 +4509,8 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_assignment_name: impl Into<String>,
-        ) -> summarize_for_subscription_level_policy_assignment::Builder {
-            summarize_for_subscription_level_policy_assignment::Builder {
+        ) -> summarize_for_subscription_level_policy_assignment::RequestBuilder {
+            summarize_for_subscription_level_policy_assignment::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4530,8 +4537,8 @@ pub mod policy_states {
             resource_group_name: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_assignment_name: impl Into<String>,
-        ) -> list_query_results_for_resource_group_level_policy_assignment::Builder {
-            list_query_results_for_resource_group_level_policy_assignment::Builder {
+        ) -> list_query_results_for_resource_group_level_policy_assignment::RequestBuilder {
+            list_query_results_for_resource_group_level_policy_assignment::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4563,8 +4570,8 @@ pub mod policy_states {
             resource_group_name: impl Into<String>,
             authorization_namespace: impl Into<String>,
             policy_assignment_name: impl Into<String>,
-        ) -> summarize_for_resource_group_level_policy_assignment::Builder {
-            summarize_for_resource_group_level_policy_assignment::Builder {
+        ) -> summarize_for_resource_group_level_policy_assignment::RequestBuilder {
+            summarize_for_resource_group_level_policy_assignment::RequestBuilder {
                 client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
@@ -4582,12 +4589,12 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
@@ -4640,7 +4647,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) management_groups_namespace: String,
@@ -4654,7 +4661,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -4791,7 +4798,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) management_groups_namespace: String,
@@ -4801,7 +4808,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -4880,7 +4887,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
@@ -4893,7 +4900,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5029,7 +5036,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
@@ -5038,7 +5045,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5116,7 +5123,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
@@ -5130,7 +5137,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5267,7 +5274,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
@@ -5277,7 +5284,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5356,7 +5363,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) resource_id: String,
@@ -5370,7 +5377,7 @@ pub mod policy_states {
             pub(crate) expand: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5514,7 +5521,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) resource_id: String,
@@ -5523,7 +5530,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5605,11 +5612,11 @@ pub mod policy_states {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5656,12 +5663,12 @@ pub mod policy_states {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5700,7 +5707,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
@@ -5715,7 +5722,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5846,7 +5853,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
@@ -5857,7 +5864,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -5930,7 +5937,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
@@ -5945,7 +5952,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6076,7 +6083,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
@@ -6087,7 +6094,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6160,7 +6167,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
@@ -6175,7 +6182,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6306,7 +6313,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
@@ -6317,7 +6324,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6390,7 +6397,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::PolicyStatesQueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
@@ -6406,7 +6413,7 @@ pub mod policy_states {
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6537,7 +6544,7 @@ pub mod policy_states {
         use super::models;
         type Response = models::SummarizeResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
@@ -6549,7 +6556,7 @@ pub mod policy_states {
             pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6624,18 +6631,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists available operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsListResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6681,15 +6688,15 @@ pub mod policy_metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_name`: The name of the policy metadata resource."]
-        pub fn get_resource(&self, resource_name: impl Into<String>) -> get_resource::Builder {
-            get_resource::Builder {
+        pub fn get_resource(&self, resource_name: impl Into<String>) -> get_resource::RequestBuilder {
+            get_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_name: resource_name.into(),
             }
         }
         #[doc = "Get a list of the policy metadata resources."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 top: None,
             }
@@ -6699,11 +6706,11 @@ pub mod policy_metadata {
         use super::models;
         type Response = models::PolicyMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6747,11 +6754,11 @@ pub mod policy_metadata {
         use super::models;
         type Response = models::PolicyMetadataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -6838,8 +6845,8 @@ pub mod policy_restrictions {
             &self,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::CheckRestrictionsRequest>,
-        ) -> check_at_subscription_scope::Builder {
-            check_at_subscription_scope::Builder {
+        ) -> check_at_subscription_scope::RequestBuilder {
+            check_at_subscription_scope::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 parameters: parameters.into(),
@@ -6856,8 +6863,8 @@ pub mod policy_restrictions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             parameters: impl Into<models::CheckRestrictionsRequest>,
-        ) -> check_at_resource_group_scope::Builder {
-            check_at_resource_group_scope::Builder {
+        ) -> check_at_resource_group_scope::RequestBuilder {
+            check_at_resource_group_scope::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6875,8 +6882,8 @@ pub mod policy_restrictions {
             management_groups_namespace: impl Into<String>,
             management_group_id: impl Into<String>,
             parameters: impl Into<models::CheckManagementGroupRestrictionsRequest>,
-        ) -> check_at_management_group_scope::Builder {
-            check_at_management_group_scope::Builder {
+        ) -> check_at_management_group_scope::RequestBuilder {
+            check_at_management_group_scope::RequestBuilder {
                 client: self.0.clone(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_id: management_group_id.into(),
@@ -6888,12 +6895,12 @@ pub mod policy_restrictions {
         use super::models;
         type Response = models::CheckRestrictionsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::CheckRestrictionsRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6938,13 +6945,13 @@ pub mod policy_restrictions {
         use super::models;
         type Response = models::CheckRestrictionsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) parameters: models::CheckRestrictionsRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6990,13 +6997,13 @@ pub mod policy_restrictions {
         use super::models;
         type Response = models::CheckRestrictionsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_id: String,
             pub(crate) parameters: models::CheckManagementGroupRestrictionsRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7047,8 +7054,8 @@ pub mod attestations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::Builder {
-            list_for_subscription::Builder {
+        pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::RequestBuilder {
+            list_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -7064,8 +7071,8 @@ pub mod attestations {
             &self,
             subscription_id: impl Into<String>,
             attestation_name: impl Into<String>,
-        ) -> get_at_subscription::Builder {
-            get_at_subscription::Builder {
+        ) -> get_at_subscription::RequestBuilder {
+            get_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 attestation_name: attestation_name.into(),
@@ -7082,8 +7089,8 @@ pub mod attestations {
             subscription_id: impl Into<String>,
             attestation_name: impl Into<String>,
             parameters: impl Into<models::Attestation>,
-        ) -> create_or_update_at_subscription::Builder {
-            create_or_update_at_subscription::Builder {
+        ) -> create_or_update_at_subscription::RequestBuilder {
+            create_or_update_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 attestation_name: attestation_name.into(),
@@ -7099,8 +7106,8 @@ pub mod attestations {
             &self,
             subscription_id: impl Into<String>,
             attestation_name: impl Into<String>,
-        ) -> delete_at_subscription::Builder {
-            delete_at_subscription::Builder {
+        ) -> delete_at_subscription::RequestBuilder {
+            delete_at_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 attestation_name: attestation_name.into(),
@@ -7115,8 +7122,8 @@ pub mod attestations {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -7135,8 +7142,8 @@ pub mod attestations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             attestation_name: impl Into<String>,
-        ) -> get_at_resource_group::Builder {
-            get_at_resource_group::Builder {
+        ) -> get_at_resource_group::RequestBuilder {
+            get_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -7156,8 +7163,8 @@ pub mod attestations {
             resource_group_name: impl Into<String>,
             attestation_name: impl Into<String>,
             parameters: impl Into<models::Attestation>,
-        ) -> create_or_update_at_resource_group::Builder {
-            create_or_update_at_resource_group::Builder {
+        ) -> create_or_update_at_resource_group::RequestBuilder {
+            create_or_update_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -7176,8 +7183,8 @@ pub mod attestations {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             attestation_name: impl Into<String>,
-        ) -> delete_at_resource_group::Builder {
-            delete_at_resource_group::Builder {
+        ) -> delete_at_resource_group::RequestBuilder {
+            delete_at_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -7188,8 +7195,8 @@ pub mod attestations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: Resource ID."]
-        pub fn list_for_resource(&self, resource_id: impl Into<String>) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        pub fn list_for_resource(&self, resource_id: impl Into<String>) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 top: None,
@@ -7201,8 +7208,12 @@ pub mod attestations {
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: Resource ID."]
         #[doc = "* `attestation_name`: The name of the attestation."]
-        pub fn get_at_resource(&self, resource_id: impl Into<String>, attestation_name: impl Into<String>) -> get_at_resource::Builder {
-            get_at_resource::Builder {
+        pub fn get_at_resource(
+            &self,
+            resource_id: impl Into<String>,
+            attestation_name: impl Into<String>,
+        ) -> get_at_resource::RequestBuilder {
+            get_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 attestation_name: attestation_name.into(),
@@ -7219,8 +7230,8 @@ pub mod attestations {
             resource_id: impl Into<String>,
             attestation_name: impl Into<String>,
             parameters: impl Into<models::Attestation>,
-        ) -> create_or_update_at_resource::Builder {
-            create_or_update_at_resource::Builder {
+        ) -> create_or_update_at_resource::RequestBuilder {
+            create_or_update_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 attestation_name: attestation_name.into(),
@@ -7236,8 +7247,8 @@ pub mod attestations {
             &self,
             resource_id: impl Into<String>,
             attestation_name: impl Into<String>,
-        ) -> delete_at_resource::Builder {
-            delete_at_resource::Builder {
+        ) -> delete_at_resource::RequestBuilder {
+            delete_at_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 attestation_name: attestation_name.into(),
@@ -7248,13 +7259,13 @@ pub mod attestations {
         use super::models;
         type Response = models::AttestationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -7340,12 +7351,12 @@ pub mod attestations {
         use super::models;
         type Response = models::Attestation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) attestation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7394,13 +7405,13 @@ pub mod attestations {
             Created201(models::Attestation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) attestation_name: String,
             pub(crate) parameters: models::Attestation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -7456,12 +7467,12 @@ pub mod attestations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) attestation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7503,14 +7514,14 @@ pub mod attestations {
         use super::models;
         type Response = models::AttestationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -7597,13 +7608,13 @@ pub mod attestations {
         use super::models;
         type Response = models::Attestation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) attestation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7653,14 +7664,14 @@ pub mod attestations {
             Created201(models::Attestation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) attestation_name: String,
             pub(crate) parameters: models::Attestation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -7717,13 +7728,13 @@ pub mod attestations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) attestation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7766,13 +7777,13 @@ pub mod attestations {
         use super::models;
         type Response = models::AttestationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -7858,12 +7869,12 @@ pub mod attestations {
         use super::models;
         type Response = models::Attestation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) attestation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7912,13 +7923,13 @@ pub mod attestations {
             Created201(models::Attestation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) attestation_name: String,
             pub(crate) parameters: models::Attestation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -7974,12 +7985,12 @@ pub mod attestations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) attestation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

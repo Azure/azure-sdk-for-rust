@@ -136,10 +136,10 @@ pub struct ActivityProperties {
     #[serde(rename = "outputTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub output_types: Vec<ActivityOutputType>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -419,10 +419,10 @@ pub struct AutomationAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<automation_account_properties::State>,
     #[doc = "Gets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -625,16 +625,16 @@ pub struct CertificateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[doc = "Gets the expiry time of the certificate."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the is exportable flag of the certificate."]
     #[serde(rename = "isExportable", default, skip_serializing_if = "Option::is_none")]
     pub is_exportable: Option<bool>,
     #[doc = "Gets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -752,10 +752,10 @@ pub struct ConnectionProperties {
     #[serde(rename = "fieldDefinitionValues", default, skip_serializing_if = "Option::is_none")]
     pub field_definition_values: Option<serde_json::Value>,
     #[doc = "Gets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -861,10 +861,10 @@ pub struct ConnectionTypeProperties {
     #[serde(rename = "fieldDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub field_definitions: Option<serde_json::Value>,
     #[doc = "Gets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1075,10 +1075,10 @@ pub struct CredentialProperties {
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
     #[doc = "Gets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1216,7 +1216,7 @@ pub struct DscCompilationJobProperties {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
     #[doc = "Gets the creation time of the job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1231,19 +1231,19 @@ pub struct DscCompilationJobProperties {
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "Gets the start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the end time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the exception of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<String>,
     #[doc = "Gets the last modified time of the job."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the last status modified time of the job."]
-    #[serde(rename = "lastStatusModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStatusModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_status_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1466,10 +1466,10 @@ pub struct DscConfigurationProperties {
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the number of compiled node configurations."]
     #[serde(rename = "nodeConfigurationCount", default, skip_serializing_if = "Option::is_none")]
@@ -1684,10 +1684,10 @@ impl DscNodeConfigurationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeConfigurationProperties {
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The Dsc configuration property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1750,10 +1750,10 @@ impl DscNodeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeProperties {
     #[doc = "Gets or sets the last seen time of the node."]
-    #[serde(rename = "lastSeen", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSeen", default, with = "azure_core::date::rfc3339::option")]
     pub last_seen: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the registration time of the node."]
-    #[serde(rename = "registrationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "registrationTime", default, with = "azure_core::date::rfc3339::option")]
     pub registration_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the ip of the node."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1789,13 +1789,13 @@ impl DscNodeProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeReport {
     #[doc = "Gets or sets the end time of the node report."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the lastModifiedTime of the node report."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the start time of the node report."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the type of the node report."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -1958,7 +1958,7 @@ pub struct DscReportResource {
     #[serde(rename = "durationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_seconds: Option<f64>,
     #[doc = "Gets or sets the start date of the resource."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
 }
 impl DscReportResource {
@@ -2073,10 +2073,10 @@ pub struct HybridRunbookWorker {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
     #[doc = "Gets or sets the registration time of the worker machine."]
-    #[serde(rename = "registrationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "registrationTime", default, with = "azure_core::date::rfc3339::option")]
     pub registration_time: Option<time::OffsetDateTime>,
     #[doc = "Last Heartbeat from the Worker"]
-    #[serde(rename = "lastSeenDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSeenDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_seen_date_time: Option<time::OffsetDateTime>,
 }
 impl HybridRunbookWorker {
@@ -2254,19 +2254,19 @@ pub struct JobCollectionItemProperties {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
     #[doc = "The creation time of the job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The status of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_collection_item_properties::Status>,
     #[doc = "The start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The last modified time of the job."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of a resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2406,7 +2406,7 @@ pub struct JobProperties {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
     #[doc = "Gets or sets the creation time of the job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the status of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2415,19 +2415,19 @@ pub struct JobProperties {
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "Gets or sets the start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the end time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the exception of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<String>,
     #[doc = "Gets or sets the last modified time of the job."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last status modified time of the job."]
-    #[serde(rename = "lastStatusModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStatusModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_status_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2688,7 +2688,7 @@ pub struct JobStreamProperties {
     #[serde(rename = "jobStreamId", default, skip_serializing_if = "Option::is_none")]
     pub job_stream_id: Option<String>,
     #[doc = "Gets or sets the creation time of the job."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the stream type."]
     #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
@@ -3074,10 +3074,10 @@ pub struct ModuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ModuleErrorInfo>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3710,10 +3710,10 @@ pub struct RunbookDraft {
     #[serde(rename = "draftContentLink", default, skip_serializing_if = "Option::is_none")]
     pub draft_content_link: Option<ContentLink>,
     #[doc = "Gets or sets the creation time of the runbook draft."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time of the runbook draft."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the runbook draft parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3953,10 +3953,10 @@ pub struct RunbookProperties {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4109,13 +4109,13 @@ impl RunbookUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SucScheduleProperties {
     #[doc = "Gets or sets the start time of the schedule."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the start time's offset in minutes."]
     #[serde(rename = "startTimeOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
     pub start_time_offset_minutes: Option<f64>,
     #[doc = "Gets or sets the end time of the schedule."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the expiry time's offset in minutes."]
     #[serde(rename = "expiryTimeOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -4124,7 +4124,7 @@ pub struct SucScheduleProperties {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
     #[doc = "Gets or sets the next run time of the schedule."]
-    #[serde(rename = "nextRun", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextRun", default, with = "azure_core::date::rfc3339::option")]
     pub next_run: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the next run time's offset in minutes."]
     #[serde(rename = "nextRunOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -4142,10 +4142,10 @@ pub struct SucScheduleProperties {
     #[serde(rename = "advancedSchedule", default, skip_serializing_if = "Option::is_none")]
     pub advanced_schedule: Option<AdvancedSchedule>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4205,7 +4205,7 @@ pub struct ScheduleCreateOrUpdateProperties {
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
     pub start_time: time::OffsetDateTime,
     #[doc = "Gets or sets the end time of the schedule."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the interval of the schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4257,13 +4257,13 @@ impl ScheduleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleProperties {
     #[doc = "Gets or sets the start time of the schedule."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the start time's offset in minutes."]
     #[serde(rename = "startTimeOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
     pub start_time_offset_minutes: Option<f64>,
     #[doc = "Gets or sets the end time of the schedule."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the expiry time's offset in minutes."]
     #[serde(rename = "expiryTimeOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -4272,7 +4272,7 @@ pub struct ScheduleProperties {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
     #[doc = "Gets or sets the next run time of the schedule."]
-    #[serde(rename = "nextRun", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextRun", default, with = "azure_core::date::rfc3339::option")]
     pub next_run: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the next run time's offset in minutes."]
     #[serde(rename = "nextRunOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -4290,10 +4290,10 @@ pub struct ScheduleProperties {
     #[serde(rename = "advancedSchedule", default, skip_serializing_if = "Option::is_none")]
     pub advanced_schedule: Option<AdvancedSchedule>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4540,10 +4540,10 @@ pub struct SourceControlProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
 }
 impl SourceControlProperties {
@@ -4693,16 +4693,16 @@ pub struct SourceControlSyncJobByIdProperties {
     #[serde(rename = "sourceControlSyncJobId", default, skip_serializing_if = "Option::is_none")]
     pub source_control_sync_job_id: Option<String>,
     #[doc = "The creation time of the job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the job."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<source_control_sync_job_by_id_properties::ProvisioningState>,
     #[doc = "The start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The sync type."]
     #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
@@ -4846,16 +4846,16 @@ pub struct SourceControlSyncJobProperties {
     #[serde(rename = "sourceControlSyncJobId", default, skip_serializing_if = "Option::is_none")]
     pub source_control_sync_job_id: Option<String>,
     #[doc = "The creation time of the job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the job."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<source_control_sync_job_properties::ProvisioningState>,
     #[doc = "The start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The sync type."]
     #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
@@ -4985,7 +4985,7 @@ pub struct SourceControlSyncJobStreamByIdProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
     #[doc = "The time of the sync job stream."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The type of the sync job stream."]
     #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
@@ -5052,7 +5052,7 @@ pub struct SourceControlSyncJobStreamProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
     #[doc = "The time of the sync job stream."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The type of the sync job stream."]
     #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
@@ -5172,10 +5172,10 @@ pub struct Statistics {
     #[serde(rename = "counterValue", default, skip_serializing_if = "Option::is_none")]
     pub counter_value: Option<i64>,
     #[doc = "Gets the startTime of the statistic."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the endTime of the statistic."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5247,7 +5247,7 @@ impl TargetProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestJob {
     #[doc = "Gets or sets the creation time of the test job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the status of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5259,19 +5259,19 @@ pub struct TestJob {
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
     #[doc = "Gets or sets the start time of the test job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the end time of the test job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the exception of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<String>,
     #[doc = "Gets or sets the last modified time of the test job."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last status modified time of the test job."]
-    #[serde(rename = "lastStatusModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStatusModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_status_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the parameters of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5486,10 +5486,10 @@ pub struct VariableProperties {
     #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
     pub is_encrypted: Option<bool>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5593,10 +5593,10 @@ pub struct WatcherProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Details of the user who last modified the watcher."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -5673,7 +5673,7 @@ pub struct WebhookCreateOrUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
     #[doc = "Gets or sets the expiry time."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5721,10 +5721,10 @@ pub struct WebhookProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
     #[doc = "Gets or sets the expiry time."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last invoked time."]
-    #[serde(rename = "lastInvokedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastInvokedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_invoked_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the parameters of the job that is created when the webhook calls the runbook it is associated with."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5736,10 +5736,10 @@ pub struct WebhookProperties {
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
     #[doc = "Gets or sets the creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Details of the user who last modified the Webhook"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -5986,19 +5986,19 @@ pub struct SoftwareUpdateConfigurationCollectionItemProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduleFrequency>,
     #[doc = "the start time of the update."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Creation time of the software update configuration, which only appears in the response."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Last time software update configuration was modified, which only appears in the response."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state for the software update configuration, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "ext run time of the update."]
-    #[serde(rename = "nextRun", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextRun", default, with = "azure_core::date::rfc3339::option")]
     pub next_run: Option<time::OffsetDateTime>,
 }
 impl SoftwareUpdateConfigurationCollectionItemProperties {
@@ -6067,13 +6067,13 @@ pub struct SoftwareUpdateConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
     #[doc = "Creation time of the resource, which only appears in the response."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "CreatedBy property, which only appears in the response."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "Last time resource was modified, which only appears in the response."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "LastModifiedBy property, which only appears in the response."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -6146,10 +6146,10 @@ pub struct SoftwareUpdateConfigurationRunProperties {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
     #[doc = "Start time of the software update configuration run."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the software update configuration run."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Number of computers in the software update configuration run."]
     #[serde(rename = "computerCount", default, skip_serializing_if = "Option::is_none")]
@@ -6158,13 +6158,13 @@ pub struct SoftwareUpdateConfigurationRunProperties {
     #[serde(rename = "failedCount", default, skip_serializing_if = "Option::is_none")]
     pub failed_count: Option<i64>,
     #[doc = "Creation time of the resource, which only appears in the response."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "CreatedBy property, which only appears in the response."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "Last time resource was modified, which only appears in the response."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "LastModifiedBy property, which only appears in the response."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -6304,10 +6304,10 @@ pub struct UpdateConfigurationMachineRunProperties {
     #[serde(rename = "sourceComputerId", default, skip_serializing_if = "Option::is_none")]
     pub source_computer_id: Option<String>,
     #[doc = "Start time of the software update configuration machine run."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the software update configuration machine run."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "configured duration for the software update configuration run."]
     #[serde(rename = "configuredDuration", default, skip_serializing_if = "Option::is_none")]
@@ -6316,13 +6316,13 @@ pub struct UpdateConfigurationMachineRunProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub job: Option<JobNavigation>,
     #[doc = "Creation time of the resource, which only appears in the response."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "createdBy property, which only appears in the response."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "Last time resource was modified, which only appears in the response."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "lastModifiedBy property, which only appears in the response."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]

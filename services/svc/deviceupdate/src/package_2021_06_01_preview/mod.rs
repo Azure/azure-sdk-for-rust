@@ -125,8 +125,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> stop_deployment::Builder {
-            stop_deployment::Builder {
+        ) -> stop_deployment::RequestBuilder {
+            stop_deployment::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -144,8 +144,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> retry_deployment::Builder {
-            retry_deployment::Builder {
+        ) -> retry_deployment::RequestBuilder {
+            retry_deployment::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -156,8 +156,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_device_classes(&self, instance_id: impl Into<String>) -> list_device_classes::Builder {
-            list_device_classes::Builder {
+        pub fn list_device_classes(&self, instance_id: impl Into<String>) -> list_device_classes::RequestBuilder {
+            list_device_classes::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
@@ -167,8 +167,12 @@ pub mod device_management {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `device_class_id`: Device class identifier."]
-        pub fn get_device_class(&self, instance_id: impl Into<String>, device_class_id: impl Into<String>) -> get_device_class::Builder {
-            get_device_class::Builder {
+        pub fn get_device_class(
+            &self,
+            instance_id: impl Into<String>,
+            device_class_id: impl Into<String>,
+        ) -> get_device_class::RequestBuilder {
+            get_device_class::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 device_class_id: device_class_id.into(),
@@ -183,8 +187,8 @@ pub mod device_management {
             &self,
             instance_id: impl Into<String>,
             device_class_id: impl Into<String>,
-        ) -> list_installable_updates_for_device_class::Builder {
-            list_installable_updates_for_device_class::Builder {
+        ) -> list_installable_updates_for_device_class::RequestBuilder {
+            list_installable_updates_for_device_class::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 device_class_id: device_class_id.into(),
@@ -194,8 +198,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_devices(&self, instance_id: impl Into<String>) -> list_devices::Builder {
-            list_devices::Builder {
+        pub fn list_devices(&self, instance_id: impl Into<String>) -> list_devices::RequestBuilder {
+            list_devices::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 filter: None,
@@ -212,8 +216,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             action: impl Into<String>,
             import_type: impl Into<models::ImportType>,
-        ) -> import_devices::Builder {
-            import_devices::Builder {
+        ) -> import_devices::RequestBuilder {
+            import_devices::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 action: action.into(),
@@ -225,8 +229,8 @@ pub mod device_management {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `device_id`: Device identifier in Azure IoT Hub."]
-        pub fn get_device(&self, instance_id: impl Into<String>, device_id: impl Into<String>) -> get_device::Builder {
-            get_device::Builder {
+        pub fn get_device(&self, instance_id: impl Into<String>, device_id: impl Into<String>) -> get_device::RequestBuilder {
+            get_device::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 device_id: device_id.into(),
@@ -243,8 +247,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             device_id: impl Into<String>,
             module_id: impl Into<String>,
-        ) -> get_device_module::Builder {
-            get_device_module::Builder {
+        ) -> get_device_module::RequestBuilder {
+            get_device_module::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 device_id: device_id.into(),
@@ -255,8 +259,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn get_update_compliance(&self, instance_id: impl Into<String>) -> get_update_compliance::Builder {
-            get_update_compliance::Builder {
+        pub fn get_update_compliance(&self, instance_id: impl Into<String>) -> get_update_compliance::RequestBuilder {
+            get_update_compliance::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
@@ -265,8 +269,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_device_tags(&self, instance_id: impl Into<String>) -> list_device_tags::Builder {
-            list_device_tags::Builder {
+        pub fn list_device_tags(&self, instance_id: impl Into<String>) -> list_device_tags::RequestBuilder {
+            list_device_tags::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
@@ -276,8 +280,8 @@ pub mod device_management {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `tag_name`: Tag name."]
-        pub fn get_device_tag(&self, instance_id: impl Into<String>, tag_name: impl Into<String>) -> get_device_tag::Builder {
-            get_device_tag::Builder {
+        pub fn get_device_tag(&self, instance_id: impl Into<String>, tag_name: impl Into<String>) -> get_device_tag::RequestBuilder {
+            get_device_tag::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 tag_name: tag_name.into(),
@@ -287,8 +291,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_groups(&self, instance_id: impl Into<String>) -> list_groups::Builder {
-            list_groups::Builder {
+        pub fn list_groups(&self, instance_id: impl Into<String>) -> list_groups::RequestBuilder {
+            list_groups::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
@@ -298,8 +302,8 @@ pub mod device_management {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `group_id`: Group identity."]
-        pub fn get_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> get_group::Builder {
-            get_group::Builder {
+        pub fn get_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> get_group::RequestBuilder {
+            get_group::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -316,8 +320,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             group: impl Into<models::Group>,
-        ) -> create_or_update_group::Builder {
-            create_or_update_group::Builder {
+        ) -> create_or_update_group::RequestBuilder {
+            create_or_update_group::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -329,8 +333,8 @@ pub mod device_management {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `group_id`: Group identity."]
-        pub fn delete_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> delete_group::Builder {
-            delete_group::Builder {
+        pub fn delete_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> delete_group::RequestBuilder {
+            delete_group::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -345,8 +349,8 @@ pub mod device_management {
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> get_group_update_compliance::Builder {
-            get_group_update_compliance::Builder {
+        ) -> get_group_update_compliance::RequestBuilder {
+            get_group_update_compliance::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -361,8 +365,8 @@ pub mod device_management {
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> list_best_updates_for_group::Builder {
-            list_best_updates_for_group::Builder {
+        ) -> list_best_updates_for_group::RequestBuilder {
+            list_best_updates_for_group::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -378,8 +382,8 @@ pub mod device_management {
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> list_deployments_for_group::Builder {
-            list_deployments_for_group::Builder {
+        ) -> list_deployments_for_group::RequestBuilder {
+            list_deployments_for_group::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -397,8 +401,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> get_deployment::Builder {
-            get_deployment::Builder {
+        ) -> get_deployment::RequestBuilder {
+            get_deployment::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -418,8 +422,8 @@ pub mod device_management {
             deployment_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment: impl Into<models::Deployment>,
-        ) -> create_or_update_deployment::Builder {
-            create_or_update_deployment::Builder {
+        ) -> create_or_update_deployment::RequestBuilder {
+            create_or_update_deployment::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 deployment_id: deployment_id.into(),
@@ -438,8 +442,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> delete_deployment::Builder {
-            delete_deployment::Builder {
+        ) -> delete_deployment::RequestBuilder {
+            delete_deployment::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -457,8 +461,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> get_deployment_status::Builder {
-            get_deployment_status::Builder {
+        ) -> get_deployment_status::RequestBuilder {
+            get_deployment_status::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -476,8 +480,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> list_deployment_devices::Builder {
-            list_deployment_devices::Builder {
+        ) -> list_deployment_devices::RequestBuilder {
+            list_deployment_devices::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -490,8 +494,8 @@ pub mod device_management {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `operation_id`: Operation identifier."]
-        pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::Builder {
-            get_operation::Builder {
+        pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::RequestBuilder {
+            get_operation::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
@@ -502,8 +506,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_operations(&self, instance_id: impl Into<String>) -> list_operations::Builder {
-            list_operations::Builder {
+        pub fn list_operations(&self, instance_id: impl Into<String>) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 filter: None,
@@ -519,8 +523,8 @@ pub mod device_management {
             &self,
             instance_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get_log_collection_operation::Builder {
-            get_log_collection_operation::Builder {
+        ) -> get_log_collection_operation::RequestBuilder {
+            get_log_collection_operation::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
@@ -537,8 +541,8 @@ pub mod device_management {
             instance_id: impl Into<String>,
             operation_id: impl Into<String>,
             log_collection_request: impl Into<models::LogCollectionOperation>,
-        ) -> collect_logs::Builder {
-            collect_logs::Builder {
+        ) -> collect_logs::RequestBuilder {
+            collect_logs::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
@@ -549,8 +553,8 @@ pub mod device_management {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_log_collection_operations(&self, instance_id: impl Into<String>) -> list_log_collection_operations::Builder {
-            list_log_collection_operations::Builder {
+        pub fn list_log_collection_operations(&self, instance_id: impl Into<String>) -> list_log_collection_operations::RequestBuilder {
+            list_log_collection_operations::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
@@ -564,8 +568,8 @@ pub mod device_management {
             &self,
             instance_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get_log_collection_operation_detailed_status::Builder {
-            get_log_collection_operation_detailed_status::Builder {
+        ) -> get_log_collection_operation_detailed_status::RequestBuilder {
+            get_log_collection_operation_detailed_status::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
@@ -576,13 +580,13 @@ pub mod device_management {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -629,13 +633,13 @@ pub mod device_management {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -682,11 +686,11 @@ pub mod device_management {
         use super::models;
         type Response = models::DeviceClassesList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -756,12 +760,12 @@ pub mod device_management {
         use super::models;
         type Response = models::DeviceClass;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) device_class_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -806,12 +810,12 @@ pub mod device_management {
         use super::models;
         type Response = models::UpdateIdsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) device_class_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -882,12 +886,12 @@ pub mod device_management {
         use super::models;
         type Response = models::DevicesList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Restricts the set of devices returned. You can filter on device GroupId or DeviceClassId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -965,13 +969,13 @@ pub mod device_management {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) action: String,
             pub(crate) import_type: models::ImportType,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1015,12 +1019,12 @@ pub mod device_management {
         use super::models;
         type Response = models::Device;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1065,13 +1069,13 @@ pub mod device_management {
         use super::models;
         type Response = models::Device;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) device_id: String,
             pub(crate) module_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1117,11 +1121,11 @@ pub mod device_management {
         use super::models;
         type Response = models::UpdateCompliance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1165,11 +1169,11 @@ pub mod device_management {
         use super::models;
         type Response = models::DeviceTagsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1239,12 +1243,12 @@ pub mod device_management {
         use super::models;
         type Response = models::DeviceTag;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) tag_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1289,11 +1293,11 @@ pub mod device_management {
         use super::models;
         type Response = models::GroupsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1363,12 +1367,12 @@ pub mod device_management {
         use super::models;
         type Response = models::Group;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1413,13 +1417,13 @@ pub mod device_management {
         use super::models;
         type Response = models::Group;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) group: models::Group,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1465,12 +1469,12 @@ pub mod device_management {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1511,12 +1515,12 @@ pub mod device_management {
         use super::models;
         type Response = models::UpdateCompliance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1561,13 +1565,13 @@ pub mod device_management {
         use super::models;
         type Response = models::UpdatableDevicesList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Restricts the set of bestUpdates returned. You can filter on update Provider, Name and Version property."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1646,13 +1650,13 @@ pub mod device_management {
         use super::models;
         type Response = models::DeploymentsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Restricts the set of deployments returned. You can filter on update Provider, Name and Version property."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1731,13 +1735,13 @@ pub mod device_management {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1783,14 +1787,14 @@ pub mod device_management {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) deployment_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment: models::Deployment,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1837,13 +1841,13 @@ pub mod device_management {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1885,13 +1889,13 @@ pub mod device_management {
         use super::models;
         type Response = models::DeploymentStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1937,14 +1941,14 @@ pub mod device_management {
         use super::models;
         type Response = models::DeploymentDeviceStatesList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Restricts the set of deployment device states returned. You can filter on deviceId and moduleId and/or deviceState."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2024,13 +2028,13 @@ pub mod device_management {
         use super::models;
         type Response = models::DeviceOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) operation_id: String,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
@@ -2083,13 +2087,13 @@ pub mod device_management {
         use super::models;
         type Response = models::DeviceOperationsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Restricts the set of operations returned. Only one specific filter is supported: \"status eq 'NotStarted' or status eq 'Running'\""]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2175,12 +2179,12 @@ pub mod device_management {
         use super::models;
         type Response = models::LogCollectionOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2225,13 +2229,13 @@ pub mod device_management {
         use super::models;
         type Response = models::LogCollectionOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) operation_id: String,
             pub(crate) log_collection_request: models::LogCollectionOperation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2277,11 +2281,11 @@ pub mod device_management {
         use super::models;
         type Response = models::LogCollectionOperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2351,12 +2355,12 @@ pub mod device_management {
         use super::models;
         type Response = models::LogCollectionOperationDetailedStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2406,8 +2410,8 @@ pub mod device_update {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_updates(&self, instance_id: impl Into<String>) -> list_updates::Builder {
-            list_updates::Builder {
+        pub fn list_updates(&self, instance_id: impl Into<String>) -> list_updates::RequestBuilder {
+            list_updates::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 search: None,
@@ -2425,8 +2429,8 @@ pub mod device_update {
             instance_id: impl Into<String>,
             action: impl Into<String>,
             update_to_import: impl Into<models::ImportUpdateInput>,
-        ) -> import_update::Builder {
-            import_update::Builder {
+        ) -> import_update::RequestBuilder {
+            import_update::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 action: action.into(),
@@ -2446,8 +2450,8 @@ pub mod device_update {
             provider: impl Into<String>,
             name: impl Into<String>,
             version: impl Into<String>,
-        ) -> get_update::Builder {
-            get_update::Builder {
+        ) -> get_update::RequestBuilder {
+            get_update::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 provider: provider.into(),
@@ -2469,8 +2473,8 @@ pub mod device_update {
             provider: impl Into<String>,
             name: impl Into<String>,
             version: impl Into<String>,
-        ) -> delete_update::Builder {
-            delete_update::Builder {
+        ) -> delete_update::RequestBuilder {
+            delete_update::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 provider: provider.into(),
@@ -2482,8 +2486,8 @@ pub mod device_update {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_providers(&self, instance_id: impl Into<String>) -> list_providers::Builder {
-            list_providers::Builder {
+        pub fn list_providers(&self, instance_id: impl Into<String>) -> list_providers::RequestBuilder {
+            list_providers::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
@@ -2493,8 +2497,8 @@ pub mod device_update {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `provider`: Update provider."]
-        pub fn list_names(&self, instance_id: impl Into<String>, provider: impl Into<String>) -> list_names::Builder {
-            list_names::Builder {
+        pub fn list_names(&self, instance_id: impl Into<String>, provider: impl Into<String>) -> list_names::RequestBuilder {
+            list_names::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 provider: provider.into(),
@@ -2511,8 +2515,8 @@ pub mod device_update {
             instance_id: impl Into<String>,
             provider: impl Into<String>,
             name: impl Into<String>,
-        ) -> list_versions::Builder {
-            list_versions::Builder {
+        ) -> list_versions::RequestBuilder {
+            list_versions::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 provider: provider.into(),
@@ -2533,8 +2537,8 @@ pub mod device_update {
             provider: impl Into<String>,
             name: impl Into<String>,
             version: impl Into<String>,
-        ) -> list_files::Builder {
-            list_files::Builder {
+        ) -> list_files::RequestBuilder {
+            list_files::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 provider: provider.into(),
@@ -2557,8 +2561,8 @@ pub mod device_update {
             name: impl Into<String>,
             version: impl Into<String>,
             file_id: impl Into<String>,
-        ) -> get_file::Builder {
-            get_file::Builder {
+        ) -> get_file::RequestBuilder {
+            get_file::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 provider: provider.into(),
@@ -2572,8 +2576,8 @@ pub mod device_update {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
-        pub fn list_operations(&self, instance_id: impl Into<String>) -> list_operations::Builder {
-            list_operations::Builder {
+        pub fn list_operations(&self, instance_id: impl Into<String>) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 filter: None,
@@ -2585,8 +2589,8 @@ pub mod device_update {
         #[doc = "Arguments:"]
         #[doc = "* `instance_id`: Account instance identifier."]
         #[doc = "* `operation_id`: Operation identifier."]
-        pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::Builder {
-            get_operation::Builder {
+        pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::RequestBuilder {
+            get_operation::RequestBuilder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
@@ -2598,13 +2602,13 @@ pub mod device_update {
         use super::models;
         type Response = models::UpdateList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) search: Option<String>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Request updates matching a free-text search expression."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
@@ -2687,13 +2691,13 @@ pub mod device_update {
         use super::models;
         type Response = models::Update;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) action: String,
             pub(crate) update_to_import: models::ImportUpdateInput,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2738,7 +2742,7 @@ pub mod device_update {
         use super::models;
         type Response = models::Update;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) provider: String,
@@ -2746,7 +2750,7 @@ pub mod device_update {
             pub(crate) version: String,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
@@ -2801,14 +2805,14 @@ pub mod device_update {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) provider: String,
             pub(crate) name: String,
             pub(crate) version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2852,11 +2856,11 @@ pub mod device_update {
         use super::models;
         type Response = models::StringsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2926,12 +2930,12 @@ pub mod device_update {
         use super::models;
         type Response = models::StringsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) provider: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3002,14 +3006,14 @@ pub mod device_update {
         use super::models;
         type Response = models::StringsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) provider: String,
             pub(crate) name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filter updates by its properties."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3089,14 +3093,14 @@ pub mod device_update {
         use super::models;
         type Response = models::StringsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) provider: String,
             pub(crate) name: String,
             pub(crate) version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3169,7 +3173,7 @@ pub mod device_update {
         use super::models;
         type Response = models::UpdateFile;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) provider: String,
@@ -3178,7 +3182,7 @@ pub mod device_update {
             pub(crate) file_id: String,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
@@ -3234,13 +3238,13 @@ pub mod device_update {
         use super::models;
         type Response = models::UpdateOperationsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Restricts the set of operations returned. Only one specific filter is supported: \"status eq 'NotStarted' or status eq 'Running'\""]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3326,13 +3330,13 @@ pub mod device_update {
         use super::models;
         type Response = models::UpdateOperation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) operation_id: String,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());

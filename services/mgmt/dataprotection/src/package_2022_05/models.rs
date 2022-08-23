@@ -257,7 +257,7 @@ pub struct AzureBackupJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
     #[doc = "EndTime of the job(in UTC)"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "A List, detailing the errors related to the job"]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
@@ -2229,7 +2229,7 @@ impl OperationJobExtendedInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResource {
     #[doc = "End time of the operation"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2244,7 +2244,7 @@ pub struct OperationResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationExtendedInfo>,
     #[doc = "Start time of the operation"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -2403,9 +2403,9 @@ impl RangeBasedItemLevelRestoreCriteria {
 #[doc = "RecoveryPoint datastore details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointDataStoreDetails {
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -2417,7 +2417,7 @@ pub struct RecoveryPointDataStoreDetails {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visible: Option<bool>,
-    #[serde(rename = "rehydrationExpiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "rehydrationExpiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub rehydration_expiry_time: Option<time::OffsetDateTime>,
     #[serde(rename = "rehydrationStatus", default, skip_serializing_if = "Option::is_none")]
     pub rehydration_status: Option<recovery_point_data_store_details::RehydrationStatus>,
@@ -2717,7 +2717,7 @@ impl RestoreFilesTargetInfo {
 pub struct RestoreJobRecoveryPointDetails {
     #[serde(rename = "recoveryPointID", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
-    #[serde(rename = "recoveryPointTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time: Option<time::OffsetDateTime>,
 }
 impl RestoreJobRecoveryPointDetails {
@@ -3400,7 +3400,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -3409,7 +3409,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -167,7 +167,7 @@ pub struct FileUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
     #[doc = "Expiry time of the file"]
-    #[serde(rename = "expireTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expireTime", default, with = "azure_core::date::rfc3339::option")]
     pub expire_time: Option<time::OffsetDateTime>,
 }
 impl FileUrl {
@@ -195,7 +195,7 @@ pub struct FileUrlPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[doc = "Expiry time of the file"]
-    #[serde(rename = "expireTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expireTime", default, with = "azure_core::date::rfc3339::option")]
     pub expire_time: Option<time::OffsetDateTime>,
 }
 impl FileUrlPath {
@@ -491,13 +491,13 @@ pub struct TestModel {
     #[serde(rename = "passFailCriteria", default, skip_serializing_if = "Option::is_none")]
     pub pass_fail_criteria: Option<PassFailCriteria>,
     #[doc = "[ReadOnly] The created DateTime(Iso8601Literal format) of the test model"]
-    #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
     #[doc = "[ReadOnly] The user that created the test model"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "[ReadOnly] The last Modified DateTime(Iso8601Literal format) of the test model"]
-    #[serde(rename = "lastModifiedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "[ReadOnly] The user that last modified the test model"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -554,10 +554,10 @@ pub struct TestRunModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "[ReadOnly] The test run start DateTime(Iso8601Literal format)"]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "[ReadOnly] The test run end DateTime(Iso8601Literal format)"]
-    #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time: Option<time::OffsetDateTime>,
     #[doc = "The load test configuration"]
     #[serde(rename = "loadTestConfig", default, skip_serializing_if = "Option::is_none")]
@@ -571,7 +571,7 @@ pub struct TestRunModel {
     #[serde(rename = "testArtifacts", default, skip_serializing_if = "Option::is_none")]
     pub test_artifacts: Option<TestArtifacts>,
     #[doc = "[ReadOnly] Test run initiated time"]
-    #[serde(rename = "executedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "executedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub executed_date_time: Option<time::OffsetDateTime>,
     #[doc = "[ReadOnly] No of virtual users, for which test has been run"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -580,13 +580,13 @@ pub struct TestRunModel {
     #[serde(rename = "testRunStatistics", default, skip_serializing_if = "Option::is_none")]
     pub test_run_statistics: Option<serde_json::Value>,
     #[doc = "[ReadOnly] The created DateTime(Iso8601Literal format) of the test run"]
-    #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
     #[doc = "[ReadOnly] The user that created the test run"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "[ReadOnly] The last updated  DateTime(Iso8601Literal format) of the test run"]
-    #[serde(rename = "lastModifiedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "[ReadOnly] The user that updated the test run"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -678,10 +678,10 @@ impl TestRunStatisticsModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeRange {
     #[doc = "start DateTime(Iso8601Literal format) for the requested client metrics filter"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "end DateTime(Iso8601Literal format) for the requested client metrics filter"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl TimeRange {
@@ -692,7 +692,7 @@ impl TimeRange {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeries {
     #[doc = "Timestamp(Iso8601Literal format)"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Value at timestamp"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -7,7 +7,6 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
-use oauth2::{ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
@@ -19,19 +18,19 @@ use url::{form_urlencoded, Url};
 pub async fn exchange(
     http_client: Arc<dyn HttpClient>,
     tenant_id: &str,
-    client_id: &ClientId,
-    client_secret: Option<&ClientSecret>,
+    client_id: &str,
+    client_secret: Option<&str>,
     refresh_token: &AccessToken,
 ) -> azure_core::Result<RefreshTokenResponse> {
     let encoded = {
         let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
         encoded = encoded
             .append_pair("grant_type", "refresh_token")
-            .append_pair("client_id", client_id.as_str())
+            .append_pair("client_id", client_id)
             .append_pair("refresh_token", refresh_token.secret());
         // optionally add the client secret
         if let Some(client_secret) = client_secret {
-            encoded = encoded.append_pair("client_secret", client_secret.secret())
+            encoded = encoded.append_pair("client_secret", client_secret)
         };
         encoded.finish()
     };
@@ -150,7 +149,7 @@ mod tests {
         require_send(exchange(
             azure_core::new_http_client(),
             "UNUSED",
-            &ClientId::new("UNUSED".to_owned()),
+            "UNUSED",
             None,
             &AccessToken::new("UNUSED"),
         ));

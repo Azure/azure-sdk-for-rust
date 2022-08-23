@@ -28,10 +28,10 @@ pub struct AcceptorProperties {
     #[doc = "Reference to a process."]
     pub destination: ProcessReference,
     #[doc = "Relationship start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Relationship end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl AcceptorProperties {
@@ -660,7 +660,7 @@ pub mod machine {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "UTC date and time when this resource was updated in the system."]
-        #[serde(with = "azure_core::date::rfc3339::option")]
+        #[serde(default, with = "azure_core::date::rfc3339::option")]
         pub timestamp: Option<time::OffsetDateTime>,
         #[doc = "Used to specify if a resources is monitored or discovered."]
         #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
@@ -678,7 +678,7 @@ pub mod machine {
         #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
         pub fully_qualified_domain_name: Option<String>,
         #[doc = "UTC date and time when the machine last booted"]
-        #[serde(rename = "bootTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "bootTime", default, with = "azure_core::date::rfc3339::option")]
         pub boot_time: Option<time::OffsetDateTime>,
         #[doc = "Describes a timezone."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1067,10 +1067,10 @@ impl MapNodes {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapRequest {
     #[doc = "Map interval start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Map interval end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The type of map to create."]
     pub kind: map_request::Kind,
@@ -1323,7 +1323,7 @@ pub mod process {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "UTC date and time when this process resource was updated in the system"]
-        #[serde(with = "azure_core::date::rfc3339::option")]
+        #[serde(default, with = "azure_core::date::rfc3339::option")]
         pub timestamp: Option<time::OffsetDateTime>,
         #[doc = "Used to specify if a resources is monitored or discovered."]
         #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
@@ -1338,7 +1338,7 @@ pub mod process {
         #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
         #[doc = "UTC date and time when the process started"]
-        #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
         pub start_time: Option<time::OffsetDateTime>,
         #[doc = "The inferred role of this process based on its name, command line, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1617,10 +1617,10 @@ pub struct RelationshipProperties {
     #[doc = "Represents a reference to another resource."]
     pub destination: ResourceReference,
     #[doc = "Relationship start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Relationship end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl RelationshipProperties {

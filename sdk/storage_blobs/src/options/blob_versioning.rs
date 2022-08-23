@@ -1,4 +1,5 @@
-use super::{Snapshot, VersionId};
+use super::VersionId;
+use crate::options::Snapshot;
 use azure_core::AppendToUrlQuery;
 
 #[derive(Debug, Clone)]

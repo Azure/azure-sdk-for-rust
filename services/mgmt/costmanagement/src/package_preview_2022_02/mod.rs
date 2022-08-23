@@ -125,8 +125,8 @@ pub mod price_sheet {
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
             invoice_name: impl Into<String>,
-        ) -> download::Builder {
-            download::Builder {
+        ) -> download::RequestBuilder {
+            download::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -142,8 +142,8 @@ pub mod price_sheet {
             &self,
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
-        ) -> download_by_billing_profile::Builder {
-            download_by_billing_profile::Builder {
+        ) -> download_by_billing_profile::RequestBuilder {
+            download_by_billing_profile::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -158,13 +158,13 @@ pub mod price_sheet {
             Ok200(models::DownloadUrl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -211,12 +211,12 @@ pub mod price_sheet {
             Ok200(models::DownloadUrl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -261,18 +261,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available consumption REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

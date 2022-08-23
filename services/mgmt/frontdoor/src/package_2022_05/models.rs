@@ -1939,10 +1939,10 @@ pub struct LatencyScorecardProperties {
     #[serde(rename = "endpointB", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_b: Option<String>,
     #[doc = "The start time of the Latency Scorecard in UTC"]
-    #[serde(rename = "startDateTimeUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTimeUTC", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The end time of the Latency Scorecard in UTC"]
-    #[serde(rename = "endDateTimeUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDateTimeUTC", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The country associated with the Latency Scorecard. Values are country ISO codes as specified here- https://www.iso.org/iso-3166-country-codes.html"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

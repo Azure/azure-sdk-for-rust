@@ -133,15 +133,15 @@ pub mod api_tokens {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of API tokens in an application. The token value will never be returned for security reasons."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get an API token by ID."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `token_id`: Unique ID for the API token."]
-        pub fn get(&self, token_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, token_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 token_id: token_id.into(),
             }
@@ -151,8 +151,8 @@ pub mod api_tokens {
         #[doc = "Arguments:"]
         #[doc = "* `token_id`: Unique ID for the API token."]
         #[doc = "* `body`: API token body."]
-        pub fn create(&self, token_id: impl Into<String>, body: impl Into<models::ApiToken>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, token_id: impl Into<String>, body: impl Into<models::ApiToken>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 token_id: token_id.into(),
                 body: body.into(),
@@ -162,8 +162,8 @@ pub mod api_tokens {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `token_id`: Unique ID for the API token."]
-        pub fn remove(&self, token_id: impl Into<String>) -> remove::Builder {
-            remove::Builder {
+        pub fn remove(&self, token_id: impl Into<String>) -> remove::RequestBuilder {
+            remove::RequestBuilder {
                 client: self.0.clone(),
                 token_id: token_id.into(),
             }
@@ -173,10 +173,10 @@ pub mod api_tokens {
         use super::models;
         type Response = models::ApiTokenCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -242,11 +242,11 @@ pub mod api_tokens {
         use super::models;
         type Response = models::ApiToken;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) token_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -286,12 +286,12 @@ pub mod api_tokens {
         use super::models;
         type Response = models::ApiToken;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) token_id: String,
             pub(crate) body: models::ApiToken,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -332,11 +332,11 @@ pub mod api_tokens {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) token_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -374,15 +374,15 @@ pub mod continuous_data_exports {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of continuous data exports in an application."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a continuous data export by ID."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `export_id`: Unique ID for the continuous data export."]
-        pub fn get(&self, export_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, export_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 export_id: export_id.into(),
             }
@@ -392,8 +392,8 @@ pub mod continuous_data_exports {
         #[doc = "Arguments:"]
         #[doc = "* `export_id`: Unique ID for the continuous data export."]
         #[doc = "* `body`: Data export body."]
-        pub fn create(&self, export_id: impl Into<String>, body: impl Into<models::ContinuousDataExport>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, export_id: impl Into<String>, body: impl Into<models::ContinuousDataExport>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 export_id: export_id.into(),
                 body: body.into(),
@@ -404,8 +404,8 @@ pub mod continuous_data_exports {
         #[doc = "Arguments:"]
         #[doc = "* `export_id`: Unique ID for the continuous data export."]
         #[doc = "* `body`: Data export patch body."]
-        pub fn update(&self, export_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, export_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 export_id: export_id.into(),
                 body: body.into(),
@@ -415,8 +415,8 @@ pub mod continuous_data_exports {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `export_id`: Unique ID for the continuous data export."]
-        pub fn remove(&self, export_id: impl Into<String>) -> remove::Builder {
-            remove::Builder {
+        pub fn remove(&self, export_id: impl Into<String>) -> remove::RequestBuilder {
+            remove::RequestBuilder {
                 client: self.0.clone(),
                 export_id: export_id.into(),
             }
@@ -426,10 +426,10 @@ pub mod continuous_data_exports {
         use super::models;
         type Response = models::ContinuousDataExportCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -495,11 +495,11 @@ pub mod continuous_data_exports {
         use super::models;
         type Response = models::ContinuousDataExport;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -539,12 +539,12 @@ pub mod continuous_data_exports {
         use super::models;
         type Response = models::ContinuousDataExport;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
             pub(crate) body: models::ContinuousDataExport,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -585,12 +585,12 @@ pub mod continuous_data_exports {
         use super::models;
         type Response = models::ContinuousDataExport;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -631,11 +631,11 @@ pub mod continuous_data_exports {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -673,18 +673,18 @@ pub mod device_groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of device groups in an application."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::DeviceGroupCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -752,15 +752,15 @@ pub mod device_templates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of device templates in an application"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a device template by ID"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_template_id`: Unique ID of the device template."]
-        pub fn get(&self, device_template_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, device_template_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
@@ -770,8 +770,8 @@ pub mod device_templates {
         #[doc = "Arguments:"]
         #[doc = "* `device_template_id`: Unique ID of the device template."]
         #[doc = "* `body`: Device template body."]
-        pub fn create(&self, device_template_id: impl Into<String>, body: impl Into<models::DeviceTemplate>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, device_template_id: impl Into<String>, body: impl Into<models::DeviceTemplate>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
                 body: body.into(),
@@ -782,8 +782,8 @@ pub mod device_templates {
         #[doc = "Arguments:"]
         #[doc = "* `device_template_id`: Unique ID of the device template."]
         #[doc = "* `body`: Device template patch body."]
-        pub fn update(&self, device_template_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, device_template_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
                 body: body.into(),
@@ -794,8 +794,8 @@ pub mod device_templates {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_template_id`: Unique ID of the device template."]
-        pub fn remove(&self, device_template_id: impl Into<String>) -> remove::Builder {
-            remove::Builder {
+        pub fn remove(&self, device_template_id: impl Into<String>) -> remove::RequestBuilder {
+            remove::RequestBuilder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
@@ -804,8 +804,8 @@ pub mod device_templates {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_template_id`: Unique ID of the device template."]
-        pub fn list_devices(&self, device_template_id: impl Into<String>) -> list_devices::Builder {
-            list_devices::Builder {
+        pub fn list_devices(&self, device_template_id: impl Into<String>) -> list_devices::RequestBuilder {
+            list_devices::RequestBuilder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
@@ -814,8 +814,8 @@ pub mod device_templates {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_template_id`: Unique ID of the device template."]
-        pub fn get_merged(&self, device_template_id: impl Into<String>) -> get_merged::Builder {
-            get_merged::Builder {
+        pub fn get_merged(&self, device_template_id: impl Into<String>) -> get_merged::RequestBuilder {
+            get_merged::RequestBuilder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
@@ -825,10 +825,10 @@ pub mod device_templates {
         use super::models;
         type Response = models::DeviceTemplateCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -894,11 +894,11 @@ pub mod device_templates {
         use super::models;
         type Response = models::DeviceTemplate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -939,12 +939,12 @@ pub mod device_templates {
         use super::models;
         type Response = models::DeviceTemplate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
             pub(crate) body: models::DeviceTemplate,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -986,12 +986,12 @@ pub mod device_templates {
         use super::models;
         type Response = models::DeviceTemplate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1033,11 +1033,11 @@ pub mod device_templates {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1074,11 +1074,11 @@ pub mod device_templates {
         use super::models;
         type Response = models::DeviceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1148,11 +1148,11 @@ pub mod device_templates {
         use super::models;
         type Response = models::DeviceTemplate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1198,16 +1198,16 @@ pub mod devices {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of devices in an application"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a device by ID"]
         #[doc = "Get details about an existing device by device ID."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn get(&self, device_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, device_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1218,8 +1218,8 @@ pub mod devices {
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
         #[doc = "* `body`: Device body."]
-        pub fn create(&self, device_id: impl Into<String>, body: impl Into<models::Device>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, device_id: impl Into<String>, body: impl Into<models::Device>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1231,8 +1231,8 @@ pub mod devices {
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
         #[doc = "* `body`: Device patch body."]
-        pub fn update(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1243,8 +1243,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn remove(&self, device_id: impl Into<String>) -> remove::Builder {
-            remove::Builder {
+        pub fn remove(&self, device_id: impl Into<String>) -> remove::RequestBuilder {
+            remove::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1253,8 +1253,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn get_attestation(&self, device_id: impl Into<String>) -> get_attestation::Builder {
-            get_attestation::Builder {
+        pub fn get_attestation(&self, device_id: impl Into<String>) -> get_attestation::RequestBuilder {
+            get_attestation::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1268,8 +1268,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             body: impl Into<models::Attestation>,
-        ) -> create_attestation::Builder {
-            create_attestation::Builder {
+        ) -> create_attestation::RequestBuilder {
+            create_attestation::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1280,8 +1280,12 @@ pub mod devices {
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
         #[doc = "* `body`: Individual device attestation patch body."]
-        pub fn update_attestation(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_attestation::Builder {
-            update_attestation::Builder {
+        pub fn update_attestation(
+            &self,
+            device_id: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+        ) -> update_attestation::RequestBuilder {
+            update_attestation::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1291,8 +1295,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn remove_attestation(&self, device_id: impl Into<String>) -> remove_attestation::Builder {
-            remove_attestation::Builder {
+        pub fn remove_attestation(&self, device_id: impl Into<String>) -> remove_attestation::RequestBuilder {
+            remove_attestation::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1302,8 +1306,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn get_cloud_properties(&self, device_id: impl Into<String>) -> get_cloud_properties::Builder {
-            get_cloud_properties::Builder {
+        pub fn get_cloud_properties(&self, device_id: impl Into<String>) -> get_cloud_properties::RequestBuilder {
+            get_cloud_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1318,8 +1322,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             body: impl Into<models::DeviceCloudProperties>,
-        ) -> replace_cloud_properties::Builder {
-            replace_cloud_properties::Builder {
+        ) -> replace_cloud_properties::RequestBuilder {
+            replace_cloud_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1335,8 +1339,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             body: impl Into<serde_json::Value>,
-        ) -> update_cloud_properties::Builder {
-            update_cloud_properties::Builder {
+        ) -> update_cloud_properties::RequestBuilder {
+            update_cloud_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1347,8 +1351,12 @@ pub mod devices {
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
         #[doc = "* `command_name`: Name of this device command."]
-        pub fn get_command_history(&self, device_id: impl Into<String>, command_name: impl Into<String>) -> get_command_history::Builder {
-            get_command_history::Builder {
+        pub fn get_command_history(
+            &self,
+            device_id: impl Into<String>,
+            command_name: impl Into<String>,
+        ) -> get_command_history::RequestBuilder {
+            get_command_history::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 command_name: command_name.into(),
@@ -1366,8 +1374,8 @@ pub mod devices {
             device_id: impl Into<String>,
             command_name: impl Into<String>,
             body: impl Into<models::DeviceCommand>,
-        ) -> run_command::Builder {
-            run_command::Builder {
+        ) -> run_command::RequestBuilder {
+            run_command::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 command_name: command_name.into(),
@@ -1378,8 +1386,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn list_components(&self, device_id: impl Into<String>) -> list_components::Builder {
-            list_components::Builder {
+        pub fn list_components(&self, device_id: impl Into<String>) -> list_components::RequestBuilder {
+            list_components::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1395,8 +1403,8 @@ pub mod devices {
             device_id: impl Into<String>,
             component_name: impl Into<String>,
             command_name: impl Into<String>,
-        ) -> get_component_command_history::Builder {
-            get_component_command_history::Builder {
+        ) -> get_component_command_history::RequestBuilder {
+            get_component_command_history::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
@@ -1417,8 +1425,8 @@ pub mod devices {
             component_name: impl Into<String>,
             command_name: impl Into<String>,
             body: impl Into<models::DeviceCommand>,
-        ) -> run_component_command::Builder {
-            run_component_command::Builder {
+        ) -> run_component_command::RequestBuilder {
+            run_component_command::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
@@ -1435,8 +1443,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             component_name: impl Into<String>,
-        ) -> get_component_properties::Builder {
-            get_component_properties::Builder {
+        ) -> get_component_properties::RequestBuilder {
+            get_component_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
@@ -1453,8 +1461,8 @@ pub mod devices {
             device_id: impl Into<String>,
             component_name: impl Into<String>,
             body: impl Into<models::DeviceProperties>,
-        ) -> replace_component_properties::Builder {
-            replace_component_properties::Builder {
+        ) -> replace_component_properties::RequestBuilder {
+            replace_component_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
@@ -1472,8 +1480,8 @@ pub mod devices {
             device_id: impl Into<String>,
             component_name: impl Into<String>,
             body: impl Into<serde_json::Value>,
-        ) -> update_component_properties::Builder {
-            update_component_properties::Builder {
+        ) -> update_component_properties::RequestBuilder {
+            update_component_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
@@ -1492,8 +1500,8 @@ pub mod devices {
             device_id: impl Into<String>,
             component_name: impl Into<String>,
             telemetry_name: impl Into<String>,
-        ) -> get_component_telemetry_value::Builder {
-            get_component_telemetry_value::Builder {
+        ) -> get_component_telemetry_value::RequestBuilder {
+            get_component_telemetry_value::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
@@ -1504,8 +1512,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn get_credentials(&self, device_id: impl Into<String>) -> get_credentials::Builder {
-            get_credentials::Builder {
+        pub fn get_credentials(&self, device_id: impl Into<String>) -> get_credentials::RequestBuilder {
+            get_credentials::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1514,8 +1522,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn list_modules(&self, device_id: impl Into<String>) -> list_modules::Builder {
-            list_modules::Builder {
+        pub fn list_modules(&self, device_id: impl Into<String>) -> list_modules::RequestBuilder {
+            list_modules::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1531,8 +1539,8 @@ pub mod devices {
             device_id: impl Into<String>,
             module_name: impl Into<String>,
             command_name: impl Into<String>,
-        ) -> get_module_command_history::Builder {
-            get_module_command_history::Builder {
+        ) -> get_module_command_history::RequestBuilder {
+            get_module_command_history::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1553,8 +1561,8 @@ pub mod devices {
             module_name: impl Into<String>,
             command_name: impl Into<String>,
             body: impl Into<models::DeviceCommand>,
-        ) -> run_module_command::Builder {
-            run_module_command::Builder {
+        ) -> run_module_command::RequestBuilder {
+            run_module_command::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1571,8 +1579,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             module_name: impl Into<String>,
-        ) -> list_module_components::Builder {
-            list_module_components::Builder {
+        ) -> list_module_components::RequestBuilder {
+            list_module_components::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1591,8 +1599,8 @@ pub mod devices {
             module_name: impl Into<String>,
             component_name: impl Into<String>,
             command_name: impl Into<String>,
-        ) -> get_module_component_command_history::Builder {
-            get_module_component_command_history::Builder {
+        ) -> get_module_component_command_history::RequestBuilder {
+            get_module_component_command_history::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1616,8 +1624,8 @@ pub mod devices {
             component_name: impl Into<String>,
             command_name: impl Into<String>,
             body: impl Into<models::DeviceCommand>,
-        ) -> run_module_component_command::Builder {
-            run_module_component_command::Builder {
+        ) -> run_module_component_command::RequestBuilder {
+            run_module_component_command::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1637,8 +1645,8 @@ pub mod devices {
             device_id: impl Into<String>,
             module_name: impl Into<String>,
             component_name: impl Into<String>,
-        ) -> get_module_component_properties::Builder {
-            get_module_component_properties::Builder {
+        ) -> get_module_component_properties::RequestBuilder {
+            get_module_component_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1658,8 +1666,8 @@ pub mod devices {
             module_name: impl Into<String>,
             component_name: impl Into<String>,
             body: impl Into<models::DeviceProperties>,
-        ) -> replace_module_component_properties::Builder {
-            replace_module_component_properties::Builder {
+        ) -> replace_module_component_properties::RequestBuilder {
+            replace_module_component_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1680,8 +1688,8 @@ pub mod devices {
             module_name: impl Into<String>,
             component_name: impl Into<String>,
             body: impl Into<serde_json::Value>,
-        ) -> update_module_component_properties::Builder {
-            update_module_component_properties::Builder {
+        ) -> update_module_component_properties::RequestBuilder {
+            update_module_component_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1703,8 +1711,8 @@ pub mod devices {
             module_name: impl Into<String>,
             component_name: impl Into<String>,
             telemetry_name: impl Into<String>,
-        ) -> get_module_component_telemetry_value::Builder {
-            get_module_component_telemetry_value::Builder {
+        ) -> get_module_component_telemetry_value::RequestBuilder {
+            get_module_component_telemetry_value::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1722,8 +1730,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             module_name: impl Into<String>,
-        ) -> get_module_properties::Builder {
-            get_module_properties::Builder {
+        ) -> get_module_properties::RequestBuilder {
+            get_module_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1741,8 +1749,8 @@ pub mod devices {
             device_id: impl Into<String>,
             module_name: impl Into<String>,
             body: impl Into<models::DeviceProperties>,
-        ) -> replace_module_properties::Builder {
-            replace_module_properties::Builder {
+        ) -> replace_module_properties::RequestBuilder {
+            replace_module_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1761,8 +1769,8 @@ pub mod devices {
             device_id: impl Into<String>,
             module_name: impl Into<String>,
             body: impl Into<serde_json::Value>,
-        ) -> update_module_properties::Builder {
-            update_module_properties::Builder {
+        ) -> update_module_properties::RequestBuilder {
+            update_module_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1781,8 +1789,8 @@ pub mod devices {
             device_id: impl Into<String>,
             module_name: impl Into<String>,
             telemetry_name: impl Into<String>,
-        ) -> get_module_telemetry_value::Builder {
-            get_module_telemetry_value::Builder {
+        ) -> get_module_telemetry_value::RequestBuilder {
+            get_module_telemetry_value::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
@@ -1794,8 +1802,8 @@ pub mod devices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
-        pub fn get_properties(&self, device_id: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, device_id: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
@@ -1810,8 +1818,8 @@ pub mod devices {
             &self,
             device_id: impl Into<String>,
             body: impl Into<models::DeviceProperties>,
-        ) -> replace_properties::Builder {
-            replace_properties::Builder {
+        ) -> replace_properties::RequestBuilder {
+            replace_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1823,8 +1831,12 @@ pub mod devices {
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
         #[doc = "* `body`: Device properties patch."]
-        pub fn update_properties(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_properties::Builder {
-            update_properties::Builder {
+        pub fn update_properties(
+            &self,
+            device_id: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+        ) -> update_properties::RequestBuilder {
+            update_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
@@ -1836,8 +1848,12 @@ pub mod devices {
         #[doc = "Arguments:"]
         #[doc = "* `device_id`: Unique ID of the device."]
         #[doc = "* `telemetry_name`: Name of this device telemetry."]
-        pub fn get_telemetry_value(&self, device_id: impl Into<String>, telemetry_name: impl Into<String>) -> get_telemetry_value::Builder {
-            get_telemetry_value::Builder {
+        pub fn get_telemetry_value(
+            &self,
+            device_id: impl Into<String>,
+            telemetry_name: impl Into<String>,
+        ) -> get_telemetry_value::RequestBuilder {
+            get_telemetry_value::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 telemetry_name: telemetry_name.into(),
@@ -1848,10 +1864,10 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1917,11 +1933,11 @@ pub mod devices {
         use super::models;
         type Response = models::Device;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1961,12 +1977,12 @@ pub mod devices {
         use super::models;
         type Response = models::Device;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::Device,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2007,12 +2023,12 @@ pub mod devices {
         use super::models;
         type Response = models::Device;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2053,11 +2069,11 @@ pub mod devices {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2093,11 +2109,11 @@ pub mod devices {
         use super::models;
         type Response = models::Attestation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2137,12 +2153,12 @@ pub mod devices {
         use super::models;
         type Response = models::Attestation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::Attestation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2183,12 +2199,12 @@ pub mod devices {
         use super::models;
         type Response = models::Attestation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2229,11 +2245,11 @@ pub mod devices {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2269,11 +2285,11 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCloudProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2314,12 +2330,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCloudProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::DeviceCloudProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2361,12 +2377,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCloudProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2408,12 +2424,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommandCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) command_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2484,13 +2500,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommand;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) command_name: String,
             pub(crate) body: models::DeviceCommand,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2536,11 +2552,11 @@ pub mod devices {
         use super::models;
         type Response = models::Collection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2580,13 +2596,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommandCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) command_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2658,14 +2674,14 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommand;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) command_name: String,
             pub(crate) body: models::DeviceCommand,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2712,12 +2728,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2762,13 +2778,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) body: models::DeviceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2814,13 +2830,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2866,13 +2882,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceTelemetry;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) telemetry_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2918,11 +2934,11 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCredentials;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2962,11 +2978,11 @@ pub mod devices {
         use super::models;
         type Response = models::Collection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3006,13 +3022,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommandCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) command_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3084,14 +3100,14 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommand;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) command_name: String,
             pub(crate) body: models::DeviceCommand,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3138,12 +3154,12 @@ pub mod devices {
         use super::models;
         type Response = models::Collection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3188,14 +3204,14 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommandCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
             pub(crate) command_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3268,7 +3284,7 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceCommand;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
@@ -3276,7 +3292,7 @@ pub mod devices {
             pub(crate) command_name: String,
             pub(crate) body: models::DeviceCommand,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3324,13 +3340,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3376,14 +3392,14 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
             pub(crate) body: models::DeviceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3430,14 +3446,14 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3484,14 +3500,14 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceTelemetry;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
             pub(crate) telemetry_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3538,12 +3554,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3588,13 +3604,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) body: models::DeviceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3640,13 +3656,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3692,13 +3708,13 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceTelemetry;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) telemetry_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3744,11 +3760,11 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3788,12 +3804,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::DeviceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3834,12 +3850,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3880,12 +3896,12 @@ pub mod devices {
         use super::models;
         type Response = models::DeviceTelemetry;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) telemetry_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3932,16 +3948,16 @@ pub mod jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of jobs in an application"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a job by ID"]
         #[doc = "Get details about a running or completed job by job ID."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: Unique ID of the job."]
-        pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, job_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
@@ -3952,8 +3968,8 @@ pub mod jobs {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: Unique ID of the job."]
         #[doc = "* `body`: Job definition."]
-        pub fn create(&self, job_id: impl Into<String>, body: impl Into<models::Job>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, job_id: impl Into<String>, body: impl Into<models::Job>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 body: body.into(),
@@ -3964,8 +3980,8 @@ pub mod jobs {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: Unique ID of the job."]
-        pub fn get_devices(&self, job_id: impl Into<String>) -> get_devices::Builder {
-            get_devices::Builder {
+        pub fn get_devices(&self, job_id: impl Into<String>) -> get_devices::RequestBuilder {
+            get_devices::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
@@ -3976,8 +3992,8 @@ pub mod jobs {
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: Unique ID of the job."]
         #[doc = "* `rerun_id`: Unique ID of the job rerun."]
-        pub fn rerun(&self, job_id: impl Into<String>, rerun_id: impl Into<String>) -> rerun::Builder {
-            rerun::Builder {
+        pub fn rerun(&self, job_id: impl Into<String>, rerun_id: impl Into<String>) -> rerun::RequestBuilder {
+            rerun::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
                 rerun_id: rerun_id.into(),
@@ -3988,8 +4004,8 @@ pub mod jobs {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: Unique ID of the job."]
-        pub fn resume(&self, job_id: impl Into<String>) -> resume::Builder {
-            resume::Builder {
+        pub fn resume(&self, job_id: impl Into<String>) -> resume::RequestBuilder {
+            resume::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
@@ -3999,8 +4015,8 @@ pub mod jobs {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `job_id`: Unique ID of the job."]
-        pub fn stop(&self, job_id: impl Into<String>) -> stop::Builder {
-            stop::Builder {
+        pub fn stop(&self, job_id: impl Into<String>) -> stop::RequestBuilder {
+            stop::RequestBuilder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
@@ -4010,10 +4026,10 @@ pub mod jobs {
         use super::models;
         type Response = models::JobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4079,11 +4095,11 @@ pub mod jobs {
         use super::models;
         type Response = models::Job;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4123,12 +4139,12 @@ pub mod jobs {
         use super::models;
         type Response = models::Job;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) body: models::Job,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4169,11 +4185,11 @@ pub mod jobs {
         use super::models;
         type Response = models::JobDeviceStatusCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4213,12 +4229,12 @@ pub mod jobs {
         use super::models;
         type Response = models::Job;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) rerun_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4263,11 +4279,11 @@ pub mod jobs {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4304,11 +4320,11 @@ pub mod jobs {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4347,15 +4363,15 @@ pub mod roles {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of roles in an application."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a role by ID."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `role_id`: Unique ID for the role."]
-        pub fn get(&self, role_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, role_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
             }
@@ -4365,10 +4381,10 @@ pub mod roles {
         use super::models;
         type Response = models::RoleCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4434,11 +4450,11 @@ pub mod roles {
         use super::models;
         type Response = models::Role;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4480,15 +4496,15 @@ pub mod users {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the list of users in an application"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a user by ID"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `user_id`: Unique ID of the user."]
-        pub fn get(&self, user_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, user_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 user_id: user_id.into(),
             }
@@ -4498,8 +4514,8 @@ pub mod users {
         #[doc = "Arguments:"]
         #[doc = "* `user_id`: Unique ID of the user."]
         #[doc = "* `body`: User body."]
-        pub fn create(&self, user_id: impl Into<String>, body: impl Into<models::User>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, user_id: impl Into<String>, body: impl Into<models::User>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 user_id: user_id.into(),
                 body: body.into(),
@@ -4510,8 +4526,8 @@ pub mod users {
         #[doc = "Arguments:"]
         #[doc = "* `user_id`: Unique ID of the user."]
         #[doc = "* `body`: User patch body."]
-        pub fn update(&self, user_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, user_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 user_id: user_id.into(),
                 body: body.into(),
@@ -4521,8 +4537,8 @@ pub mod users {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `user_id`: Unique ID of the user."]
-        pub fn remove(&self, user_id: impl Into<String>) -> remove::Builder {
-            remove::Builder {
+        pub fn remove(&self, user_id: impl Into<String>) -> remove::RequestBuilder {
+            remove::RequestBuilder {
                 client: self.0.clone(),
                 user_id: user_id.into(),
             }
@@ -4532,10 +4548,10 @@ pub mod users {
         use super::models;
         type Response = models::UserCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4601,11 +4617,11 @@ pub mod users {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4645,12 +4661,12 @@ pub mod users {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
             pub(crate) body: models::User,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4691,12 +4707,12 @@ pub mod users {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
             pub(crate) body: serde_json::Value,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4737,11 +4753,11 @@ pub mod users {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

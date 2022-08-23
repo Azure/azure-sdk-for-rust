@@ -121,8 +121,8 @@ pub mod locations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns a list of locations to which you can ship the disks associated with an import or export job. A location is a Microsoft data center region."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 accept_language: None,
             }
@@ -131,8 +131,8 @@ pub mod locations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `location_name`: The name of the location. For example, West US or westus."]
-        pub fn get(&self, location_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, location_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 location_name: location_name.into(),
                 accept_language: None,
@@ -143,11 +143,11 @@ pub mod locations {
         use super::models;
         type Response = models::LocationsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -197,12 +197,12 @@ pub mod locations {
         use super::models;
         type Response = models::Location;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -259,8 +259,8 @@ pub mod jobs {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -277,8 +277,8 @@ pub mod jobs {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -298,8 +298,8 @@ pub mod jobs {
             job_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 job_name: job_name.into(),
                 subscription_id: subscription_id.into(),
@@ -320,8 +320,8 @@ pub mod jobs {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             body: impl Into<models::PutJobParameters>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 job_name: job_name.into(),
                 subscription_id: subscription_id.into(),
@@ -344,8 +344,8 @@ pub mod jobs {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             body: impl Into<models::UpdateJobParameters>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 job_name: job_name.into(),
                 subscription_id: subscription_id.into(),
@@ -365,8 +365,8 @@ pub mod jobs {
             job_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 job_name: job_name.into(),
                 subscription_id: subscription_id.into(),
@@ -379,14 +379,14 @@ pub mod jobs {
         use super::models;
         type Response = models::ListJobsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An integer value that specifies how many jobs at most should be returned. The value cannot exceed 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -480,7 +480,7 @@ pub mod jobs {
         use super::models;
         type Response = models::ListJobsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -488,7 +488,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An integer value that specifies how many jobs at most should be returned. The value cannot exceed 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -583,14 +583,14 @@ pub mod jobs {
         use super::models;
         type Response = models::JobResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -648,7 +648,7 @@ pub mod jobs {
             Created201(models::JobResponse),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_name: String,
             pub(crate) subscription_id: String,
@@ -657,7 +657,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -725,7 +725,7 @@ pub mod jobs {
         use super::models;
         type Response = models::JobResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_name: String,
             pub(crate) subscription_id: String,
@@ -733,7 +733,7 @@ pub mod jobs {
             pub(crate) body: models::UpdateJobParameters,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -788,14 +788,14 @@ pub mod jobs {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -857,8 +857,8 @@ pub mod bit_locker_keys {
             job_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 job_name: job_name.into(),
                 subscription_id: subscription_id.into(),
@@ -871,14 +871,14 @@ pub mod bit_locker_keys {
         use super::models;
         type Response = models::GetBitLockerKeysResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) job_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -936,8 +936,8 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the list of operations supported by the import/export resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 accept_language: None,
             }
@@ -947,11 +947,11 @@ pub mod operations {
         use super::models;
         type Response = models::ListOperationsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());

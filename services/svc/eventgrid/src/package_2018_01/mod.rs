@@ -109,8 +109,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `events`: An array of events to be published to Event Grid."]
-    pub fn publish_event_grid_events(&self, events: Vec<models::EventGridEvent>) -> publish_event_grid_events::Builder {
-        publish_event_grid_events::Builder {
+    pub fn publish_event_grid_events(&self, events: Vec<models::EventGridEvent>) -> publish_event_grid_events::RequestBuilder {
+        publish_event_grid_events::RequestBuilder {
             client: self.clone(),
             events,
         }
@@ -119,8 +119,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `events`: An array of events to be published to Event Grid."]
-    pub fn publish_cloud_event_events(&self, events: Vec<models::CloudEventEvent>) -> publish_cloud_event_events::Builder {
-        publish_cloud_event_events::Builder {
+    pub fn publish_cloud_event_events(&self, events: Vec<models::CloudEventEvent>) -> publish_cloud_event_events::RequestBuilder {
+        publish_cloud_event_events::RequestBuilder {
             client: self.clone(),
             events,
             aeg_channel_name: None,
@@ -130,8 +130,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `events`: An array of events to be published to Event Grid."]
-    pub fn publish_custom_event_events(&self, events: Vec<models::CustomEventEvent>) -> publish_custom_event_events::Builder {
-        publish_custom_event_events::Builder {
+    pub fn publish_custom_event_events(&self, events: Vec<models::CustomEventEvent>) -> publish_custom_event_events::RequestBuilder {
+        publish_custom_event_events::RequestBuilder {
             client: self.clone(),
             events,
         }
@@ -141,11 +141,11 @@ pub mod publish_event_grid_events {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) events: Vec<models::EventGridEvent>,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -182,12 +182,12 @@ pub mod publish_cloud_event_events {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) events: Vec<models::CloudEventEvent>,
         pub(crate) aeg_channel_name: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Required only when publishing to partner namespaces with partner topic routing mode ChannelNameHeader."]
         pub fn aeg_channel_name(mut self, aeg_channel_name: impl Into<String>) -> Self {
             self.aeg_channel_name = Some(aeg_channel_name.into());
@@ -232,11 +232,11 @@ pub mod publish_custom_event_events {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) events: Vec<models::CustomEventEvent>,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();

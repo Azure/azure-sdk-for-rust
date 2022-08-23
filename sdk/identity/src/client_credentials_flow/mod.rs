@@ -4,7 +4,6 @@
 //!
 //! ```no_run
 //! use azure_identity::client_credentials_flow;
-//! use oauth2::{ClientId, ClientSecret};
 //! use url::Url;
 //!
 //! use std::env;
@@ -13,10 +12,9 @@
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn Error>> {
 //!     let client_id =
-//!         ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
-//!     let client_secret = ClientSecret::new(
-//!         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."),
-//!     );
+//!         env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
+//!     let client_secret =
+//!         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
 //!     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
 //!     let subscription_id =
 //!         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
@@ -54,15 +52,15 @@ use url::{form_urlencoded, Url};
 #[fix_hidden_lifetime_bug::fix_hidden_lifetime_bug]
 pub async fn perform(
     http_client: Arc<dyn HttpClient>,
-    client_id: &oauth2::ClientId,
-    client_secret: &oauth2::ClientSecret,
+    client_id: &str,
+    client_secret: &str,
     scopes: &[&str],
     tenant_id: &str,
 ) -> azure_core::Result<LoginResponse> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
-        .append_pair("client_id", client_id.as_str())
+        .append_pair("client_id", client_id)
         .append_pair("scope", &scopes.join(" "))
-        .append_pair("client_secret", client_secret.secret())
+        .append_pair("client_secret", client_secret)
         .append_pair("grant_type", "client_credentials")
         .finish();
 

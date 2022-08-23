@@ -22,7 +22,7 @@ pub struct DatadogAgreementProperties {
     #[serde(rename = "privacyPolicyLink", default, skip_serializing_if = "Option::is_none")]
     pub privacy_policy_link: Option<String>,
     #[doc = "Date and time in UTC of when the terms were accepted. This is empty if Accepted is false."]
-    #[serde(rename = "retrieveDatetime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "retrieveDatetime", default, with = "azure_core::date::rfc3339::option")]
     pub retrieve_datetime: Option<time::OffsetDateTime>,
     #[doc = "Terms signature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

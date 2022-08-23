@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DownloadUrl {
     #[doc = "The time in UTC when the download URL will expire."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "The URL to the ZIP file. This Zip file will consists of multiple CSV files"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

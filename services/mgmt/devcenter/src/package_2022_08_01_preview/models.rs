@@ -127,7 +127,7 @@ pub struct CatalogProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "When the catalog was last synced."]
-    #[serde(rename = "lastSyncTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSyncTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_sync_time: Option<time::OffsetDateTime>,
 }
 impl CatalogProperties {
@@ -635,10 +635,10 @@ pub struct HealthCheck {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Start time of health check item."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the health check item."]
-    #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time: Option<time::OffsetDateTime>,
     #[doc = "The type of error that occurred during this health check."]
     #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
@@ -739,10 +739,10 @@ impl HealthCheckStatusDetailsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthCheckStatusDetailsProperties {
     #[doc = "Start time of last execution of the health checks."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "End time of last execution of the health checks."]
-    #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time: Option<time::OffsetDateTime>,
     #[doc = "Details for each health check item."]
     #[serde(rename = "healthChecks", default, skip_serializing_if = "Vec::is_empty")]
@@ -939,7 +939,7 @@ pub struct ImageVersionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The datetime that the backing image version was published."]
-    #[serde(rename = "publishedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "publishedDate", default, with = "azure_core::date::rfc3339::option")]
     pub published_date: Option<time::OffsetDateTime>,
     #[doc = "If the version should be excluded from being treated as the latest version."]
     #[serde(rename = "excludeFromLatest", default, skip_serializing_if = "Option::is_none")]
@@ -1383,10 +1383,10 @@ pub struct OperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The start time of the operation"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the operation"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Percent of the operation that is complete"]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
@@ -2146,7 +2146,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2155,7 +2155,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

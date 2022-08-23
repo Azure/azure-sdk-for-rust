@@ -44,7 +44,7 @@ pub struct ApiToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
     #[doc = "String-formatted date representing the time when the token expires."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
 }
 impl ApiToken {
@@ -297,7 +297,7 @@ pub struct DeviceTelemetry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
     #[doc = "String-formatted date representing the time when the telemetry value was sent."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
 }
 impl DeviceTelemetry {
@@ -400,7 +400,7 @@ pub struct ErrorDetails {
     #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
     #[doc = "The time that error request failed."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub time: Option<time::OffsetDateTime>,
 }
 impl ErrorDetails {

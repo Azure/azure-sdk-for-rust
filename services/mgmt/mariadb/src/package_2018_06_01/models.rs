@@ -303,10 +303,10 @@ pub struct LogFileProperties {
     #[serde(rename = "sizeInKB", default, skip_serializing_if = "Option::is_none")]
     pub size_in_kb: Option<i64>,
     #[doc = "Creation timestamp of the log file."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Last modified timestamp of the log file."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Type of the log file."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -834,10 +834,10 @@ pub struct QueryStatisticProperties {
     #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
     pub query_id: Option<String>,
     #[doc = "Observation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Observation end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Aggregation function name."]
     #[serde(rename = "aggregationFunction", default, skip_serializing_if = "Option::is_none")]
@@ -943,10 +943,10 @@ pub struct RecommendationActionProperties {
     #[serde(rename = "actionId", default, skip_serializing_if = "Option::is_none")]
     pub action_id: Option<i32>,
     #[doc = "Recommendation action creation time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Recommendation action expiration time."]
-    #[serde(rename = "expirationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time: Option<time::OffsetDateTime>,
     #[doc = "Recommendation action reason."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -991,7 +991,7 @@ pub struct RecommendedActionSessionsOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Operation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1367,7 +1367,7 @@ pub struct ServerProperties {
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub fully_qualified_domain_name: Option<String>,
     #[doc = "Earliest restore point creation time (ISO8601 format)"]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
     #[doc = "Storage Profile properties of a server"]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
@@ -2123,10 +2123,10 @@ impl WaitStatistic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WaitStatisticProperties {
     #[doc = "Observation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Observation end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Wait event name."]
     #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]

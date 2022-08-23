@@ -143,6 +143,9 @@ impl TypeNameCode {
     pub fn is_string(&self) -> bool {
         self.type_name == Some(TypeName::String)
     }
+    pub fn is_bytes(&self) -> bool {
+        self.type_name == Some(TypeName::Bytes)
+    }
     pub fn is_date_time(&self) -> bool {
         self.type_name == Some(TypeName::DateTime)
     }
