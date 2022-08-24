@@ -32,8 +32,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let group_created = client
         .resource_groups_client()
         .create_or_update(resource_group_name, group, subscription_id)
-        .into_future()
-        .await?
         .into_body()
         .await?;
     println!("group created: {:#?}", group_created);
