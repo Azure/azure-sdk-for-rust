@@ -17,7 +17,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_network::Client::builder(credential).build();
 
-    let response = client.service_tags_client().list(location, subscription_id).into_future().await?;
+    let response = client
+        .service_tags_client()
+        .list(location, subscription_id)
+        .into_future()
+        .await?
+        .into_body()
+        .await?;
     for entry in response.values {
         if let Some(name) = entry.name {
             if let Some(properties) = entry.properties {

@@ -26,6 +26,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .list_publishers(&location, &subscription_id)
         .into_future()
         .await?
+        .into_body()
+        .await?
         .into_iter()
         .map(|x| x.name)
         .collect::<Vec<_>>();
@@ -35,6 +37,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut offers = client
             .list_offers(&location, &publisher, &subscription_id)
             .into_future()
+            .await?
+            .into_body()
             .await?
             .into_iter()
             .map(|x| x.name)
@@ -46,6 +50,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .list_skus(&location, &publisher, &offer, &subscription_id)
                 .into_future()
                 .await?
+                .into_body()
+                .await?
                 .into_iter()
                 .map(|x| x.name)
                 .collect::<Vec<_>>();
@@ -55,6 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut versions = client
                     .list(&location, &publisher, &offer, &sku, &subscription_id)
                     .into_future()
+                    .await?
+                    .into_body()
                     .await?
                     .into_iter()
                     .map(|x| x.name)
@@ -68,6 +76,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let vm = client
                         .get(&location, &publisher, &offer, &sku, &version, &subscription_id)
                         .into_future()
+                        .await?
+                        .into_body()
                         .await?;
 
                     if let Some(props) = vm.properties {
