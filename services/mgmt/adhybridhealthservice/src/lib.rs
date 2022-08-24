@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2014-01")]
 pub mod package_2014_01;
 #[cfg(all(feature = "package-2014-01", not(feature = "no-default-tag")))]
-pub use package_2014_01::{models, Client, ClientBuilder};
+pub use package_2014_01::*;

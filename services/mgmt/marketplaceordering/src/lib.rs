@@ -6,8 +6,8 @@
 #[cfg(feature = "package-2021-01-01")]
 pub mod package_2021_01_01;
 #[cfg(all(feature = "package-2021-01-01", not(feature = "no-default-tag")))]
-pub use package_2021_01_01::{models, Client, ClientBuilder};
+pub use package_2021_01_01::*;
 #[cfg(feature = "package-2015-06-01")]
 pub mod package_2015_06_01;
 #[cfg(all(feature = "package-2015-06-01", not(feature = "no-default-tag")))]
-pub use package_2015_06_01::{models, Client, ClientBuilder};
+pub use package_2015_06_01::*;

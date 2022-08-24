@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2018-02-28-preview")]
 pub mod package_2018_02_28_preview;
 #[cfg(all(feature = "package-2018-02-28-preview", not(feature = "no-default-tag")))]
-pub use package_2018_02_28_preview::{models, Client, ClientBuilder};
+pub use package_2018_02_28_preview::*;

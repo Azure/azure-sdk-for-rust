@@ -6,4 +6,4 @@
 #[cfg(feature = "v1")]
 pub mod v1;
 #[cfg(all(feature = "v1", not(feature = "no-default-tag")))]
-pub use v1::{models, Client, ClientBuilder};
+pub use v1::*;
