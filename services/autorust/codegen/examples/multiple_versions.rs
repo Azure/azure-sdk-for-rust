@@ -4,6 +4,7 @@
 // https://github.com/Azure/azure-sdk-for-rust/issues/563
 
 use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, io, Result, Spec, SpecReadme};
+use autorust_openapi::StatusCode;
 use std::collections::BTreeSet;
 
 fn main() -> Result<()> {
@@ -29,7 +30,18 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
                         if respones.len() > 1 {
                             let mut codes: Vec<_> = respones.into_iter().map(|(sc, rsp)| sc).collect();
                             codes.sort();
-                            // println!("{} {} {:?}", readme.spec(), &tag.name(), codes);
+
+                            if codes
+                                == vec![
+                                    StatusCode::Code(200),
+                                    StatusCode::Code(201),
+                                    StatusCode::Code(202),
+                                    StatusCode::Code(204),
+                                ]
+                            {
+                                println!("{} {} {:?} {:?}", readme.spec(), &tag.name(), operation.id, codes);
+                            }
+
                             services.insert(codes);
                         }
                     }
