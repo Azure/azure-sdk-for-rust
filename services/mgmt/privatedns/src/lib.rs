@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2020-06")]
 pub mod package_2020_06;
 #[cfg(all(feature = "package-2020-06", not(feature = "no-default-tag")))]
-pub use package_2020_06::{models, Client, ClientBuilder};
+pub use package_2020_06::*;
 #[cfg(feature = "package-2020-01")]
 pub mod package_2020_01;
 #[cfg(all(feature = "package-2020-01", not(feature = "no-default-tag")))]
-pub use package_2020_01::{models, Client, ClientBuilder};
+pub use package_2020_01::*;
 #[cfg(feature = "package-2018-09")]
 pub mod package_2018_09;
 #[cfg(all(feature = "package-2018-09", not(feature = "no-default-tag")))]
-pub use package_2018_09::{models, Client, ClientBuilder};
+pub use package_2018_09::*;
