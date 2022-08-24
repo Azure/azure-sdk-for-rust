@@ -74,6 +74,7 @@ impl Policy for AuthorizationPolicy {
                 );
                 request
             }
+            StorageCredentials::Anonymous => request,
         };
 
         next[0].send(ctx, request, &next[1..]).await
