@@ -663,64 +663,59 @@ impl ResponseCode {
             pageable: operation.pageable(),
         })
     }
-
-    fn is_single_response(&self) -> bool {
-        self.status_responses.len() == 1
-    }
 }
 
 impl ToTokens for ResponseCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.is_single_response() {
-            let tp = self.status_responses[0]
-                .response_type
-                .as_ref()
-                .map(TypeNameCode::to_token_stream)
-                .unwrap_or(quote! { () });
+        tokens.extend(quote! {
+            struct Response(azure_core::Response);
+        });
+        let response_type = &self.status_responses[0].response_type.as_ref();
+        if let Some(response_type) = response_type {
+            let deserialize_body = if TypeNameCode::is_bytes(response_type) {
+                quote! {
+                    let body = bytes;
+                }
+            } else {
+                quote! {
+                    let body: #response_type = serde_json::from_slice(&bytes)?;
+                }
+            };
             tokens.extend(quote! {
-                type Response = #tp;
-            });
-        } else {
-            let mut success_responses_ts = TokenStream::new();
-            let mut continuation_response = TokenStream::new();
-            for status_response in &self.status_responses {
-                let response_type = &status_response.response_type;
-                let code = match response_type {
-                    Some(response_type) => quote! { (#response_type) },
-                    None => quote! {},
-                };
-                let enum_type_name = &status_response.name;
-                success_responses_ts.extend(quote! { #enum_type_name#code, });
-
-                let continuation = if response_type.is_some() {
-                    quote! {
-                        Self::#enum_type_name(x) => x.continuation(),
+                impl Response {
+                    pub async fn into_body(self) -> azure_core::Result<#response_type> {
+                        let bytes = self.0.into_body().collect().await?;
+                        #deserialize_body
+                        Ok(body)
                     }
-                } else {
-                    quote! { Self::#enum_type_name => None, }
-                };
-                continuation_response.extend(continuation);
-            }
-            tokens.extend(quote! {
-                #[derive(Debug)]
-                pub enum Response {
-                    #success_responses_ts
                 }
             });
-
-            if self.pageable.is_some() {
-                tokens.extend(quote! {
-                    impl azure_core::Continuable for Response {
-                        type Continuation = String;
-                        fn continuation(&self) -> Option<Self::Continuation> {
-                            match self {
-                                #continuation_response
-                            }
-                        }
-                    }
-                });
-            }
         }
+        // HELP!!!
+        // let mut continuation_response = TokenStream::new();
+        // for status_response in &self.status_responses {
+        //     let enum_type_name = &status_response.name;
+        //     let continuation = if response_type.is_some() {
+        //         quote! {
+        //             Self::#enum_type_name(x) => x.continuation(),
+        //         }
+        //     } else {
+        //         quote! { Self::#enum_type_name => None, }
+        //     };
+        //     continuation_response.extend(continuation);
+        // }
+        // if self.pageable.is_some() {
+        //     tokens.extend(quote! {
+        //         impl azure_core::Continuable for Response {
+        //             type Continuation = String;
+        //             fn continuation(&self) -> Option<Self::Continuation> {
+        //                 match self {
+        //                     #continuation_response
+        //                 }
+        //             }
+        //         }
+        //     });
+        // }
     }
 }
 
@@ -751,10 +746,6 @@ impl RequestBuilderIntoFutureCode {
             long_running_operation,
         })
     }
-
-    fn is_single_response(&self) -> bool {
-        self.response_code.status_responses.len() == 1
-    }
 }
 
 impl ToTokens for RequestBuilderIntoFutureCode {
@@ -772,33 +763,16 @@ impl ToTokens for RequestBuilderIntoFutureCode {
         let mut match_status = TokenStream::new();
         for status_response in &self.response_code.status_responses {
             let response_type = &status_response.response_type;
-            let rsp_value = create_rsp_value(response_type.as_ref());
             let status_code_name = &status_response.status_code_name;
-            let response_type_name = &status_response.name;
 
-            let status_code_code = if self.is_single_response() {
-                match response_type {
-                    Some(_) => quote! {
-                        let rsp_body = rsp_stream.collect().await?;
-                        #rsp_value
-                        Ok(rsp_value)
-                    },
-                    None => quote! { Ok(()) },
-                }
-            } else {
-                match response_type {
-                    Some(_) => quote! {
-                        let rsp_body = rsp_stream.collect().await?;
-                        #rsp_value
-                        Ok(Response::#response_type_name(rsp_value))
-                    },
-                    None => quote! { Ok(Response::#response_type_name) },
-                }
+            let response_code = match response_type {
+                Some(_) => quote! {
+                    Ok(Response(rsp)),
+                },
+                None => quote! { Ok(Response()), },
             };
             match_status.extend(quote! {
-                azure_core::StatusCode::#status_code_name => {
-                    #status_code_code
-                }
+                azure_core::StatusCode::#status_code_name => #response_code
             });
         }
         match_status.extend(quote! {
@@ -816,11 +790,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                         #new_request_code
                         #request_builder
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            #match_status
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -881,8 +851,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                         this.client.send(&mut req).await?
                                     }
                                 };
-                                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                                match rsp_status {
+                                match rsp.status() {
                                     #match_status
                                 }
                             }
@@ -937,18 +906,6 @@ impl ToTokens for OperationModuleCode {
 
             }
         })
-    }
-}
-
-fn create_rsp_value(tp: Option<&TypeNameCode>) -> TokenStream {
-    if tp.map(TypeNameCode::is_bytes) == Some(true) {
-        quote! {
-            let rsp_value = rsp_body;
-        }
-    } else {
-        quote! {
-            let rsp_value: #tp = serde_json::from_slice(&rsp_body)?;
-        }
     }
 }
 
