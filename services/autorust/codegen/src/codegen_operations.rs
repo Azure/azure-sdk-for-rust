@@ -661,6 +661,15 @@ impl ResponseCode {
             pageable: operation.pageable(),
         })
     }
+
+    /// Get the response type for the HTTP response body
+    fn response_type(&self) -> Option<&TypeNameCode> {
+        let responses = &self.status_responses;
+        if responses.is_empty() {
+            return None;
+        }
+        responses[0].response_type.as_ref()
+    }
 }
 
 impl ToTokens for ResponseCode {
@@ -668,7 +677,7 @@ impl ToTokens for ResponseCode {
         tokens.extend(quote! {
             pub struct Response(azure_core::Response);
         });
-        let response_type = &self.status_responses[0].response_type.as_ref();
+        let response_type = &self.response_type();
         if let Some(response_type) = response_type {
             let deserialize_body = if TypeNameCode::is_bytes(response_type) {
                 quote! {
@@ -735,17 +744,9 @@ impl ToTokens for RequestBuilderIntoFutureCode {
 
         let mut match_status = TokenStream::new();
         for status_response in &self.response_code.status_responses {
-            let response_type = &status_response.response_type;
             let status_code_name = &status_response.status_code_name;
-
-            let response_code = match response_type {
-                Some(_) => quote! {
-                    Ok(Response(rsp)),
-                },
-                None => quote! { Ok(Response()), },
-            };
             match_status.extend(quote! {
-                azure_core::StatusCode::#status_code_name => #response_code
+                azure_core::StatusCode::#status_code_name => Ok(Response(rsp)),
             });
         }
         match_status.extend(quote! {
@@ -800,10 +801,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     };
                 }
 
-                let response_type = self.response_code.status_responses[0]
-                    .response_type
-                    .as_ref()
-                    .expect("pageable response has a body");
+                let response_type = self.response_code.response_type().expect("pageable response has a body");
                 quote! {
                     pub fn into_stream(self) -> azure_core::Pageable<#response_type, azure_core::error::Error> {
                         let make_request = move |continuation: Option<String>| {
