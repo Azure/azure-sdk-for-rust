@@ -701,7 +701,7 @@ impl ToTokens for ResponseCode {
     }
 }
 
-/// The `into_future` function of the request builder.
+/// The `send` function of the request builder.
 struct RequestBuilderIntoFutureCode {
     new_request_code: NewRequestCode,
     request_builder: SetRequestCode,
@@ -755,8 +755,20 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             }
         });
 
-        let basic_future = quote! {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        let into_body = if let Some(response_type) = self.response_code.response_type() {
+            quote! {
+                #[doc = "Send the request and return the response body."]
+                pub async fn into_body(self) -> azure_core::Result<#response_type> {
+                    self.send().await?.into_body().await
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        let send_future = quote! {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -768,6 +780,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     }
                 })
             }
+            #into_body
         };
 
         let fut = if let Some(pageable) = &self.response_code.pageable {
@@ -784,7 +797,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                 //
                 // Ref: https://github.com/Azure/azure-sdk-for-rust/issues/446
                 let mut fut = quote! { #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]};
-                fut.extend(basic_future);
+                fut.extend(send_future);
                 fut
             } else {
                 let mut stream_api_version = quote! {};
@@ -850,10 +863,10 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             //
             // ref: https://github.com/Azure/azure-sdk-for-rust/issues/741
             let mut fut = quote! {#[doc = "only the first response will be fetched as long running operations are not supported yet"]};
-            fut.extend(basic_future);
+            fut.extend(send_future);
             fut
         } else {
-            basic_future
+            send_future
         };
         tokens.extend(fut);
     }
