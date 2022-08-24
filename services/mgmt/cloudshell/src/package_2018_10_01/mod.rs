@@ -356,7 +356,14 @@ impl Client {
 }
 pub mod get_user_settings_with_location {
     use super::models;
-    type Response = models::UserSettingsResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UserSettingsResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -386,19 +393,7 @@ pub mod get_user_settings_with_location {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -406,7 +401,14 @@ pub mod get_user_settings_with_location {
 }
 pub mod put_user_settings_with_location {
     use super::models;
-    type Response = models::UserSettingsResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UserSettingsResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -438,19 +440,7 @@ pub mod put_user_settings_with_location {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.parameters)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -458,7 +448,14 @@ pub mod put_user_settings_with_location {
 }
 pub mod patch_user_settings_with_location {
     use super::models;
-    type Response = models::UserSettingsResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UserSettingsResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -490,19 +487,7 @@ pub mod patch_user_settings_with_location {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.parameters)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -510,11 +495,7 @@ pub mod patch_user_settings_with_location {
 }
 pub mod delete_user_settings_with_location {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        NoContent204,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -544,16 +525,7 @@ pub mod delete_user_settings_with_location {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -561,7 +533,14 @@ pub mod delete_user_settings_with_location {
 }
 pub mod get_console_with_location {
     use super::models;
-    type Response = models::CloudShellConsole;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::CloudShellConsole = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -591,19 +570,7 @@ pub mod get_console_with_location {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::CloudShellConsole = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -611,10 +578,13 @@ pub mod get_console_with_location {
 }
 pub mod put_console_with_location {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::CloudShellConsole),
-        Created201(models::CloudShellConsole),
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::CloudShellConsole = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -645,24 +615,7 @@ pub mod put_console_with_location {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::CloudShellConsole = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::Created => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::CloudShellConsole = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Created201(rsp_value))
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -670,11 +623,7 @@ pub mod put_console_with_location {
 }
 pub mod delete_console_with_location {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        NoContent204,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -704,16 +653,7 @@ pub mod delete_console_with_location {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -721,7 +661,7 @@ pub mod delete_console_with_location {
 }
 pub mod keep_alive_with_location {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -749,15 +689,7 @@ pub mod keep_alive_with_location {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -765,7 +697,14 @@ pub mod keep_alive_with_location {
 }
 pub mod get_user_settings {
     use super::models;
-    type Response = models::UserSettingsResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UserSettingsResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -793,19 +732,7 @@ pub mod get_user_settings {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -813,7 +740,14 @@ pub mod get_user_settings {
 }
 pub mod put_user_settings {
     use super::models;
-    type Response = models::UserSettingsResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UserSettingsResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -843,19 +777,7 @@ pub mod put_user_settings {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.parameters)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -863,7 +785,14 @@ pub mod put_user_settings {
 }
 pub mod patch_user_settings {
     use super::models;
-    type Response = models::UserSettingsResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UserSettingsResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -893,19 +822,7 @@ pub mod patch_user_settings {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.parameters)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -913,11 +830,7 @@ pub mod patch_user_settings {
 }
 pub mod delete_user_settings {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        NoContent204,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -945,16 +858,7 @@ pub mod delete_user_settings {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -962,7 +866,14 @@ pub mod delete_user_settings {
 }
 pub mod get_console {
     use super::models;
-    type Response = models::CloudShellConsole;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::CloudShellConsole = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -990,19 +901,7 @@ pub mod get_console {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::CloudShellConsole = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -1010,10 +909,13 @@ pub mod get_console {
 }
 pub mod put_console {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::CloudShellConsole),
-        Created201(models::CloudShellConsole),
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::CloudShellConsole = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -1044,24 +946,7 @@ pub mod put_console {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.parameters)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::CloudShellConsole = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::Created => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::CloudShellConsole = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Created201(rsp_value))
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -1069,11 +954,7 @@ pub mod put_console {
 }
 pub mod delete_console {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        NoContent204,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1101,16 +982,7 @@ pub mod delete_console {
                         .append_pair(azure_core::query_param::API_VERSION, "2018-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -1118,7 +990,7 @@ pub mod delete_console {
 }
 pub mod keep_alive {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1144,15 +1016,7 @@ pub mod keep_alive {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
