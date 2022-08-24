@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::Headers, CollectedResponse, Method};
 
 operation! {
     GetSecret,
@@ -11,32 +11,28 @@ operation! {
 impl GetSecretBuilder {
     pub fn into_future(mut self) -> GetSecret {
         Box::pin(async move {
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             let version = self.version.unwrap_or_default();
             uri.set_path(&format!("secrets/{}/{}", self.name, version));
-            uri.set_query(Some(API_VERSION_PARAM));
+            let headers = Headers::new();
 
-            let response_body = self
+            let mut request =
+                self.client
+                    .keyvault_client
+                    .finalize_request(uri, Method::Get, headers, None)?;
+
+            let response = self
                 .client
-                .client
-                .request(reqwest::Method::GET, uri.to_string(), None)
+                .keyvault_client
+                .send(&mut self.context, &mut request)
                 .await?;
-            let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&response_body)
-            .with_context(ErrorKind::DataConversion, || {
-                format!(
-                    "failed to parse KeyVaultGetSecretResponse. secret_name: {} secret_version_name: {version} response_body: {response_body}", self.name
-                )
-            })?;
-            Ok(KeyVaultSecret {
-                expires_on: response.attributes.exp,
-                enabled: response.attributes.enabled,
-                value: response.value,
-                created_on: response.attributes.created,
-                updated_on: response.attributes.updated,
-                id: response.id,
-            })
+
+            let response = CollectedResponse::from_response(response).await?;
+            let body = response.body();
+            let response = serde_json::from_slice::<KeyVaultGetSecretResponse>(body)?;
+            Ok(response)
         })
     }
 }
 
-type GetSecretResponse = KeyVaultSecret;
+type GetSecretResponse = KeyVaultGetSecretResponse;

@@ -6,4 +6,4 @@
 #[cfg(feature = "package-preview-2022-04")]
 pub mod package_preview_2022_04;
 #[cfg(all(feature = "package-preview-2022-04", not(feature = "no-default-tag")))]
-pub use package_preview_2022_04::{models, Client, ClientBuilder};
+pub use package_preview_2022_04::*;

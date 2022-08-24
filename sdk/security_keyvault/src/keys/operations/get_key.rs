@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use azure_core::{headers::Headers, CollectedResponse, Method};
 
 operation! {
     GetKey,
@@ -10,18 +11,27 @@ operation! {
 impl GetKeyBuilder {
     pub fn into_future(mut self) -> GetKey {
         Box::pin(async move {
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             let version = self.version.unwrap_or_default();
             let path = format!("keys/{}/{}", self.name, version);
             uri.set_path(&path);
-            uri.set_query(Some(API_VERSION_PARAM));
 
-            let resp_body = self
+            let headers = Headers::new();
+            let mut request =
+                self.client
+                    .keyvault_client
+                    .finalize_request(uri, Method::Get, headers, None)?;
+
+            let response = self
                 .client
-                .client
-                .request(reqwest::Method::GET, uri.to_string(), None)
+                .keyvault_client
+                .send(&mut self.context, &mut request)
                 .await?;
-            let response = serde_json::from_str::<KeyVaultKey>(&resp_body)?;
+
+            let response = CollectedResponse::from_response(response).await?;
+            let body = response.body();
+            let response = serde_json::from_slice::<KeyVaultKey>(body)?;
+
             Ok(response)
         })
     }

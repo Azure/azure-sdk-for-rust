@@ -1,66 +1,48 @@
 use crate::prelude::*;
-use crate::secrets::models::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{error::Error, headers::Headers, CollectedResponse, Method, Pageable};
 use url::Url;
 
 operation! {
+    #[stream]
     GetSecretVersions,
     client: SecretClient,
     name: String,
 }
 
 impl GetSecretVersionsBuilder {
-    pub fn into_future(mut self) -> GetSecretVersions {
-        Box::pin(async move {
-            let mut secret_versions = Vec::<KeyVaultSecretBaseIdentifier>::new();
+    pub fn into_stream(self) -> Pageable<KeyVaultGetSecretsResponse, Error> {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let mut ctx = self.context.clone();
+            async move {
+                let mut uri = this.client.keyvault_client.vault_url.clone();
+                uri.set_path(&format!("secrets/{}/versions", this.name));
 
-            let mut uri = self.client.client.vault_url.clone();
-            uri.set_path(&format!("secrets/{}/versions", self.name));
-            uri.set_query(Some(API_VERSION_PARAM));
+                if let Some(continuation) = continuation {
+                    uri = Url::parse(&continuation)?;
+                }
 
-            loop {
-                let resp_body = self
+                let headers = Headers::new();
+                let mut request = this.client.keyvault_client.finalize_request(
+                    uri,
+                    Method::Get,
+                    headers,
+                    None,
+                )?;
+
+                let response = this
                     .client
-                    .client
-                    .request(reqwest::Method::GET, uri.to_string(), None)
+                    .keyvault_client
+                    .send(&mut ctx, &mut request)
                     .await?;
-                let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body)
-                    .with_context(ErrorKind::DataConversion, || {
-                        format!(
-                            "failed to parse KeyVaultGetSecretsResponse. resp_body: {resp_body}"
-                        )
-                    })?;
 
-                secret_versions.extend(
-                    response
-                        .value
-                        .into_iter()
-                        .map(|s| KeyVaultSecretBaseIdentifier {
-                            id: s.id.to_owned(),
-                            name: s.id.split('/').last().unwrap().to_owned(),
-                            enabled: s.attributes.enabled,
-                            created_on: s.attributes.created,
-                            updated_on: s.attributes.updated,
-                        })
-                        .collect::<Vec<KeyVaultSecretBaseIdentifier>>(),
-                );
-                match response.next_link {
-                    None => break,
-                    Some(u) => uri = Url::parse(&u)?,
-                }
+                let response = CollectedResponse::from_response(response).await?;
+                let body = response.body();
+
+                let response = serde_json::from_slice::<KeyVaultGetSecretsResponse>(body)?;
+                Ok(response)
             }
-
-            // Return the secret versions sorted by the time modified in descending order.
-            secret_versions.sort_by(|a, b| {
-                if a.updated_on > b.updated_on {
-                    std::cmp::Ordering::Less
-                } else {
-                    std::cmp::Ordering::Greater
-                }
-            });
-            Ok(secret_versions)
-        })
+        };
+        Pageable::new(make_request)
     }
 }
-
-type GetSecretVersionsResponse = Vec<KeyVaultSecretBaseIdentifier>;

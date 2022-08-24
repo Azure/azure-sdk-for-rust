@@ -1,25 +1,26 @@
-use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
+use azure_identity::DefaultAzureCredentialBuilder;
 use azure_security_keyvault::SecretClient;
-use std::env;
+use futures::StreamExt;
+use std::{env, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client_id = env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
-    let client_secret =
-        env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
-    let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
     let keyvault_url =
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
 
-    let creds = std::sync::Arc::new(ClientSecretCredential::new(
-        azure_core::new_http_client(),
-        tenant_id,
-        client_id,
-        client_secret,
-        TokenCredentialOptions::default(),
-    ));
+    let creds = Arc::new(
+        DefaultAzureCredentialBuilder::new()
+            .exclude_managed_identity_credential()
+            .build(),
+    );
+
     let client = SecretClient::new(&keyvault_url, creds)?;
+
+    let mut versions = client.get_versions(&secret_name).into_stream();
+    while let Some(version) = versions.next().await {
+        println!("{:?}", version?);
+    }
 
     let secret = client.get(secret_name).into_future().await?;
     dbg!(secret.value);

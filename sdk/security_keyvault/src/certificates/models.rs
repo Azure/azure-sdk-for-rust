@@ -2,37 +2,39 @@ use serde::Deserialize;
 use time::OffsetDateTime;
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
+pub struct KeyVaultCertificateBaseIdentifierAttributes {
     pub enabled: bool,
-    #[serde(default, with = "azure_core::date::timestamp::option")]
-    pub exp: Option<OffsetDateTime>,
-    #[serde(default, with = "azure_core::date::timestamp::option")]
-    pub nbf: Option<OffsetDateTime>,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub created: OffsetDateTime,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub updated: OffsetDateTime,
+    #[serde(default, with = "azure_core::date::timestamp::option", rename = "exp")]
+    pub expires_on: Option<OffsetDateTime>,
+    #[serde(default, with = "azure_core::date::timestamp::option", rename = "nbf")]
+    pub not_before: Option<OffsetDateTime>,
+    #[serde(with = "azure_core::date::timestamp", rename = "created")]
+    pub created_on: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp", rename = "updated")]
+    pub updated_on: OffsetDateTime,
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultCertificateBaseIdentifierRaw {
+pub struct KeyVaultCertificateBaseIdentifier {
     pub id: String,
     #[allow(unused)]
     pub x5t: String,
-    pub attributes: KeyVaultCertificateBaseIdentifierAttributedRaw,
+    pub attributes: KeyVaultCertificateBaseIdentifierAttributes,
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultGetCertificatesResponse {
-    pub value: Vec<KeyVaultCertificateBaseIdentifierRaw>,
+pub struct KeyVaultGetCertificatesResponse {
+    pub value: Vec<KeyVaultCertificateBaseIdentifier>,
     #[serde(rename = "nextLink")]
     pub next_link: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultGetCertificateResponse {
-    pub kid: String,
-    pub sid: String,
+pub struct KeyVaultGetCertificateResponse {
+    #[serde(rename = "kid")]
+    pub key_id: String,
+    #[serde(rename = "sid")]
+    pub secret_id: String,
     pub x5t: String,
     pub cer: String,
     pub id: String,
@@ -41,16 +43,16 @@ pub(crate) struct KeyVaultGetCertificateResponse {
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultGetCertificateResponseAttributes {
+pub struct KeyVaultGetCertificateResponseAttributes {
     pub enabled: bool,
-    #[serde(default, with = "azure_core::date::timestamp::option")]
-    pub exp: Option<OffsetDateTime>,
-    #[serde(default, with = "azure_core::date::timestamp::option")]
-    pub nbf: Option<OffsetDateTime>,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub created: OffsetDateTime,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub updated: OffsetDateTime,
+    #[serde(default, with = "azure_core::date::timestamp::option", rename = "exp")]
+    pub expires_on: Option<OffsetDateTime>,
+    #[serde(default, with = "azure_core::date::timestamp::option", rename = "nbf")]
+    pub not_before: Option<OffsetDateTime>,
+    #[serde(with = "azure_core::date::timestamp", rename = "created")]
+    pub created_on: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp", rename = "updated")]
+    pub updated_on: OffsetDateTime,
     #[serde(rename = "recoveryLevel")]
     #[allow(unused)]
     pub recovery_level: String,
@@ -58,7 +60,7 @@ pub(crate) struct KeyVaultGetCertificateResponseAttributes {
 
 #[derive(Deserialize, Debug)]
 #[allow(unused)]
-pub(crate) struct KeyVaultGetCertificateResponsePolicy {
+pub struct KeyVaultGetCertificateResponsePolicy {
     pub id: String,
     pub key_props: KeyVaultGetCertificateResponsePolicyKeyProperties,
     pub secret_props: KeyVaultGetCertificateResponsePolicySecretProperties,
@@ -69,7 +71,7 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicy {
 
 #[derive(Deserialize, Debug)]
 #[allow(unused)]
-pub(crate) struct KeyVaultGetCertificateResponsePolicyKeyProperties {
+pub struct KeyVaultGetCertificateResponsePolicyKeyProperties {
     pub exportable: bool,
     pub kty: String,
     pub key_size: u64,
@@ -77,47 +79,37 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicyKeyProperties {
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultGetCertificateResponsePolicySecretProperties {
+pub struct KeyVaultGetCertificateResponsePolicySecretProperties {
     #[serde(rename = "contentType")]
     pub content_type: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[allow(unused)]
-pub(crate) struct KeyVaultGetCertificateResponsePolicyX509Properties {
+pub struct KeyVaultGetCertificateResponsePolicyX509Properties {
     pub subject: String,
     pub validity_months: u64,
 }
 
 #[derive(Deserialize, Debug)]
 #[allow(unused)]
-pub(crate) struct KeyVaultGetCertificateResponsePolicyIssuer {
+pub struct KeyVaultGetCertificateResponsePolicyIssuer {
     pub name: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[allow(unused)]
-pub(crate) struct KeyVaultGetCertificateResponsePolicyAttributes {
+pub struct KeyVaultGetCertificateResponsePolicyAttributes {
     pub enabled: bool,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub created: OffsetDateTime,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub updated: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp", rename = "created")]
+    pub created_on: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp", rename = "updated")]
+    pub updated_on: OffsetDateTime,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct CertificateBackupResponse {
     pub value: String,
-}
-
-#[derive(Debug)]
-pub struct KeyVaultCertificate {
-    pub key_id: String,
-    pub secret_id: String,
-    pub x5t: String,
-    pub cer: String,
-    pub content_type: String,
-    pub properties: CertificateProperties,
 }
 
 #[derive(Debug)]
