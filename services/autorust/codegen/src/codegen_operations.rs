@@ -3,8 +3,8 @@ use crate::{
     codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
+    status_codes::get_status_code_ident,
     status_codes::get_success_responses,
-    status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
 use crate::{content_type, Result};
@@ -642,7 +642,6 @@ struct Pageable {
 /// A single status code response of an operation.
 #[derive(Clone)]
 struct StatusResponseCode {
-    name: Ident,
     status_code_name: Ident,
     response_type: Option<TypeNameCode>,
 }
@@ -653,7 +652,6 @@ impl ResponseCode {
         let responses = &operation.0.responses;
         for (status_code, rsp) in &get_success_responses(responses) {
             status_responses.push(StatusResponseCode {
-                name: get_response_type_ident(status_code)?,
                 status_code_name: get_status_code_ident(status_code)?,
                 response_type: create_response_type(rsp)?,
             });
@@ -668,7 +666,7 @@ impl ResponseCode {
 impl ToTokens for ResponseCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(quote! {
-            struct Response(azure_core::Response);
+            pub struct Response(azure_core::Response);
         });
         let response_type = &self.status_responses[0].response_type.as_ref();
         if let Some(response_type) = response_type {
@@ -691,31 +689,6 @@ impl ToTokens for ResponseCode {
                 }
             });
         }
-        // HELP!!!
-        // let mut continuation_response = TokenStream::new();
-        // for status_response in &self.status_responses {
-        //     let enum_type_name = &status_response.name;
-        //     let continuation = if response_type.is_some() {
-        //         quote! {
-        //             Self::#enum_type_name(x) => x.continuation(),
-        //         }
-        //     } else {
-        //         quote! { Self::#enum_type_name => None, }
-        //     };
-        //     continuation_response.extend(continuation);
-        // }
-        // if self.pageable.is_some() {
-        //     tokens.extend(quote! {
-        //         impl azure_core::Continuable for Response {
-        //             type Continuation = String;
-        //             fn continuation(&self) -> Option<Self::Continuation> {
-        //                 match self {
-        //                     #continuation_response
-        //                 }
-        //             }
-        //         }
-        //     });
-        // }
     }
 }
 
@@ -827,8 +800,12 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     };
                 }
 
+                let response_type = self.response_code.status_responses[0]
+                    .response_type
+                    .as_ref()
+                    .expect("pageable response has a body");
                 quote! {
-                    pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                    pub fn into_stream(self) -> azure_core::Pageable<#response_type, azure_core::error::Error> {
                         let make_request = move |continuation: Option<String>| {
                             let this = self.clone();
                             async move {
@@ -851,9 +828,11 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                         this.client.send(&mut req).await?
                                     }
                                 };
-                                match rsp.status() {
-                                    #match_status
-                                }
+                                let rsp =
+                                    match rsp.status() {
+                                        #match_status
+                                    };
+                                Ok(rsp?.into_body().await?)
                             }
                         };
 
