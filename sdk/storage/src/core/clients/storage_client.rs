@@ -33,6 +33,7 @@ pub enum StorageCredentials {
     SASToken(Vec<(String, String)>),
     BearerToken(String),
     TokenCredential(Arc<dyn TokenCredential>),
+    Anonymous,
 }
 
 impl std::fmt::Debug for StorageCredentials {
@@ -53,6 +54,10 @@ impl std::fmt::Debug for StorageCredentials {
             StorageCredentials::TokenCredential(_) => f
                 .debug_struct("StorageCredentials")
                 .field("credential", &"TokenCredential")
+                .finish(),
+            StorageCredentials::Anonymous => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"Anonymous")
                 .finish(),
         }
     }
@@ -333,6 +338,35 @@ impl StorageClient {
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                 ))
             }
+        }
+    }
+
+    /// Create a new anonymous storage client
+    ///
+    /// Ref: https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal
+    pub fn new_anonymous<A>(account: A) -> Self
+    where
+        A: Into<String>,
+    {
+        let account = account.into();
+        let storage_credentials = StorageCredentials::Anonymous;
+        let pipeline =
+            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+
+        Self {
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{}-secondary", account),
+                "queue",
+            )
+            .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
+            storage_credentials,
+            account,
+            pipeline,
         }
     }
 
