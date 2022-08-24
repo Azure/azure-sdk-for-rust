@@ -254,7 +254,7 @@ pub mod service {
     }
     pub mod get_properties {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::StorageServiceProperties> {
                 let bytes = self.0.into_body().collect().await?;
@@ -309,7 +309,7 @@ pub mod service {
     }
     pub mod set_properties {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -359,7 +359,7 @@ pub mod service {
     }
     pub mod get_statistics {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::StorageServiceStats> {
                 let bytes = self.0.into_body().collect().await?;
@@ -414,7 +414,7 @@ pub mod service {
     }
     pub mod list_containers_segment {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListContainersSegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
@@ -464,7 +464,7 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ListContainersSegmentResponse, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -513,13 +513,14 @@ pub mod service {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        match rsp.status() {
+                        let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        Ok(rsp?.into_body().await?)
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -528,7 +529,7 @@ pub mod service {
     }
     pub mod get_user_delegation_key {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UserDelegationKey> {
                 let bytes = self.0.into_body().collect().await?;
@@ -585,7 +586,7 @@ pub mod service {
     }
     pub mod get_account_info {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -615,7 +616,7 @@ pub mod service {
     }
     pub mod submit_batch {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
                 let bytes = self.0.into_body().collect().await?;
@@ -675,7 +676,7 @@ pub mod service {
     }
     pub mod filter_blobs {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FilterBlobSegment> {
                 let bytes = self.0.into_body().collect().await?;
@@ -1130,7 +1131,7 @@ pub mod container {
     }
     pub mod get_properties {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1189,7 +1190,7 @@ pub mod container {
     }
     pub mod create {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1278,7 +1279,7 @@ pub mod container {
     }
     pub mod delete {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1355,7 +1356,7 @@ pub mod container {
     }
     pub mod set_metadata {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1435,7 +1436,7 @@ pub mod container {
     }
     pub mod get_access_policy {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SignedIdentifiers> {
                 let bytes = self.0.into_body().collect().await?;
@@ -1504,7 +1505,7 @@ pub mod container {
     }
     pub mod set_access_policy {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1604,7 +1605,7 @@ pub mod container {
     }
     pub mod restore {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1675,7 +1676,7 @@ pub mod container {
     }
     pub mod rename {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1739,7 +1740,7 @@ pub mod container {
     }
     pub mod submit_batch {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
                 let bytes = self.0.into_body().collect().await?;
@@ -1804,7 +1805,7 @@ pub mod container {
     }
     pub mod acquire_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1895,7 +1896,7 @@ pub mod container {
     }
     pub mod release_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1970,7 +1971,7 @@ pub mod container {
     }
     pub mod renew_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2045,7 +2046,7 @@ pub mod container {
     }
     pub mod break_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2127,7 +2128,7 @@ pub mod container {
     }
     pub mod change_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2204,7 +2205,7 @@ pub mod container {
     }
     pub mod list_blob_flat_segment {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListBlobsFlatSegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
@@ -2255,7 +2256,7 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ListBlobsFlatSegmentResponse, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -2308,13 +2309,14 @@ pub mod container {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        match rsp.status() {
+                        let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        Ok(rsp?.into_body().await?)
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -2323,7 +2325,7 @@ pub mod container {
     }
     pub mod list_blob_hierarchy_segment {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListBlobsHierarchySegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
@@ -2375,7 +2377,7 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ListBlobsHierarchySegmentResponse, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -2430,13 +2432,14 @@ pub mod container {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        match rsp.status() {
+                        let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        Ok(rsp?.into_body().await?)
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -2445,7 +2448,7 @@ pub mod container {
     }
     pub mod get_account_info {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3202,7 +3205,7 @@ pub mod blob {
     }
     pub mod download {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
                 let bytes = self.0.into_body().collect().await?;
@@ -3385,7 +3388,7 @@ pub mod blob {
     }
     pub mod delete {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3525,7 +3528,7 @@ pub mod blob {
     }
     pub mod get_properties {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3674,7 +3677,7 @@ pub mod blob {
     }
     pub mod undelete {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3729,7 +3732,7 @@ pub mod blob {
     }
     pub mod set_expiry {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3795,7 +3798,7 @@ pub mod blob {
     }
     pub mod set_http_headers {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3958,7 +3961,7 @@ pub mod blob {
     }
     pub mod set_immutability_policy {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4046,7 +4049,7 @@ pub mod blob {
     }
     pub mod delete_immutability_policy {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4101,7 +4104,7 @@ pub mod blob {
     }
     pub mod set_legal_hold {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4158,7 +4161,7 @@ pub mod blob {
     }
     pub mod set_metadata {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4312,7 +4315,7 @@ pub mod blob {
     }
     pub mod acquire_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4432,7 +4435,7 @@ pub mod blob {
     }
     pub mod release_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4536,7 +4539,7 @@ pub mod blob {
     }
     pub mod renew_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4640,7 +4643,7 @@ pub mod blob {
     }
     pub mod change_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4746,7 +4749,7 @@ pub mod blob {
     }
     pub mod break_lease {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4857,7 +4860,7 @@ pub mod blob {
     }
     pub mod create_snapshot {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5011,7 +5014,7 @@ pub mod blob {
     }
     pub mod start_copy_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5245,7 +5248,7 @@ pub mod blob {
     }
     pub mod copy_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5481,7 +5484,7 @@ pub mod blob {
     }
     pub mod abort_copy_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5547,7 +5550,7 @@ pub mod blob {
     }
     pub mod set_tier {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5649,7 +5652,7 @@ pub mod blob {
     }
     pub mod get_account_info {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5686,7 +5689,7 @@ pub mod blob {
     }
     pub mod query {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
                 let bytes = self.0.into_body().collect().await?;
@@ -5849,7 +5852,7 @@ pub mod blob {
     }
     pub mod get_tags {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::BlobTags> {
                 let bytes = self.0.into_body().collect().await?;
@@ -5947,7 +5950,7 @@ pub mod blob {
     }
     pub mod set_tags {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6418,7 +6421,7 @@ pub mod page_blob {
     }
     pub mod create {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6692,7 +6695,7 @@ pub mod page_blob {
     }
     pub mod upload_pages {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6897,7 +6900,7 @@ pub mod page_blob {
     }
     pub mod clear_pages {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7082,7 +7085,7 @@ pub mod page_blob {
     }
     pub mod upload_pages_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7327,7 +7330,7 @@ pub mod page_blob {
     }
     pub mod get_page_ranges {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::PageList> {
                 let bytes = self.0.into_body().collect().await?;
@@ -7415,7 +7418,7 @@ pub mod page_blob {
                 self.maxresults = Some(maxresults);
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::PageList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -7490,13 +7493,14 @@ pub mod page_blob {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        match rsp.status() {
+                        let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        Ok(rsp?.into_body().await?)
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -7505,7 +7509,7 @@ pub mod page_blob {
     }
     pub mod get_page_ranges_diff {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::PageList> {
                 let bytes = self.0.into_body().collect().await?;
@@ -7605,7 +7609,7 @@ pub mod page_blob {
                 self.maxresults = Some(maxresults);
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::PageList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -7686,13 +7690,14 @@ pub mod page_blob {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        match rsp.status() {
+                        let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        Ok(rsp?.into_body().await?)
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -7701,7 +7706,7 @@ pub mod page_blob {
     }
     pub mod resize {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7848,7 +7853,7 @@ pub mod page_blob {
     }
     pub mod update_sequence_number {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7968,7 +7973,7 @@ pub mod page_blob {
     }
     pub mod copy_incremental {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8240,7 +8245,7 @@ pub mod append_blob {
     }
     pub mod create {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8494,7 +8499,7 @@ pub mod append_blob {
     }
     pub mod append_block {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8679,7 +8684,7 @@ pub mod append_blob {
     }
     pub mod append_block_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8927,7 +8932,7 @@ pub mod append_blob {
     }
     pub mod seal {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9308,7 +9313,7 @@ pub mod block_blob {
     }
     pub mod upload {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9582,7 +9587,7 @@ pub mod block_blob {
     }
     pub mod put_blob_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9895,7 +9900,7 @@ pub mod block_blob {
     }
     pub mod stage_block {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10020,7 +10025,7 @@ pub mod block_blob {
     }
     pub mod stage_block_from_url {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10199,7 +10204,7 @@ pub mod block_blob {
     }
     pub mod get_block_list {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::BlockList> {
                 let bytes = self.0.into_body().collect().await?;
@@ -10291,7 +10296,7 @@ pub mod block_blob {
     }
     pub mod commit_block_list {
         use super::models;
-        struct Response(azure_core::Response);
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
