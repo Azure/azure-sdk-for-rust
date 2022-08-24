@@ -520,7 +520,7 @@ pub mod service {
                                 error_code: None,
                             })),
                         };
-                        Ok(rsp?.into_body().await?)
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -2316,7 +2316,7 @@ pub mod container {
                                 error_code: None,
                             })),
                         };
-                        Ok(rsp?.into_body().await?)
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -2439,7 +2439,7 @@ pub mod container {
                                 error_code: None,
                             })),
                         };
-                        Ok(rsp?.into_body().await?)
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -7500,7 +7500,7 @@ pub mod page_blob {
                                 error_code: None,
                             })),
                         };
-                        Ok(rsp?.into_body().await?)
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -7697,7 +7697,7 @@ pub mod page_blob {
                                 error_code: None,
                             })),
                         };
-                        Ok(rsp?.into_body().await?)
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)

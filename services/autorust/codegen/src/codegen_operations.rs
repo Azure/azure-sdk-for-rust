@@ -832,7 +832,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                     match rsp.status() {
                                         #match_status
                                     };
-                                Ok(rsp?.into_body().await?)
+                                rsp?.into_body().await
                             }
                         };
 
