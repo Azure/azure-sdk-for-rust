@@ -288,7 +288,8 @@ pub mod accounts {
             pub(crate) account_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -315,6 +316,10 @@ pub mod accounts {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccount> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -336,7 +341,8 @@ pub mod accounts {
             pub(crate) maps_account_create_parameters: models::MapsAccountCreateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -364,6 +370,10 @@ pub mod accounts {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccount> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update {
@@ -385,7 +395,8 @@ pub mod accounts {
             pub(crate) maps_account_update_parameters: models::MapsAccountUpdateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -413,6 +424,10 @@ pub mod accounts {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccount> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -426,7 +441,8 @@ pub mod accounts {
             pub(crate) account_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -473,7 +489,8 @@ pub mod accounts {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -499,6 +516,10 @@ pub mod accounts {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccounts> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list_by_subscription {
@@ -518,7 +539,8 @@ pub mod accounts {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -543,6 +565,10 @@ pub mod accounts {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccounts> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list_keys {
@@ -563,7 +589,8 @@ pub mod accounts {
             pub(crate) account_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -591,6 +618,10 @@ pub mod accounts {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccountKeys> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod regenerate_keys {
@@ -612,7 +643,8 @@ pub mod accounts {
             pub(crate) key_specification: models::MapsKeySpecification,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -639,6 +671,10 @@ pub mod accounts {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsAccountKeys> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -668,7 +704,8 @@ pub mod maps {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -688,6 +725,10 @@ pub mod maps {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::MapsOperations> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -829,7 +870,8 @@ pub mod private_atlases {
             pub(crate) private_atlas_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -857,6 +899,10 @@ pub mod private_atlases {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateAtlas> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -879,7 +925,8 @@ pub mod private_atlases {
             pub(crate) private_atlas_create_parameters: models::PrivateAtlasCreateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -908,6 +955,10 @@ pub mod private_atlases {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateAtlas> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update {
@@ -930,7 +981,8 @@ pub mod private_atlases {
             pub(crate) private_atlas_update_parameters: models::PrivateAtlasUpdateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -959,6 +1011,10 @@ pub mod private_atlases {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateAtlas> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -973,7 +1029,8 @@ pub mod private_atlases {
             pub(crate) private_atlas_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1022,7 +1079,8 @@ pub mod private_atlases {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1048,6 +1106,10 @@ pub mod private_atlases {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateAtlasList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1189,7 +1251,8 @@ pub mod creators {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1216,6 +1279,10 @@ pub mod creators {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::CreatorList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get {
@@ -1237,7 +1304,8 @@ pub mod creators {
             pub(crate) creator_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1265,6 +1333,10 @@ pub mod creators {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Creator> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -1287,7 +1359,8 @@ pub mod creators {
             pub(crate) creator_create_parameters: models::CreatorCreateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1316,6 +1389,10 @@ pub mod creators {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Creator> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update {
@@ -1338,7 +1415,8 @@ pub mod creators {
             pub(crate) creator_update_parameters: models::CreatorUpdateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1367,6 +1445,10 @@ pub mod creators {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Creator> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -1381,7 +1463,8 @@ pub mod creators {
             pub(crate) creator_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

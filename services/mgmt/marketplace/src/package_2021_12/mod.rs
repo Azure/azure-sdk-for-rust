@@ -511,7 +511,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -536,6 +537,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateStore> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -552,7 +557,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -593,7 +599,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -636,7 +643,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -662,6 +670,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::QueryOffers> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod billing_accounts {
@@ -680,7 +692,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -706,6 +719,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::BillingAccountsResponse> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod collections_to_subscriptions_mapping {
@@ -729,7 +746,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -759,6 +777,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::CollectionsToSubscriptionsMappingResponse> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod query_approved_plans {
@@ -782,7 +804,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -812,6 +835,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::QueryApprovedPlansResponse> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod bulk_collections_action {
@@ -835,7 +862,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -865,6 +893,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::BulkCollectionsResponse> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_approval_requests_list {
@@ -883,7 +915,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -908,6 +941,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RequestApprovalsList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_request_approval {
@@ -927,7 +964,8 @@ pub mod private_store {
             pub(crate) request_approval_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -953,6 +991,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RequestApprovalResource> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_approval_request {
@@ -977,7 +1019,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1008,6 +1051,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RequestApprovalResource> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod query_request_approval {
@@ -1032,7 +1079,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1063,6 +1111,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::QueryRequestApproval> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod admin_request_approvals_list {
@@ -1081,7 +1133,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1106,6 +1159,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AdminRequestApprovalsList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_admin_request_approval {
@@ -1126,7 +1183,8 @@ pub mod private_store {
             pub(crate) publisher_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1154,6 +1212,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AdminRequestApprovalsResource> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update_admin_request_approval {
@@ -1178,7 +1240,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1209,6 +1272,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AdminRequestApprovalsResource> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod query_notifications_state {
@@ -1227,7 +1294,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1253,6 +1321,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateStoreNotificationsState> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod acknowledge_offer_notification {
@@ -1270,7 +1342,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1318,7 +1391,8 @@ pub mod private_store {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1373,7 +1447,8 @@ pub mod private_store {
                 self.next_page_token = Some(next_page_token.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1402,6 +1477,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionsResponse> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list_new_plans_notifications {
@@ -1420,7 +1499,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1446,6 +1526,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::NewPlansNotificationsList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list_stop_sell_offers_plans_notifications {
@@ -1469,7 +1553,8 @@ pub mod private_store {
                 self.stop_sell_subscriptions = Some(stop_sell_subscriptions.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1499,6 +1584,10 @@ pub mod private_store {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::StopSellOffersPlansNotificationsList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list_subscriptions_context {
@@ -1517,7 +1606,8 @@ pub mod private_store {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1542,6 +1632,10 @@ pub mod private_store {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionsContextList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1648,7 +1742,8 @@ pub mod private_store_collection {
             pub(crate) private_store_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1673,6 +1768,10 @@ pub mod private_store_collection {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::CollectionsList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get {
@@ -1692,7 +1791,8 @@ pub mod private_store_collection {
             pub(crate) collection_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1718,6 +1818,10 @@ pub mod private_store_collection {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Collection> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod post {
@@ -1735,7 +1839,8 @@ pub mod private_store_collection {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1790,7 +1895,8 @@ pub mod private_store_collection {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1821,6 +1927,10 @@ pub mod private_store_collection {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Collection> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -1833,7 +1943,8 @@ pub mod private_store_collection {
             pub(crate) collection_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1883,7 +1994,8 @@ pub mod private_store_collection {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1913,6 +2025,10 @@ pub mod private_store_collection {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::TransferOffersResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2109,7 +2225,8 @@ pub mod private_store_collection_offer {
             pub(crate) collection_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2136,6 +2253,10 @@ pub mod private_store_collection_offer {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Offer> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod post {
@@ -2154,7 +2275,8 @@ pub mod private_store_collection_offer {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2211,7 +2333,8 @@ pub mod private_store_collection_offer {
                 self.payload = Some(payload.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2243,6 +2366,10 @@ pub mod private_store_collection_offer {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Offer> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -2256,7 +2383,8 @@ pub mod private_store_collection_offer {
             pub(crate) collection_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2310,7 +2438,8 @@ pub mod operations {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2331,6 +2460,10 @@ pub mod operations {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::OperationListResult> {
+                self.send().await?.into_body().await
             }
         }
     }

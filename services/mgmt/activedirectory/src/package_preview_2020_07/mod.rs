@@ -232,7 +232,8 @@ pub mod azure_ad_metrics {
             pub(crate) azure_ad_metrics_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -259,6 +260,10 @@ pub mod azure_ad_metrics {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AzureAdMetricsConfig> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -281,7 +286,8 @@ pub mod azure_ad_metrics {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -309,6 +315,10 @@ pub mod azure_ad_metrics {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AzureAdMetricsConfig> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update {
@@ -335,7 +345,8 @@ pub mod azure_ad_metrics {
                 self.azure_ad_metrics_config = Some(azure_ad_metrics_config.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -367,6 +378,10 @@ pub mod azure_ad_metrics {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AzureAdMetricsConfig> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -380,7 +395,8 @@ pub mod azure_ad_metrics {
             pub(crate) azure_ad_metrics_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

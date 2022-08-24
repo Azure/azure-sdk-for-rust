@@ -371,7 +371,8 @@ pub mod get_user_settings_with_location {
         pub(crate) location: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -397,6 +398,10 @@ pub mod get_user_settings_with_location {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod put_user_settings_with_location {
@@ -417,7 +422,8 @@ pub mod put_user_settings_with_location {
         pub(crate) parameters: models::CloudShellUserSettings,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -444,6 +450,10 @@ pub mod put_user_settings_with_location {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod patch_user_settings_with_location {
@@ -464,7 +474,8 @@ pub mod patch_user_settings_with_location {
         pub(crate) parameters: models::CloudShellPatchUserSettings,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -491,6 +502,10 @@ pub mod patch_user_settings_with_location {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_user_settings_with_location {
@@ -503,7 +518,8 @@ pub mod delete_user_settings_with_location {
         pub(crate) location: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -548,7 +564,8 @@ pub mod get_console_with_location {
         pub(crate) location: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -574,6 +591,10 @@ pub mod get_console_with_location {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod put_console_with_location {
@@ -593,7 +614,8 @@ pub mod put_console_with_location {
         pub(crate) location: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -619,6 +641,10 @@ pub mod put_console_with_location {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_console_with_location {
@@ -631,7 +657,8 @@ pub mod delete_console_with_location {
         pub(crate) location: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -669,7 +696,8 @@ pub mod keep_alive_with_location {
         pub(crate) location: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -711,7 +739,8 @@ pub mod get_user_settings {
         pub(crate) user_settings_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -736,6 +765,10 @@ pub mod get_user_settings {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod put_user_settings {
@@ -755,7 +788,8 @@ pub mod put_user_settings {
         pub(crate) parameters: models::CloudShellUserSettings,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -781,6 +815,10 @@ pub mod put_user_settings {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod patch_user_settings {
@@ -800,7 +838,8 @@ pub mod patch_user_settings {
         pub(crate) parameters: models::CloudShellPatchUserSettings,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -826,6 +865,10 @@ pub mod patch_user_settings {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_user_settings {
@@ -837,7 +880,8 @@ pub mod delete_user_settings {
         pub(crate) user_settings_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -880,7 +924,8 @@ pub mod get_console {
         pub(crate) console_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -905,6 +950,10 @@ pub mod get_console {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod put_console {
@@ -924,7 +973,8 @@ pub mod put_console {
         pub(crate) parameters: models::ConsoleDefinition,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -950,6 +1000,10 @@ pub mod put_console {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_console {
@@ -961,7 +1015,8 @@ pub mod delete_console {
         pub(crate) console_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -997,7 +1052,8 @@ pub mod keep_alive {
         pub(crate) console_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {

@@ -1300,7 +1300,8 @@ pub mod delete_certificate {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1321,6 +1322,10 @@ pub mod delete_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedCertificateBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_certificate_contacts {
@@ -1338,7 +1343,8 @@ pub mod get_certificate_contacts {
         pub(crate) client: super::Client,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1359,6 +1365,10 @@ pub mod get_certificate_contacts {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Contacts> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod set_certificate_contacts {
@@ -1377,7 +1387,8 @@ pub mod set_certificate_contacts {
         pub(crate) contacts: models::Contacts,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1399,6 +1410,10 @@ pub mod set_certificate_contacts {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Contacts> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_certificate_contacts {
@@ -1416,7 +1431,8 @@ pub mod delete_certificate_contacts {
         pub(crate) client: super::Client,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1436,6 +1452,10 @@ pub mod delete_certificate_contacts {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Contacts> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -1536,7 +1556,8 @@ pub mod get_certificate_issuer {
         pub(crate) issuer_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1557,6 +1578,10 @@ pub mod get_certificate_issuer {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::IssuerBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod set_certificate_issuer {
@@ -1576,7 +1601,8 @@ pub mod set_certificate_issuer {
         pub(crate) parameter: models::CertificateIssuerSetParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1598,6 +1624,10 @@ pub mod set_certificate_issuer {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::IssuerBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_certificate_issuer {
@@ -1617,7 +1647,8 @@ pub mod update_certificate_issuer {
         pub(crate) parameter: models::CertificateIssuerUpdateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1639,6 +1670,10 @@ pub mod update_certificate_issuer {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::IssuerBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_certificate_issuer {
@@ -1657,7 +1692,8 @@ pub mod delete_certificate_issuer {
         pub(crate) issuer_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1678,6 +1714,10 @@ pub mod delete_certificate_issuer {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::IssuerBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_certificate {
@@ -1697,7 +1737,8 @@ pub mod create_certificate {
         pub(crate) parameters: models::CertificateCreateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1723,6 +1764,10 @@ pub mod create_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateOperation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod import_certificate {
@@ -1742,7 +1787,8 @@ pub mod import_certificate {
         pub(crate) parameters: models::CertificateImportParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1767,6 +1813,10 @@ pub mod import_certificate {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -1872,7 +1922,8 @@ pub mod get_certificate_policy {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1897,6 +1948,10 @@ pub mod get_certificate_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificatePolicy> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_certificate_policy {
@@ -1916,7 +1971,8 @@ pub mod update_certificate_policy {
         pub(crate) certificate_policy: models::CertificatePolicy,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1942,6 +1998,10 @@ pub mod update_certificate_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificatePolicy> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_certificate {
@@ -1961,7 +2021,8 @@ pub mod get_certificate {
         pub(crate) certificate_version: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1987,6 +2048,10 @@ pub mod get_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_certificate {
@@ -2007,7 +2072,8 @@ pub mod update_certificate {
         pub(crate) parameters: models::CertificateUpdateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2034,6 +2100,10 @@ pub mod update_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_certificate_operation {
@@ -2052,7 +2122,8 @@ pub mod get_certificate_operation {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2077,6 +2148,10 @@ pub mod get_certificate_operation {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateOperation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_certificate_operation {
@@ -2096,7 +2171,8 @@ pub mod update_certificate_operation {
         pub(crate) certificate_operation: models::CertificateOperationUpdateParameter,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2122,6 +2198,10 @@ pub mod update_certificate_operation {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateOperation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_certificate_operation {
@@ -2140,7 +2220,8 @@ pub mod delete_certificate_operation {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2165,6 +2246,10 @@ pub mod delete_certificate_operation {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateOperation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod merge_certificate {
@@ -2184,7 +2269,8 @@ pub mod merge_certificate {
         pub(crate) parameters: models::CertificateMergeParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2210,6 +2296,10 @@ pub mod merge_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod backup_certificate {
@@ -2228,7 +2318,8 @@ pub mod backup_certificate {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2254,6 +2345,10 @@ pub mod backup_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::BackupCertificateResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restore_certificate {
@@ -2272,7 +2367,8 @@ pub mod restore_certificate {
         pub(crate) parameters: models::CertificateRestoreParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2293,6 +2389,10 @@ pub mod restore_certificate {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -2404,7 +2504,8 @@ pub mod get_deleted_certificate {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2429,6 +2530,10 @@ pub mod get_deleted_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedCertificateBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod purge_deleted_certificate {
@@ -2440,7 +2545,8 @@ pub mod purge_deleted_certificate {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2483,7 +2589,8 @@ pub mod recover_deleted_certificate {
         pub(crate) certificate_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2509,6 +2616,10 @@ pub mod recover_deleted_certificate {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::CertificateBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_key {
@@ -2528,7 +2639,8 @@ pub mod create_key {
         pub(crate) parameters: models::KeyCreateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2550,6 +2662,10 @@ pub mod create_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod import_key {
@@ -2569,7 +2685,8 @@ pub mod import_key {
         pub(crate) parameters: models::KeyImportParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2591,6 +2708,10 @@ pub mod import_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_key {
@@ -2609,7 +2730,8 @@ pub mod delete_key {
         pub(crate) key_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2630,6 +2752,10 @@ pub mod delete_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedKeyBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_key {
@@ -2649,7 +2775,8 @@ pub mod get_key {
         pub(crate) key_version: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2669,6 +2796,10 @@ pub mod get_key {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -2690,7 +2821,8 @@ pub mod update_key {
         pub(crate) parameters: models::KeyUpdateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2711,6 +2843,10 @@ pub mod update_key {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -2893,7 +3029,8 @@ pub mod backup_key {
         pub(crate) key_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2915,6 +3052,10 @@ pub mod backup_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::BackupKeyResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restore_key {
@@ -2933,7 +3074,8 @@ pub mod restore_key {
         pub(crate) parameters: models::KeyRestoreParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -2955,6 +3097,10 @@ pub mod restore_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod encrypt {
@@ -2975,7 +3121,8 @@ pub mod encrypt {
         pub(crate) parameters: models::KeyOperationsParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3002,6 +3149,10 @@ pub mod encrypt {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyOperationResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod decrypt {
@@ -3022,7 +3173,8 @@ pub mod decrypt {
         pub(crate) parameters: models::KeyOperationsParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3049,6 +3201,10 @@ pub mod decrypt {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyOperationResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod sign {
@@ -3069,7 +3225,8 @@ pub mod sign {
         pub(crate) parameters: models::KeySignParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3096,6 +3253,10 @@ pub mod sign {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyOperationResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod verify {
@@ -3116,7 +3277,8 @@ pub mod verify {
         pub(crate) parameters: models::KeyVerifyParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3143,6 +3305,10 @@ pub mod verify {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyVerifyResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod wrap_key {
@@ -3163,7 +3329,8 @@ pub mod wrap_key {
         pub(crate) parameters: models::KeyOperationsParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3190,6 +3357,10 @@ pub mod wrap_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyOperationResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod unwrap_key {
@@ -3210,7 +3381,8 @@ pub mod unwrap_key {
         pub(crate) parameters: models::KeyOperationsParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3236,6 +3408,10 @@ pub mod unwrap_key {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyOperationResult> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -3336,7 +3512,8 @@ pub mod get_deleted_key {
         pub(crate) key_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3357,6 +3534,10 @@ pub mod get_deleted_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedKeyBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod purge_deleted_key {
@@ -3368,7 +3549,8 @@ pub mod purge_deleted_key {
         pub(crate) key_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3407,7 +3589,8 @@ pub mod recover_deleted_key {
         pub(crate) key_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3429,6 +3612,10 @@ pub mod recover_deleted_key {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::KeyBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod set_secret {
@@ -3448,7 +3635,8 @@ pub mod set_secret {
         pub(crate) parameters: models::SecretSetParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3470,6 +3658,10 @@ pub mod set_secret {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SecretBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_secret {
@@ -3488,7 +3680,8 @@ pub mod delete_secret {
         pub(crate) secret_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3509,6 +3702,10 @@ pub mod delete_secret {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedSecretBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_secret {
@@ -3528,7 +3725,8 @@ pub mod get_secret {
         pub(crate) secret_version: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3554,6 +3752,10 @@ pub mod get_secret {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SecretBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_secret {
@@ -3574,7 +3776,8 @@ pub mod update_secret {
         pub(crate) parameters: models::SecretUpdateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3600,6 +3803,10 @@ pub mod update_secret {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SecretBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -3863,7 +4070,8 @@ pub mod get_deleted_secret {
         pub(crate) secret_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3884,6 +4092,10 @@ pub mod get_deleted_secret {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedSecretBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod purge_deleted_secret {
@@ -3895,7 +4107,8 @@ pub mod purge_deleted_secret {
         pub(crate) secret_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3934,7 +4147,8 @@ pub mod recover_deleted_secret {
         pub(crate) secret_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3956,6 +4170,10 @@ pub mod recover_deleted_secret {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SecretBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod backup_secret {
@@ -3974,7 +4192,8 @@ pub mod backup_secret {
         pub(crate) secret_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3996,6 +4215,10 @@ pub mod backup_secret {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::BackupSecretResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restore_secret {
@@ -4014,7 +4237,8 @@ pub mod restore_secret {
         pub(crate) parameters: models::SecretRestoreParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4035,6 +4259,10 @@ pub mod restore_secret {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SecretBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4216,7 +4444,8 @@ pub mod get_deleted_storage_account {
         pub(crate) storage_account_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4237,6 +4466,10 @@ pub mod get_deleted_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedStorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod purge_deleted_storage_account {
@@ -4248,7 +4481,8 @@ pub mod purge_deleted_storage_account {
         pub(crate) storage_account_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4287,7 +4521,8 @@ pub mod recover_deleted_storage_account {
         pub(crate) storage_account_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4313,6 +4548,10 @@ pub mod recover_deleted_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::StorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod backup_storage_account {
@@ -4331,7 +4570,8 @@ pub mod backup_storage_account {
         pub(crate) storage_account_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4353,6 +4593,10 @@ pub mod backup_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::BackupStorageResult> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restore_storage_account {
@@ -4371,7 +4615,8 @@ pub mod restore_storage_account {
         pub(crate) parameters: models::StorageRestoreParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4393,6 +4638,10 @@ pub mod restore_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::StorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_storage_account {
@@ -4411,7 +4660,8 @@ pub mod get_storage_account {
         pub(crate) storage_account_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4432,6 +4682,10 @@ pub mod get_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::StorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod set_storage_account {
@@ -4451,7 +4705,8 @@ pub mod set_storage_account {
         pub(crate) parameters: models::StorageAccountCreateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4473,6 +4728,10 @@ pub mod set_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::StorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_storage_account {
@@ -4492,7 +4751,8 @@ pub mod update_storage_account {
         pub(crate) parameters: models::StorageAccountUpdateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4514,6 +4774,10 @@ pub mod update_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::StorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_storage_account {
@@ -4532,7 +4796,8 @@ pub mod delete_storage_account {
         pub(crate) storage_account_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4553,6 +4818,10 @@ pub mod delete_storage_account {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedStorageBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod regenerate_storage_account_key {
@@ -4572,7 +4841,8 @@ pub mod regenerate_storage_account_key {
         pub(crate) parameters: models::StorageAccountRegenerteKeyParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4597,6 +4867,10 @@ pub mod regenerate_storage_account_key {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::StorageBundle> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4786,7 +5060,8 @@ pub mod get_deleted_sas_definition {
         pub(crate) sas_definition_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4812,6 +5087,10 @@ pub mod get_deleted_sas_definition {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedSasDefinitionBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod recover_deleted_sas_definition {
@@ -4831,7 +5110,8 @@ pub mod recover_deleted_sas_definition {
         pub(crate) sas_definition_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4858,6 +5138,10 @@ pub mod recover_deleted_sas_definition {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SasDefinitionBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_sas_definition {
@@ -4877,7 +5161,8 @@ pub mod get_sas_definition {
         pub(crate) sas_definition_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4903,6 +5188,10 @@ pub mod get_sas_definition {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SasDefinitionBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod set_sas_definition {
@@ -4923,7 +5212,8 @@ pub mod set_sas_definition {
         pub(crate) parameters: models::SasDefinitionCreateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4950,6 +5240,10 @@ pub mod set_sas_definition {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SasDefinitionBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_sas_definition {
@@ -4970,7 +5264,8 @@ pub mod update_sas_definition {
         pub(crate) parameters: models::SasDefinitionUpdateParameters,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4997,6 +5292,10 @@ pub mod update_sas_definition {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SasDefinitionBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_sas_definition {
@@ -5016,7 +5315,8 @@ pub mod delete_sas_definition {
         pub(crate) sas_definition_name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5042,6 +5342,10 @@ pub mod delete_sas_definition {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedSasDefinitionBundle> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod full_backup {
@@ -5066,7 +5370,8 @@ pub mod full_backup {
             self
         }
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5092,6 +5397,10 @@ pub mod full_backup {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::FullBackupOperation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod full_backup_status {
@@ -5110,7 +5419,8 @@ pub mod full_backup_status {
         pub(crate) job_id: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5130,6 +5440,10 @@ pub mod full_backup_status {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::FullBackupOperation> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -5155,7 +5469,8 @@ pub mod full_restore_operation {
             self
         }
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5181,6 +5496,10 @@ pub mod full_restore_operation {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RestoreOperation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restore_status {
@@ -5199,7 +5518,8 @@ pub mod restore_status {
         pub(crate) job_id: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5219,6 +5539,10 @@ pub mod restore_status {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RestoreOperation> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -5245,7 +5569,8 @@ pub mod selective_key_restore_operation {
             self
         }
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5270,6 +5595,10 @@ pub mod selective_key_restore_operation {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SelectiveKeyRestoreOperation> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -5349,7 +5678,8 @@ pub mod role_definitions {
             pub(crate) role_definition_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5375,6 +5705,10 @@ pub mod role_definitions {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -5395,7 +5729,8 @@ pub mod role_definitions {
             pub(crate) parameters: models::RoleDefinitionCreateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5422,6 +5757,10 @@ pub mod role_definitions {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -5441,7 +5780,8 @@ pub mod role_definitions {
             pub(crate) role_definition_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5466,6 +5806,10 @@ pub mod role_definitions {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5632,7 +5976,8 @@ pub mod role_assignments {
             pub(crate) role_assignment_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5658,6 +6003,10 @@ pub mod role_assignments {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create {
@@ -5678,7 +6027,8 @@ pub mod role_assignments {
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5705,6 +6055,10 @@ pub mod role_assignments {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -5724,7 +6078,8 @@ pub mod role_assignments {
             pub(crate) role_assignment_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5749,6 +6104,10 @@ pub mod role_assignments {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5891,7 +6250,8 @@ pub mod hsm_security_domain {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5908,6 +6268,10 @@ pub mod hsm_security_domain {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecurityDomainOperationStatus> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5928,7 +6292,8 @@ pub mod hsm_security_domain {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5950,6 +6315,10 @@ pub mod hsm_security_domain {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecurityDomainObject> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod transfer_key {
@@ -5967,7 +6336,8 @@ pub mod hsm_security_domain {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5988,6 +6358,10 @@ pub mod hsm_security_domain {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::TransferKey> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod upload {
@@ -6007,7 +6381,8 @@ pub mod hsm_security_domain {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6026,6 +6401,10 @@ pub mod hsm_security_domain {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecurityDomainOperationStatus> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod upload_pending {
@@ -6043,7 +6422,8 @@ pub mod hsm_security_domain {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6060,6 +6440,10 @@ pub mod hsm_security_domain {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecurityDomainOperationStatus> {
+                self.send().await?.into_body().await
             }
         }
     }

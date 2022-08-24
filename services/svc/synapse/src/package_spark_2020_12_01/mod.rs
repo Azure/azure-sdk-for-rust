@@ -228,7 +228,8 @@ pub mod spark_batch {
                 self.detailed = Some(detailed);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -260,6 +261,10 @@ pub mod spark_batch {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJobCollection> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_spark_batch_job {
@@ -286,7 +291,8 @@ pub mod spark_batch {
                 self.detailed = Some(detailed);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -312,6 +318,10 @@ pub mod spark_batch {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJob> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -339,7 +349,8 @@ pub mod spark_batch {
                 self.detailed = Some(detailed);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -366,6 +377,10 @@ pub mod spark_batch {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJob> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod cancel_spark_batch_job {
@@ -379,7 +394,8 @@ pub mod spark_batch {
             pub(crate) batch_id: i32,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -628,7 +644,8 @@ pub mod spark_session {
                 self.detailed = Some(detailed);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -660,6 +677,10 @@ pub mod spark_session {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkSessionCollection> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_spark_session {
@@ -686,7 +707,8 @@ pub mod spark_session {
                 self.detailed = Some(detailed);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -712,6 +734,10 @@ pub mod spark_session {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkSession> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -739,7 +765,8 @@ pub mod spark_session {
                 self.detailed = Some(detailed);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -766,6 +793,10 @@ pub mod spark_session {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkSession> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod cancel_spark_session {
@@ -779,7 +810,8 @@ pub mod spark_session {
             pub(crate) session_id: i32,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -816,7 +848,8 @@ pub mod spark_session {
             pub(crate) session_id: i32,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -860,7 +893,8 @@ pub mod spark_session {
             pub(crate) session_id: i32,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -884,6 +918,10 @@ pub mod spark_session {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkStatementCollection> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_spark_statement {
@@ -905,7 +943,8 @@ pub mod spark_session {
             pub(crate) spark_statement_options: models::SparkStatementOptions,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -930,6 +969,10 @@ pub mod spark_session {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkStatement> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_spark_statement {
@@ -951,7 +994,8 @@ pub mod spark_session {
             pub(crate) statement_id: i32,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -976,6 +1020,10 @@ pub mod spark_session {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkStatement> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod cancel_spark_statement {
@@ -997,7 +1045,8 @@ pub mod spark_session {
             pub(crate) statement_id: i32,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1022,6 +1071,10 @@ pub mod spark_session {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SparkStatementCancellationResult> {
+                self.send().await?.into_body().await
             }
         }
     }

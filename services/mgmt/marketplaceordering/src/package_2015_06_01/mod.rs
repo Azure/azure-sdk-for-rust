@@ -264,7 +264,8 @@ pub mod marketplace_agreements {
             pub(crate) plan_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -284,6 +285,10 @@ pub mod marketplace_agreements {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -308,7 +313,8 @@ pub mod marketplace_agreements {
             pub(crate) parameters: models::AgreementTerms,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -329,6 +335,10 @@ pub mod marketplace_agreements {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -351,7 +361,8 @@ pub mod marketplace_agreements {
             pub(crate) plan_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -380,6 +391,10 @@ pub mod marketplace_agreements {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTerms> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod cancel {
@@ -401,7 +416,8 @@ pub mod marketplace_agreements {
             pub(crate) plan_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -430,6 +446,10 @@ pub mod marketplace_agreements {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTerms> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_agreement {
@@ -451,7 +471,8 @@ pub mod marketplace_agreements {
             pub(crate) plan_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -479,6 +500,10 @@ pub mod marketplace_agreements {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTerms> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list {
@@ -497,7 +522,8 @@ pub mod marketplace_agreements {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -521,6 +547,10 @@ pub mod marketplace_agreements {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AgreementTermsList> {
+                self.send().await?.into_body().await
             }
         }
     }

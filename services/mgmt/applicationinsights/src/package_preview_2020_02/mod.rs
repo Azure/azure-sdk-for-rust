@@ -256,7 +256,8 @@ pub mod get_test_result_file {
             self.continuation_token = Some(continuation_token.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -297,6 +298,10 @@ pub mod get_test_result_file {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::TestResultFileResponse> {
+            self.send().await?.into_body().await
         }
     }
 }

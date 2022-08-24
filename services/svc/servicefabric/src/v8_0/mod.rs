@@ -3451,7 +3451,8 @@ pub mod get_cluster_manifest {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3474,6 +3475,10 @@ pub mod get_cluster_manifest {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterManifest> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -3528,7 +3533,8 @@ pub mod get_cluster_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3577,6 +3583,10 @@ pub mod get_cluster_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -3637,7 +3647,8 @@ pub mod get_cluster_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3692,6 +3703,10 @@ pub mod get_cluster_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_cluster_health_chunk {
@@ -3715,7 +3730,8 @@ pub mod get_cluster_health_chunk {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3738,6 +3754,10 @@ pub mod get_cluster_health_chunk {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealthChunk> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -3771,7 +3791,8 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3800,6 +3821,10 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealthChunk> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_cluster_health {
@@ -3823,7 +3848,8 @@ pub mod report_cluster_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3880,7 +3906,8 @@ pub mod get_provisioned_fabric_code_version_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3906,6 +3933,10 @@ pub mod get_provisioned_fabric_code_version_info_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::FabricCodeVersionInfoList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -3936,7 +3967,8 @@ pub mod get_provisioned_fabric_config_version_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3963,6 +3995,10 @@ pub mod get_provisioned_fabric_config_version_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::FabricConfigVersionInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_cluster_upgrade_progress {
@@ -3986,7 +4022,8 @@ pub mod get_cluster_upgrade_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4009,6 +4046,10 @@ pub mod get_cluster_upgrade_progress {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterUpgradeProgressObject> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4034,7 +4075,8 @@ pub mod get_cluster_configuration {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4062,6 +4104,10 @@ pub mod get_cluster_configuration {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterConfiguration> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_cluster_configuration_upgrade_status {
@@ -4085,7 +4131,8 @@ pub mod get_cluster_configuration_upgrade_status {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4108,6 +4155,10 @@ pub mod get_cluster_configuration_upgrade_status {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterConfigurationUpgradeStatusInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4132,7 +4183,8 @@ pub mod get_upgrade_orchestration_service_state {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4155,6 +4207,10 @@ pub mod get_upgrade_orchestration_service_state {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UpgradeOrchestrationServiceState> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4180,7 +4236,8 @@ pub mod set_upgrade_orchestration_service_state {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4205,6 +4262,10 @@ pub mod set_upgrade_orchestration_service_state {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UpgradeOrchestrationServiceStateSummary> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod provision_cluster {
@@ -4222,7 +4283,8 @@ pub mod provision_cluster {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4264,7 +4326,8 @@ pub mod unprovision_cluster {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4305,7 +4368,8 @@ pub mod rollback_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4347,7 +4411,8 @@ pub mod resume_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4389,7 +4454,8 @@ pub mod start_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4431,7 +4497,8 @@ pub mod start_cluster_configuration_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4473,7 +4540,8 @@ pub mod update_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4521,7 +4589,8 @@ pub mod get_aad_metadata {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4544,6 +4613,10 @@ pub mod get_aad_metadata {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AadMetadataObject> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4568,7 +4641,8 @@ pub mod get_cluster_version {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4591,6 +4665,10 @@ pub mod get_cluster_version {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterVersion> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4615,7 +4693,8 @@ pub mod get_cluster_load {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4639,6 +4718,10 @@ pub mod get_cluster_load {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterLoadInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod toggle_verbose_service_placement_health_reporting {
@@ -4656,7 +4739,8 @@ pub mod toggle_verbose_service_placement_health_reporting {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4727,7 +4811,8 @@ pub mod get_node_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4760,6 +4845,10 @@ pub mod get_node_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedNodeInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_node_info {
@@ -4784,7 +4873,8 @@ pub mod get_node_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4807,6 +4897,10 @@ pub mod get_node_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4838,7 +4932,8 @@ pub mod get_node_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4866,6 +4961,10 @@ pub mod get_node_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -4903,7 +5002,8 @@ pub mod get_node_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4937,6 +5037,10 @@ pub mod get_node_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_node_health {
@@ -4961,7 +5065,8 @@ pub mod report_node_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5013,7 +5118,8 @@ pub mod get_node_load_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5041,6 +5147,10 @@ pub mod get_node_load_info {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeLoadInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod disable_node {
@@ -5059,7 +5169,8 @@ pub mod disable_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5101,7 +5212,8 @@ pub mod enable_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5143,7 +5255,8 @@ pub mod remove_node_state {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5186,7 +5299,8 @@ pub mod restart_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5228,7 +5342,8 @@ pub mod remove_configuration_overrides {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5280,7 +5395,8 @@ pub mod get_configuration_overrides {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5308,6 +5424,10 @@ pub mod get_configuration_overrides {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ConfigParameterOverrideList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod add_configuration_parameter_overrides {
@@ -5332,7 +5452,8 @@ pub mod add_configuration_parameter_overrides {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5376,7 +5497,8 @@ pub mod remove_node_tags {
         pub(crate) node_tags: models::NodeTagsList,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5410,7 +5532,8 @@ pub mod add_node_tags {
         pub(crate) node_tags: models::NodeTagsList,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5479,7 +5602,8 @@ pub mod get_application_type_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5519,6 +5643,10 @@ pub mod get_application_type_info_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationTypeInfoList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -5568,7 +5696,8 @@ pub mod get_application_type_info_list_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5612,6 +5741,10 @@ pub mod get_application_type_info_list_by_name {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationTypeInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod provision_application_type {
@@ -5629,7 +5762,8 @@ pub mod provision_application_type {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5672,7 +5806,8 @@ pub mod unprovision_application_type {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5726,7 +5861,8 @@ pub mod get_service_type_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5758,6 +5894,10 @@ pub mod get_service_type_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceTypeInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_service_type_info_by_name {
@@ -5784,7 +5924,8 @@ pub mod get_service_type_info_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5817,6 +5958,10 @@ pub mod get_service_type_info_by_name {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceTypeInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_service_manifest {
@@ -5843,7 +5988,8 @@ pub mod get_service_manifest {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5879,6 +6025,10 @@ pub mod get_service_manifest {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceTypeManifest> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_deployed_service_type_info_list {
@@ -5910,7 +6060,8 @@ pub mod get_deployed_service_type_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5944,6 +6095,10 @@ pub mod get_deployed_service_type_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceTypeInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_deployed_service_type_info_by_name {
@@ -5976,7 +6131,8 @@ pub mod get_deployed_service_type_info_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6011,6 +6167,10 @@ pub mod get_deployed_service_type_info_by_name {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceTypeInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_application {
@@ -6028,7 +6188,8 @@ pub mod create_application {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6076,7 +6237,8 @@ pub mod delete_application {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6134,7 +6296,8 @@ pub mod get_application_load_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6161,6 +6324,10 @@ pub mod get_application_load_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationLoadInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -6215,7 +6382,8 @@ pub mod get_application_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6260,6 +6428,10 @@ pub mod get_application_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_application_info {
@@ -6290,7 +6462,8 @@ pub mod get_application_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6318,6 +6491,10 @@ pub mod get_application_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -6367,7 +6544,8 @@ pub mod get_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6415,6 +6593,10 @@ pub mod get_application_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -6470,7 +6652,8 @@ pub mod get_application_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6524,6 +6707,10 @@ pub mod get_application_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_application_health {
@@ -6548,7 +6735,8 @@ pub mod report_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6598,7 +6786,8 @@ pub mod start_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6651,7 +6840,8 @@ pub mod get_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6679,6 +6869,10 @@ pub mod get_application_upgrade {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationUpgradeProgressInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_application_upgrade {
@@ -6697,7 +6891,8 @@ pub mod update_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6744,7 +6939,8 @@ pub mod resume_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6790,7 +6986,8 @@ pub mod rollback_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6861,7 +7058,8 @@ pub mod get_deployed_application_info_list {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6896,6 +7094,10 @@ pub mod get_deployed_application_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedDeployedApplicationInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_deployed_application_info {
@@ -6927,7 +7129,8 @@ pub mod get_deployed_application_info {
             self.include_health_state = Some(include_health_state);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6960,6 +7163,10 @@ pub mod get_deployed_application_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedApplicationInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -7004,7 +7211,8 @@ pub mod get_deployed_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7048,6 +7256,10 @@ pub mod get_deployed_application_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedApplicationHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -7098,7 +7310,8 @@ pub mod get_deployed_application_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7148,6 +7361,10 @@ pub mod get_deployed_application_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedApplicationHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_deployed_application_health {
@@ -7173,7 +7390,8 @@ pub mod report_deployed_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7231,7 +7449,8 @@ pub mod get_application_manifest {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7262,6 +7481,10 @@ pub mod get_application_manifest {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationTypeManifest> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -7299,7 +7522,8 @@ pub mod get_service_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7333,6 +7557,10 @@ pub mod get_service_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedServiceInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_service_info {
@@ -7358,7 +7586,8 @@ pub mod get_service_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7387,6 +7616,10 @@ pub mod get_service_info {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_application_name_info {
@@ -7411,7 +7644,8 @@ pub mod get_application_name_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7439,6 +7673,10 @@ pub mod get_application_name_info {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationNameInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_service {
@@ -7457,7 +7695,8 @@ pub mod create_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7504,7 +7743,8 @@ pub mod create_service_from_template {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7556,7 +7796,8 @@ pub mod delete_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7604,7 +7845,8 @@ pub mod update_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7653,7 +7895,8 @@ pub mod get_service_description {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7680,6 +7923,10 @@ pub mod get_service_description {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceDescription> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -7723,7 +7970,8 @@ pub mod get_service_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7761,6 +8009,10 @@ pub mod get_service_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -7810,7 +8062,8 @@ pub mod get_service_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7854,6 +8107,10 @@ pub mod get_service_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_service_health {
@@ -7878,7 +8135,8 @@ pub mod report_service_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7948,7 +8206,8 @@ pub mod resolve_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7991,6 +8250,10 @@ pub mod resolve_service {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ResolvedServicePartition> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_unplaced_replica_information {
@@ -8027,7 +8290,8 @@ pub mod get_unplaced_replica_information {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8062,6 +8326,10 @@ pub mod get_unplaced_replica_information {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UnplacedReplicaInformation> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -8105,7 +8373,8 @@ pub mod get_loaded_partition_info_list {
             self.continuation_token = Some(continuation_token.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8140,6 +8409,10 @@ pub mod get_loaded_partition_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::LoadedPartitionInformationResultList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_partition_info_list {
@@ -8170,7 +8443,8 @@ pub mod get_partition_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8197,6 +8471,10 @@ pub mod get_partition_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedServicePartitionInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_partition_info {
@@ -8221,7 +8499,8 @@ pub mod get_partition_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8244,6 +8523,10 @@ pub mod get_partition_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServicePartitionInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -8269,7 +8552,8 @@ pub mod get_service_name_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8296,6 +8580,10 @@ pub mod get_service_name_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceNameInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -8339,7 +8627,8 @@ pub mod get_partition_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8377,6 +8666,10 @@ pub mod get_partition_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -8426,7 +8719,8 @@ pub mod get_partition_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8470,6 +8764,10 @@ pub mod get_partition_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_partition_health {
@@ -8494,7 +8792,8 @@ pub mod report_partition_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8550,7 +8849,8 @@ pub mod get_partition_load_information {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8578,6 +8878,10 @@ pub mod get_partition_load_information {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionLoadInformation> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod reset_partition_load {
@@ -8595,7 +8899,8 @@ pub mod reset_partition_load {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8637,7 +8942,8 @@ pub mod recover_partition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8679,7 +8985,8 @@ pub mod recover_service_partitions {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8724,7 +9031,8 @@ pub mod recover_system_partitions {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8765,7 +9073,8 @@ pub mod recover_all_partitions {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8819,7 +9128,8 @@ pub mod move_primary_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8886,7 +9196,8 @@ pub mod move_secondary_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8961,7 +9272,8 @@ pub mod update_partition_load {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8991,6 +9303,10 @@ pub mod update_partition_load {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedUpdatePartitionLoadResultList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -9028,7 +9344,8 @@ pub mod move_instance {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9087,7 +9404,8 @@ pub mod create_repair_task {
         pub(crate) repair_task: models::RepairTask,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9109,6 +9427,10 @@ pub mod create_repair_task {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod cancel_repair_task {
@@ -9127,7 +9449,8 @@ pub mod cancel_repair_task {
         pub(crate) repair_task_cancel_description: models::RepairTaskCancelDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9149,6 +9472,10 @@ pub mod cancel_repair_task {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_repair_task {
@@ -9160,7 +9487,8 @@ pub mod delete_repair_task {
         pub(crate) repair_task_delete_description: models::RepairTaskDeleteDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9217,7 +9545,8 @@ pub mod get_repair_task_list {
             self.executor_filter = Some(executor_filter.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9249,6 +9578,10 @@ pub mod get_repair_task_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod force_approve_repair_task {
@@ -9267,7 +9600,8 @@ pub mod force_approve_repair_task {
         pub(crate) repair_task_approve_description: models::RepairTaskApproveDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9289,6 +9623,10 @@ pub mod force_approve_repair_task {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_repair_task_health_policy {
@@ -9307,7 +9645,8 @@ pub mod update_repair_task_health_policy {
         pub(crate) repair_task_update_health_policy_description: models::RepairTaskUpdateHealthPolicyDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9329,6 +9668,10 @@ pub mod update_repair_task_health_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_repair_execution_state {
@@ -9347,7 +9690,8 @@ pub mod update_repair_execution_state {
         pub(crate) repair_task: models::RepairTask,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9368,6 +9712,10 @@ pub mod update_repair_execution_state {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -9399,7 +9747,8 @@ pub mod get_replica_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9430,6 +9779,10 @@ pub mod get_replica_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedReplicaInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_replica_info {
@@ -9455,7 +9808,8 @@ pub mod get_replica_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9483,6 +9837,10 @@ pub mod get_replica_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -9515,7 +9873,8 @@ pub mod get_replica_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9548,6 +9907,10 @@ pub mod get_replica_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -9586,7 +9949,8 @@ pub mod get_replica_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9625,6 +9989,10 @@ pub mod get_replica_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_replica_health {
@@ -9651,7 +10019,8 @@ pub mod report_replica_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9723,7 +10092,8 @@ pub mod get_deployed_service_replica_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9760,6 +10130,10 @@ pub mod get_deployed_service_replica_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_deployed_service_replica_detail_info {
@@ -9786,7 +10160,8 @@ pub mod get_deployed_service_replica_detail_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9816,6 +10191,10 @@ pub mod get_deployed_service_replica_detail_info {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_deployed_service_replica_detail_info_by_partition_id {
@@ -9841,7 +10220,8 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9870,6 +10250,10 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restart_replica {
@@ -9889,7 +10273,8 @@ pub mod restart_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9945,7 +10330,8 @@ pub mod remove_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10006,7 +10392,8 @@ pub mod get_deployed_service_package_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10035,6 +10422,10 @@ pub mod get_deployed_service_package_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_deployed_service_package_info_list_by_name {
@@ -10061,7 +10452,8 @@ pub mod get_deployed_service_package_info_list_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10090,6 +10482,10 @@ pub mod get_deployed_service_package_info_list_by_name {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageInfoList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -10123,7 +10519,8 @@ pub mod get_deployed_service_package_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10157,6 +10554,10 @@ pub mod get_deployed_service_package_health {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageHealth> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -10196,7 +10597,8 @@ pub mod get_deployed_service_package_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10236,6 +10638,10 @@ pub mod get_deployed_service_package_health_using_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageHealth> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod report_deployed_service_package_health {
@@ -10262,7 +10668,8 @@ pub mod report_deployed_service_package_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10314,7 +10721,8 @@ pub mod deploy_service_package_to_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10380,7 +10788,8 @@ pub mod get_deployed_code_package_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10417,6 +10826,10 @@ pub mod get_deployed_code_package_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedCodePackageInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restart_deployed_code_package {
@@ -10436,7 +10849,8 @@ pub mod restart_deployed_code_package {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10505,7 +10919,8 @@ pub mod get_container_logs_deployed_on_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10546,6 +10961,10 @@ pub mod get_container_logs_deployed_on_node {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ContainerLogs> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod invoke_container_api {
@@ -10575,7 +10994,8 @@ pub mod invoke_container_api {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10615,6 +11035,10 @@ pub mod invoke_container_api {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ContainerApiResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_compose_deployment {
@@ -10632,7 +11056,8 @@ pub mod create_compose_deployment {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10681,7 +11106,8 @@ pub mod get_compose_deployment_status {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10704,6 +11130,10 @@ pub mod get_compose_deployment_status {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ComposeDeploymentStatusInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -10740,7 +11170,8 @@ pub mod get_compose_deployment_status_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10770,6 +11201,10 @@ pub mod get_compose_deployment_status_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedComposeDeploymentStatusInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_compose_deployment_upgrade_progress {
@@ -10794,7 +11229,8 @@ pub mod get_compose_deployment_upgrade_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10822,6 +11258,10 @@ pub mod get_compose_deployment_upgrade_progress {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ComposeDeploymentUpgradeProgressInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod remove_compose_deployment {
@@ -10839,7 +11279,8 @@ pub mod remove_compose_deployment {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10886,7 +11327,8 @@ pub mod start_compose_deployment_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10932,7 +11374,8 @@ pub mod start_rollback_compose_deployment_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10984,7 +11427,8 @@ pub mod get_chaos {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11008,6 +11452,10 @@ pub mod get_chaos {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Chaos> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod start_chaos {
@@ -11025,7 +11473,8 @@ pub mod start_chaos {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11066,7 +11515,8 @@ pub mod stop_chaos {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11138,7 +11588,8 @@ pub mod get_chaos_events {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11174,6 +11625,10 @@ pub mod get_chaos_events {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ChaosEventsSegment> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_chaos_schedule {
@@ -11197,7 +11652,8 @@ pub mod get_chaos_schedule {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11221,6 +11677,10 @@ pub mod get_chaos_schedule {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ChaosScheduleDescription> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod post_chaos_schedule {
@@ -11238,7 +11698,8 @@ pub mod post_chaos_schedule {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11287,7 +11748,8 @@ pub mod get_image_store_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11311,6 +11773,10 @@ pub mod get_image_store_content {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ImageStoreContent> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod upload_file {
@@ -11328,7 +11794,8 @@ pub mod upload_file {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11369,7 +11836,8 @@ pub mod delete_image_store_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11416,7 +11884,8 @@ pub mod get_image_store_root_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11440,6 +11909,10 @@ pub mod get_image_store_root_content {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ImageStoreContent> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod copy_image_store_content {
@@ -11457,7 +11930,8 @@ pub mod copy_image_store_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11499,7 +11973,8 @@ pub mod delete_image_store_upload_session {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11542,7 +12017,8 @@ pub mod commit_image_store_upload_session {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11593,7 +12069,8 @@ pub mod get_image_store_upload_session_by_id {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11619,6 +12096,10 @@ pub mod get_image_store_upload_session_by_id {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UploadSession> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_image_store_upload_session_by_path {
@@ -11643,7 +12124,8 @@ pub mod get_image_store_upload_session_by_path {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11671,6 +12153,10 @@ pub mod get_image_store_upload_session_by_path {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::UploadSession> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod upload_file_chunk {
@@ -11690,7 +12176,8 @@ pub mod upload_file_chunk {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11744,7 +12231,8 @@ pub mod get_image_store_root_folder_size {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11767,6 +12255,10 @@ pub mod get_image_store_root_folder_size {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::FolderSizeInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -11792,7 +12284,8 @@ pub mod get_image_store_folder_size {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11820,6 +12313,10 @@ pub mod get_image_store_folder_size {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::FolderSizeInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_image_store_info {
@@ -11843,7 +12340,8 @@ pub mod get_image_store_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11866,6 +12364,10 @@ pub mod get_image_store_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ImageStoreInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -11897,7 +12399,8 @@ pub mod invoke_infrastructure_command {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11926,6 +12429,10 @@ pub mod invoke_infrastructure_command {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::InfrastructureServiceResponse> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -11957,7 +12464,8 @@ pub mod invoke_infrastructure_query {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11986,6 +12494,10 @@ pub mod invoke_infrastructure_query {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::InfrastructureServiceResponse> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod start_data_loss {
@@ -12006,7 +12518,8 @@ pub mod start_data_loss {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12066,7 +12579,8 @@ pub mod get_data_loss_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12097,6 +12611,10 @@ pub mod get_data_loss_progress {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionDataLossProgress> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod start_quorum_loss {
@@ -12118,7 +12636,8 @@ pub mod start_quorum_loss {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12182,7 +12701,8 @@ pub mod get_quorum_loss_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12213,6 +12733,10 @@ pub mod get_quorum_loss_progress {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionQuorumLossProgress> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod start_partition_restart {
@@ -12233,7 +12757,8 @@ pub mod start_partition_restart {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12295,7 +12820,8 @@ pub mod get_partition_restart_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12326,6 +12852,10 @@ pub mod get_partition_restart_progress {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionRestartProgress> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod start_node_transition {
@@ -12347,7 +12877,8 @@ pub mod start_node_transition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12413,7 +12944,8 @@ pub mod get_node_transition_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12443,6 +12975,10 @@ pub mod get_node_transition_progress {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeTransitionProgress> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_fault_operation_list {
@@ -12468,7 +13004,8 @@ pub mod get_fault_operation_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12498,6 +13035,10 @@ pub mod get_fault_operation_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::OperationStatusList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod cancel_operation {
@@ -12516,7 +13057,8 @@ pub mod cancel_operation {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12568,7 +13110,8 @@ pub mod create_backup_policy {
             self.validate_connection = Some(validate_connection);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12615,7 +13158,8 @@ pub mod delete_backup_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12679,7 +13223,8 @@ pub mod get_backup_policy_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12709,6 +13254,10 @@ pub mod get_backup_policy_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupPolicyDescriptionList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_backup_policy_by_name {
@@ -12733,7 +13282,8 @@ pub mod get_backup_policy_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12760,6 +13310,10 @@ pub mod get_backup_policy_by_name {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::BackupPolicyDescription> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -12797,7 +13351,8 @@ pub mod get_all_entities_backed_up_by_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12831,6 +13386,10 @@ pub mod get_all_entities_backed_up_by_policy {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupEntityList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_backup_policy {
@@ -12855,7 +13414,8 @@ pub mod update_backup_policy {
             self.validate_connection = Some(validate_connection);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12907,7 +13467,8 @@ pub mod enable_application_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12959,7 +13520,8 @@ pub mod disable_application_backup {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13028,7 +13590,8 @@ pub mod get_application_backup_configuration_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13061,6 +13624,10 @@ pub mod get_application_backup_configuration_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupConfigurationInfoList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -13116,7 +13683,8 @@ pub mod get_application_backup_list {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13163,6 +13731,10 @@ pub mod get_application_backup_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod suspend_application_backup {
@@ -13180,7 +13752,8 @@ pub mod suspend_application_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13226,7 +13799,8 @@ pub mod resume_application_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13273,7 +13847,8 @@ pub mod enable_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13321,7 +13896,8 @@ pub mod disable_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13386,7 +13962,8 @@ pub mod get_service_backup_configuration_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13419,6 +13996,10 @@ pub mod get_service_backup_configuration_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupConfigurationInfoList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -13474,7 +14055,8 @@ pub mod get_service_backup_list {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13517,6 +14099,10 @@ pub mod get_service_backup_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod suspend_service_backup {
@@ -13534,7 +14120,8 @@ pub mod suspend_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13576,7 +14163,8 @@ pub mod resume_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13619,7 +14207,8 @@ pub mod enable_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13671,7 +14260,8 @@ pub mod disable_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13728,7 +14318,8 @@ pub mod get_partition_backup_configuration_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13755,6 +14346,10 @@ pub mod get_partition_backup_configuration_info {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionBackupConfigurationInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -13798,7 +14393,8 @@ pub mod get_partition_backup_list {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13839,6 +14435,10 @@ pub mod get_partition_backup_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod suspend_partition_backup {
@@ -13856,7 +14456,8 @@ pub mod suspend_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13902,7 +14503,8 @@ pub mod resume_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13960,7 +14562,8 @@ pub mod backup_partition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14018,7 +14621,8 @@ pub mod get_partition_backup_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14046,6 +14650,10 @@ pub mod get_partition_backup_progress {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::BackupProgressInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod restore_partition {
@@ -14070,7 +14678,8 @@ pub mod restore_partition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14124,7 +14733,8 @@ pub mod get_partition_restore_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14151,6 +14761,10 @@ pub mod get_partition_restore_progress {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RestoreProgressInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -14188,7 +14802,8 @@ pub mod get_backups_from_backup_location {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14219,6 +14834,10 @@ pub mod get_backups_from_backup_location {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_name {
@@ -14236,7 +14855,8 @@ pub mod create_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14278,7 +14898,8 @@ pub mod get_name_exists_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14319,7 +14940,8 @@ pub mod delete_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14379,7 +15001,8 @@ pub mod get_sub_name_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14408,6 +15031,10 @@ pub mod get_sub_name_info_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedSubNameInfoList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -14445,7 +15072,8 @@ pub mod get_property_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14477,6 +15105,10 @@ pub mod get_property_info_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PagedPropertyInfoList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_property_info {
@@ -14502,7 +15134,8 @@ pub mod get_property_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14528,6 +15161,10 @@ pub mod get_property_info {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PropertyInfo> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod put_property {
@@ -14546,7 +15183,8 @@ pub mod put_property {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14589,7 +15227,8 @@ pub mod delete_property {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14640,7 +15279,8 @@ pub mod submit_property_batch {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14668,6 +15308,10 @@ pub mod submit_property_batch {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::SuccessfulPropertyBatchInfo> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -14712,7 +15356,8 @@ pub mod get_cluster_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14754,6 +15399,10 @@ pub mod get_cluster_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterEventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -14798,7 +15447,8 @@ pub mod get_containers_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14840,6 +15490,10 @@ pub mod get_containers_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ContainerInstanceEventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -14885,7 +15539,8 @@ pub mod get_node_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14932,6 +15587,10 @@ pub mod get_node_event_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeEventList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_nodes_event_list {
@@ -14975,7 +15634,8 @@ pub mod get_nodes_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15017,6 +15677,10 @@ pub mod get_nodes_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::NodeEventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -15062,7 +15726,8 @@ pub mod get_application_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15109,6 +15774,10 @@ pub mod get_application_event_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationEventList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_applications_event_list {
@@ -15152,7 +15821,8 @@ pub mod get_applications_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15194,6 +15864,10 @@ pub mod get_applications_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationEventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -15239,7 +15913,8 @@ pub mod get_service_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15286,6 +15961,10 @@ pub mod get_service_event_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceEventList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_services_event_list {
@@ -15329,7 +16008,8 @@ pub mod get_services_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15371,6 +16051,10 @@ pub mod get_services_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceEventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -15416,7 +16100,8 @@ pub mod get_partition_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15463,6 +16148,10 @@ pub mod get_partition_event_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionEventList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_partitions_event_list {
@@ -15506,7 +16195,8 @@ pub mod get_partitions_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15548,6 +16238,10 @@ pub mod get_partitions_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionEventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -15594,7 +16288,8 @@ pub mod get_partition_replica_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15642,6 +16337,10 @@ pub mod get_partition_replica_event_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaEventList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_partition_replicas_event_list {
@@ -15686,7 +16385,8 @@ pub mod get_partition_replicas_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15733,6 +16433,10 @@ pub mod get_partition_replicas_event_list {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaEventList> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_correlated_event_list {
@@ -15757,7 +16461,8 @@ pub mod get_correlated_event_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15784,6 +16489,10 @@ pub mod get_correlated_event_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::EventList> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -15852,7 +16561,8 @@ pub mod mesh_secret {
             pub(crate) secret_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -15877,6 +16587,10 @@ pub mod mesh_secret {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecretResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -15896,7 +16610,8 @@ pub mod mesh_secret {
             pub(crate) secret_resource_description: models::SecretResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -15922,6 +16637,10 @@ pub mod mesh_secret {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecretResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -15933,7 +16652,8 @@ pub mod mesh_secret {
             pub(crate) secret_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -15975,7 +16695,8 @@ pub mod mesh_secret {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -15995,6 +16716,10 @@ pub mod mesh_secret {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedSecretResourceDescriptionList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -16095,7 +16820,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16121,6 +16847,10 @@ pub mod mesh_secret_value {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecretValueResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod add_value {
@@ -16141,7 +16871,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_description: models::SecretValueResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16168,6 +16899,10 @@ pub mod mesh_secret_value {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecretValueResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -16180,7 +16915,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16224,7 +16960,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16249,6 +16986,10 @@ pub mod mesh_secret_value {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedSecretValueResourceDescriptionList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod show {
@@ -16268,7 +17009,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16294,6 +17036,10 @@ pub mod mesh_secret_value {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SecretValue> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -16363,7 +17109,8 @@ pub mod mesh_volume {
             pub(crate) volume_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16388,6 +17135,10 @@ pub mod mesh_volume {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::VolumeResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -16407,7 +17158,8 @@ pub mod mesh_volume {
             pub(crate) volume_resource_description: models::VolumeResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16433,6 +17185,10 @@ pub mod mesh_volume {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::VolumeResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -16444,7 +17200,8 @@ pub mod mesh_volume {
             pub(crate) volume_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16486,7 +17243,8 @@ pub mod mesh_volume {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16506,6 +17264,10 @@ pub mod mesh_volume {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedVolumeResourceDescriptionList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -16575,7 +17337,8 @@ pub mod mesh_network {
             pub(crate) network_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16600,6 +17363,10 @@ pub mod mesh_network {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::NetworkResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -16619,7 +17386,8 @@ pub mod mesh_network {
             pub(crate) network_resource_description: models::NetworkResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16645,6 +17413,10 @@ pub mod mesh_network {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::NetworkResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -16656,7 +17428,8 @@ pub mod mesh_network {
             pub(crate) network_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16698,7 +17471,8 @@ pub mod mesh_network {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16718,6 +17492,10 @@ pub mod mesh_network {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedNetworkResourceDescriptionList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -16798,7 +17576,8 @@ pub mod mesh_application {
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16823,6 +17602,10 @@ pub mod mesh_application {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ApplicationResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -16842,7 +17625,8 @@ pub mod mesh_application {
             pub(crate) application_resource_description: models::ApplicationResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16868,6 +17652,10 @@ pub mod mesh_application {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ApplicationResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -16879,7 +17667,8 @@ pub mod mesh_application {
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16921,7 +17710,8 @@ pub mod mesh_application {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16942,6 +17732,10 @@ pub mod mesh_application {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationResourceDescriptionList> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_upgrade_progress {
@@ -16960,7 +17754,8 @@ pub mod mesh_application {
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -16984,6 +17779,10 @@ pub mod mesh_application {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ApplicationResourceUpgradeProgressInfo> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -17034,7 +17833,8 @@ pub mod mesh_service {
             pub(crate) service_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17060,6 +17860,10 @@ pub mod mesh_service {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list {
@@ -17078,7 +17882,8 @@ pub mod mesh_service {
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17102,6 +17907,10 @@ pub mod mesh_service {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedServiceResourceDescriptionList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -17160,7 +17969,8 @@ pub mod mesh_code_package {
                 self.tail = Some(tail.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17190,6 +18000,10 @@ pub mod mesh_code_package {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ContainerLogs> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -17250,7 +18064,8 @@ pub mod mesh_service_replica {
             pub(crate) replica_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17277,6 +18092,10 @@ pub mod mesh_service_replica {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceReplicaDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list {
@@ -17296,7 +18115,8 @@ pub mod mesh_service_replica {
             pub(crate) service_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17321,6 +18141,10 @@ pub mod mesh_service_replica {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedServiceReplicaDescriptionList> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -17390,7 +18214,8 @@ pub mod mesh_gateway {
             pub(crate) gateway_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17415,6 +18240,10 @@ pub mod mesh_gateway {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::GatewayResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -17434,7 +18263,8 @@ pub mod mesh_gateway {
             pub(crate) gateway_resource_description: models::GatewayResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17460,6 +18290,10 @@ pub mod mesh_gateway {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::GatewayResourceDescription> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -17471,7 +18305,8 @@ pub mod mesh_gateway {
             pub(crate) gateway_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17513,7 +18348,8 @@ pub mod mesh_gateway {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17533,6 +18369,10 @@ pub mod mesh_gateway {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::PagedGatewayResourceDescriptionList> {
+                self.send().await?.into_body().await
             }
         }
     }

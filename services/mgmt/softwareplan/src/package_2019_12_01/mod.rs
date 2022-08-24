@@ -140,7 +140,8 @@ pub mod software_plan {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -350,7 +351,8 @@ pub mod hybrid_use_benefit {
             pub(crate) plan_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -376,6 +378,10 @@ pub mod hybrid_use_benefit {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::HybridUseBenefitModel> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create {
@@ -396,7 +402,8 @@ pub mod hybrid_use_benefit {
             pub(crate) body: models::HybridUseBenefitModel,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -423,6 +430,10 @@ pub mod hybrid_use_benefit {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::HybridUseBenefitModel> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update {
@@ -443,7 +454,8 @@ pub mod hybrid_use_benefit {
             pub(crate) body: models::HybridUseBenefitModel,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -470,6 +482,10 @@ pub mod hybrid_use_benefit {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::HybridUseBenefitModel> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -482,7 +498,8 @@ pub mod hybrid_use_benefit {
             pub(crate) plan_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

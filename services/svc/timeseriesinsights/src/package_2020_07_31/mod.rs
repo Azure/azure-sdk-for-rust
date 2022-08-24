@@ -193,7 +193,8 @@ pub mod query {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -222,6 +223,10 @@ pub mod query {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::AvailabilityResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -259,7 +264,8 @@ pub mod query {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -289,6 +295,10 @@ pub mod query {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::EventSchema> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -332,7 +342,8 @@ pub mod query {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -365,6 +376,10 @@ pub mod query {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::QueryResultPage> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -421,7 +436,8 @@ pub mod model_settings {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -447,6 +463,10 @@ pub mod model_settings {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ModelSettingsResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -478,7 +498,8 @@ pub mod model_settings {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -505,6 +526,10 @@ pub mod model_settings {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::ModelSettingsResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -593,7 +618,8 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -622,6 +648,10 @@ pub mod time_series_instances {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::GetInstancesPage> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -653,7 +683,8 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -680,6 +711,10 @@ pub mod time_series_instances {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::InstancesBatchResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -711,7 +746,8 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -738,6 +774,10 @@ pub mod time_series_instances {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::InstancesSuggestResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -775,7 +815,8 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -805,6 +846,10 @@ pub mod time_series_instances {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SearchInstancesResponsePage> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -868,7 +913,8 @@ pub mod time_series_types {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -897,6 +943,10 @@ pub mod time_series_types {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::GetTypesPage> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -928,7 +978,8 @@ pub mod time_series_types {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -955,6 +1006,10 @@ pub mod time_series_types {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::TypesBatchResponse> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1018,7 +1073,8 @@ pub mod time_series_hierarchies {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1047,6 +1103,10 @@ pub mod time_series_hierarchies {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::GetHierarchiesPage> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1078,7 +1138,8 @@ pub mod time_series_hierarchies {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1105,6 +1166,10 @@ pub mod time_series_hierarchies {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::HierarchiesBatchResponse> {
+                self.send().await?.into_body().await
             }
         }
     }

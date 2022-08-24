@@ -242,7 +242,8 @@ pub mod remote_rendering {
             pub(crate) conversion_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -268,6 +269,10 @@ pub mod remote_rendering {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Conversion> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_conversion {
@@ -288,7 +293,8 @@ pub mod remote_rendering {
             pub(crate) body: models::CreateConversionSettings,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -314,6 +320,10 @@ pub mod remote_rendering {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::Conversion> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -408,7 +418,8 @@ pub mod remote_rendering {
             pub(crate) session_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -434,6 +445,10 @@ pub mod remote_rendering {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SessionProperties> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_session {
@@ -454,7 +469,8 @@ pub mod remote_rendering {
             pub(crate) body: models::CreateSessionSettings,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -481,6 +497,10 @@ pub mod remote_rendering {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SessionProperties> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update_session {
@@ -501,7 +521,8 @@ pub mod remote_rendering {
             pub(crate) body: models::UpdateSessionSettings,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -528,6 +549,10 @@ pub mod remote_rendering {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::SessionProperties> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod stop_session {
@@ -540,7 +565,8 @@ pub mod remote_rendering {
             pub(crate) session_id: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

@@ -387,7 +387,8 @@ pub mod fluid_relay_servers {
             pub(crate) fluid_relay_server_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -414,6 +415,10 @@ pub mod fluid_relay_servers {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayServer> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod create_or_update {
@@ -435,7 +440,8 @@ pub mod fluid_relay_servers {
             pub(crate) resource: models::FluidRelayServer,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -463,6 +469,10 @@ pub mod fluid_relay_servers {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayServer> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod update {
@@ -484,7 +494,8 @@ pub mod fluid_relay_servers {
             pub(crate) resource: models::FluidRelayServerUpdate,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -512,6 +523,10 @@ pub mod fluid_relay_servers {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayServer> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -525,7 +540,8 @@ pub mod fluid_relay_servers {
             pub(crate) fluid_relay_server_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -573,7 +589,8 @@ pub mod fluid_relay_servers {
             pub(crate) parameters: models::RegenerateKeyRequest,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -601,6 +618,10 @@ pub mod fluid_relay_servers {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayServerKeys> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod get_keys {
@@ -621,7 +642,8 @@ pub mod fluid_relay_servers {
             pub(crate) fluid_relay_server_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -649,6 +671,10 @@ pub mod fluid_relay_servers {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayServerKeys> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod list_keys {
@@ -669,7 +695,8 @@ pub mod fluid_relay_servers {
             pub(crate) fluid_relay_server_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -696,6 +723,10 @@ pub mod fluid_relay_servers {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayServerKeys> {
+                self.send().await?.into_body().await
             }
         }
     }
@@ -943,7 +974,8 @@ pub mod fluid_relay_containers {
             pub(crate) fluid_relay_container_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -964,6 +996,10 @@ pub mod fluid_relay_containers {
                     }
                 })
             }
+            #[doc = "Send the request and return the response body."]
+            pub async fn into_body(self) -> azure_core::Result<models::FluidRelayContainer> {
+                self.send().await?.into_body().await
+            }
         }
     }
     pub mod delete {
@@ -978,7 +1014,8 @@ pub mod fluid_relay_containers {
             pub(crate) fluid_relay_container_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

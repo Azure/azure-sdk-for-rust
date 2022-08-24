@@ -377,7 +377,8 @@ pub mod get_docker_registry_v2_support {
         pub(crate) client: super::Client,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -413,7 +414,8 @@ pub mod get_tag_list {
         pub(crate) name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -430,6 +432,10 @@ pub mod get_tag_list {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepositoryTags> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -456,7 +462,8 @@ pub mod get_manifest {
             self.accept = Some(accept.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -482,6 +489,10 @@ pub mod get_manifest {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Manifest> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod create_manifest {
@@ -502,7 +513,8 @@ pub mod create_manifest {
         pub(crate) payload: models::Manifest,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -526,6 +538,10 @@ pub mod create_manifest {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod delete_manifest {
@@ -538,7 +554,8 @@ pub mod delete_manifest {
         pub(crate) reference: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -590,7 +607,8 @@ pub mod get_repositories {
             self.n = Some(n);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -613,6 +631,10 @@ pub mod get_repositories {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Repositories> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -643,7 +665,8 @@ pub mod get_acr_repositories {
             self.n = Some(n);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -667,6 +690,10 @@ pub mod get_acr_repositories {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::Repositories> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_acr_repository_attributes {
@@ -685,7 +712,8 @@ pub mod get_acr_repository_attributes {
         pub(crate) name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -702,6 +730,10 @@ pub mod get_acr_repository_attributes {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RepositoryAttributes> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -720,7 +752,8 @@ pub mod update_acr_repository_attributes {
             self.value = Some(value.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -761,7 +794,8 @@ pub mod delete_acr_repository {
         pub(crate) name: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -778,6 +812,10 @@ pub mod delete_acr_repository {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::DeletedRepository> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -821,7 +859,8 @@ pub mod get_acr_tags {
             self.digest = Some(digest.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -851,6 +890,10 @@ pub mod get_acr_tags {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AcrRepositoryTags> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_acr_tag_attributes {
@@ -870,7 +913,8 @@ pub mod get_acr_tag_attributes {
         pub(crate) reference: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -893,6 +937,10 @@ pub mod get_acr_tag_attributes {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AcrTagAttributes> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_acr_tag_attributes {
@@ -911,7 +959,8 @@ pub mod update_acr_tag_attributes {
             self.value = Some(value.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -951,7 +1000,8 @@ pub mod delete_acr_tag {
         pub(crate) reference: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1010,7 +1060,8 @@ pub mod get_acr_manifests {
             self.orderby = Some(orderby.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1037,6 +1088,10 @@ pub mod get_acr_manifests {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AcrManifests> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_acr_manifest_attributes {
@@ -1056,7 +1111,8 @@ pub mod get_acr_manifest_attributes {
         pub(crate) reference: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1079,6 +1135,10 @@ pub mod get_acr_manifest_attributes {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AcrManifestAttributes> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod update_acr_manifest_attributes {
@@ -1097,7 +1157,8 @@ pub mod update_acr_manifest_attributes {
             self.value = Some(value.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1162,7 +1223,8 @@ pub mod get_acr_refresh_token_from_exchange {
             self.access_token = Some(access_token.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1186,6 +1248,10 @@ pub mod get_acr_refresh_token_from_exchange {
                 }
             })
         }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::RefreshToken> {
+            self.send().await?.into_body().await
+        }
     }
 }
 pub mod get_acr_access_token_from_login {
@@ -1205,7 +1271,8 @@ pub mod get_acr_access_token_from_login {
         pub(crate) scope: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1226,6 +1293,10 @@ pub mod get_acr_access_token_from_login {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AccessToken> {
+            self.send().await?.into_body().await
         }
     }
 }
@@ -1248,7 +1319,8 @@ pub mod get_acr_access_token {
         pub(crate) refresh_token: String,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1270,6 +1342,10 @@ pub mod get_acr_access_token {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub async fn into_body(self) -> azure_core::Result<models::AccessToken> {
+            self.send().await?.into_body().await
         }
     }
 }
