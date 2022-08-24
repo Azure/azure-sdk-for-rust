@@ -80,7 +80,7 @@ pub struct ReplaceCollectionResponse {
     pub quorum_acked_lsn: u64,
     pub last_state_change: OffsetDateTime,
     pub date: OffsetDateTime,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub activity_id: uuid::Uuid,
     pub schema_version: String,
 }

@@ -369,7 +369,7 @@ impl CostInsightProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CostPerDayProperties {
     #[doc = "The date of the cost item."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub date: Option<time::OffsetDateTime>,
     #[doc = "The cost of the cost item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -486,7 +486,7 @@ pub struct CustomImageProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
     #[doc = "The creation date of the custom image."]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -668,7 +668,7 @@ pub struct FormulaProperties {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
     #[doc = "The creation date of the formula."]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "A virtual machine."]
     #[serde(rename = "formulaContent", default, skip_serializing_if = "Option::is_none")]
@@ -731,7 +731,7 @@ pub struct GalleryImageProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
     #[doc = "The creation date of the gallery image."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The description of the gallery image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -878,7 +878,7 @@ pub struct LabProperties {
     #[serde(rename = "defaultVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
     pub default_virtual_network_id: Option<String>,
     #[doc = "The creation date of the lab."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

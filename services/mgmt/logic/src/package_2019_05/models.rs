@@ -871,10 +871,10 @@ impl ArtifactContentPropertiesDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactProperties {
     #[doc = "The artifact creation time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The artifact changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
@@ -1064,10 +1064,10 @@ pub struct BatchConfigurationProperties {
     #[serde(rename = "releaseCriteria")]
     pub release_criteria: BatchReleaseCriteria,
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
 }
 impl BatchConfigurationProperties {
@@ -2322,7 +2322,7 @@ impl GenerateUpgradedDefinitionParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetCallbackUrlParameters {
     #[doc = "The expiry time."]
-    #[serde(rename = "notAfter", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "notAfter", default, with = "azure_core::date::rfc3339::option")]
     pub not_after: Option<time::OffsetDateTime>,
     #[doc = "The key type."]
     #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
@@ -2455,10 +2455,10 @@ impl IntegrationAccountAgreementListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountAgreementProperties {
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2544,10 +2544,10 @@ impl IntegrationAccountCertificateListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountCertificateProperties {
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2644,10 +2644,10 @@ pub struct IntegrationAccountMapProperties {
     #[serde(rename = "parametersSchema", default, skip_serializing_if = "Option::is_none")]
     pub parameters_schema: Option<integration_account_map_properties::ParametersSchema>,
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2747,10 +2747,10 @@ pub struct IntegrationAccountPartnerProperties {
     #[serde(rename = "partnerType")]
     pub partner_type: PartnerType,
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2849,10 +2849,10 @@ pub struct IntegrationAccountSchemaProperties {
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2936,10 +2936,10 @@ impl IntegrationAccountSessionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountSessionProperties {
     #[doc = "The created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<Object>,
@@ -4255,10 +4255,10 @@ impl OperationResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultProperties {
     #[doc = "The start time of the workflow scope repetition."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the workflow scope repetition."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow run action correlation properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4552,10 +4552,10 @@ impl RequestHistoryListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHistoryProperties {
     #[doc = "The time the request started."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The time the request ended."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "A request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4632,10 +4632,10 @@ impl Response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetryHistory {
     #[doc = "Gets the start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5566,10 +5566,10 @@ pub struct WorkflowProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<WorkflowProvisioningState>,
     #[doc = "Gets the created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5774,10 +5774,10 @@ impl WorkflowRunActionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionProperties {
     #[doc = "Gets the start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5897,13 +5897,13 @@ impl WorkflowRunListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunProperties {
     #[doc = "Gets the wait end time."]
-    #[serde(rename = "waitEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "waitEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub wait_end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5954,13 +5954,13 @@ pub struct WorkflowRunTrigger {
     #[serde(rename = "outputsLink", default, skip_serializing_if = "Option::is_none")]
     pub outputs_link: Option<ContentLink>,
     #[doc = "Gets the scheduled time."]
-    #[serde(rename = "scheduledTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledTime", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the tracking id."]
     #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
@@ -6204,13 +6204,13 @@ impl WorkflowTriggerHistoryListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistoryProperties {
     #[doc = "Gets the start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The scheduled time."]
-    #[serde(rename = "scheduledTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledTime", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6296,10 +6296,10 @@ pub struct WorkflowTriggerProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<WorkflowTriggerProvisioningState>,
     #[doc = "Gets the created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6308,10 +6308,10 @@ pub struct WorkflowTriggerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Gets the last execution time."]
-    #[serde(rename = "lastExecutionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastExecutionTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_execution_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the next execution time."]
-    #[serde(rename = "nextExecutionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextExecutionTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_execution_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow trigger recurrence."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6483,10 +6483,10 @@ pub struct WorkflowVersionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<WorkflowProvisioningState>,
     #[doc = "Gets the created time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the changed time."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The workflow state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

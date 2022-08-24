@@ -138,8 +138,8 @@ pub mod migrate_projects_controller {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> get_migrate_project::Builder {
-            get_migrate_project::Builder {
+        ) -> get_migrate_project::RequestBuilder {
+            get_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -160,8 +160,8 @@ pub mod migrate_projects_controller {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             body: impl Into<models::MigrateProject>,
-        ) -> put_migrate_project::Builder {
-            put_migrate_project::Builder {
+        ) -> put_migrate_project::RequestBuilder {
+            put_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -183,8 +183,8 @@ pub mod migrate_projects_controller {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             body: impl Into<models::MigrateProject>,
-        ) -> patch_migrate_project::Builder {
-            patch_migrate_project::Builder {
+        ) -> patch_migrate_project::RequestBuilder {
+            patch_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -204,8 +204,8 @@ pub mod migrate_projects_controller {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> delete_migrate_project::Builder {
-            delete_migrate_project::Builder {
+        ) -> delete_migrate_project::RequestBuilder {
+            delete_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -217,13 +217,13 @@ pub mod migrate_projects_controller {
         use super::models;
         type Response = models::MigrateProject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -269,14 +269,14 @@ pub mod migrate_projects_controller {
         use super::models;
         type Response = models::MigrateProject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) body: models::MigrateProject,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -323,14 +323,14 @@ pub mod migrate_projects_controller {
         use super::models;
         type Response = models::MigrateProject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) body: models::MigrateProject,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -381,13 +381,13 @@ pub mod migrate_projects_controller {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -443,8 +443,8 @@ pub mod private_endpoint_connections_controller {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> get_private_endpoint_connections::Builder {
-            get_private_endpoint_connections::Builder {
+        ) -> get_private_endpoint_connections::RequestBuilder {
+            get_private_endpoint_connections::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -456,13 +456,13 @@ pub mod private_endpoint_connections_controller {
         use super::models;
         type Response = models::PrivateEndpointConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -517,8 +517,8 @@ pub mod private_endpoint_connection_controller {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             pe_connection_name: impl Into<String>,
-        ) -> get_private_endpoint_connection::Builder {
-            get_private_endpoint_connection::Builder {
+        ) -> get_private_endpoint_connection::RequestBuilder {
+            get_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -542,8 +542,8 @@ pub mod private_endpoint_connection_controller {
             migrate_project_name: impl Into<String>,
             pe_connection_name: impl Into<String>,
             body: impl Into<models::ModifyConnectionStateBody>,
-        ) -> put_private_endpoint_connection::Builder {
-            put_private_endpoint_connection::Builder {
+        ) -> put_private_endpoint_connection::RequestBuilder {
+            put_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -566,8 +566,8 @@ pub mod private_endpoint_connection_controller {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             pe_connection_name: impl Into<String>,
-        ) -> delete_private_endpoint_connection::Builder {
-            delete_private_endpoint_connection::Builder {
+        ) -> delete_private_endpoint_connection::RequestBuilder {
+            delete_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -580,14 +580,14 @@ pub mod private_endpoint_connection_controller {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) pe_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -627,7 +627,7 @@ pub mod private_endpoint_connection_controller {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -635,7 +635,7 @@ pub mod private_endpoint_connection_controller {
             pub(crate) pe_connection_name: String,
             pub(crate) body: models::ModifyConnectionStateBody,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -680,14 +680,14 @@ pub mod private_endpoint_connection_controller {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) pe_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -739,8 +739,8 @@ pub mod private_link_resource_controller {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             private_link_resource_name: impl Into<String>,
-        ) -> get_private_link_resource::Builder {
-            get_private_link_resource::Builder {
+        ) -> get_private_link_resource::RequestBuilder {
+            get_private_link_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -760,8 +760,8 @@ pub mod private_link_resource_controller {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> get_private_link_resources::Builder {
-            get_private_link_resources::Builder {
+        ) -> get_private_link_resources::RequestBuilder {
+            get_private_link_resources::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -773,14 +773,14 @@ pub mod private_link_resource_controller {
         use super::models;
         type Response = models::PrivateLinkResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) private_link_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -827,13 +827,13 @@ pub mod private_link_resource_controller {
         use super::models;
         type Response = models::PrivateLinkResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -885,8 +885,8 @@ pub mod projects {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -897,8 +897,8 @@ pub mod projects {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
         #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
-        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -909,11 +909,11 @@ pub mod projects {
         use super::models;
         type Response = models::ProjectResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -983,12 +983,12 @@ pub mod projects {
         use super::models;
         type Response = models::ProjectResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1062,18 +1062,18 @@ pub mod operations {
     impl Client {
         #[doc = "Get list of operations supported in the API."]
         #[doc = "Get a list of REST API supported by Microsoft.Migrate provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::AvailableOperations;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

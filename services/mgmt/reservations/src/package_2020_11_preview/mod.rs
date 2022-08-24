@@ -145,8 +145,8 @@ pub mod quota {
             provider_id: impl Into<String>,
             location: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
@@ -169,8 +169,8 @@ pub mod quota {
             location: impl Into<String>,
             resource_name: impl Into<String>,
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
@@ -194,8 +194,8 @@ pub mod quota {
             location: impl Into<String>,
             resource_name: impl Into<String>,
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
@@ -215,8 +215,8 @@ pub mod quota {
             subscription_id: impl Into<String>,
             provider_id: impl Into<String>,
             location: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
@@ -228,14 +228,14 @@ pub mod quota {
         use super::models;
         type Response = models::CurrentQuotaLimitBase;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -286,7 +286,7 @@ pub mod quota {
             Created201(models::QuotaRequestSubmitResponse201),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
@@ -294,7 +294,7 @@ pub mod quota {
             pub(crate) resource_name: String,
             pub(crate) create_quota_request: models::CurrentQuotaLimitBase,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -352,7 +352,7 @@ pub mod quota {
             Created201(models::QuotaRequestSubmitResponse201),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
@@ -360,7 +360,7 @@ pub mod quota {
             pub(crate) resource_name: String,
             pub(crate) create_quota_request: models::CurrentQuotaLimitBase,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -414,13 +414,13 @@ pub mod quota {
         use super::models;
         type Response = models::QuotaLimits;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -506,8 +506,8 @@ pub mod quota_request_status {
             provider_id: impl Into<String>,
             location: impl Into<String>,
             id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
@@ -526,8 +526,8 @@ pub mod quota_request_status {
             subscription_id: impl Into<String>,
             provider_id: impl Into<String>,
             location: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
@@ -542,14 +542,14 @@ pub mod quota_request_status {
         use super::models;
         type Response = models::QuotaRequestDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -596,7 +596,7 @@ pub mod quota_request_status {
         use super::models;
         type Response = models::QuotaRequestDetailsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
@@ -605,7 +605,7 @@ pub mod quota_request_status {
             pub(crate) top: Option<i32>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "| Field | Supported operators |\r\n|---------------------|------------------------|\r\n|requestSubmitTime | ge, le, eq, gt, lt |"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -706,8 +706,8 @@ pub mod auto_quota_increase {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription id."]
-        pub fn get_properties(&self, subscription_id: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, subscription_id: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -721,8 +721,8 @@ pub mod auto_quota_increase {
             &self,
             subscription_id: impl Into<String>,
             auto_quota_increase_request: impl Into<models::AutoQuotaIncreaseDetail>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 auto_quota_increase_request: auto_quota_increase_request.into(),
@@ -733,11 +733,11 @@ pub mod auto_quota_increase {
         use super::models;
         type Response = models::AutoQuotaIncreaseDetail;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -781,12 +781,12 @@ pub mod auto_quota_increase {
         use super::models;
         type Response = models::AutoQuotaIncreaseDetail;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) auto_quota_increase_request: models::AutoQuotaIncreaseDetail,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -843,8 +843,8 @@ pub mod reservation {
             reservation_order_id: impl Into<String>,
             reservation_id: impl Into<String>,
             body: impl Into<models::AvailableScopeRequest>,
-        ) -> available_scopes::Builder {
-            available_scopes::Builder {
+        ) -> available_scopes::RequestBuilder {
+            available_scopes::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 reservation_id: reservation_id.into(),
@@ -857,8 +857,8 @@ pub mod reservation {
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         #[doc = "* `body`: Information needed to Split a reservation item"]
-        pub fn split(&self, reservation_order_id: impl Into<String>, body: impl Into<models::SplitRequest>) -> split::Builder {
-            split::Builder {
+        pub fn split(&self, reservation_order_id: impl Into<String>, body: impl Into<models::SplitRequest>) -> split::RequestBuilder {
+            split::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
@@ -870,8 +870,8 @@ pub mod reservation {
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         #[doc = "* `body`: Information needed for commercial request for a reservation"]
-        pub fn merge(&self, reservation_order_id: impl Into<String>, body: impl Into<models::MergeRequest>) -> merge::Builder {
-            merge::Builder {
+        pub fn merge(&self, reservation_order_id: impl Into<String>, body: impl Into<models::MergeRequest>) -> merge::RequestBuilder {
+            merge::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
@@ -882,8 +882,8 @@ pub mod reservation {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
-        pub fn list(&self, reservation_order_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, reservation_order_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
             }
@@ -894,8 +894,8 @@ pub mod reservation {
         #[doc = "Arguments:"]
         #[doc = "* `reservation_id`: Id of the Reservation Item"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
-        pub fn get(&self, reservation_id: impl Into<String>, reservation_order_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, reservation_id: impl Into<String>, reservation_order_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 reservation_id: reservation_id.into(),
                 reservation_order_id: reservation_order_id.into(),
@@ -914,8 +914,8 @@ pub mod reservation {
             reservation_order_id: impl Into<String>,
             reservation_id: impl Into<String>,
             parameters: impl Into<models::Patch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 reservation_id: reservation_id.into(),
@@ -932,8 +932,8 @@ pub mod reservation {
             &self,
             reservation_id: impl Into<String>,
             reservation_order_id: impl Into<String>,
-        ) -> list_revisions::Builder {
-            list_revisions::Builder {
+        ) -> list_revisions::RequestBuilder {
+            list_revisions::RequestBuilder {
                 client: self.0.clone(),
                 reservation_id: reservation_id.into(),
                 reservation_order_id: reservation_order_id.into(),
@@ -944,13 +944,13 @@ pub mod reservation {
         use super::models;
         type Response = models::AvailableScopeProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) reservation_id: String,
             pub(crate) body: models::AvailableScopeRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1001,12 +1001,12 @@ pub mod reservation {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::SplitRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1057,12 +1057,12 @@ pub mod reservation {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::MergeRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1109,11 +1109,11 @@ pub mod reservation {
         use super::models;
         type Response = models::ReservationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1183,13 +1183,13 @@ pub mod reservation {
         use super::models;
         type Response = models::ReservationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_id: String,
             pub(crate) reservation_order_id: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Supported value of this query is renewProperties"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -1246,13 +1246,13 @@ pub mod reservation {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) reservation_id: String,
             pub(crate) parameters: models::Patch,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1300,12 +1300,12 @@ pub mod reservation {
         use super::models;
         type Response = models::ReservationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_id: String,
             pub(crate) reservation_order_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1379,8 +1379,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Id of the subscription"]
     #[doc = "* `reserved_resource_type`: The type of the resource for which the skus should be provided."]
-    pub fn get_catalog(&self, subscription_id: impl Into<String>, reserved_resource_type: impl Into<String>) -> get_catalog::Builder {
-        get_catalog::Builder {
+    pub fn get_catalog(
+        &self,
+        subscription_id: impl Into<String>,
+        reserved_resource_type: impl Into<String>,
+    ) -> get_catalog::RequestBuilder {
+        get_catalog::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             reserved_resource_type: reserved_resource_type.into(),
@@ -1392,8 +1396,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Id of the subscription"]
-    pub fn get_applied_reservation_list(&self, subscription_id: impl Into<String>) -> get_applied_reservation_list::Builder {
-        get_applied_reservation_list::Builder {
+    pub fn get_applied_reservation_list(&self, subscription_id: impl Into<String>) -> get_applied_reservation_list::RequestBuilder {
+        get_applied_reservation_list::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
@@ -1403,13 +1407,13 @@ pub mod get_catalog {
     use super::models;
     type Response = Vec<models::Catalog>;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) reserved_resource_type: String,
         pub(crate) location: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Filters the skus based on the location specified in this parameter. This can be an azure region or global"]
         pub fn location(mut self, location: impl Into<String>) -> Self {
             self.location = Some(location.into());
@@ -1465,11 +1469,11 @@ pub mod get_applied_reservation_list {
     use super::models;
     type Response = models::AppliedReservations;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1518,24 +1522,24 @@ pub mod reservation_order {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `body`: Information needed for calculate or purchase reservation"]
-        pub fn calculate(&self, body: impl Into<models::PurchaseRequest>) -> calculate::Builder {
-            calculate::Builder {
+        pub fn calculate(&self, body: impl Into<models::PurchaseRequest>) -> calculate::RequestBuilder {
+            calculate::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
             }
         }
         #[doc = "Get all `ReservationOrder`s."]
         #[doc = "List of all the `ReservationOrder`s that the user has access to in the current tenant."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a specific `ReservationOrder`."]
         #[doc = "Get the details of the `ReservationOrder`."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
-        pub fn get(&self, reservation_order_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, reservation_order_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 expand: None,
@@ -1547,8 +1551,12 @@ pub mod reservation_order {
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         #[doc = "* `body`: Information needed for calculate or purchase reservation"]
-        pub fn purchase(&self, reservation_order_id: impl Into<String>, body: impl Into<models::PurchaseRequest>) -> purchase::Builder {
-            purchase::Builder {
+        pub fn purchase(
+            &self,
+            reservation_order_id: impl Into<String>,
+            body: impl Into<models::PurchaseRequest>,
+        ) -> purchase::RequestBuilder {
+            purchase::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
@@ -1564,8 +1572,8 @@ pub mod reservation_order {
             &self,
             reservation_order_id: impl Into<String>,
             body: impl Into<models::ChangeDirectoryRequest>,
-        ) -> change_directory::Builder {
-            change_directory::Builder {
+        ) -> change_directory::RequestBuilder {
+            change_directory::RequestBuilder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
@@ -1576,11 +1584,11 @@ pub mod reservation_order {
         use super::models;
         type Response = models::CalculatePriceResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: models::PurchaseRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1622,10 +1630,10 @@ pub mod reservation_order {
         use super::models;
         type Response = models::ReservationOrderList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1694,12 +1702,12 @@ pub mod reservation_order {
         use super::models;
         type Response = models::ReservationOrderResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to expand the planInformation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -1755,12 +1763,12 @@ pub mod reservation_order {
             Accepted202(models::ReservationOrderResponse),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::PurchaseRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1811,12 +1819,12 @@ pub mod reservation_order {
         use super::models;
         type Response = models::ChangeDirectoryResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::ChangeDirectoryRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1864,18 +1872,18 @@ pub mod operation {
     impl Client {
         #[doc = "Get operations."]
         #[doc = "List all the operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1948,8 +1956,8 @@ pub mod calculate_exchange {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `body`: Request containing purchases and refunds that need to be executed."]
-        pub fn post(&self, body: impl Into<models::CalculateExchangeRequest>) -> post::Builder {
-            post::Builder {
+        pub fn post(&self, body: impl Into<models::CalculateExchangeRequest>) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
             }
@@ -1963,11 +1971,11 @@ pub mod calculate_exchange {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: models::CalculateExchangeRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2019,8 +2027,8 @@ pub mod exchange {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `body`: Request containing the refunds and purchases that need to be executed."]
-        pub fn post(&self, body: impl Into<models::ExchangeRequest>) -> post::Builder {
-            post::Builder {
+        pub fn post(&self, body: impl Into<models::ExchangeRequest>) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
             }
@@ -2034,11 +2042,11 @@ pub mod exchange {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: models::ExchangeRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

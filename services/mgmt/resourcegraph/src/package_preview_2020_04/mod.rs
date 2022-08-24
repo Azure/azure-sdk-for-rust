@@ -112,8 +112,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `query`: Request specifying query and its options."]
-    pub fn resources(&self, query: impl Into<models::QueryRequest>) -> resources::Builder {
-        resources::Builder {
+    pub fn resources(&self, query: impl Into<models::QueryRequest>) -> resources::RequestBuilder {
+        resources::RequestBuilder {
             client: self.clone(),
             query: query.into(),
         }
@@ -122,8 +122,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: the parameters for this request for changes."]
-    pub fn resource_changes(&self, parameters: impl Into<models::ResourceChangesRequestParameters>) -> resource_changes::Builder {
-        resource_changes::Builder {
+    pub fn resource_changes(&self, parameters: impl Into<models::ResourceChangesRequestParameters>) -> resource_changes::RequestBuilder {
+        resource_changes::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
@@ -135,15 +135,15 @@ impl Client {
     pub fn resource_change_details(
         &self,
         parameters: impl Into<models::ResourceChangeDetailsRequestParameters>,
-    ) -> resource_change_details::Builder {
-        resource_change_details::Builder {
+    ) -> resource_change_details::RequestBuilder {
+        resource_change_details::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
     #[doc = "List all snapshots of a resource for a given time interval."]
-    pub fn resources_history(&self, request: impl Into<models::ResourcesHistoryRequest>) -> resources_history::Builder {
-        resources_history::Builder {
+    pub fn resources_history(&self, request: impl Into<models::ResourcesHistoryRequest>) -> resources_history::RequestBuilder {
+        resources_history::RequestBuilder {
             client: self.clone(),
             request: request.into(),
         }
@@ -153,11 +153,11 @@ pub mod resources {
     use super::models;
     type Response = models::QueryResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) query: models::QueryRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -198,11 +198,11 @@ pub mod resource_changes {
     use super::models;
     type Response = models::ResourceChangeList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::ResourceChangesRequestParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -246,11 +246,11 @@ pub mod resource_change_details {
     use super::models;
     type Response = models::ResourceChangeData;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::ResourceChangeDetailsRequestParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -294,11 +294,11 @@ pub mod resources_history {
     use super::models;
     type Response = serde_json::Value;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) request: models::ResourcesHistoryRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -343,18 +343,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

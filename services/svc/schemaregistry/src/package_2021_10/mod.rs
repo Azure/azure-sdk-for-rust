@@ -116,18 +116,18 @@ pub mod schema_groups {
     impl Client {
         #[doc = "Get list of schema groups."]
         #[doc = "Gets the list of schema groups user is authorized to access."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::SchemaGroups;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -173,8 +173,8 @@ pub mod schema {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: References specific schema in registry namespace."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -185,8 +185,8 @@ pub mod schema {
         #[doc = "Arguments:"]
         #[doc = "* `group_name`: Schema group under which schema is registered.  Group's serialization type should match the serialization type specified in the request."]
         #[doc = "* `schema_name`: Name of schema."]
-        pub fn get_versions(&self, group_name: impl Into<String>, schema_name: impl Into<String>) -> get_versions::Builder {
-            get_versions::Builder {
+        pub fn get_versions(&self, group_name: impl Into<String>, schema_name: impl Into<String>) -> get_versions::RequestBuilder {
+            get_versions::RequestBuilder {
                 client: self.0.clone(),
                 group_name: group_name.into(),
                 schema_name: schema_name.into(),
@@ -204,8 +204,8 @@ pub mod schema {
             group_name: impl Into<String>,
             schema_name: impl Into<String>,
             schema_content: impl Into<String>,
-        ) -> query_id_by_content::Builder {
-            query_id_by_content::Builder {
+        ) -> query_id_by_content::RequestBuilder {
+            query_id_by_content::RequestBuilder {
                 client: self.0.clone(),
                 group_name: group_name.into(),
                 schema_name: schema_name.into(),
@@ -224,8 +224,8 @@ pub mod schema {
             group_name: impl Into<String>,
             schema_name: impl Into<String>,
             schema_content: impl Into<String>,
-        ) -> register::Builder {
-            register::Builder {
+        ) -> register::RequestBuilder {
+            register::RequestBuilder {
                 client: self.0.clone(),
                 group_name: group_name.into(),
                 schema_name: schema_name.into(),
@@ -237,11 +237,11 @@ pub mod schema {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -281,12 +281,12 @@ pub mod schema {
         use super::models;
         type Response = models::SchemaVersions;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_name: String,
             pub(crate) schema_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -331,13 +331,13 @@ pub mod schema {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_name: String,
             pub(crate) schema_name: String,
             pub(crate) schema_content: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -379,13 +379,13 @@ pub mod schema {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_name: String,
             pub(crate) schema_name: String,
             pub(crate) schema_content: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

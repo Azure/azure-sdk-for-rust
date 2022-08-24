@@ -51,13 +51,13 @@ pub struct ComponentProperties {
     #[serde(rename = "healthStateCategory", default, skip_serializing_if = "Option::is_none")]
     pub health_state_category: Option<component_properties::HealthStateCategory>,
     #[doc = "Start time for health state changes."]
-    #[serde(rename = "healthStateChangesStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "healthStateChangesStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub health_state_changes_start_time: Option<time::OffsetDateTime>,
     #[doc = "End time for health state changes."]
-    #[serde(rename = "healthStateChangesEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "healthStateChangesEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub health_state_changes_end_time: Option<time::OffsetDateTime>,
     #[doc = "Time of last health state change."]
-    #[serde(rename = "lastHealthStateChangeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastHealthStateChangeTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_health_state_change_time: Option<time::OffsetDateTime>,
     #[doc = "ID of the VM this component belongs to."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
@@ -243,7 +243,7 @@ pub struct HealthStateChange {
     #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<health_state_change::HealthState>,
     #[doc = "Time at which this Health state was reached."]
-    #[serde(rename = "healthStateChangeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "healthStateChangeTime", default, with = "azure_core::date::rfc3339::option")]
     pub health_state_change_time: Option<time::OffsetDateTime>,
 }
 impl HealthStateChange {
@@ -383,13 +383,13 @@ pub struct MonitorInstanceProperties {
     #[serde(rename = "healthStateChanges", default, skip_serializing_if = "Vec::is_empty")]
     pub health_state_changes: Vec<HealthStateChange>,
     #[doc = "Start time for health state changes."]
-    #[serde(rename = "healthStateChangesStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "healthStateChangesStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub health_state_changes_start_time: Option<time::OffsetDateTime>,
     #[doc = "End time for health state changes."]
-    #[serde(rename = "healthStateChangesEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "healthStateChangesEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub health_state_changes_end_time: Option<time::OffsetDateTime>,
     #[doc = "Time of last health state change."]
-    #[serde(rename = "lastHealthStateChangeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastHealthStateChangeTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_health_state_change_time: Option<time::OffsetDateTime>,
     #[doc = "Generates alert or not."]
     #[serde(rename = "alertGeneration", default, skip_serializing_if = "Option::is_none")]

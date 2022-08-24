@@ -148,26 +148,26 @@ pub mod best_practices {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `best_practice_name`: The Automanage best practice name."]
-        pub fn get(&self, best_practice_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, best_practice_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 best_practice_name: best_practice_name.into(),
             }
         }
         #[doc = "Retrieve a list of Automanage best practices"]
-        pub fn list_by_tenant(&self) -> list_by_tenant::Builder {
-            list_by_tenant::Builder { client: self.0.clone() }
+        pub fn list_by_tenant(&self) -> list_by_tenant::RequestBuilder {
+            list_by_tenant::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::BestPractice;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) best_practice_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -211,10 +211,10 @@ pub mod best_practices {
         use super::models;
         type Response = models::BestPracticeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -262,8 +262,8 @@ pub mod best_practices_versions {
         #[doc = "Arguments:"]
         #[doc = "* `best_practice_name`: The Automanage best practice name."]
         #[doc = "* `version_name`: The Automanage best practice version name."]
-        pub fn get(&self, best_practice_name: impl Into<String>, version_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, best_practice_name: impl Into<String>, version_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 best_practice_name: best_practice_name.into(),
                 version_name: version_name.into(),
@@ -273,8 +273,8 @@ pub mod best_practices_versions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `best_practice_name`: The Automanage best practice name."]
-        pub fn list_by_tenant(&self, best_practice_name: impl Into<String>) -> list_by_tenant::Builder {
-            list_by_tenant::Builder {
+        pub fn list_by_tenant(&self, best_practice_name: impl Into<String>) -> list_by_tenant::RequestBuilder {
+            list_by_tenant::RequestBuilder {
                 client: self.0.clone(),
                 best_practice_name: best_practice_name.into(),
             }
@@ -284,12 +284,12 @@ pub mod best_practices_versions {
         use super::models;
         type Response = models::BestPractice;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) best_practice_name: String,
             pub(crate) version_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -334,11 +334,11 @@ pub mod best_practices_versions {
         use super::models;
         type Response = models::BestPracticeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) best_practice_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -395,8 +395,8 @@ pub mod configuration_profiles {
             configuration_profile_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_name: configuration_profile_name.into(),
                 subscription_id: subscription_id.into(),
@@ -416,8 +416,8 @@ pub mod configuration_profiles {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             parameters: impl Into<models::ConfigurationProfile>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_name: configuration_profile_name.into(),
                 subscription_id: subscription_id.into(),
@@ -438,8 +438,8 @@ pub mod configuration_profiles {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             parameters: impl Into<models::ConfigurationProfileUpdate>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_name: configuration_profile_name.into(),
                 subscription_id: subscription_id.into(),
@@ -458,8 +458,8 @@ pub mod configuration_profiles {
             resource_group_name: impl Into<String>,
             configuration_profile_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 configuration_profile_name: configuration_profile_name.into(),
@@ -475,8 +475,8 @@ pub mod configuration_profiles {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -486,8 +486,8 @@ pub mod configuration_profiles {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -497,13 +497,13 @@ pub mod configuration_profiles {
         use super::models;
         type Response = models::ConfigurationProfile;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -553,14 +553,14 @@ pub mod configuration_profiles {
             Created201(models::ConfigurationProfile),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) parameters: models::ConfigurationProfile,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -612,14 +612,14 @@ pub mod configuration_profiles {
         use super::models;
         type Response = models::ConfigurationProfile;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) parameters: models::ConfigurationProfileUpdate,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -670,13 +670,13 @@ pub mod configuration_profiles {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) configuration_profile_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -719,12 +719,12 @@ pub mod configuration_profiles {
         use super::models;
         type Response = models::ConfigurationProfileList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -770,11 +770,11 @@ pub mod configuration_profiles {
         use super::models;
         type Response = models::ConfigurationProfileList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -833,8 +833,8 @@ pub mod configuration_profiles_versions {
             version_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_name: configuration_profile_name.into(),
                 version_name: version_name.into(),
@@ -857,8 +857,8 @@ pub mod configuration_profiles_versions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             parameters: impl Into<models::ConfigurationProfile>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_name: configuration_profile_name.into(),
                 version_name: version_name.into(),
@@ -880,8 +880,8 @@ pub mod configuration_profiles_versions {
             configuration_profile_name: impl Into<String>,
             version_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 configuration_profile_name: configuration_profile_name.into(),
@@ -900,8 +900,8 @@ pub mod configuration_profiles_versions {
             configuration_profile_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_child_resources::Builder {
-            list_child_resources::Builder {
+        ) -> list_child_resources::RequestBuilder {
+            list_child_resources::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_name: configuration_profile_name.into(),
                 subscription_id: subscription_id.into(),
@@ -913,14 +913,14 @@ pub mod configuration_profiles_versions {
         use super::models;
         type Response = models::ConfigurationProfile;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_name: String,
             pub(crate) version_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -971,7 +971,7 @@ pub mod configuration_profiles_versions {
             Created201(models::ConfigurationProfile),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_name: String,
             pub(crate) version_name: String,
@@ -979,7 +979,7 @@ pub mod configuration_profiles_versions {
             pub(crate) resource_group_name: String,
             pub(crate) parameters: models::ConfigurationProfile,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1036,14 +1036,14 @@ pub mod configuration_profiles_versions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) configuration_profile_name: String,
             pub(crate) version_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1087,13 +1087,13 @@ pub mod configuration_profiles_versions {
         use super::models;
         type Response = models::ConfigurationProfileList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1154,8 +1154,8 @@ pub mod configuration_profile_assignments {
             configuration_profile_assignment_name: impl Into<String>,
             subscription_id: impl Into<String>,
             vm_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
@@ -1178,8 +1178,8 @@ pub mod configuration_profile_assignments {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             vm_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
                 parameters: parameters.into(),
@@ -1201,8 +1201,8 @@ pub mod configuration_profile_assignments {
             configuration_profile_assignment_name: impl Into<String>,
             subscription_id: impl Into<String>,
             vm_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
@@ -1221,8 +1221,8 @@ pub mod configuration_profile_assignments {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             vm_name: impl Into<String>,
-        ) -> list_by_virtual_machines::Builder {
-            list_by_virtual_machines::Builder {
+        ) -> list_by_virtual_machines::RequestBuilder {
+            list_by_virtual_machines::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1234,8 +1234,8 @@ pub mod configuration_profile_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1245,8 +1245,8 @@ pub mod configuration_profile_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1262,8 +1262,8 @@ pub mod configuration_profile_assignments {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> list_by_machine_name::Builder {
-            list_by_machine_name::Builder {
+        ) -> list_by_machine_name::RequestBuilder {
+            list_by_machine_name::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1281,8 +1281,8 @@ pub mod configuration_profile_assignments {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
-        ) -> list_by_cluster_name::Builder {
-            list_by_cluster_name::Builder {
+        ) -> list_by_cluster_name::RequestBuilder {
+            list_by_cluster_name::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1294,14 +1294,14 @@ pub mod configuration_profile_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) configuration_profile_assignment_name: String,
             pub(crate) subscription_id: String,
             pub(crate) vm_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1345,7 +1345,7 @@ pub mod configuration_profile_assignments {
             Created201(models::ConfigurationProfileAssignment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) configuration_profile_assignment_name: String,
             pub(crate) parameters: models::ConfigurationProfileAssignment,
@@ -1353,7 +1353,7 @@ pub mod configuration_profile_assignments {
             pub(crate) resource_group_name: String,
             pub(crate) vm_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1403,14 +1403,14 @@ pub mod configuration_profile_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) configuration_profile_assignment_name: String,
             pub(crate) subscription_id: String,
             pub(crate) vm_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1447,13 +1447,13 @@ pub mod configuration_profile_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vm_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1494,12 +1494,12 @@ pub mod configuration_profile_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1545,11 +1545,11 @@ pub mod configuration_profile_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1594,13 +1594,13 @@ pub mod configuration_profile_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) machine_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1641,13 +1641,13 @@ pub mod configuration_profile_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) cluster_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1690,18 +1690,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Automanage REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1759,8 +1759,8 @@ pub mod reports {
             report_name: impl Into<String>,
             subscription_id: impl Into<String>,
             vm_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
@@ -1782,8 +1782,8 @@ pub mod reports {
             resource_group_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
             vm_name: impl Into<String>,
-        ) -> list_by_configuration_profile_assignments::Builder {
-            list_by_configuration_profile_assignments::Builder {
+        ) -> list_by_configuration_profile_assignments::RequestBuilder {
+            list_by_configuration_profile_assignments::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1796,7 +1796,7 @@ pub mod reports {
         use super::models;
         type Response = models::Report;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) configuration_profile_assignment_name: String,
@@ -1804,7 +1804,7 @@ pub mod reports {
             pub(crate) subscription_id: String,
             pub(crate) vm_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1844,14 +1844,14 @@ pub mod reports {
         use super::models;
         type Response = models::ReportList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) configuration_profile_assignment_name: String,
             pub(crate) vm_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1897,8 +1897,8 @@ pub mod service_principals {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1907,8 +1907,8 @@ pub mod service_principals {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1918,11 +1918,11 @@ pub mod service_principals {
         use super::models;
         type Response = models::ServicePrincipalListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1967,11 +1967,11 @@ pub mod service_principals {
         use super::models;
         type Response = models::ServicePrincipal;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2029,8 +2029,8 @@ pub mod configuration_profile_hcrp_assignments {
             subscription_id: impl Into<String>,
             machine_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2053,8 +2053,8 @@ pub mod configuration_profile_hcrp_assignments {
             resource_group_name: impl Into<String>,
             machine_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -2076,8 +2076,8 @@ pub mod configuration_profile_hcrp_assignments {
             subscription_id: impl Into<String>,
             machine_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2090,14 +2090,14 @@ pub mod configuration_profile_hcrp_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) machine_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2141,7 +2141,7 @@ pub mod configuration_profile_hcrp_assignments {
             Created201(models::ConfigurationProfileAssignment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::ConfigurationProfileAssignment,
             pub(crate) subscription_id: String,
@@ -2149,7 +2149,7 @@ pub mod configuration_profile_hcrp_assignments {
             pub(crate) machine_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2199,14 +2199,14 @@ pub mod configuration_profile_hcrp_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) machine_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2259,8 +2259,8 @@ pub mod hcrp_reports {
             machine_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
             report_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2282,8 +2282,8 @@ pub mod hcrp_reports {
             resource_group_name: impl Into<String>,
             machine_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> list_by_configuration_profile_assignments::Builder {
-            list_by_configuration_profile_assignments::Builder {
+        ) -> list_by_configuration_profile_assignments::RequestBuilder {
+            list_by_configuration_profile_assignments::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2296,7 +2296,7 @@ pub mod hcrp_reports {
         use super::models;
         type Response = models::Report;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2304,7 +2304,7 @@ pub mod hcrp_reports {
             pub(crate) configuration_profile_assignment_name: String,
             pub(crate) report_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2344,14 +2344,14 @@ pub mod hcrp_reports {
         use super::models;
         type Response = models::ReportList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) machine_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2406,8 +2406,8 @@ pub mod configuration_profile_hci_assignments {
             subscription_id: impl Into<String>,
             cluster_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2430,8 +2430,8 @@ pub mod configuration_profile_hci_assignments {
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -2453,8 +2453,8 @@ pub mod configuration_profile_hci_assignments {
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2467,14 +2467,14 @@ pub mod configuration_profile_hci_assignments {
         use super::models;
         type Response = models::ConfigurationProfileAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) cluster_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2518,7 +2518,7 @@ pub mod configuration_profile_hci_assignments {
             Created201(models::ConfigurationProfileAssignment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::ConfigurationProfileAssignment,
             pub(crate) subscription_id: String,
@@ -2526,7 +2526,7 @@ pub mod configuration_profile_hci_assignments {
             pub(crate) cluster_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2576,14 +2576,14 @@ pub mod configuration_profile_hci_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) cluster_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2636,8 +2636,8 @@ pub mod hci_reports {
             cluster_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
             report_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2659,8 +2659,8 @@ pub mod hci_reports {
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             configuration_profile_assignment_name: impl Into<String>,
-        ) -> list_by_configuration_profile_assignments::Builder {
-            list_by_configuration_profile_assignments::Builder {
+        ) -> list_by_configuration_profile_assignments::RequestBuilder {
+            list_by_configuration_profile_assignments::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2673,7 +2673,7 @@ pub mod hci_reports {
         use super::models;
         type Response = models::Report;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -2681,7 +2681,7 @@ pub mod hci_reports {
             pub(crate) configuration_profile_assignment_name: String,
             pub(crate) report_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2721,14 +2721,14 @@ pub mod hci_reports {
         use super::models;
         type Response = models::ReportList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) cluster_name: String,
             pub(crate) configuration_profile_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

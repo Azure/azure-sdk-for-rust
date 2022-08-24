@@ -116,8 +116,8 @@ pub mod remote_rendering {
         #[doc = "Arguments:"]
         #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
         #[doc = "* `conversion_id`: An ID uniquely identifying the conversion for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
-        pub fn get_conversion(&self, account_id: impl Into<String>, conversion_id: impl Into<String>) -> get_conversion::Builder {
-            get_conversion::Builder {
+        pub fn get_conversion(&self, account_id: impl Into<String>, conversion_id: impl Into<String>) -> get_conversion::RequestBuilder {
+            get_conversion::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
                 conversion_id: conversion_id.into(),
@@ -134,8 +134,8 @@ pub mod remote_rendering {
             account_id: impl Into<String>,
             conversion_id: impl Into<String>,
             body: impl Into<models::CreateConversionSettings>,
-        ) -> create_conversion::Builder {
-            create_conversion::Builder {
+        ) -> create_conversion::RequestBuilder {
+            create_conversion::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
                 conversion_id: conversion_id.into(),
@@ -146,8 +146,8 @@ pub mod remote_rendering {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
-        pub fn list_conversions(&self, account_id: impl Into<String>) -> list_conversions::Builder {
-            list_conversions::Builder {
+        pub fn list_conversions(&self, account_id: impl Into<String>) -> list_conversions::RequestBuilder {
+            list_conversions::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
             }
@@ -157,8 +157,8 @@ pub mod remote_rendering {
         #[doc = "Arguments:"]
         #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
         #[doc = "* `session_id`: An ID uniquely identifying the rendering session for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
-        pub fn get_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> get_session::Builder {
-            get_session::Builder {
+        pub fn get_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> get_session::RequestBuilder {
+            get_session::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
@@ -175,8 +175,8 @@ pub mod remote_rendering {
             account_id: impl Into<String>,
             session_id: impl Into<String>,
             body: impl Into<models::CreateSessionSettings>,
-        ) -> create_session::Builder {
-            create_session::Builder {
+        ) -> create_session::RequestBuilder {
+            create_session::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
@@ -194,8 +194,8 @@ pub mod remote_rendering {
             account_id: impl Into<String>,
             session_id: impl Into<String>,
             body: impl Into<models::UpdateSessionSettings>,
-        ) -> update_session::Builder {
-            update_session::Builder {
+        ) -> update_session::RequestBuilder {
+            update_session::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
@@ -207,8 +207,8 @@ pub mod remote_rendering {
         #[doc = "Arguments:"]
         #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
         #[doc = "* `session_id`: An ID uniquely identifying the rendering session for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
-        pub fn stop_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> stop_session::Builder {
-            stop_session::Builder {
+        pub fn stop_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> stop_session::RequestBuilder {
+            stop_session::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
@@ -218,8 +218,8 @@ pub mod remote_rendering {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
-        pub fn list_sessions(&self, account_id: impl Into<String>) -> list_sessions::Builder {
-            list_sessions::Builder {
+        pub fn list_sessions(&self, account_id: impl Into<String>) -> list_sessions::RequestBuilder {
+            list_sessions::RequestBuilder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
             }
@@ -229,12 +229,12 @@ pub mod remote_rendering {
         use super::models;
         type Response = models::Conversion;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) conversion_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -283,13 +283,13 @@ pub mod remote_rendering {
             Created201(models::Conversion),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) conversion_id: String,
             pub(crate) body: models::CreateConversionSettings,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -340,11 +340,11 @@ pub mod remote_rendering {
         use super::models;
         type Response = models::ConversionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -411,12 +411,12 @@ pub mod remote_rendering {
         use super::models;
         type Response = models::SessionProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -465,13 +465,13 @@ pub mod remote_rendering {
             Created201(models::SessionProperties),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
             pub(crate) body: models::CreateSessionSettings,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -522,13 +522,13 @@ pub mod remote_rendering {
         use super::models;
         type Response = models::SessionProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
             pub(crate) body: models::UpdateSessionSettings,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -574,12 +574,12 @@ pub mod remote_rendering {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -621,11 +621,11 @@ pub mod remote_rendering {
         use super::models;
         type Response = models::SessionsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

@@ -106,8 +106,8 @@ impl Client {
 }
 impl Client {
     #[doc = "This method gets all the operations that are exposed for customer."]
-    pub fn list_operations_partner(&self) -> list_operations_partner::Builder {
-        list_operations_partner::Builder { client: self.clone() }
+    pub fn list_operations_partner(&self) -> list_operations_partner::RequestBuilder {
+        list_operations_partner::RequestBuilder { client: self.clone() }
     }
     #[doc = "API for updating inventory metadata and inventory configuration"]
     #[doc = ""]
@@ -124,8 +124,8 @@ impl Client {
         location: impl Into<String>,
         serial_number: impl Into<String>,
         manage_inventory_metadata_request: impl Into<models::ManageInventoryMetadataRequest>,
-    ) -> manage_inventory_metadata::Builder {
-        manage_inventory_metadata::Builder {
+    ) -> manage_inventory_metadata::RequestBuilder {
+        manage_inventory_metadata::RequestBuilder {
             client: self.clone(),
             family_identifier: family_identifier.into(),
             subscription_id: subscription_id.into(),
@@ -149,8 +149,8 @@ impl Client {
         location: impl Into<String>,
         serial_number: impl Into<String>,
         manage_link_request: impl Into<models::ManageLinkRequest>,
-    ) -> manage_link::Builder {
-        manage_link::Builder {
+    ) -> manage_link::RequestBuilder {
+        manage_link::RequestBuilder {
             client: self.clone(),
             family_identifier: family_identifier.into(),
             subscription_id: subscription_id.into(),
@@ -168,8 +168,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         search_inventories_request: impl Into<models::SearchInventoriesRequest>,
-    ) -> search_inventories::Builder {
-        search_inventories::Builder {
+    ) -> search_inventories::RequestBuilder {
+        search_inventories::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             search_inventories_request: search_inventories_request.into(),
@@ -180,10 +180,10 @@ pub mod list_operations_partner {
     use super::models;
     type Response = models::OperationListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -257,7 +257,7 @@ pub mod manage_inventory_metadata {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) family_identifier: String,
         pub(crate) subscription_id: String,
@@ -265,7 +265,7 @@ pub mod manage_inventory_metadata {
         pub(crate) serial_number: String,
         pub(crate) manage_inventory_metadata_request: models::ManageInventoryMetadataRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -309,7 +309,7 @@ pub mod manage_link {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) family_identifier: String,
         pub(crate) subscription_id: String,
@@ -317,7 +317,7 @@ pub mod manage_link {
         pub(crate) serial_number: String,
         pub(crate) manage_link_request: models::ManageLinkRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -355,12 +355,12 @@ pub mod search_inventories {
     use super::models;
     type Response = models::PartnerInventoryList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) search_inventories_request: models::SearchInventoriesRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();

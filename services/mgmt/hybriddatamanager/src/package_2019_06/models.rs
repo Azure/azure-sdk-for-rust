@@ -454,7 +454,7 @@ pub struct Job {
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
     pub start_time: time::OffsetDateTime,
     #[doc = "Time at which the job ended in UTC ISO 8601 format."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Job Properties"]
     pub properties: JobProperties,
@@ -514,7 +514,7 @@ pub struct JobDefinitionFilter {
     #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
     pub data_source: Option<String>,
     #[doc = "The last modified date time of the data source."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
 }
 impl JobDefinitionFilter {
@@ -572,7 +572,7 @@ pub struct JobDefinitionProperties {
     #[doc = "State of the job definition."]
     pub state: job_definition_properties::State,
     #[doc = "Last modified time of the job definition."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "This is the preferred geo location for the job to run."]
     #[serde(rename = "runLocation", default, skip_serializing_if = "Option::is_none")]
@@ -708,7 +708,7 @@ pub struct JobFilter {
     #[doc = "The status of the job."]
     pub status: job_filter::Status,
     #[doc = "The start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
 }
 impl JobFilter {

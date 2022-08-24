@@ -128,8 +128,8 @@ pub mod private_zones {
             resource_group_name: impl Into<String>,
             private_zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -149,8 +149,8 @@ pub mod private_zones {
             private_zone_name: impl Into<String>,
             parameters: impl Into<models::PrivateZone>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -173,8 +173,8 @@ pub mod private_zones {
             private_zone_name: impl Into<String>,
             parameters: impl Into<models::PrivateZone>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -194,8 +194,8 @@ pub mod private_zones {
             resource_group_name: impl Into<String>,
             private_zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -207,8 +207,8 @@ pub mod private_zones {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -223,8 +223,8 @@ pub mod private_zones {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -236,13 +236,13 @@ pub mod private_zones {
         use super::models;
         type Response = models::PrivateZone;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -293,7 +293,7 @@ pub mod private_zones {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -302,7 +302,7 @@ pub mod private_zones {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the Private DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -376,7 +376,7 @@ pub mod private_zones {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -384,7 +384,7 @@ pub mod private_zones {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the Private DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -446,14 +446,14 @@ pub mod private_zones {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the Private DNS zone. Omit this value to always delete the current zone. Specify the last-seen ETag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -506,12 +506,12 @@ pub mod private_zones {
         use super::models;
         type Response = models::PrivateZoneListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of Private DNS zones to return. If not specified, returns up to 100 zones."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -589,13 +589,13 @@ pub mod private_zones {
         use super::models;
         type Response = models::PrivateZoneListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -688,8 +688,8 @@ pub mod virtual_network_links {
             private_zone_name: impl Into<String>,
             virtual_network_link_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -712,8 +712,8 @@ pub mod virtual_network_links {
             virtual_network_link_name: impl Into<String>,
             parameters: impl Into<models::VirtualNetworkLink>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -739,8 +739,8 @@ pub mod virtual_network_links {
             virtual_network_link_name: impl Into<String>,
             parameters: impl Into<models::VirtualNetworkLink>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -763,8 +763,8 @@ pub mod virtual_network_links {
             private_zone_name: impl Into<String>,
             virtual_network_link_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -784,8 +784,8 @@ pub mod virtual_network_links {
             resource_group_name: impl Into<String>,
             private_zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -798,14 +798,14 @@ pub mod virtual_network_links {
         use super::models;
         type Response = models::VirtualNetworkLink;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
             pub(crate) virtual_network_link_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -857,7 +857,7 @@ pub mod virtual_network_links {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -867,7 +867,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the virtual network link to the Private DNS zone. Omit this value to always overwrite the current virtual network link. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -942,7 +942,7 @@ pub mod virtual_network_links {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -951,7 +951,7 @@ pub mod virtual_network_links {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the virtual network link to the Private DNS zone. Omit this value to always overwrite the current virtual network link. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1014,7 +1014,7 @@ pub mod virtual_network_links {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1022,7 +1022,7 @@ pub mod virtual_network_links {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the virtual network link to the Private DNS zone. Omit this value to always delete the current zone. Specify the last-seen ETag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1076,14 +1076,14 @@ pub mod virtual_network_links {
         use super::models;
         type Response = models::VirtualNetworkLinkListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of virtual network links to return. If not specified, returns up to 100 virtual network links."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1179,8 +1179,8 @@ pub mod record_sets {
             record_type: impl Into<String>,
             relative_record_set_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -1206,8 +1206,8 @@ pub mod record_sets {
             relative_record_set_name: impl Into<String>,
             parameters: impl Into<models::RecordSet>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -1236,8 +1236,8 @@ pub mod record_sets {
             relative_record_set_name: impl Into<String>,
             parameters: impl Into<models::RecordSet>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -1263,8 +1263,8 @@ pub mod record_sets {
             record_type: impl Into<String>,
             relative_record_set_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -1287,8 +1287,8 @@ pub mod record_sets {
             private_zone_name: impl Into<String>,
             record_type: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_type::Builder {
-            list_by_type::Builder {
+        ) -> list_by_type::RequestBuilder {
+            list_by_type::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -1309,8 +1309,8 @@ pub mod record_sets {
             resource_group_name: impl Into<String>,
             private_zone_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 private_zone_name: private_zone_name.into(),
@@ -1324,7 +1324,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSet;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1332,7 +1332,7 @@ pub mod record_sets {
             pub(crate) relative_record_set_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1384,7 +1384,7 @@ pub mod record_sets {
             Ok200(models::RecordSet),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1395,7 +1395,7 @@ pub mod record_sets {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1465,7 +1465,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSet;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1475,7 +1475,7 @@ pub mod record_sets {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1536,7 +1536,7 @@ pub mod record_sets {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1545,7 +1545,7 @@ pub mod record_sets {
             pub(crate) subscription_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the record set. Omit this value to always delete the current record set. Specify the last-seen ETag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1598,7 +1598,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1607,7 +1607,7 @@ pub mod record_sets {
             pub(crate) top: Option<i32>,
             pub(crate) recordsetnamesuffix: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1698,7 +1698,7 @@ pub mod record_sets {
         use super::models;
         type Response = models::RecordSetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) private_zone_name: String,
@@ -1706,7 +1706,7 @@ pub mod record_sets {
             pub(crate) top: Option<i32>,
             pub(crate) recordsetnamesuffix: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);

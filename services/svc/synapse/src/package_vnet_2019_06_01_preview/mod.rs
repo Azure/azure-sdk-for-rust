@@ -120,8 +120,8 @@ pub mod managed_private_endpoints {
             &self,
             managed_virtual_network_name: impl Into<String>,
             managed_private_endpoint_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 managed_virtual_network_name: managed_virtual_network_name.into(),
                 managed_private_endpoint_name: managed_private_endpoint_name.into(),
@@ -138,8 +138,8 @@ pub mod managed_private_endpoints {
             managed_virtual_network_name: impl Into<String>,
             managed_private_endpoint_name: impl Into<String>,
             managed_private_endpoint: impl Into<models::ManagedPrivateEndpoint>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 managed_virtual_network_name: managed_virtual_network_name.into(),
                 managed_private_endpoint_name: managed_private_endpoint_name.into(),
@@ -155,8 +155,8 @@ pub mod managed_private_endpoints {
             &self,
             managed_virtual_network_name: impl Into<String>,
             managed_private_endpoint_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 managed_virtual_network_name: managed_virtual_network_name.into(),
                 managed_private_endpoint_name: managed_private_endpoint_name.into(),
@@ -166,8 +166,8 @@ pub mod managed_private_endpoints {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
-        pub fn list(&self, managed_virtual_network_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, managed_virtual_network_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 managed_virtual_network_name: managed_virtual_network_name.into(),
             }
@@ -177,12 +177,12 @@ pub mod managed_private_endpoints {
         use super::models;
         type Response = models::ManagedPrivateEndpoint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) managed_virtual_network_name: String,
             pub(crate) managed_private_endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -227,13 +227,13 @@ pub mod managed_private_endpoints {
         use super::models;
         type Response = models::ManagedPrivateEndpoint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) managed_virtual_network_name: String,
             pub(crate) managed_private_endpoint_name: String,
             pub(crate) managed_private_endpoint: models::ManagedPrivateEndpoint,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -283,12 +283,12 @@ pub mod managed_private_endpoints {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) managed_virtual_network_name: String,
             pub(crate) managed_private_endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -330,11 +330,11 @@ pub mod managed_private_endpoints {
         use super::models;
         type Response = models::ManagedPrivateEndpointListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) managed_virtual_network_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

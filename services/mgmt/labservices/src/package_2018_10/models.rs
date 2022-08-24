@@ -122,7 +122,7 @@ pub struct EnvironmentDetails {
     #[serde(rename = "totalUsage", default, skip_serializing_if = "Option::is_none")]
     pub total_usage: Option<String>,
     #[doc = "When the password was last reset on the environment."]
-    #[serde(rename = "passwordLastReset", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "passwordLastReset", default, with = "azure_core::date::rfc3339::option")]
     pub password_last_reset: Option<time::OffsetDateTime>,
 }
 impl EnvironmentDetails {
@@ -184,7 +184,7 @@ pub struct EnvironmentProperties {
     #[serde(rename = "totalUsage", default, skip_serializing_if = "Option::is_none")]
     pub total_usage: Option<String>,
     #[doc = "When the password was last reset on the environment."]
-    #[serde(rename = "passwordLastReset", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "passwordLastReset", default, with = "azure_core::date::rfc3339::option")]
     pub password_last_reset: Option<time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -280,10 +280,10 @@ pub struct EnvironmentSettingProperties {
     #[serde(rename = "resourceSettings")]
     pub resource_settings: ResourceSettings,
     #[doc = "Time when the template VM was last changed."]
-    #[serde(rename = "lastChanged", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastChanged", default, with = "azure_core::date::rfc3339::option")]
     pub last_changed: Option<time::OffsetDateTime>,
     #[doc = "Time when the template VM was last sent for publishing."]
-    #[serde(rename = "lastPublished", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastPublished", default, with = "azure_core::date::rfc3339::option")]
     pub last_published: Option<time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -619,7 +619,7 @@ pub struct GalleryImageProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
     #[doc = "The creation date of the gallery image."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The description of the gallery image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -924,7 +924,7 @@ pub struct LabProperties {
     #[serde(rename = "createdByUserPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub created_by_user_principal_name: Option<String>,
     #[doc = "Creation date for the lab"]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

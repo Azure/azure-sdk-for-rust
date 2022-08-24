@@ -121,8 +121,8 @@ pub mod private_store {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of available private stores."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 use_cache: None,
             }
@@ -131,8 +131,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn get(&self, private_store_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, private_store_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -141,8 +141,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn create_or_update(&self, private_store_id: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(&self, private_store_id: impl Into<String>) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 payload: None,
@@ -152,8 +152,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn delete(&self, private_store_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, private_store_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -162,8 +162,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn query_offers(&self, private_store_id: impl Into<String>) -> query_offers::Builder {
-            query_offers::Builder {
+        pub fn query_offers(&self, private_store_id: impl Into<String>) -> query_offers::RequestBuilder {
+            query_offers::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -172,8 +172,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn billing_accounts(&self, private_store_id: impl Into<String>) -> billing_accounts::Builder {
-            billing_accounts::Builder {
+        pub fn billing_accounts(&self, private_store_id: impl Into<String>) -> billing_accounts::RequestBuilder {
+            billing_accounts::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -185,8 +185,8 @@ pub mod private_store {
         pub fn collections_to_subscriptions_mapping(
             &self,
             private_store_id: impl Into<String>,
-        ) -> collections_to_subscriptions_mapping::Builder {
-            collections_to_subscriptions_mapping::Builder {
+        ) -> collections_to_subscriptions_mapping::RequestBuilder {
+            collections_to_subscriptions_mapping::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 payload: None,
@@ -196,8 +196,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn query_approved_plans(&self, private_store_id: impl Into<String>) -> query_approved_plans::Builder {
-            query_approved_plans::Builder {
+        pub fn query_approved_plans(&self, private_store_id: impl Into<String>) -> query_approved_plans::RequestBuilder {
+            query_approved_plans::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 payload: None,
@@ -207,8 +207,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn bulk_collections_action(&self, private_store_id: impl Into<String>) -> bulk_collections_action::Builder {
-            bulk_collections_action::Builder {
+        pub fn bulk_collections_action(&self, private_store_id: impl Into<String>) -> bulk_collections_action::RequestBuilder {
+            bulk_collections_action::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 payload: None,
@@ -218,8 +218,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn get_approval_requests_list(&self, private_store_id: impl Into<String>) -> get_approval_requests_list::Builder {
-            get_approval_requests_list::Builder {
+        pub fn get_approval_requests_list(&self, private_store_id: impl Into<String>) -> get_approval_requests_list::RequestBuilder {
+            get_approval_requests_list::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -233,8 +233,8 @@ pub mod private_store {
             &self,
             private_store_id: impl Into<String>,
             request_approval_id: impl Into<String>,
-        ) -> get_request_approval::Builder {
-            get_request_approval::Builder {
+        ) -> get_request_approval::RequestBuilder {
+            get_request_approval::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 request_approval_id: request_approval_id.into(),
@@ -249,8 +249,8 @@ pub mod private_store {
             &self,
             private_store_id: impl Into<String>,
             request_approval_id: impl Into<String>,
-        ) -> create_approval_request::Builder {
-            create_approval_request::Builder {
+        ) -> create_approval_request::RequestBuilder {
+            create_approval_request::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 request_approval_id: request_approval_id.into(),
@@ -266,8 +266,8 @@ pub mod private_store {
             &self,
             private_store_id: impl Into<String>,
             request_approval_id: impl Into<String>,
-        ) -> query_request_approval::Builder {
-            query_request_approval::Builder {
+        ) -> query_request_approval::RequestBuilder {
+            query_request_approval::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 request_approval_id: request_approval_id.into(),
@@ -278,8 +278,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn admin_request_approvals_list(&self, private_store_id: impl Into<String>) -> admin_request_approvals_list::Builder {
-            admin_request_approvals_list::Builder {
+        pub fn admin_request_approvals_list(&self, private_store_id: impl Into<String>) -> admin_request_approvals_list::RequestBuilder {
+            admin_request_approvals_list::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -295,8 +295,8 @@ pub mod private_store {
             private_store_id: impl Into<String>,
             admin_request_approval_id: impl Into<String>,
             publisher_id: impl Into<String>,
-        ) -> get_admin_request_approval::Builder {
-            get_admin_request_approval::Builder {
+        ) -> get_admin_request_approval::RequestBuilder {
+            get_admin_request_approval::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 admin_request_approval_id: admin_request_approval_id.into(),
@@ -312,8 +312,8 @@ pub mod private_store {
             &self,
             private_store_id: impl Into<String>,
             admin_request_approval_id: impl Into<String>,
-        ) -> update_admin_request_approval::Builder {
-            update_admin_request_approval::Builder {
+        ) -> update_admin_request_approval::RequestBuilder {
+            update_admin_request_approval::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 admin_request_approval_id: admin_request_approval_id.into(),
@@ -324,8 +324,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn query_notifications_state(&self, private_store_id: impl Into<String>) -> query_notifications_state::Builder {
-            query_notifications_state::Builder {
+        pub fn query_notifications_state(&self, private_store_id: impl Into<String>) -> query_notifications_state::RequestBuilder {
+            query_notifications_state::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -339,8 +339,8 @@ pub mod private_store {
             &self,
             private_store_id: impl Into<String>,
             offer_id: impl Into<String>,
-        ) -> acknowledge_offer_notification::Builder {
-            acknowledge_offer_notification::Builder {
+        ) -> acknowledge_offer_notification::RequestBuilder {
+            acknowledge_offer_notification::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 offer_id: offer_id.into(),
@@ -352,8 +352,12 @@ pub mod private_store {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `request_approval_id`: The request approval ID to get create or update"]
-        pub fn withdraw_plan(&self, private_store_id: impl Into<String>, request_approval_id: impl Into<String>) -> withdraw_plan::Builder {
-            withdraw_plan::Builder {
+        pub fn withdraw_plan(
+            &self,
+            private_store_id: impl Into<String>,
+            request_approval_id: impl Into<String>,
+        ) -> withdraw_plan::RequestBuilder {
+            withdraw_plan::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 request_approval_id: request_approval_id.into(),
@@ -364,8 +368,11 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn fetch_all_subscriptions_in_tenant(&self, private_store_id: impl Into<String>) -> fetch_all_subscriptions_in_tenant::Builder {
-            fetch_all_subscriptions_in_tenant::Builder {
+        pub fn fetch_all_subscriptions_in_tenant(
+            &self,
+            private_store_id: impl Into<String>,
+        ) -> fetch_all_subscriptions_in_tenant::RequestBuilder {
+            fetch_all_subscriptions_in_tenant::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 next_page_token: None,
@@ -375,8 +382,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn list_new_plans_notifications(&self, private_store_id: impl Into<String>) -> list_new_plans_notifications::Builder {
-            list_new_plans_notifications::Builder {
+        pub fn list_new_plans_notifications(&self, private_store_id: impl Into<String>) -> list_new_plans_notifications::RequestBuilder {
+            list_new_plans_notifications::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -388,8 +395,8 @@ pub mod private_store {
         pub fn list_stop_sell_offers_plans_notifications(
             &self,
             private_store_id: impl Into<String>,
-        ) -> list_stop_sell_offers_plans_notifications::Builder {
-            list_stop_sell_offers_plans_notifications::Builder {
+        ) -> list_stop_sell_offers_plans_notifications::RequestBuilder {
+            list_stop_sell_offers_plans_notifications::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 stop_sell_subscriptions: None,
@@ -399,8 +406,8 @@ pub mod private_store {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn list_subscriptions_context(&self, private_store_id: impl Into<String>) -> list_subscriptions_context::Builder {
-            list_subscriptions_context::Builder {
+        pub fn list_subscriptions_context(&self, private_store_id: impl Into<String>) -> list_subscriptions_context::RequestBuilder {
+            list_subscriptions_context::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -410,11 +417,11 @@ pub mod private_store {
         use super::models;
         type Response = models::PrivateStoreList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) use_cache: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Determines if to use cache or DB for serving this request"]
             pub fn use_cache(mut self, use_cache: impl Into<String>) -> Self {
                 self.use_cache = Some(use_cache.into());
@@ -489,11 +496,11 @@ pub mod private_store {
         use super::models;
         type Response = models::PrivateStore;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -537,12 +544,12 @@ pub mod private_store {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) payload: Option<models::PrivateStore>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::PrivateStore>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -595,11 +602,11 @@ pub mod private_store {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -640,11 +647,11 @@ pub mod private_store {
         use super::models;
         type Response = models::QueryOffers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -689,11 +696,11 @@ pub mod private_store {
         use super::models;
         type Response = models::BillingAccountsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -738,12 +745,12 @@ pub mod private_store {
         use super::models;
         type Response = models::CollectionsToSubscriptionsMappingResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) payload: Option<models::CollectionsToSubscriptionsMappingPayload>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::CollectionsToSubscriptionsMappingPayload>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -796,12 +803,12 @@ pub mod private_store {
         use super::models;
         type Response = models::QueryApprovedPlansResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) payload: Option<models::QueryApprovedPlansPayload>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::QueryApprovedPlansPayload>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -854,12 +861,12 @@ pub mod private_store {
         use super::models;
         type Response = models::BulkCollectionsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) payload: Option<models::BulkCollectionsPayload>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::BulkCollectionsPayload>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -912,11 +919,11 @@ pub mod private_store {
         use super::models;
         type Response = models::RequestApprovalsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -960,12 +967,12 @@ pub mod private_store {
         use super::models;
         type Response = models::RequestApprovalResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) request_approval_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1010,13 +1017,13 @@ pub mod private_store {
         use super::models;
         type Response = models::RequestApprovalResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) request_approval_id: String,
             pub(crate) payload: Option<models::RequestApprovalResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::RequestApprovalResource>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1070,13 +1077,13 @@ pub mod private_store {
         use super::models;
         type Response = models::QueryRequestApproval;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) request_approval_id: String,
             pub(crate) payload: Option<models::QueryRequestApprovalProperties>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::QueryRequestApprovalProperties>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1130,11 +1137,11 @@ pub mod private_store {
         use super::models;
         type Response = models::AdminRequestApprovalsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1178,13 +1185,13 @@ pub mod private_store {
         use super::models;
         type Response = models::AdminRequestApprovalsResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) admin_request_approval_id: String,
             pub(crate) publisher_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1231,13 +1238,13 @@ pub mod private_store {
         use super::models;
         type Response = models::AdminRequestApprovalsResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) admin_request_approval_id: String,
             pub(crate) payload: Option<models::AdminRequestApprovalsResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::AdminRequestApprovalsResource>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1291,11 +1298,11 @@ pub mod private_store {
         use super::models;
         type Response = models::PrivateStoreNotificationsState;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1340,13 +1347,13 @@ pub mod private_store {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) offer_id: String,
             pub(crate) payload: Option<models::AcknowledgeOfferNotificationProperties>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::AcknowledgeOfferNotificationProperties>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1396,13 +1403,13 @@ pub mod private_store {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) request_approval_id: String,
             pub(crate) payload: Option<models::WithdrawProperties>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::WithdrawProperties>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1452,12 +1459,12 @@ pub mod private_store {
         use super::models;
         type Response = models::SubscriptionsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) next_page_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The skip token to get the next page."]
             pub fn next_page_token(mut self, next_page_token: impl Into<String>) -> Self {
                 self.next_page_token = Some(next_page_token.into());
@@ -1510,11 +1517,11 @@ pub mod private_store {
         use super::models;
         type Response = models::NewPlansNotificationsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1559,12 +1566,12 @@ pub mod private_store {
         use super::models;
         type Response = models::StopSellOffersPlansNotificationsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) stop_sell_subscriptions: Option<models::StopSellSubscriptions>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn stop_sell_subscriptions(mut self, stop_sell_subscriptions: impl Into<models::StopSellSubscriptions>) -> Self {
                 self.stop_sell_subscriptions = Some(stop_sell_subscriptions.into());
                 self
@@ -1617,11 +1624,11 @@ pub mod private_store {
         use super::models;
         type Response = models::SubscriptionsContextList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1671,8 +1678,8 @@ pub mod private_store_collection {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
-        pub fn list(&self, private_store_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, private_store_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
@@ -1682,8 +1689,8 @@ pub mod private_store_collection {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `collection_id`: The collection ID"]
-        pub fn get(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 collection_id: collection_id.into(),
@@ -1694,8 +1701,8 @@ pub mod private_store_collection {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `collection_id`: The collection ID"]
-        pub fn post(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> post::Builder {
-            post::Builder {
+        pub fn post(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 collection_id: collection_id.into(),
@@ -1707,8 +1714,12 @@ pub mod private_store_collection {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `collection_id`: The collection ID"]
-        pub fn create_or_update(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(
+            &self,
+            private_store_id: impl Into<String>,
+            collection_id: impl Into<String>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 collection_id: collection_id.into(),
@@ -1720,8 +1731,8 @@ pub mod private_store_collection {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `collection_id`: The collection ID"]
-        pub fn delete(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 collection_id: collection_id.into(),
@@ -1732,8 +1743,12 @@ pub mod private_store_collection {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `collection_id`: The collection ID"]
-        pub fn transfer_offers(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> transfer_offers::Builder {
-            transfer_offers::Builder {
+        pub fn transfer_offers(
+            &self,
+            private_store_id: impl Into<String>,
+            collection_id: impl Into<String>,
+        ) -> transfer_offers::RequestBuilder {
+            transfer_offers::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 collection_id: collection_id.into(),
@@ -1745,11 +1760,11 @@ pub mod private_store_collection {
         use super::models;
         type Response = models::CollectionsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1793,12 +1808,12 @@ pub mod private_store_collection {
         use super::models;
         type Response = models::Collection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) collection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1843,13 +1858,13 @@ pub mod private_store_collection {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) collection_id: String,
             pub(crate) payload: Option<models::PrivateStoreOperation>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::PrivateStoreOperation>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1899,13 +1914,13 @@ pub mod private_store_collection {
         use super::models;
         type Response = models::Collection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) collection_id: String,
             pub(crate) payload: Option<models::Collection>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::Collection>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -1963,12 +1978,12 @@ pub mod private_store_collection {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) collection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2010,13 +2025,13 @@ pub mod private_store_collection {
         use super::models;
         type Response = models::TransferOffersResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) collection_id: String,
             pub(crate) payload: Option<models::TransferOffersProperties>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::TransferOffersProperties>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -2076,8 +2091,8 @@ pub mod private_store_collection_offer {
         #[doc = "Arguments:"]
         #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         #[doc = "* `collection_id`: The collection ID"]
-        pub fn list(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 collection_id: collection_id.into(),
@@ -2094,8 +2109,8 @@ pub mod private_store_collection_offer {
             private_store_id: impl Into<String>,
             offer_id: impl Into<String>,
             collection_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 offer_id: offer_id.into(),
@@ -2113,8 +2128,8 @@ pub mod private_store_collection_offer {
             private_store_id: impl Into<String>,
             offer_id: impl Into<String>,
             collection_id: impl Into<String>,
-        ) -> post::Builder {
-            post::Builder {
+        ) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 offer_id: offer_id.into(),
@@ -2133,8 +2148,8 @@ pub mod private_store_collection_offer {
             private_store_id: impl Into<String>,
             offer_id: impl Into<String>,
             collection_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 offer_id: offer_id.into(),
@@ -2153,8 +2168,8 @@ pub mod private_store_collection_offer {
             private_store_id: impl Into<String>,
             offer_id: impl Into<String>,
             collection_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
                 offer_id: offer_id.into(),
@@ -2166,12 +2181,12 @@ pub mod private_store_collection_offer {
         use super::models;
         type Response = models::OfferListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) collection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2242,13 +2257,13 @@ pub mod private_store_collection_offer {
         use super::models;
         type Response = models::Offer;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) offer_id: String,
             pub(crate) collection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2294,14 +2309,14 @@ pub mod private_store_collection_offer {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) offer_id: String,
             pub(crate) collection_id: String,
             pub(crate) payload: Option<models::PrivateStoreOperation>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::PrivateStoreOperation>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -2352,14 +2367,14 @@ pub mod private_store_collection_offer {
         use super::models;
         type Response = models::Offer;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) offer_id: String,
             pub(crate) collection_id: String,
             pub(crate) payload: Option<models::Offer>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn payload(mut self, payload: impl Into<models::Offer>) -> Self {
                 self.payload = Some(payload.into());
                 self
@@ -2418,13 +2433,13 @@ pub mod private_store_collection_offer {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) private_store_id: String,
             pub(crate) offer_id: String,
             pub(crate) collection_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2469,18 +2484,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Microsoft.Marketplace REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

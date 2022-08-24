@@ -112,19 +112,19 @@ impl Client {
 }
 impl Client {
     #[doc = "Returns location for user tenant."]
-    pub fn get_locations(&self) -> get_locations::Builder {
-        get_locations::Builder { client: self.clone() }
+    pub fn get_locations(&self) -> get_locations::RequestBuilder {
+        get_locations::RequestBuilder { client: self.clone() }
     }
     #[doc = "Returns location for given tenant."]
-    pub fn get_location_by_host_name(&self) -> get_location_by_host_name::Builder {
-        get_location_by_host_name::Builder { client: self.clone() }
+    pub fn get_location_by_host_name(&self) -> get_location_by_host_name::RequestBuilder {
+        get_location_by_host_name::RequestBuilder { client: self.clone() }
     }
     #[doc = "Returns Intune Manageable apps."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `host_name`: Location hostName for the tenant"]
-    pub fn get_apps(&self, host_name: impl Into<String>) -> get_apps::Builder {
-        get_apps::Builder {
+    pub fn get_apps(&self, host_name: impl Into<String>) -> get_apps::RequestBuilder {
+        get_apps::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             filter: None,
@@ -137,8 +137,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `host_name`: Location hostName for the tenant"]
     #[doc = "* `user_name`: user unique Name"]
-    pub fn get_mam_user_devices(&self, host_name: impl Into<String>, user_name: impl Into<String>) -> get_mam_user_devices::Builder {
-        get_mam_user_devices::Builder {
+    pub fn get_mam_user_devices(&self, host_name: impl Into<String>, user_name: impl Into<String>) -> get_mam_user_devices::RequestBuilder {
+        get_mam_user_devices::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
@@ -158,8 +158,8 @@ impl Client {
         host_name: impl Into<String>,
         user_name: impl Into<String>,
         device_name: impl Into<String>,
-    ) -> get_mam_user_device_by_device_name::Builder {
-        get_mam_user_device_by_device_name::Builder {
+    ) -> get_mam_user_device_by_device_name::RequestBuilder {
+        get_mam_user_device_by_device_name::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
@@ -178,8 +178,8 @@ impl Client {
         host_name: impl Into<String>,
         user_name: impl Into<String>,
         device_name: impl Into<String>,
-    ) -> wipe_mam_user_device::Builder {
-        wipe_mam_user_device::Builder {
+    ) -> wipe_mam_user_device::RequestBuilder {
+        wipe_mam_user_device::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
@@ -190,8 +190,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `host_name`: Location hostName for the tenant"]
-    pub fn get_operation_results(&self, host_name: impl Into<String>) -> get_operation_results::Builder {
-        get_operation_results::Builder {
+    pub fn get_operation_results(&self, host_name: impl Into<String>) -> get_operation_results::RequestBuilder {
+        get_operation_results::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             filter: None,
@@ -203,8 +203,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `host_name`: Location hostName for the tenant"]
-    pub fn get_mam_statuses(&self, host_name: impl Into<String>) -> get_mam_statuses::Builder {
-        get_mam_statuses::Builder {
+    pub fn get_mam_statuses(&self, host_name: impl Into<String>) -> get_mam_statuses::RequestBuilder {
+        get_mam_statuses::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
         }
@@ -213,8 +213,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `host_name`: Location hostName for the tenant"]
-    pub fn get_mam_flagged_users(&self, host_name: impl Into<String>) -> get_mam_flagged_users::Builder {
-        get_mam_flagged_users::Builder {
+    pub fn get_mam_flagged_users(&self, host_name: impl Into<String>) -> get_mam_flagged_users::RequestBuilder {
+        get_mam_flagged_users::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             filter: None,
@@ -231,8 +231,8 @@ impl Client {
         &self,
         host_name: impl Into<String>,
         user_name: impl Into<String>,
-    ) -> get_mam_flagged_user_by_name::Builder {
-        get_mam_flagged_user_by_name::Builder {
+    ) -> get_mam_flagged_user_by_name::RequestBuilder {
+        get_mam_flagged_user_by_name::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
@@ -248,8 +248,8 @@ impl Client {
         &self,
         host_name: impl Into<String>,
         user_name: impl Into<String>,
-    ) -> get_mam_user_flagged_enrolled_apps::Builder {
-        get_mam_user_flagged_enrolled_apps::Builder {
+    ) -> get_mam_user_flagged_enrolled_apps::RequestBuilder {
+        get_mam_user_flagged_enrolled_apps::RequestBuilder {
             client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
@@ -263,10 +263,10 @@ pub mod get_locations {
     use super::models;
     type Response = models::LocationCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -332,10 +332,10 @@ pub mod get_location_by_host_name {
     use super::models;
     type Response = models::Location;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -376,14 +376,14 @@ pub mod get_apps {
     use super::models;
     type Response = models::ApplicationCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) top: Option<i32>,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -476,7 +476,7 @@ pub mod get_mam_user_devices {
     use super::models;
     type Response = models::DeviceCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
@@ -484,7 +484,7 @@ pub mod get_mam_user_devices {
         pub(crate) top: Option<i32>,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -578,14 +578,14 @@ pub mod get_mam_user_device_by_device_name {
     use super::models;
     type Response = models::Device;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) device_name: String,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
@@ -639,13 +639,13 @@ pub mod wipe_mam_user_device {
     use super::models;
     type Response = models::WipeDeviceOperationResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) device_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -692,14 +692,14 @@ pub mod get_operation_results {
     use super::models;
     type Response = models::OperationResultCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) top: Option<i32>,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -792,11 +792,11 @@ pub mod get_mam_statuses {
     use super::models;
     type Response = models::StatusesDefault;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -866,14 +866,14 @@ pub mod get_mam_flagged_users {
     use super::models;
     type Response = models::FlaggedUserCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) top: Option<i32>,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -966,13 +966,13 @@ pub mod get_mam_flagged_user_by_name {
     use super::models;
     type Response = models::FlaggedUser;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
@@ -1025,7 +1025,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
     use super::models;
     type Response = models::FlaggedEnrolledAppCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
@@ -1033,7 +1033,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
         pub(crate) top: Option<i32>,
         pub(crate) select: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -1131,8 +1131,8 @@ pub mod ios {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `host_name`: Location hostName for the tenant"]
-        pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
-            get_mam_policies::Builder {
+        pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::RequestBuilder {
+            get_mam_policies::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 filter: None,
@@ -1149,8 +1149,8 @@ pub mod ios {
             &self,
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get_mam_policy_by_name::Builder {
-            get_mam_policy_by_name::Builder {
+        ) -> get_mam_policy_by_name::RequestBuilder {
+            get_mam_policy_by_name::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1168,8 +1168,8 @@ pub mod ios {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             parameters: impl Into<models::IOsmamPolicy>,
-        ) -> create_or_update_mam_policy::Builder {
-            create_or_update_mam_policy::Builder {
+        ) -> create_or_update_mam_policy::RequestBuilder {
+            create_or_update_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1187,8 +1187,8 @@ pub mod ios {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             parameters: impl Into<models::IOsmamPolicy>,
-        ) -> patch_mam_policy::Builder {
-            patch_mam_policy::Builder {
+        ) -> patch_mam_policy::RequestBuilder {
+            patch_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1200,8 +1200,8 @@ pub mod ios {
         #[doc = "Arguments:"]
         #[doc = "* `host_name`: Location hostName for the tenant"]
         #[doc = "* `policy_name`: Unique name for the policy"]
-        pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
-            delete_mam_policy::Builder {
+        pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::RequestBuilder {
+            delete_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1216,8 +1216,8 @@ pub mod ios {
             &self,
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get_app_for_mam_policy::Builder {
-            get_app_for_mam_policy::Builder {
+        ) -> get_app_for_mam_policy::RequestBuilder {
+            get_app_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1239,8 +1239,8 @@ pub mod ios {
             policy_name: impl Into<String>,
             app_name: impl Into<String>,
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
-        ) -> add_app_for_mam_policy::Builder {
-            add_app_for_mam_policy::Builder {
+        ) -> add_app_for_mam_policy::RequestBuilder {
+            add_app_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1259,8 +1259,8 @@ pub mod ios {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             app_name: impl Into<String>,
-        ) -> delete_app_for_mam_policy::Builder {
-            delete_app_for_mam_policy::Builder {
+        ) -> delete_app_for_mam_policy::RequestBuilder {
+            delete_app_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1276,8 +1276,8 @@ pub mod ios {
             &self,
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get_groups_for_mam_policy::Builder {
-            get_groups_for_mam_policy::Builder {
+        ) -> get_groups_for_mam_policy::RequestBuilder {
+            get_groups_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1296,8 +1296,8 @@ pub mod ios {
             policy_name: impl Into<String>,
             group_id: impl Into<String>,
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
-        ) -> add_group_for_mam_policy::Builder {
-            add_group_for_mam_policy::Builder {
+        ) -> add_group_for_mam_policy::RequestBuilder {
+            add_group_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1316,8 +1316,8 @@ pub mod ios {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> delete_group_for_mam_policy::Builder {
-            delete_group_for_mam_policy::Builder {
+        ) -> delete_group_for_mam_policy::RequestBuilder {
+            delete_group_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -1329,14 +1329,14 @@ pub mod ios {
         use super::models;
         type Response = models::IosmamPolicyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
             pub(crate) select: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1429,13 +1429,13 @@ pub mod ios {
         use super::models;
         type Response = models::IOsmamPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) select: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -1488,13 +1488,13 @@ pub mod ios {
         use super::models;
         type Response = models::IOsmamPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::IOsmamPolicy,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1540,13 +1540,13 @@ pub mod ios {
         use super::models;
         type Response = models::IOsmamPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::IOsmamPolicy,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1596,12 +1596,12 @@ pub mod ios {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1643,7 +1643,7 @@ pub mod ios {
         use super::models;
         type Response = models::ApplicationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
@@ -1651,7 +1651,7 @@ pub mod ios {
             pub(crate) top: Option<i32>,
             pub(crate) select: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1749,14 +1749,14 @@ pub mod ios {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1804,13 +1804,13 @@ pub mod ios {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1853,12 +1853,12 @@ pub mod ios {
         use super::models;
         type Response = models::GroupsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1933,14 +1933,14 @@ pub mod ios {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1988,13 +1988,13 @@ pub mod ios {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2042,8 +2042,8 @@ pub mod android {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `host_name`: Location hostName for the tenant"]
-        pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
-            get_mam_policies::Builder {
+        pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::RequestBuilder {
+            get_mam_policies::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 filter: None,
@@ -2060,8 +2060,8 @@ pub mod android {
             &self,
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get_mam_policy_by_name::Builder {
-            get_mam_policy_by_name::Builder {
+        ) -> get_mam_policy_by_name::RequestBuilder {
+            get_mam_policy_by_name::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2079,8 +2079,8 @@ pub mod android {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             parameters: impl Into<models::AndroidMamPolicy>,
-        ) -> create_or_update_mam_policy::Builder {
-            create_or_update_mam_policy::Builder {
+        ) -> create_or_update_mam_policy::RequestBuilder {
+            create_or_update_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2098,8 +2098,8 @@ pub mod android {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             parameters: impl Into<models::AndroidMamPolicy>,
-        ) -> patch_mam_policy::Builder {
-            patch_mam_policy::Builder {
+        ) -> patch_mam_policy::RequestBuilder {
+            patch_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2111,8 +2111,8 @@ pub mod android {
         #[doc = "Arguments:"]
         #[doc = "* `host_name`: Location hostName for the tenant"]
         #[doc = "* `policy_name`: Unique name for the policy"]
-        pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
-            delete_mam_policy::Builder {
+        pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::RequestBuilder {
+            delete_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2127,8 +2127,8 @@ pub mod android {
             &self,
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get_app_for_mam_policy::Builder {
-            get_app_for_mam_policy::Builder {
+        ) -> get_app_for_mam_policy::RequestBuilder {
+            get_app_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2150,8 +2150,8 @@ pub mod android {
             policy_name: impl Into<String>,
             app_name: impl Into<String>,
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
-        ) -> add_app_for_mam_policy::Builder {
-            add_app_for_mam_policy::Builder {
+        ) -> add_app_for_mam_policy::RequestBuilder {
+            add_app_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2170,8 +2170,8 @@ pub mod android {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             app_name: impl Into<String>,
-        ) -> delete_app_for_mam_policy::Builder {
-            delete_app_for_mam_policy::Builder {
+        ) -> delete_app_for_mam_policy::RequestBuilder {
+            delete_app_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2187,8 +2187,8 @@ pub mod android {
             &self,
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get_groups_for_mam_policy::Builder {
-            get_groups_for_mam_policy::Builder {
+        ) -> get_groups_for_mam_policy::RequestBuilder {
+            get_groups_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2207,8 +2207,8 @@ pub mod android {
             policy_name: impl Into<String>,
             group_id: impl Into<String>,
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
-        ) -> add_group_for_mam_policy::Builder {
-            add_group_for_mam_policy::Builder {
+        ) -> add_group_for_mam_policy::RequestBuilder {
+            add_group_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2227,8 +2227,8 @@ pub mod android {
             host_name: impl Into<String>,
             policy_name: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> delete_group_for_mam_policy::Builder {
-            delete_group_for_mam_policy::Builder {
+        ) -> delete_group_for_mam_policy::RequestBuilder {
+            delete_group_for_mam_policy::RequestBuilder {
                 client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
@@ -2240,14 +2240,14 @@ pub mod android {
         use super::models;
         type Response = models::AndroidMamPolicyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
             pub(crate) select: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2340,13 +2340,13 @@ pub mod android {
         use super::models;
         type Response = models::AndroidMamPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) select: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -2399,13 +2399,13 @@ pub mod android {
         use super::models;
         type Response = models::AndroidMamPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::AndroidMamPolicy,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2451,13 +2451,13 @@ pub mod android {
         use super::models;
         type Response = models::AndroidMamPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::AndroidMamPolicy,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2507,12 +2507,12 @@ pub mod android {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2554,7 +2554,7 @@ pub mod android {
         use super::models;
         type Response = models::ApplicationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
@@ -2562,7 +2562,7 @@ pub mod android {
             pub(crate) top: Option<i32>,
             pub(crate) select: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2660,14 +2660,14 @@ pub mod android {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2715,13 +2715,13 @@ pub mod android {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2764,12 +2764,12 @@ pub mod android {
         use super::models;
         type Response = models::GroupsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2844,14 +2844,14 @@ pub mod android {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2899,13 +2899,13 @@ pub mod android {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

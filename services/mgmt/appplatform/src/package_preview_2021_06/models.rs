@@ -66,7 +66,7 @@ pub struct AppResourceProperties {
     #[serde(rename = "httpsOnly", default, skip_serializing_if = "Option::is_none")]
     pub https_only: Option<bool>,
     #[doc = "Date time when the resource is created"]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Temporary disk payload"]
     #[serde(rename = "temporaryDisk", default, skip_serializing_if = "Option::is_none")]
@@ -785,7 +785,7 @@ pub struct DeploymentResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active: Option<bool>,
     #[doc = "Date time when the resource is created"]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Collection of instances belong to the Deployment"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

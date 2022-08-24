@@ -48,7 +48,7 @@ pub struct Backup {
     #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<backup::GeoRedundantBackup>,
     #[doc = "The earliest restore point time (ISO8601 format) for server."]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl Backup {
@@ -813,7 +813,7 @@ pub struct MigrationResourceProperties {
     pub setup_logical_replication_on_source_db_if_needed: Option<bool>,
     #[serde(rename = "overwriteDBsInTarget", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_d_bs_in_target: Option<bool>,
-    #[serde(rename = "migrationWindowStartTimeInUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "migrationWindowStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
     pub migration_window_start_time_in_utc: Option<time::OffsetDateTime>,
     #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<bool>,
@@ -848,7 +848,7 @@ pub struct MigrationResourcePropertiesForPatch {
     pub setup_logical_replication_on_source_db_if_needed: Option<bool>,
     #[serde(rename = "overwriteDBsInTarget", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_d_bs_in_target: Option<bool>,
-    #[serde(rename = "migrationWindowStartTimeInUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "migrationWindowStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
     pub migration_window_start_time_in_utc: Option<time::OffsetDateTime>,
     #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<bool>,
@@ -1430,7 +1430,7 @@ pub struct ServerProperties {
     #[serde(rename = "sourceServerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_server_resource_id: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from. It's required when 'createMode' is 'PointInTimeRestore'."]
-    #[serde(rename = "pointInTimeUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time_utc: Option<time::OffsetDateTime>,
     #[doc = "availability zone information of the server."]
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
@@ -1918,7 +1918,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1927,7 +1927,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

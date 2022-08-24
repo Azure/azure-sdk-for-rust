@@ -7,7 +7,7 @@ use std::{collections::HashMap, str::FromStr};
 
 /// Construct a new `HttpClient` with the `reqwest` backend.
 pub fn new_reqwest_client() -> std::sync::Arc<dyn HttpClient> {
-    log::info!("instantiating an http client using the reqwest backend");
+    log::debug!("instantiating an http client using the reqwest backend");
     std::sync::Arc::new(::reqwest::Client::new())
 }
 

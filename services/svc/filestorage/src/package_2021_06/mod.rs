@@ -124,8 +124,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -140,8 +140,8 @@ pub mod service {
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
             x_ms_version: impl Into<String>,
-        ) -> set_properties::Builder {
-            set_properties::Builder {
+        ) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 storage_service_properties: storage_service_properties.into(),
                 x_ms_version: x_ms_version.into(),
@@ -152,8 +152,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_shares_segment(&self, x_ms_version: impl Into<String>) -> list_shares_segment::Builder {
-            list_shares_segment::Builder {
+        pub fn list_shares_segment(&self, x_ms_version: impl Into<String>) -> list_shares_segment::RequestBuilder {
+            list_shares_segment::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -168,12 +168,12 @@ pub mod service {
         use super::models;
         type Response = models::StorageServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -219,13 +219,13 @@ pub mod service {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -268,7 +268,7 @@ pub mod service {
         use super::models;
         type Response = models::ListSharesResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -277,7 +277,7 @@ pub mod service {
             pub(crate) include: Vec<String>,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters the results to return only entries whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -377,8 +377,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -392,8 +392,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -410,8 +410,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -432,8 +432,8 @@ pub mod share {
             share_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> acquire_lease::Builder {
-            acquire_lease::Builder {
+        ) -> acquire_lease::RequestBuilder {
+            acquire_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -458,8 +458,8 @@ pub mod share {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> release_lease::Builder {
-            release_lease::Builder {
+        ) -> release_lease::RequestBuilder {
+            release_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -483,8 +483,8 @@ pub mod share {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> change_lease::Builder {
-            change_lease::Builder {
+        ) -> change_lease::RequestBuilder {
+            change_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -509,8 +509,8 @@ pub mod share {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> renew_lease::Builder {
-            renew_lease::Builder {
+        ) -> renew_lease::RequestBuilder {
+            renew_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -532,8 +532,8 @@ pub mod share {
             share_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> break_lease::Builder {
-            break_lease::Builder {
+        ) -> break_lease::RequestBuilder {
+            break_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -550,8 +550,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create_snapshot(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create_snapshot::Builder {
-            create_snapshot::Builder {
+        pub fn create_snapshot(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create_snapshot::RequestBuilder {
+            create_snapshot::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -570,8 +570,8 @@ pub mod share {
             share_name: impl Into<String>,
             x_ms_file_permission_key: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_permission::Builder {
-            get_permission::Builder {
+        ) -> get_permission::RequestBuilder {
+            get_permission::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_file_permission_key: x_ms_file_permission_key.into(),
@@ -590,8 +590,8 @@ pub mod share {
             share_name: impl Into<String>,
             x_ms_version: impl Into<String>,
             share_permission: impl Into<models::SharePermission>,
-        ) -> create_permission::Builder {
-            create_permission::Builder {
+        ) -> create_permission::RequestBuilder {
+            create_permission::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -604,8 +604,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_properties::Builder {
-            set_properties::Builder {
+        pub fn set_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -621,8 +621,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_metadata(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
-            set_metadata::Builder {
+        pub fn set_metadata(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::RequestBuilder {
+            set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -636,8 +636,12 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
-            get_access_policy::Builder {
+        pub fn get_access_policy(
+            &self,
+            share_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_access_policy::RequestBuilder {
+            get_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -650,8 +654,12 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
-            set_access_policy::Builder {
+        pub fn set_access_policy(
+            &self,
+            share_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_access_policy::RequestBuilder {
+            set_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -665,8 +673,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_statistics::Builder {
-            get_statistics::Builder {
+        pub fn get_statistics(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_statistics::RequestBuilder {
+            get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -679,8 +687,8 @@ pub mod share {
         #[doc = "Arguments:"]
         #[doc = "* `share_name`: The name of the target share."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn restore(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::Builder {
-            restore::Builder {
+        pub fn restore(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::RequestBuilder {
+            restore::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -695,7 +703,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -703,7 +711,7 @@ pub mod share {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
@@ -761,7 +769,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -772,7 +780,7 @@ pub mod share {
             pub(crate) x_ms_enabled_protocols: Option<String>,
             pub(crate) x_ms_root_squash: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -854,7 +862,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -863,7 +871,7 @@ pub mod share {
             pub(crate) x_ms_delete_snapshots: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
@@ -929,7 +937,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -940,7 +948,7 @@ pub mod share {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1019,7 +1027,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -1029,7 +1037,7 @@ pub mod share {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1093,7 +1101,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -1104,7 +1112,7 @@ pub mod share {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1176,7 +1184,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -1186,7 +1194,7 @@ pub mod share {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1250,7 +1258,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -1261,7 +1269,7 @@ pub mod share {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) sharesnapshot: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1340,14 +1348,14 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1401,14 +1409,14 @@ pub mod share {
         use super::models;
         type Response = models::SharePermission;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_file_permission_key: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1459,14 +1467,14 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) share_permission: models::SharePermission,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1513,7 +1521,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -1523,7 +1531,7 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_root_squash: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1601,7 +1609,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -1609,7 +1617,7 @@ pub mod share {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1671,14 +1679,14 @@ pub mod share {
         use super::models;
         type Response = models::SignedIdentifiers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1733,7 +1741,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -1741,7 +1749,7 @@ pub mod share {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ACL for the share."]
             pub fn share_acl(mut self, share_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.share_acl = Some(share_acl.into());
@@ -1802,14 +1810,14 @@ pub mod share {
         use super::models;
         type Response = models::ShareStats;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1864,7 +1872,7 @@ pub mod share {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) x_ms_version: String,
@@ -1873,7 +1881,7 @@ pub mod share {
             pub(crate) x_ms_deleted_share_name: Option<String>,
             pub(crate) x_ms_deleted_share_version: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1955,8 +1963,8 @@ pub mod directory {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -1978,8 +1986,8 @@ pub mod directory {
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2005,8 +2013,8 @@ pub mod directory {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2027,8 +2035,8 @@ pub mod directory {
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-        ) -> set_properties::Builder {
-            set_properties::Builder {
+        ) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2053,8 +2061,8 @@ pub mod directory {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_metadata::Builder {
-            set_metadata::Builder {
+        ) -> set_metadata::RequestBuilder {
+            set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2074,8 +2082,8 @@ pub mod directory {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> list_files_and_directories_segment::Builder {
-            list_files_and_directories_segment::Builder {
+        ) -> list_files_and_directories_segment::RequestBuilder {
+            list_files_and_directories_segment::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2100,8 +2108,8 @@ pub mod directory {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> list_handles::Builder {
-            list_handles::Builder {
+        ) -> list_handles::RequestBuilder {
+            list_handles::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2126,8 +2134,8 @@ pub mod directory {
             directory: impl Into<String>,
             x_ms_handle_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> force_close_handles::Builder {
-            force_close_handles::Builder {
+        ) -> force_close_handles::RequestBuilder {
+            force_close_handles::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2152,8 +2160,8 @@ pub mod directory {
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_rename_source: impl Into<String>,
-        ) -> rename::Builder {
-            rename::Builder {
+        ) -> rename::RequestBuilder {
+            rename::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -2178,7 +2186,7 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2186,7 +2194,7 @@ pub mod directory {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
@@ -2241,7 +2249,7 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2255,7 +2263,7 @@ pub mod directory {
             pub(crate) x_ms_file_last_write_time: Option<time::OffsetDateTime>,
             pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2351,14 +2359,14 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2405,7 +2413,7 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2418,7 +2426,7 @@ pub mod directory {
             pub(crate) x_ms_file_last_write_time: Option<time::OffsetDateTime>,
             pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2506,7 +2514,7 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2514,7 +2522,7 @@ pub mod directory {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2569,7 +2577,7 @@ pub mod directory {
         use super::models;
         type Response = models::ListFilesAndDirectoriesSegmentResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2582,7 +2590,7 @@ pub mod directory {
             pub(crate) include: Vec<String>,
             pub(crate) x_ms_file_extended_info: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters the results to return only entries whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -2697,7 +2705,7 @@ pub mod directory {
         use super::models;
         type Response = models::ListHandlesResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2708,7 +2716,7 @@ pub mod directory {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) x_ms_recursive: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
@@ -2791,7 +2799,7 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2802,7 +2810,7 @@ pub mod directory {
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) x_ms_recursive: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2874,7 +2882,7 @@ pub mod directory {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -2893,7 +2901,7 @@ pub mod directory {
             pub(crate) x_ms_file_permission_key: Option<String>,
             pub(crate) x_ms_meta: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -3046,8 +3054,8 @@ pub mod file {
             directory: impl Into<String>,
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> download::Builder {
-            download::Builder {
+        ) -> download::RequestBuilder {
+            download::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3078,8 +3086,8 @@ pub mod file {
             x_ms_content_length: i64,
             x_ms_type: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3117,8 +3125,8 @@ pub mod file {
             directory: impl Into<String>,
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3141,8 +3149,8 @@ pub mod file {
             directory: impl Into<String>,
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3168,8 +3176,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-        ) -> set_http_headers::Builder {
-            set_http_headers::Builder {
+        ) -> set_http_headers::RequestBuilder {
+            set_http_headers::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3205,8 +3213,8 @@ pub mod file {
             directory: impl Into<String>,
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_metadata::Builder {
-            set_metadata::Builder {
+        ) -> set_metadata::RequestBuilder {
+            set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3232,8 +3240,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> acquire_lease::Builder {
-            acquire_lease::Builder {
+        ) -> acquire_lease::RequestBuilder {
+            acquire_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3263,8 +3271,8 @@ pub mod file {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> release_lease::Builder {
-            release_lease::Builder {
+        ) -> release_lease::RequestBuilder {
+            release_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3293,8 +3301,8 @@ pub mod file {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> change_lease::Builder {
-            change_lease::Builder {
+        ) -> change_lease::RequestBuilder {
+            change_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3322,8 +3330,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> break_lease::Builder {
-            break_lease::Builder {
+        ) -> break_lease::RequestBuilder {
+            break_lease::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3354,8 +3362,8 @@ pub mod file {
             x_ms_write: impl Into<String>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> upload_range::Builder {
-            upload_range::Builder {
+        ) -> upload_range::RequestBuilder {
+            upload_range::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3392,8 +3400,8 @@ pub mod file {
             x_ms_write: impl Into<String>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> upload_range_from_url::Builder {
-            upload_range_from_url::Builder {
+        ) -> upload_range_from_url::RequestBuilder {
+            upload_range_from_url::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3426,8 +3434,8 @@ pub mod file {
             directory: impl Into<String>,
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_range_list::Builder {
-            get_range_list::Builder {
+        ) -> get_range_list::RequestBuilder {
+            get_range_list::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3455,8 +3463,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
-        ) -> start_copy::Builder {
-            start_copy::Builder {
+        ) -> start_copy::RequestBuilder {
+            start_copy::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3492,8 +3500,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_copy_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> abort_copy::Builder {
-            abort_copy::Builder {
+        ) -> abort_copy::RequestBuilder {
+            abort_copy::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3517,8 +3525,8 @@ pub mod file {
             directory: impl Into<String>,
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> list_handles::Builder {
-            list_handles::Builder {
+        ) -> list_handles::RequestBuilder {
+            list_handles::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3545,8 +3553,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_handle_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> force_close_handles::Builder {
-            force_close_handles::Builder {
+        ) -> force_close_handles::RequestBuilder {
+            force_close_handles::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3573,8 +3581,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_rename_source: impl Into<String>,
-        ) -> rename::Builder {
-            rename::Builder {
+        ) -> rename::RequestBuilder {
+            rename::RequestBuilder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
@@ -3605,7 +3613,7 @@ pub mod file {
             PartialContent206(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -3616,7 +3624,7 @@ pub mod file {
             pub(crate) x_ms_range_get_content_md5: Option<bool>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -3697,7 +3705,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -3721,7 +3729,7 @@ pub mod file {
             pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -3876,7 +3884,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -3885,7 +3893,7 @@ pub mod file {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -3941,7 +3949,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -3951,7 +3959,7 @@ pub mod file {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
@@ -4015,7 +4023,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4037,7 +4045,7 @@ pub mod file {
             pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4190,7 +4198,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4200,7 +4208,7 @@ pub mod file {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4264,7 +4272,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4276,7 +4284,7 @@ pub mod file {
             pub(crate) x_ms_proposed_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4349,7 +4357,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4360,7 +4368,7 @@ pub mod file {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4418,7 +4426,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4430,7 +4438,7 @@ pub mod file {
             pub(crate) x_ms_proposed_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4496,7 +4504,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4507,7 +4515,7 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4572,7 +4580,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4587,7 +4595,7 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_file_last_write_time: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Initial data."]
             pub fn optionalbody(mut self, optionalbody: impl Into<serde_json::Value>) -> Self {
                 self.optionalbody = Some(optionalbody.into());
@@ -4672,7 +4680,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4691,7 +4699,7 @@ pub mod file {
             pub(crate) x_ms_copy_source_authorization: Option<String>,
             pub(crate) x_ms_file_last_write_time: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4799,7 +4807,7 @@ pub mod file {
         use super::models;
         type Response = models::ShareFileRangeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4811,7 +4819,7 @@ pub mod file {
             pub(crate) x_ms_range: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
@@ -4895,7 +4903,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -4915,7 +4923,7 @@ pub mod file {
             pub(crate) x_ms_file_copy_set_archive: Option<bool>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5052,7 +5060,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -5062,7 +5070,7 @@ pub mod file {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5119,7 +5127,7 @@ pub mod file {
         use super::models;
         type Response = models::ListHandlesResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -5130,7 +5138,7 @@ pub mod file {
             pub(crate) timeout: Option<i64>,
             pub(crate) sharesnapshot: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
@@ -5206,7 +5214,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -5217,7 +5225,7 @@ pub mod file {
             pub(crate) marker: Option<String>,
             pub(crate) sharesnapshot: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5282,7 +5290,7 @@ pub mod file {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
@@ -5303,7 +5311,7 @@ pub mod file {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_content_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);

@@ -1,6 +1,8 @@
 use super::{ClientSecretCredential, TokenCredentialOptions};
 use azure_core::auth::{TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::HttpClient;
+use std::sync::Arc;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
@@ -22,15 +24,29 @@ const AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PA
 /// This credential ultimately uses a `ClientSecretCredential` to perform the authentication using
 /// these details.
 /// Please consult the documentation of that class for more details.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct EnvironmentCredential {
+    http_client: Arc<dyn HttpClient>,
     options: TokenCredentialOptions,
+}
+
+impl Default for EnvironmentCredential {
+    /// Creates an instance of the `EnvironmentCredential` using the default `HttpClient`.
+    fn default() -> Self {
+        Self::new(
+            azure_core::new_http_client(),
+            TokenCredentialOptions::default(),
+        )
+    }
 }
 
 impl EnvironmentCredential {
     /// Creates a new `EnvironmentCredential` with the given `TokenCredentialOptions`.
-    pub fn new(options: TokenCredentialOptions) -> Self {
-        Self { options }
+    pub fn new(http_client: Arc<dyn HttpClient>, options: TokenCredentialOptions) -> Self {
+        Self {
+            http_client,
+            options,
+        }
     }
 }
 
@@ -60,6 +76,7 @@ impl TokenCredential for EnvironmentCredential {
 
         if let Ok(client_secret) = client_secret {
             let credential = ClientSecretCredential::new(
+                self.http_client.clone(),
                 tenant_id,
                 client_id,
                 client_secret,

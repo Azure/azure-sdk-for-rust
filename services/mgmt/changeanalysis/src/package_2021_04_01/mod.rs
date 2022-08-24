@@ -118,8 +118,8 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the supported operations by the Microsoft.ChangeAnalysis resource provider along with their descriptions."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skip_token: None,
             }
@@ -129,11 +129,11 @@ pub mod operations {
         use super::models;
         type Response = models::ResourceProviderOperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -220,8 +220,8 @@ pub mod resource_changes {
             resource_id: impl Into<String>,
             start_time: impl Into<time::OffsetDateTime>,
             end_time: impl Into<time::OffsetDateTime>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 start_time: start_time.into(),
@@ -234,14 +234,14 @@ pub mod resource_changes {
         use super::models;
         type Response = models::ChangeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) start_time: time::OffsetDateTime,
             pub(crate) end_time: time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -338,8 +338,8 @@ pub mod changes {
             resource_group_name: impl Into<String>,
             start_time: impl Into<time::OffsetDateTime>,
             end_time: impl Into<time::OffsetDateTime>,
-        ) -> list_changes_by_resource_group::Builder {
-            list_changes_by_resource_group::Builder {
+        ) -> list_changes_by_resource_group::RequestBuilder {
+            list_changes_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -359,8 +359,8 @@ pub mod changes {
             subscription_id: impl Into<String>,
             start_time: impl Into<time::OffsetDateTime>,
             end_time: impl Into<time::OffsetDateTime>,
-        ) -> list_changes_by_subscription::Builder {
-            list_changes_by_subscription::Builder {
+        ) -> list_changes_by_subscription::RequestBuilder {
+            list_changes_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 start_time: start_time.into(),
@@ -373,7 +373,7 @@ pub mod changes {
         use super::models;
         type Response = models::ChangeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -381,7 +381,7 @@ pub mod changes {
             pub(crate) end_time: time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -464,14 +464,14 @@ pub mod changes {
         use super::models;
         type Response = models::ChangeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) start_time: time::OffsetDateTime,
             pub(crate) end_time: time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());

@@ -130,8 +130,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -147,8 +147,8 @@ pub mod service {
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
             x_ms_version: impl Into<String>,
-        ) -> set_properties::Builder {
-            set_properties::Builder {
+        ) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 storage_service_properties: storage_service_properties.into(),
                 x_ms_version: x_ms_version.into(),
@@ -160,8 +160,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::Builder {
-            get_statistics::Builder {
+        pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::RequestBuilder {
+            get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -172,8 +172,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_containers_segment(&self, x_ms_version: impl Into<String>) -> list_containers_segment::Builder {
-            list_containers_segment::Builder {
+        pub fn list_containers_segment(&self, x_ms_version: impl Into<String>) -> list_containers_segment::RequestBuilder {
+            list_containers_segment::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -193,8 +193,8 @@ pub mod service {
             &self,
             key_info: impl Into<models::KeyInfo>,
             x_ms_version: impl Into<String>,
-        ) -> get_user_delegation_key::Builder {
-            get_user_delegation_key::Builder {
+        ) -> get_user_delegation_key::RequestBuilder {
+            get_user_delegation_key::RequestBuilder {
                 client: self.0.clone(),
                 key_info: key_info.into(),
                 x_ms_version: x_ms_version.into(),
@@ -206,8 +206,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_account_info(&self, x_ms_version: impl Into<String>) -> get_account_info::Builder {
-            get_account_info::Builder {
+        pub fn get_account_info(&self, x_ms_version: impl Into<String>) -> get_account_info::RequestBuilder {
+            get_account_info::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
             }
@@ -225,8 +225,8 @@ pub mod service {
             content_length: i64,
             content_type: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> submit_batch::Builder {
-            submit_batch::Builder {
+        ) -> submit_batch::RequestBuilder {
+            submit_batch::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
                 content_length,
@@ -240,8 +240,8 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn filter_blobs(&self, x_ms_version: impl Into<String>) -> filter_blobs::Builder {
-            filter_blobs::Builder {
+        pub fn filter_blobs(&self, x_ms_version: impl Into<String>) -> filter_blobs::RequestBuilder {
+            filter_blobs::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -256,13 +256,13 @@ pub mod service {
         use super::models;
         type Response = models::StorageServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -316,14 +316,14 @@ pub mod service {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -374,13 +374,13 @@ pub mod service {
         use super::models;
         type Response = models::StorageServiceStats;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -434,7 +434,7 @@ pub mod service {
         use super::models;
         type Response = models::ListContainersSegmentResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -444,7 +444,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters the results to return only containers whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -546,14 +546,14 @@ pub mod service {
         use super::models;
         type Response = models::UserDelegationKey;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) key_info: models::KeyInfo,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -608,11 +608,11 @@ pub mod service {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -646,7 +646,7 @@ pub mod service {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
@@ -655,7 +655,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -711,7 +711,7 @@ pub mod service {
         use super::models;
         type Response = models::FilterBlobSegment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -720,7 +720,7 @@ pub mod service {
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -804,8 +804,8 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
-            get_properties::Builder {
+        pub fn get_properties(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -819,8 +819,8 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -837,8 +837,8 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -854,8 +854,8 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_metadata(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
-            set_metadata::Builder {
+        pub fn set_metadata(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::RequestBuilder {
+            set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -871,8 +871,12 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_access_policy(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
-            get_access_policy::Builder {
+        pub fn get_access_policy(
+            &self,
+            container_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_access_policy::RequestBuilder {
+            get_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -886,8 +890,12 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_access_policy(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
-            set_access_policy::Builder {
+        pub fn set_access_policy(
+            &self,
+            container_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_access_policy::RequestBuilder {
+            set_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -905,8 +913,8 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn restore(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::Builder {
-            restore::Builder {
+        pub fn restore(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::RequestBuilder {
+            restore::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -927,8 +935,8 @@ pub mod container {
             container_name: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_source_container_name: impl Into<String>,
-        ) -> rename::Builder {
-            rename::Builder {
+        ) -> rename::RequestBuilder {
+            rename::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -953,8 +961,8 @@ pub mod container {
             content_length: i64,
             content_type: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> submit_batch::Builder {
-            submit_batch::Builder {
+        ) -> submit_batch::RequestBuilder {
+            submit_batch::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 body: body.into(),
@@ -970,8 +978,8 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn filter_blobs(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> filter_blobs::Builder {
-            filter_blobs::Builder {
+        pub fn filter_blobs(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> filter_blobs::RequestBuilder {
+            filter_blobs::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -993,8 +1001,8 @@ pub mod container {
             container_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> acquire_lease::Builder {
-            acquire_lease::Builder {
+        ) -> acquire_lease::RequestBuilder {
+            acquire_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -1020,8 +1028,8 @@ pub mod container {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> release_lease::Builder {
-            release_lease::Builder {
+        ) -> release_lease::RequestBuilder {
+            release_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -1046,8 +1054,8 @@ pub mod container {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> renew_lease::Builder {
-            renew_lease::Builder {
+        ) -> renew_lease::RequestBuilder {
+            renew_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -1070,8 +1078,8 @@ pub mod container {
             container_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> break_lease::Builder {
-            break_lease::Builder {
+        ) -> break_lease::RequestBuilder {
+            break_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -1098,8 +1106,8 @@ pub mod container {
             x_ms_lease_id: impl Into<String>,
             x_ms_proposed_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> change_lease::Builder {
-            change_lease::Builder {
+        ) -> change_lease::RequestBuilder {
+            change_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -1121,8 +1129,8 @@ pub mod container {
             &self,
             container_name: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> list_blob_flat_segment::Builder {
-            list_blob_flat_segment::Builder {
+        ) -> list_blob_flat_segment::RequestBuilder {
+            list_blob_flat_segment::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1145,8 +1153,8 @@ pub mod container {
             container_name: impl Into<String>,
             delimiter: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> list_blob_hierarchy_segment::Builder {
-            list_blob_hierarchy_segment::Builder {
+        ) -> list_blob_hierarchy_segment::RequestBuilder {
+            list_blob_hierarchy_segment::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 delimiter: delimiter.into(),
@@ -1164,8 +1172,12 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_account_info(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_account_info::Builder {
-            get_account_info::Builder {
+        pub fn get_account_info(
+            &self,
+            container_name: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_account_info::RequestBuilder {
+            get_account_info::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1176,7 +1188,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1184,7 +1196,7 @@ pub mod container {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1243,7 +1255,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1254,7 +1266,7 @@ pub mod container {
             pub(crate) x_ms_default_encryption_scope: Option<String>,
             pub(crate) x_ms_deny_encryption_scope_override: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1340,7 +1352,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1350,7 +1362,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1425,7 +1437,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1435,7 +1447,7 @@ pub mod container {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1513,7 +1525,7 @@ pub mod container {
         use super::models;
         type Response = models::SignedIdentifiers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1521,7 +1533,7 @@ pub mod container {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1587,7 +1599,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1599,7 +1611,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "the acls for the container"]
             pub fn container_acl(mut self, container_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.container_acl = Some(container_acl.into());
@@ -1695,7 +1707,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1704,7 +1716,7 @@ pub mod container {
             pub(crate) x_ms_deleted_container_name: Option<String>,
             pub(crate) x_ms_deleted_container_version: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1774,7 +1786,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1783,7 +1795,7 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_source_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1846,7 +1858,7 @@ pub mod container {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) body: serde_json::Value,
@@ -1856,7 +1868,7 @@ pub mod container {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1916,7 +1928,7 @@ pub mod container {
         use super::models;
         type Response = models::FilterBlobSegment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -1926,7 +1938,7 @@ pub mod container {
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2008,7 +2020,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -2020,7 +2032,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2107,7 +2119,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -2118,7 +2130,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2190,7 +2202,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -2201,7 +2213,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2273,7 +2285,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -2284,7 +2296,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2363,7 +2375,7 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
@@ -2375,7 +2387,7 @@ pub mod container {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2448,7 +2460,7 @@ pub mod container {
         use super::models;
         type Response = models::ListBlobsFlatSegmentResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
@@ -2459,7 +2471,7 @@ pub mod container {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters the results to return only containers whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -2565,7 +2577,7 @@ pub mod container {
         use super::models;
         type Response = models::ListBlobsHierarchySegmentResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) delimiter: String,
@@ -2577,7 +2589,7 @@ pub mod container {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters the results to return only containers whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -2685,12 +2697,12 @@ pub mod container {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2740,8 +2752,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> download::Builder {
-            download::Builder {
+        ) -> download::RequestBuilder {
+            download::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2775,8 +2787,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2806,8 +2818,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2838,8 +2850,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> undelete::Builder {
-            undelete::Builder {
+        ) -> undelete::RequestBuilder {
+            undelete::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2861,8 +2873,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_expiry_option: impl Into<String>,
-        ) -> set_expiry::Builder {
-            set_expiry::Builder {
+        ) -> set_expiry::RequestBuilder {
+            set_expiry::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2884,8 +2896,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_http_headers::Builder {
-            set_http_headers::Builder {
+        ) -> set_http_headers::RequestBuilder {
+            set_http_headers::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2917,8 +2929,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_immutability_policy::Builder {
-            set_immutability_policy::Builder {
+        ) -> set_immutability_policy::RequestBuilder {
+            set_immutability_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2941,8 +2953,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> delete_immutability_policy::Builder {
-            delete_immutability_policy::Builder {
+        ) -> delete_immutability_policy::RequestBuilder {
+            delete_immutability_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2964,8 +2976,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_legal_hold: bool,
-        ) -> set_legal_hold::Builder {
-            set_legal_hold::Builder {
+        ) -> set_legal_hold::RequestBuilder {
+            set_legal_hold::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -2986,8 +2998,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_metadata::Builder {
-            set_metadata::Builder {
+        ) -> set_metadata::RequestBuilder {
+            set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3020,8 +3032,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> acquire_lease::Builder {
-            acquire_lease::Builder {
+        ) -> acquire_lease::RequestBuilder {
+            acquire_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3053,8 +3065,8 @@ pub mod blob {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> release_lease::Builder {
-            release_lease::Builder {
+        ) -> release_lease::RequestBuilder {
+            release_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3085,8 +3097,8 @@ pub mod blob {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> renew_lease::Builder {
-            renew_lease::Builder {
+        ) -> renew_lease::RequestBuilder {
+            renew_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3119,8 +3131,8 @@ pub mod blob {
             x_ms_lease_id: impl Into<String>,
             x_ms_proposed_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> change_lease::Builder {
-            change_lease::Builder {
+        ) -> change_lease::RequestBuilder {
+            change_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3150,8 +3162,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> break_lease::Builder {
-            break_lease::Builder {
+        ) -> break_lease::RequestBuilder {
+            break_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3178,8 +3190,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> create_snapshot::Builder {
-            create_snapshot::Builder {
+        ) -> create_snapshot::RequestBuilder {
+            create_snapshot::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3212,8 +3224,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> start_copy_from_url::Builder {
-            start_copy_from_url::Builder {
+        ) -> start_copy_from_url::RequestBuilder {
+            start_copy_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3257,8 +3269,8 @@ pub mod blob {
             x_ms_requires_sync: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> copy_from_url::Builder {
-            copy_from_url::Builder {
+        ) -> copy_from_url::RequestBuilder {
+            copy_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3302,8 +3314,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_copy_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> abort_copy_from_url::Builder {
-            abort_copy_from_url::Builder {
+        ) -> abort_copy_from_url::RequestBuilder {
+            abort_copy_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3327,8 +3339,8 @@ pub mod blob {
             blob: impl Into<String>,
             x_ms_access_tier: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_tier::Builder {
-            set_tier::Builder {
+        ) -> set_tier::RequestBuilder {
+            set_tier::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3354,8 +3366,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_account_info::Builder {
-            get_account_info::Builder {
+        ) -> get_account_info::RequestBuilder {
+            get_account_info::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3368,8 +3380,13 @@ pub mod blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn query(&self, container_name: impl Into<String>, blob: impl Into<String>, x_ms_version: impl Into<String>) -> query::Builder {
-            query::Builder {
+        pub fn query(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> query::RequestBuilder {
+            query::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3400,8 +3417,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_tags::Builder {
-            get_tags::Builder {
+        ) -> get_tags::RequestBuilder {
+            get_tags::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3425,8 +3442,8 @@ pub mod blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_tags::Builder {
-            set_tags::Builder {
+        ) -> set_tags::RequestBuilder {
+            set_tags::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -3450,7 +3467,7 @@ pub mod blob {
             PartialContent206(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -3472,7 +3489,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -3643,7 +3660,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -3661,7 +3678,7 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) deletetype: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -3791,7 +3808,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -3810,7 +3827,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -3948,7 +3965,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -3956,7 +3973,7 @@ pub mod blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4011,7 +4028,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4021,7 +4038,7 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_expiry_time: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4085,7 +4102,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4105,7 +4122,7 @@ pub mod blob {
             pub(crate) x_ms_blob_content_disposition: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4256,7 +4273,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4267,7 +4284,7 @@ pub mod blob {
             pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4352,7 +4369,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4360,7 +4377,7 @@ pub mod blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4415,7 +4432,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4424,7 +4441,7 @@ pub mod blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4480,7 +4497,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4499,7 +4516,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4642,7 +4659,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4658,7 +4675,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4770,7 +4787,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4785,7 +4802,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4882,7 +4899,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -4897,7 +4914,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -4994,7 +5011,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5010,7 +5027,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5108,7 +5125,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5123,7 +5140,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5227,7 +5244,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5246,7 +5263,7 @@ pub mod blob {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5389,7 +5406,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5417,7 +5434,7 @@ pub mod blob {
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5631,7 +5648,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5661,7 +5678,7 @@ pub mod blob {
             pub(crate) x_ms_encryption_scope: Option<String>,
             pub(crate) x_ms_copy_source_tag_option: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5884,7 +5901,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5894,7 +5911,7 @@ pub mod blob {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -5962,7 +5979,7 @@ pub mod blob {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -5976,7 +5993,7 @@ pub mod blob {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -6073,13 +6090,13 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6122,7 +6139,7 @@ pub mod blob {
             PartialContent206(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -6141,7 +6158,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "the query request"]
             pub fn query_request(mut self, query_request: impl Into<models::QueryRequest>) -> Self {
                 self.query_request = Some(query_request.into());
@@ -6295,7 +6312,7 @@ pub mod blob {
         use super::models;
         type Response = models::BlobTags;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -6307,7 +6324,7 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -6398,7 +6415,7 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -6412,7 +6429,7 @@ pub mod blob {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) tags: Option<models::BlobTags>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -6535,8 +6552,8 @@ pub mod page_blob {
             content_length: i64,
             x_ms_blob_content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6588,8 +6605,8 @@ pub mod page_blob {
             body: impl Into<serde_json::Value>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> upload_pages::Builder {
-            upload_pages::Builder {
+        ) -> upload_pages::RequestBuilder {
+            upload_pages::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6632,8 +6649,8 @@ pub mod page_blob {
             x_ms_page_write: impl Into<String>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> clear_pages::Builder {
-            clear_pages::Builder {
+        ) -> clear_pages::RequestBuilder {
+            clear_pages::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6679,8 +6696,8 @@ pub mod page_blob {
             content_length: i64,
             x_ms_range: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> upload_pages_from_url::Builder {
-            upload_pages_from_url::Builder {
+        ) -> upload_pages_from_url::RequestBuilder {
+            upload_pages_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6725,8 +6742,8 @@ pub mod page_blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_page_ranges::Builder {
-            get_page_ranges::Builder {
+        ) -> get_page_ranges::RequestBuilder {
+            get_page_ranges::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6756,8 +6773,8 @@ pub mod page_blob {
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_page_ranges_diff::Builder {
-            get_page_ranges_diff::Builder {
+        ) -> get_page_ranges_diff::RequestBuilder {
+            get_page_ranges_diff::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6791,8 +6808,8 @@ pub mod page_blob {
             blob: impl Into<String>,
             x_ms_blob_content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> resize::Builder {
-            resize::Builder {
+        ) -> resize::RequestBuilder {
+            resize::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6825,8 +6842,8 @@ pub mod page_blob {
             blob: impl Into<String>,
             x_ms_sequence_number_action: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> update_sequence_number::Builder {
-            update_sequence_number::Builder {
+        ) -> update_sequence_number::RequestBuilder {
+            update_sequence_number::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6856,8 +6873,8 @@ pub mod page_blob {
             blob: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> copy_incremental::Builder {
-            copy_incremental::Builder {
+        ) -> copy_incremental::RequestBuilder {
+            copy_incremental::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -6877,7 +6894,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -6911,7 +6928,7 @@ pub mod page_blob {
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -7159,7 +7176,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -7186,7 +7203,7 @@ pub mod page_blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
@@ -7372,7 +7389,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -7396,7 +7413,7 @@ pub mod page_blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -7565,7 +7582,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -7598,7 +7615,7 @@ pub mod page_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify the md5 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
                 self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
@@ -7818,7 +7835,7 @@ pub mod page_blob {
         use super::models;
         type Response = models::PageList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -7836,7 +7853,7 @@ pub mod page_blob {
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -7994,7 +8011,7 @@ pub mod page_blob {
         use super::models;
         type Response = models::PageList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -8014,7 +8031,7 @@ pub mod page_blob {
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -8188,7 +8205,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -8207,7 +8224,7 @@ pub mod page_blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -8343,7 +8360,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -8359,7 +8376,7 @@ pub mod page_blob {
             pub(crate) x_ms_blob_sequence_number: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -8471,7 +8488,7 @@ pub mod page_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -8485,7 +8502,7 @@ pub mod page_blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -8597,8 +8614,8 @@ pub mod append_blob {
             x_ms_blob_type: impl Into<String>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -8645,8 +8662,8 @@ pub mod append_blob {
             body: impl Into<serde_json::Value>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> append_block::Builder {
-            append_block::Builder {
+        ) -> append_block::RequestBuilder {
+            append_block::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -8686,8 +8703,8 @@ pub mod append_blob {
             x_ms_copy_source: impl Into<String>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> append_block_from_url::Builder {
-            append_block_from_url::Builder {
+        ) -> append_block_from_url::RequestBuilder {
+            append_block_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -8725,8 +8742,13 @@ pub mod append_blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn seal(&self, container_name: impl Into<String>, blob: impl Into<String>, x_ms_version: impl Into<String>) -> seal::Builder {
-            seal::Builder {
+        pub fn seal(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> seal::RequestBuilder {
+            seal::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -8746,7 +8768,7 @@ pub mod append_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -8777,7 +8799,7 @@ pub mod append_blob {
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -9008,7 +9030,7 @@ pub mod append_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -9032,7 +9054,7 @@ pub mod append_blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -9201,7 +9223,7 @@ pub mod append_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -9232,7 +9254,7 @@ pub mod append_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Bytes of source data in the specified range."]
             pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
                 self.x_ms_source_range = Some(x_ms_source_range.into());
@@ -9457,7 +9479,7 @@ pub mod append_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -9471,7 +9493,7 @@ pub mod append_blob {
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -9592,8 +9614,8 @@ pub mod block_blob {
             body: impl Into<serde_json::Value>,
             content_length: i64,
             x_ms_version: impl Into<String>,
-        ) -> upload::Builder {
-            upload::Builder {
+        ) -> upload::RequestBuilder {
+            upload::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -9645,8 +9667,8 @@ pub mod block_blob {
             content_length: i64,
             x_ms_version: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
-        ) -> put_blob_from_url::Builder {
-            put_blob_from_url::Builder {
+        ) -> put_blob_from_url::RequestBuilder {
+            put_blob_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -9704,8 +9726,8 @@ pub mod block_blob {
             content_length: i64,
             body: impl Into<serde_json::Value>,
             x_ms_version: impl Into<String>,
-        ) -> stage_block::Builder {
-            stage_block::Builder {
+        ) -> stage_block::RequestBuilder {
+            stage_block::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -9741,8 +9763,8 @@ pub mod block_blob {
             content_length: i64,
             x_ms_copy_source: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> stage_block_from_url::Builder {
-            stage_block_from_url::Builder {
+        ) -> stage_block_from_url::RequestBuilder {
+            stage_block_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -9780,8 +9802,8 @@ pub mod block_blob {
             blob: impl Into<String>,
             blocklisttype: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_block_list::Builder {
-            get_block_list::Builder {
+        ) -> get_block_list::RequestBuilder {
+            get_block_list::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -9807,8 +9829,8 @@ pub mod block_blob {
             blob: impl Into<String>,
             blocks: impl Into<models::BlockLookupList>,
             x_ms_version: impl Into<String>,
-        ) -> commit_block_list::Builder {
-            commit_block_list::Builder {
+        ) -> commit_block_list::RequestBuilder {
+            commit_block_list::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
@@ -9847,7 +9869,7 @@ pub mod block_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -9881,7 +9903,7 @@ pub mod block_blob {
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -10129,7 +10151,7 @@ pub mod block_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -10169,7 +10191,7 @@ pub mod block_blob {
             pub(crate) x_ms_copy_source_authorization: Option<String>,
             pub(crate) x_ms_copy_source_tag_option: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -10459,7 +10481,7 @@ pub mod block_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -10477,7 +10499,7 @@ pub mod block_blob {
             pub(crate) x_ms_encryption_scope: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
@@ -10592,7 +10614,7 @@ pub mod block_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -10616,7 +10638,7 @@ pub mod block_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Bytes of source data in the specified range."]
             pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
                 self.x_ms_source_range = Some(x_ms_source_range.into());
@@ -10779,7 +10801,7 @@ pub mod block_blob {
         use super::models;
         type Response = models::BlockList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -10791,7 +10813,7 @@ pub mod block_blob {
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
@@ -10876,7 +10898,7 @@ pub mod block_blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
@@ -10909,7 +10931,7 @@ pub mod block_blob {
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);

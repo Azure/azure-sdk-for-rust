@@ -42,7 +42,7 @@ pub struct AcsChatMessageDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
     #[doc = "The time at which the message was deleted"]
-    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
     pub delete_time: Option<time::OffsetDateTime>,
 }
 impl AcsChatMessageDeletedEventData {
@@ -56,7 +56,7 @@ pub struct AcsChatMessageDeletedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
     #[doc = "The time at which the message was deleted"]
-    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
     pub delete_time: Option<time::OffsetDateTime>,
 }
 impl AcsChatMessageDeletedInThreadEventData {
@@ -76,7 +76,7 @@ pub struct AcsChatMessageEditedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The time at which the message was edited"]
-    #[serde(rename = "editTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
     pub edit_time: Option<time::OffsetDateTime>,
 }
 impl AcsChatMessageEditedEventData {
@@ -96,7 +96,7 @@ pub struct AcsChatMessageEditedInThreadEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The time at which the message was edited"]
-    #[serde(rename = "editTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
     pub edit_time: Option<time::OffsetDateTime>,
 }
 impl AcsChatMessageEditedInThreadEventData {
@@ -119,7 +119,7 @@ pub struct AcsChatMessageEventBaseProperties {
     #[serde(rename = "senderDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub sender_display_name: Option<String>,
     #[doc = "The original compose time of the message"]
-    #[serde(rename = "composeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "composeTime", default, with = "azure_core::date::rfc3339::option")]
     pub compose_time: Option<time::OffsetDateTime>,
     #[doc = "The type of the message"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -148,7 +148,7 @@ pub struct AcsChatMessageEventInThreadBaseProperties {
     #[serde(rename = "senderDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub sender_display_name: Option<String>,
     #[doc = "The original compose time of the message"]
-    #[serde(rename = "composeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "composeTime", default, with = "azure_core::date::rfc3339::option")]
     pub compose_time: Option<time::OffsetDateTime>,
     #[doc = "The type of the message"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -202,7 +202,7 @@ pub struct AcsChatParticipantAddedToThreadEventData {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The time at which the user was added to the thread"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
     #[serde(rename = "addedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -225,7 +225,7 @@ pub struct AcsChatParticipantAddedToThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "The time at which the user was added to the thread"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
     #[serde(rename = "addedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -245,7 +245,7 @@ pub struct AcsChatParticipantRemovedFromThreadEventData {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The time at which the user was removed to the thread"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
     #[serde(rename = "removedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -268,7 +268,7 @@ pub struct AcsChatParticipantRemovedFromThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "The time at which the user was removed to the thread"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
     #[serde(rename = "removedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -331,7 +331,7 @@ pub struct AcsChatThreadDeletedEventData {
     #[serde(rename = "deletedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub deleted_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The deletion time of the thread"]
-    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
     pub delete_time: Option<time::OffsetDateTime>,
 }
 impl AcsChatThreadDeletedEventData {
@@ -345,7 +345,7 @@ pub struct AcsChatThreadEventBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
     #[doc = "The original creation time of the thread"]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -362,7 +362,7 @@ pub struct AcsChatThreadEventInThreadBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The original creation time of the thread"]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -397,7 +397,7 @@ pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[serde(rename = "editedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub edited_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The time at which the properties of the thread were updated"]
-    #[serde(rename = "editTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
     pub edit_time: Option<time::OffsetDateTime>,
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -417,7 +417,7 @@ pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[serde(rename = "editedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub edited_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The time at which the properties of the thread were updated"]
-    #[serde(rename = "editTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
     pub edit_time: Option<time::OffsetDateTime>,
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -437,7 +437,7 @@ pub struct AcsChatThreadWithUserDeletedEventData {
     #[serde(rename = "deletedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub deleted_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The deletion time of the thread"]
-    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
     pub delete_time: Option<time::OffsetDateTime>,
 }
 impl AcsChatThreadWithUserDeletedEventData {
@@ -479,7 +479,7 @@ pub struct AcsRecordingFileStatusUpdatedEventData {
     #[serde(rename = "recordingStorageInfo", default, skip_serializing_if = "Option::is_none")]
     pub recording_storage_info: Option<AcsRecordingStorageInfoProperties>,
     #[doc = "The time at which the recording started"]
-    #[serde(rename = "recordingStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recordingStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub recording_start_time: Option<time::OffsetDateTime>,
     #[doc = "The recording duration in milliseconds"]
     #[serde(rename = "recordingDurationMs", default, skip_serializing_if = "Option::is_none")]
@@ -634,7 +634,7 @@ impl AcsRecordingStorageInfoProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsDeliveryAttemptProperties {
     #[doc = "TimeStamp when delivery was attempted"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Number of segments that were successfully delivered"]
     #[serde(rename = "segmentsSucceeded", default, skip_serializing_if = "Option::is_none")]
@@ -663,7 +663,7 @@ pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(rename = "deliveryAttempts", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attempts: Vec<AcsSmsDeliveryAttemptProperties>,
     #[doc = "The time at which the SMS delivery report was received"]
-    #[serde(rename = "receivedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub received_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Customer Content"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -701,7 +701,7 @@ pub struct AcsSmsReceivedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The time at which the SMS was received"]
-    #[serde(rename = "receivedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub received_timestamp: Option<time::OffsetDateTime>,
 }
 impl AcsSmsReceivedEventData {
@@ -1154,7 +1154,7 @@ pub struct CloudEventEvent {
     #[serde(rename = "type")]
     pub type_: String,
     #[doc = "The time (in UTC) the event was generated, in RFC3339 format."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The version of the CloudEvents specification which the event uses."]
     pub specversion: String,
@@ -1265,7 +1265,7 @@ pub struct ContainerRegistryArtifactEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1368,7 +1368,7 @@ pub struct ContainerRegistryEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1759,10 +1759,10 @@ pub struct EventHubCaptureFileCreatedEventData {
     #[serde(rename = "lastSequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub last_sequence_number: Option<i64>,
     #[doc = "The first time from the queue."]
-    #[serde(rename = "firstEnqueueTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "firstEnqueueTime", default, with = "azure_core::date::rfc3339::option")]
     pub first_enqueue_time: Option<time::OffsetDateTime>,
     #[doc = "The last time from the queue."]
-    #[serde(rename = "lastEnqueueTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastEnqueueTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_enqueue_time: Option<time::OffsetDateTime>,
 }
 impl EventHubCaptureFileCreatedEventData {
@@ -2609,10 +2609,10 @@ pub struct MachineLearningServicesDatasetDriftDetectedEventData {
     #[serde(rename = "driftCoefficient", default, skip_serializing_if = "Option::is_none")]
     pub drift_coefficient: Option<f64>,
     #[doc = "The start time of the target dataset time series that resulted in drift detection."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the target dataset time series that resulted in drift detection."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl MachineLearningServicesDatasetDriftDetectedEventData {
@@ -3493,7 +3493,7 @@ impl PhoneNumberIdentifierModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyInsightsPolicyStateChangedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
@@ -3523,7 +3523,7 @@ impl PolicyInsightsPolicyStateChangedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyInsightsPolicyStateCreatedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
@@ -3553,7 +3553,7 @@ impl PolicyInsightsPolicyStateCreatedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyInsightsPolicyStateDeletedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
@@ -3583,7 +3583,7 @@ impl PolicyInsightsPolicyStateDeletedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisExportRdbCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3601,7 +3601,7 @@ impl RedisExportRdbCompletedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisImportRdbCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3619,7 +3619,7 @@ impl RedisImportRdbCompletedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisPatchingCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3637,7 +3637,7 @@ impl RedisPatchingCompletedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisScalingCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4180,7 +4180,7 @@ impl ServiceBusDeadletterMessagesAvailableWithNoListenersEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRServiceClientConnectionConnectedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The hub of connected client connection."]
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
@@ -4201,7 +4201,7 @@ impl SignalRServiceClientConnectionConnectedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRServiceClientConnectionDisconnectedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The hub of connected client connection."]
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
@@ -4345,7 +4345,7 @@ impl StorageBlobDeletedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobInventoryPolicyCompletedEventData {
     #[doc = "The time at which inventory policy was scheduled."]
-    #[serde(rename = "scheduleDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduleDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub schedule_date_time: Option<time::OffsetDateTime>,
     #[doc = "The account name for which inventory policy is registered."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]

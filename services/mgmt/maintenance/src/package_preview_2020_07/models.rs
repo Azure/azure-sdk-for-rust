@@ -27,7 +27,7 @@ pub struct ApplyUpdateProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Last Update time"]
-    #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_time: Option<time::OffsetDateTime>,
 }
 impl ApplyUpdateProperties {
@@ -456,7 +456,7 @@ pub struct Update {
     #[serde(rename = "impactDurationInSec", default, skip_serializing_if = "Option::is_none")]
     pub impact_duration_in_sec: Option<i32>,
     #[doc = "Time when Azure will start force updates if not self-updated by customer before this time"]
-    #[serde(rename = "notBefore", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "notBefore", default, with = "azure_core::date::rfc3339::option")]
     pub not_before: Option<time::OffsetDateTime>,
     #[doc = "Properties for update"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

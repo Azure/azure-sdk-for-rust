@@ -44,7 +44,7 @@ pub struct AssessmentDetails {
     #[serde(rename = "fabricType", default, skip_serializing_if = "Option::is_none")]
     pub fabric_type: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the machine details."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
@@ -110,7 +110,7 @@ pub struct DatabaseAssessmentDetails {
     #[serde(rename = "assessmentTargetType", default, skip_serializing_if = "Option::is_none")]
     pub assessment_target_type: Option<String>,
     #[doc = "Gets or sets the time when the database was last assessed."]
-    #[serde(rename = "lastAssessedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastAssessedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_assessed_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the compatibility level of the database."]
     #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
@@ -119,7 +119,7 @@ pub struct DatabaseAssessmentDetails {
     #[serde(rename = "databaseSizeInMB", default, skip_serializing_if = "Option::is_none")]
     pub database_size_in_mb: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the database details."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
@@ -197,7 +197,7 @@ impl DatabaseInstanceCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceDiscoveryDetails {
     #[doc = "Gets or sets the time of the last modification of the database instance details."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the database instance Id."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
@@ -245,7 +245,7 @@ pub struct DatabaseInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<serde_json::Value>,
     #[doc = "Gets or sets the time of the last modification of the database."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
 }
 impl DatabaseInstanceProperties {
@@ -303,7 +303,7 @@ pub struct DatabaseProperties {
     #[serde(rename = "assessmentData", default, skip_serializing_if = "Vec::is_empty")]
     pub assessment_data: Vec<DatabaseAssessmentDetails>,
     #[doc = "Gets or sets the time of the last modification of the database."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
 }
 impl DatabaseProperties {
@@ -379,7 +379,7 @@ pub struct DiscoveryDetails {
     #[serde(rename = "fabricType", default, skip_serializing_if = "Option::is_none")]
     pub fabric_type: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the machine details."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
@@ -990,7 +990,7 @@ pub struct MachineProperties {
     #[serde(rename = "migrationData", default, skip_serializing_if = "Vec::is_empty")]
     pub migration_data: Vec<MigrationDetails>,
     #[doc = "Gets or sets the time of the last modification of the machine."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
 }
 impl MachineProperties {
@@ -1103,7 +1103,7 @@ pub struct MigrateProjectProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<serde_json::Value>,
     #[doc = "Gets the last time the project summary was refreshed."]
-    #[serde(rename = "lastSummaryRefreshedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the refresh summary state."]
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
@@ -1204,7 +1204,7 @@ pub struct MigrationDetails {
     #[serde(rename = "fabricType", default, skip_serializing_if = "Option::is_none")]
     pub fabric_type: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the machine details."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
@@ -1383,7 +1383,7 @@ pub struct ProjectSummary {
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
     #[doc = "Gets or sets the time when summary was last refreshed."]
-    #[serde(rename = "lastSummaryRefreshedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the extended summary."]
     #[serde(rename = "extendedSummary", default, skip_serializing_if = "Option::is_none")]

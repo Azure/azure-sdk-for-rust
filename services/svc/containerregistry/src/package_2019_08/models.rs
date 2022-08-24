@@ -66,7 +66,7 @@ impl AcrManifests {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Annotations {
     #[doc = "Date and time on which the image was built (string, date-time as defined by https://tools.ietf.org/html/rfc3339#section-5.6)"]
-    #[serde(rename = "org.opencontainers.image.created", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "org.opencontainers.image.created", default, with = "azure_core::date::rfc3339::option")]
     pub org_opencontainers_image_created: Option<time::OffsetDateTime>,
     #[doc = "Contact details of the people or organization responsible for the image."]
     #[serde(rename = "org.opencontainers.image.authors", default, skip_serializing_if = "Option::is_none")]

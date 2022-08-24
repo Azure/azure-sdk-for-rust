@@ -121,8 +121,8 @@ pub mod recommendations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn generate(&self, subscription_id: impl Into<String>) -> generate::Builder {
-            generate::Builder {
+        pub fn generate(&self, subscription_id: impl Into<String>) -> generate::RequestBuilder {
+            generate::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -136,8 +136,8 @@ pub mod recommendations {
             &self,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get_generate_status::Builder {
-            get_generate_status::Builder {
+        ) -> get_generate_status::RequestBuilder {
+            get_generate_status::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 operation_id: operation_id.into(),
@@ -147,8 +147,8 @@ pub mod recommendations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -161,8 +161,8 @@ pub mod recommendations {
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies."]
         #[doc = "* `recommendation_id`: The recommendation ID."]
-        pub fn get(&self, resource_uri: impl Into<String>, recommendation_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, resource_uri: impl Into<String>, recommendation_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 recommendation_id: recommendation_id.into(),
@@ -173,11 +173,11 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -222,12 +222,12 @@ pub mod recommendations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -269,14 +269,14 @@ pub mod recommendations {
         use super::models;
         type Response = models::ResourceRecommendationBaseListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i64>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply to the recommendations."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -370,12 +370,12 @@ pub mod recommendations {
         use super::models;
         type Response = models::ResourceRecommendationBase;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) recommendation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -422,18 +422,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the available Advisor REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationEntityListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -507,8 +507,13 @@ pub mod suppressions {
         #[doc = "* `resource_uri`: The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies."]
         #[doc = "* `recommendation_id`: The recommendation ID."]
         #[doc = "* `name`: The name of the suppression."]
-        pub fn get(&self, resource_uri: impl Into<String>, recommendation_id: impl Into<String>, name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(
+            &self,
+            resource_uri: impl Into<String>,
+            recommendation_id: impl Into<String>,
+            name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 recommendation_id: recommendation_id.into(),
@@ -528,8 +533,8 @@ pub mod suppressions {
             recommendation_id: impl Into<String>,
             name: impl Into<String>,
             suppression_contract: impl Into<models::SuppressionContract>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 recommendation_id: recommendation_id.into(),
@@ -548,8 +553,8 @@ pub mod suppressions {
             resource_uri: impl Into<String>,
             recommendation_id: impl Into<String>,
             name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 recommendation_id: recommendation_id.into(),
@@ -560,8 +565,8 @@ pub mod suppressions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -571,13 +576,13 @@ pub mod suppressions {
         use super::models;
         type Response = models::SuppressionContract;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) recommendation_id: String,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -623,14 +628,14 @@ pub mod suppressions {
         use super::models;
         type Response = models::SuppressionContract;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) recommendation_id: String,
             pub(crate) name: String,
             pub(crate) suppression_contract: models::SuppressionContract,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -677,13 +682,13 @@ pub mod suppressions {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) recommendation_id: String,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -725,11 +730,11 @@ pub mod suppressions {
         use super::models;
         type Response = Vec<models::SuppressionContract>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

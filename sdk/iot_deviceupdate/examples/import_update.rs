@@ -15,6 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let import_json = env::var("IMPORT_VALUE").expect("Missing IMPORT_VALUE environment variable.");
 
     let creds = Arc::new(ClientSecretCredential::new(
+        azure_core::new_http_client(),
         tenant_id,
         client_id,
         client_secret,

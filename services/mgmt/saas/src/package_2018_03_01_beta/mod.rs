@@ -127,18 +127,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all SaaS app operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::SaasAppOperationsResponseWithContinuation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -210,8 +210,8 @@ pub mod applications {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         #[doc = "* `resource_group_name`: The name of the resource group."]
-        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -222,12 +222,12 @@ pub mod applications {
         use super::models;
         type Response = models::SaasAppResponseWithContinuation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -303,8 +303,8 @@ pub mod saa_s {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
-        pub fn get_resource(&self, resource_id: impl Into<String>) -> get_resource::Builder {
-            get_resource::Builder {
+        pub fn get_resource(&self, resource_id: impl Into<String>) -> get_resource::RequestBuilder {
+            get_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
             }
@@ -318,8 +318,8 @@ pub mod saa_s {
             &self,
             resource_id: impl Into<String>,
             parameters: impl Into<models::SaasResourceCreation>,
-        ) -> update_resource::Builder {
-            update_resource::Builder {
+        ) -> update_resource::RequestBuilder {
+            update_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 parameters: parameters.into(),
@@ -330,8 +330,8 @@ pub mod saa_s {
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         #[doc = "* `parameters`: Parameters supplied to delete saas operation."]
-        pub fn delete(&self, resource_id: impl Into<String>, parameters: impl Into<models::DeleteOptions>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, resource_id: impl Into<String>, parameters: impl Into<models::DeleteOptions>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
                 parameters: parameters.into(),
@@ -341,8 +341,8 @@ pub mod saa_s {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Parameters supplied to the create saas operation."]
-        pub fn create_resource(&self, parameters: impl Into<models::SaasResourceCreation>) -> create_resource::Builder {
-            create_resource::Builder {
+        pub fn create_resource(&self, parameters: impl Into<models::SaasResourceCreation>) -> create_resource::RequestBuilder {
+            create_resource::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
@@ -352,11 +352,11 @@ pub mod saa_s {
         use super::models;
         type Response = models::SaasResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -405,12 +405,12 @@ pub mod saa_s {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) parameters: models::SaasResourceCreation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -462,12 +462,12 @@ pub mod saa_s {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) parameters: models::DeleteOptions,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -514,11 +514,11 @@ pub mod saa_s {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::SaasResourceCreation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -563,18 +563,18 @@ pub mod saas_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get All Resources"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::SaasResourceResponseWithContinuation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -643,8 +643,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
-    pub fn saas_resource_list_access_token(&self, resource_id: impl Into<String>) -> saas_resource_list_access_token::Builder {
-        saas_resource_list_access_token::Builder {
+    pub fn saas_resource_list_access_token(&self, resource_id: impl Into<String>) -> saas_resource_list_access_token::RequestBuilder {
+        saas_resource_list_access_token::RequestBuilder {
             client: self.clone(),
             resource_id: resource_id.into(),
         }
@@ -654,11 +654,11 @@ pub mod saas_resource_list_access_token {
     use super::models;
     type Response = models::AccessTokenResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resource_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -707,8 +707,8 @@ pub mod saas_subscription_level {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
-        pub fn list_by_azure_subscription(&self, subscription_id: impl Into<String>) -> list_by_azure_subscription::Builder {
-            list_by_azure_subscription::Builder {
+        pub fn list_by_azure_subscription(&self, subscription_id: impl Into<String>) -> list_by_azure_subscription::RequestBuilder {
+            list_by_azure_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -722,8 +722,8 @@ pub mod saas_subscription_level {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -740,8 +740,8 @@ pub mod saas_subscription_level {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -761,8 +761,8 @@ pub mod saas_subscription_level {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             parameters: impl Into<models::SaasResourceCreation>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -783,8 +783,8 @@ pub mod saas_subscription_level {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             parameters: impl Into<models::SaasResourceCreation>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -803,8 +803,8 @@ pub mod saas_subscription_level {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -824,8 +824,8 @@ pub mod saas_subscription_level {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             parameters: impl Into<models::DeleteOptions>,
-        ) -> update_to_unsubscribed::Builder {
-            update_to_unsubscribed::Builder {
+        ) -> update_to_unsubscribed::RequestBuilder {
+            update_to_unsubscribed::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -844,8 +844,8 @@ pub mod saas_subscription_level {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_access_token::Builder {
-            list_access_token::Builder {
+        ) -> list_access_token::RequestBuilder {
+            list_access_token::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -863,8 +863,8 @@ pub mod saas_subscription_level {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_resource_parameter: impl Into<models::MoveResource>,
-        ) -> validate_move_resources::Builder {
-            validate_move_resources::Builder {
+        ) -> validate_move_resources::RequestBuilder {
+            validate_move_resources::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -882,8 +882,8 @@ pub mod saas_subscription_level {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_resource_parameter: impl Into<models::MoveResource>,
-        ) -> move_resources::Builder {
-            move_resources::Builder {
+        ) -> move_resources::RequestBuilder {
+            move_resources::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -895,11 +895,11 @@ pub mod saas_subscription_level {
         use super::models;
         type Response = models::SaasResourceResponseWithContinuation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -969,12 +969,12 @@ pub mod saas_subscription_level {
         use super::models;
         type Response = models::SaasResourceResponseWithContinuation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1045,13 +1045,13 @@ pub mod saas_subscription_level {
         use super::models;
         type Response = models::SaasResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1102,14 +1102,14 @@ pub mod saas_subscription_level {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) parameters: models::SaasResourceCreation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1164,14 +1164,14 @@ pub mod saas_subscription_level {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) parameters: models::SaasResourceCreation,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1226,13 +1226,13 @@ pub mod saas_subscription_level {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1282,14 +1282,14 @@ pub mod saas_subscription_level {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) parameters: models::DeleteOptions,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1335,13 +1335,13 @@ pub mod saas_subscription_level {
         use super::models;
         type Response = models::AccessTokenResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1388,13 +1388,13 @@ pub mod saas_subscription_level {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_resource_parameter: models::MoveResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1440,13 +1440,13 @@ pub mod saas_subscription_level {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_resource_parameter: models::MoveResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1495,8 +1495,8 @@ pub mod saa_s_operation {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `operation_id`: the operation Id parameter."]
-        pub fn get(&self, operation_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, operation_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 operation_id: operation_id.into(),
             }
@@ -1510,11 +1510,11 @@ pub mod saa_s_operation {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

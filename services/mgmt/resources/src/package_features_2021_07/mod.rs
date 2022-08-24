@@ -112,18 +112,18 @@ impl Client {
 }
 impl Client {
     #[doc = "Lists all of the available Microsoft.Features REST API operations."]
-    pub fn list_operations(&self) -> list_operations::Builder {
-        list_operations::Builder { client: self.clone() }
+    pub fn list_operations(&self) -> list_operations::RequestBuilder {
+        list_operations::RequestBuilder { client: self.clone() }
     }
 }
 pub mod list_operations {
     use super::models;
     type Response = models::OperationListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -193,8 +193,8 @@ pub mod features {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
-            list_all::Builder {
+        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::RequestBuilder {
+            list_all::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -204,8 +204,8 @@ pub mod features {
         #[doc = "Arguments:"]
         #[doc = "* `resource_provider_namespace`: The namespace of the resource provider for getting features."]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 subscription_id: subscription_id.into(),
@@ -222,8 +222,8 @@ pub mod features {
             resource_provider_namespace: impl Into<String>,
             feature_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 feature_name: feature_name.into(),
@@ -241,8 +241,8 @@ pub mod features {
             resource_provider_namespace: impl Into<String>,
             feature_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> register::Builder {
-            register::Builder {
+        ) -> register::RequestBuilder {
+            register::RequestBuilder {
                 client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 feature_name: feature_name.into(),
@@ -260,8 +260,8 @@ pub mod features {
             resource_provider_namespace: impl Into<String>,
             feature_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> unregister::Builder {
-            unregister::Builder {
+        ) -> unregister::RequestBuilder {
+            unregister::RequestBuilder {
                 client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 feature_name: feature_name.into(),
@@ -273,11 +273,11 @@ pub mod features {
         use super::models;
         type Response = models::FeatureOperationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -347,12 +347,12 @@ pub mod features {
         use super::models;
         type Response = models::FeatureOperationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -423,13 +423,13 @@ pub mod features {
         use super::models;
         type Response = models::FeatureResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -475,13 +475,13 @@ pub mod features {
         use super::models;
         type Response = models::FeatureResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -528,13 +528,13 @@ pub mod features {
         use super::models;
         type Response = models::FeatureResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -593,8 +593,8 @@ pub mod subscription_feature_registrations {
             subscription_id: impl Into<String>,
             provider_namespace: impl Into<String>,
             feature_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
@@ -612,8 +612,8 @@ pub mod subscription_feature_registrations {
             subscription_id: impl Into<String>,
             provider_namespace: impl Into<String>,
             feature_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
@@ -632,8 +632,8 @@ pub mod subscription_feature_registrations {
             subscription_id: impl Into<String>,
             provider_namespace: impl Into<String>,
             feature_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
@@ -649,8 +649,8 @@ pub mod subscription_feature_registrations {
             &self,
             subscription_id: impl Into<String>,
             provider_namespace: impl Into<String>,
-        ) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        ) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
@@ -660,8 +660,8 @@ pub mod subscription_feature_registrations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Azure subscription ID."]
-        pub fn list_all_by_subscription(&self, subscription_id: impl Into<String>) -> list_all_by_subscription::Builder {
-            list_all_by_subscription::Builder {
+        pub fn list_all_by_subscription(&self, subscription_id: impl Into<String>) -> list_all_by_subscription::RequestBuilder {
+            list_all_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -671,13 +671,13 @@ pub mod subscription_feature_registrations {
         use super::models;
         type Response = models::SubscriptionFeatureRegistration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
             pub(crate) feature_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -723,14 +723,14 @@ pub mod subscription_feature_registrations {
         use super::models;
         type Response = models::SubscriptionFeatureRegistration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_feature_registration_type: Option<models::SubscriptionFeatureRegistration>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Subscription Feature Registration Type details."]
             pub fn subscription_feature_registration_type(
                 mut self,
@@ -793,13 +793,13 @@ pub mod subscription_feature_registrations {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
             pub(crate) feature_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -842,12 +842,12 @@ pub mod subscription_feature_registrations {
         use super::models;
         type Response = models::SubscriptionFeatureRegistrationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -918,11 +918,11 @@ pub mod subscription_feature_registrations {
         use super::models;
         type Response = models::SubscriptionFeatureRegistrationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

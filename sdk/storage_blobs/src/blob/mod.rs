@@ -17,7 +17,7 @@ pub use block_with_size_list::BlockWithSizeList;
 pub use lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 pub use page_range_list::PageRangeList;
 
-use crate::options::{AccessTier, Tags};
+use crate::options::{AccessTier, Snapshot, Tags, SNAPSHOT};
 use azure_core::{
     content_type, date,
     headers::{self, Headers},
@@ -25,6 +25,7 @@ use azure_core::{
     Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
+use serde::{self, Deserialize, Deserializer};
 use std::collections::HashMap;
 use time::OffsetDateTime;
 
@@ -59,7 +60,6 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-use serde::{self, Deserialize, Deserializer};
 fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>, D::Error>
 where
     D: Deserializer<'de>,
@@ -88,7 +88,7 @@ where
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
     pub name: String,
-    pub snapshot: Option<OffsetDateTime>,
+    pub snapshot: Option<Snapshot>,
     pub version_id: Option<String>,
     pub is_current_version: Option<bool>,
     pub deleted: Option<bool>,
@@ -101,18 +101,18 @@ pub struct Blob {
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
     #[cfg(not(feature = "azurite_workaround"))]
-    #[serde(rename = "Creation-Time")]
-    #[serde(with = "azure_core::date::rfc1123")]
+    #[serde(with = "azure_core::date::rfc1123", rename = "Creation-Time")]
     pub creation_time: OffsetDateTime,
     #[cfg(feature = "azurite_workaround")]
-    #[serde(rename = "Creation-Time")]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(
+        default,
+        with = "azure_core::date::rfc1123::option",
+        rename = "Creation-Time"
+    )]
     pub creation_time: Option<OffsetDateTime>,
-    #[serde(rename = "Last-Modified")]
-    #[serde(with = "azure_core::date::rfc1123")]
+    #[serde(with = "azure_core::date::rfc1123", rename = "Last-Modified")]
     pub last_modified: OffsetDateTime,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub last_access_time: Option<OffsetDateTime>,
     pub etag: Etag,
     #[serde(rename = "Content-Length")]
@@ -125,13 +125,17 @@ pub struct BlobProperties {
     pub content_language: Option<String>,
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: Option<String>,
-    #[serde(rename = "Content-MD5")]
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_md5_optional")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_md5_optional",
+        rename = "Content-MD5"
+    )]
     pub content_md5: Option<ConsistencyMD5>,
-    #[serde(rename = "Content-CRC64")]
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_crc64_optional")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_crc64_optional",
+        rename = "Content-CRC64"
+    )]
     pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: Option<String>,
@@ -139,8 +143,7 @@ pub struct BlobProperties {
     pub blob_sequence_number: Option<u64>,
     pub blob_type: BlobType,
     pub access_tier: Option<AccessTier>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub access_tier_change_time: Option<OffsetDateTime>,
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
@@ -149,8 +152,7 @@ pub struct BlobProperties {
     pub copy_status: Option<CopyStatus>,
     pub copy_source: Option<String>,
     pub copy_progress: Option<CopyProgress>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub copy_completion_time: Option<OffsetDateTime>,
     pub copy_status_description: Option<String>,
     pub server_encrypted: bool,
@@ -158,15 +160,16 @@ pub struct BlobProperties {
     pub encryption_scope: Option<String>,
     pub incremental_copy: Option<bool>,
     pub access_tier_inferred: Option<bool>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub deleted_time: Option<OffsetDateTime>,
     pub remaining_retention_days: Option<u32>,
     pub tag_count: Option<u32>,
     pub rehydrate_priority: Option<RehydratePriority>,
-    #[serde(default)]
-    #[serde(rename = "Expiry-Time")]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(
+        default,
+        with = "azure_core::date::rfc1123::option",
+        rename = "Expiry-Time"
+    )]
     pub expiry_time: Option<OffsetDateTime>,
     #[serde(flatten)]
     extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
@@ -230,9 +233,7 @@ impl Blob {
 
         let tags = h.get_optional_as(&headers::TAGS)?;
 
-        // TODO: Retrieve the snapshot time from
-        // the headers
-        let snapshot = None;
+        let snapshot = h.get_optional_as(&SNAPSHOT)?;
 
         Ok(Blob {
             name: blob_name.into(),

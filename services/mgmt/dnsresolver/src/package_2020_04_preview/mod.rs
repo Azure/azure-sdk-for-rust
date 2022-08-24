@@ -137,8 +137,8 @@ pub mod dns_resolvers {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -158,8 +158,8 @@ pub mod dns_resolvers {
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
             parameters: impl Into<models::DnsResolver>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -182,8 +182,8 @@ pub mod dns_resolvers {
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
             parameters: impl Into<models::DnsResolverPatch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -203,8 +203,8 @@ pub mod dns_resolvers {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -221,8 +221,8 @@ pub mod dns_resolvers {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -233,8 +233,8 @@ pub mod dns_resolvers {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -251,8 +251,8 @@ pub mod dns_resolvers {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             virtual_network_name: impl Into<String>,
-        ) -> list_by_virtual_network::Builder {
-            list_by_virtual_network::Builder {
+        ) -> list_by_virtual_network::RequestBuilder {
+            list_by_virtual_network::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -265,13 +265,13 @@ pub mod dns_resolvers {
         use super::models;
         type Response = models::DnsResolver;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_resolver_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -322,7 +322,7 @@ pub mod dns_resolvers {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -331,7 +331,7 @@ pub mod dns_resolvers {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -405,7 +405,7 @@ pub mod dns_resolvers {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -413,7 +413,7 @@ pub mod dns_resolvers {
             pub(crate) parameters: models::DnsResolverPatch,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -475,14 +475,14 @@ pub mod dns_resolvers {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_resolver_name: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -535,13 +535,13 @@ pub mod dns_resolvers {
         use super::models;
         type Response = models::DnsResolverListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -620,12 +620,12 @@ pub mod dns_resolvers {
         use super::models;
         type Response = models::DnsResolverListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -703,14 +703,14 @@ pub mod dns_resolvers {
         use super::models;
         type Response = models::SubResourceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_network_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -805,8 +805,8 @@ pub mod inbound_endpoints {
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
             inbound_endpoint_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -829,8 +829,8 @@ pub mod inbound_endpoints {
             dns_resolver_name: impl Into<String>,
             inbound_endpoint_name: impl Into<String>,
             parameters: impl Into<models::InboundEndpoint>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -856,8 +856,8 @@ pub mod inbound_endpoints {
             dns_resolver_name: impl Into<String>,
             inbound_endpoint_name: impl Into<String>,
             parameters: impl Into<models::InboundEndpointPatch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -880,8 +880,8 @@ pub mod inbound_endpoints {
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
             inbound_endpoint_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -901,8 +901,8 @@ pub mod inbound_endpoints {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -915,14 +915,14 @@ pub mod inbound_endpoints {
         use super::models;
         type Response = models::InboundEndpoint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_resolver_name: String,
             pub(crate) inbound_endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -974,7 +974,7 @@ pub mod inbound_endpoints {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -984,7 +984,7 @@ pub mod inbound_endpoints {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1059,7 +1059,7 @@ pub mod inbound_endpoints {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1068,7 +1068,7 @@ pub mod inbound_endpoints {
             pub(crate) parameters: models::InboundEndpointPatch,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1131,7 +1131,7 @@ pub mod inbound_endpoints {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1139,7 +1139,7 @@ pub mod inbound_endpoints {
             pub(crate) inbound_endpoint_name: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1193,14 +1193,14 @@ pub mod inbound_endpoints {
         use super::models;
         type Response = models::InboundEndpointListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_resolver_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1294,8 +1294,8 @@ pub mod outbound_endpoints {
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
             outbound_endpoint_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1318,8 +1318,8 @@ pub mod outbound_endpoints {
             dns_resolver_name: impl Into<String>,
             outbound_endpoint_name: impl Into<String>,
             parameters: impl Into<models::OutboundEndpoint>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1345,8 +1345,8 @@ pub mod outbound_endpoints {
             dns_resolver_name: impl Into<String>,
             outbound_endpoint_name: impl Into<String>,
             parameters: impl Into<models::OutboundEndpointPatch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1369,8 +1369,8 @@ pub mod outbound_endpoints {
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
             outbound_endpoint_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1390,8 +1390,8 @@ pub mod outbound_endpoints {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_resolver_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1404,14 +1404,14 @@ pub mod outbound_endpoints {
         use super::models;
         type Response = models::OutboundEndpoint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_resolver_name: String,
             pub(crate) outbound_endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1463,7 +1463,7 @@ pub mod outbound_endpoints {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1473,7 +1473,7 @@ pub mod outbound_endpoints {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1548,7 +1548,7 @@ pub mod outbound_endpoints {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1557,7 +1557,7 @@ pub mod outbound_endpoints {
             pub(crate) parameters: models::OutboundEndpointPatch,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1620,7 +1620,7 @@ pub mod outbound_endpoints {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1628,7 +1628,7 @@ pub mod outbound_endpoints {
             pub(crate) outbound_endpoint_name: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1682,14 +1682,14 @@ pub mod outbound_endpoints {
         use super::models;
         type Response = models::OutboundEndpointListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_resolver_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1781,8 +1781,8 @@ pub mod dns_forwarding_rulesets {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1802,8 +1802,8 @@ pub mod dns_forwarding_rulesets {
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
             parameters: impl Into<models::DnsForwardingRuleset>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1826,8 +1826,8 @@ pub mod dns_forwarding_rulesets {
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
             parameters: impl Into<models::DnsForwardingRulesetPatch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1847,8 +1847,8 @@ pub mod dns_forwarding_rulesets {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1865,8 +1865,8 @@ pub mod dns_forwarding_rulesets {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1877,8 +1877,8 @@ pub mod dns_forwarding_rulesets {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -1895,8 +1895,8 @@ pub mod dns_forwarding_rulesets {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             virtual_network_name: impl Into<String>,
-        ) -> list_by_virtual_network::Builder {
-            list_by_virtual_network::Builder {
+        ) -> list_by_virtual_network::RequestBuilder {
+            list_by_virtual_network::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1909,13 +1909,13 @@ pub mod dns_forwarding_rulesets {
         use super::models;
         type Response = models::DnsForwardingRuleset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_forwarding_ruleset_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1966,7 +1966,7 @@ pub mod dns_forwarding_rulesets {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1975,7 +1975,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2049,7 +2049,7 @@ pub mod dns_forwarding_rulesets {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2057,7 +2057,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) parameters: models::DnsForwardingRulesetPatch,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2119,14 +2119,14 @@ pub mod dns_forwarding_rulesets {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_forwarding_ruleset_name: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2179,13 +2179,13 @@ pub mod dns_forwarding_rulesets {
         use super::models;
         type Response = models::DnsForwardingRulesetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2264,12 +2264,12 @@ pub mod dns_forwarding_rulesets {
         use super::models;
         type Response = models::DnsForwardingRulesetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2347,14 +2347,14 @@ pub mod dns_forwarding_rulesets {
         use super::models;
         type Response = models::VirtualNetworkDnsForwardingRulesetListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_network_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2443,8 +2443,8 @@ pub mod forwarding_rules {
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
             forwarding_rule_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2467,8 +2467,8 @@ pub mod forwarding_rules {
             dns_forwarding_ruleset_name: impl Into<String>,
             forwarding_rule_name: impl Into<String>,
             parameters: impl Into<models::ForwardingRule>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2494,8 +2494,8 @@ pub mod forwarding_rules {
             dns_forwarding_ruleset_name: impl Into<String>,
             forwarding_rule_name: impl Into<String>,
             parameters: impl Into<models::ForwardingRulePatch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2518,8 +2518,8 @@ pub mod forwarding_rules {
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
             forwarding_rule_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2539,8 +2539,8 @@ pub mod forwarding_rules {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2553,14 +2553,14 @@ pub mod forwarding_rules {
         use super::models;
         type Response = models::ForwardingRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_forwarding_ruleset_name: String,
             pub(crate) forwarding_rule_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2611,7 +2611,7 @@ pub mod forwarding_rules {
             Ok200(models::ForwardingRule),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2621,7 +2621,7 @@ pub mod forwarding_rules {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2690,7 +2690,7 @@ pub mod forwarding_rules {
         use super::models;
         type Response = models::ForwardingRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2699,7 +2699,7 @@ pub mod forwarding_rules {
             pub(crate) parameters: models::ForwardingRulePatch,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2759,7 +2759,7 @@ pub mod forwarding_rules {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2767,7 +2767,7 @@ pub mod forwarding_rules {
             pub(crate) forwarding_rule_name: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2819,14 +2819,14 @@ pub mod forwarding_rules {
         use super::models;
         type Response = models::ForwardingRuleListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_forwarding_ruleset_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -2920,8 +2920,8 @@ pub mod virtual_network_links {
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
             virtual_network_link_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2944,8 +2944,8 @@ pub mod virtual_network_links {
             dns_forwarding_ruleset_name: impl Into<String>,
             virtual_network_link_name: impl Into<String>,
             parameters: impl Into<models::VirtualNetworkLink>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2971,8 +2971,8 @@ pub mod virtual_network_links {
             dns_forwarding_ruleset_name: impl Into<String>,
             virtual_network_link_name: impl Into<String>,
             parameters: impl Into<models::VirtualNetworkLinkPatch>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2995,8 +2995,8 @@ pub mod virtual_network_links {
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
             virtual_network_link_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3016,8 +3016,8 @@ pub mod virtual_network_links {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             dns_forwarding_ruleset_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3030,14 +3030,14 @@ pub mod virtual_network_links {
         use super::models;
         type Response = models::VirtualNetworkLink;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_forwarding_ruleset_name: String,
             pub(crate) virtual_network_link_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3082,7 +3082,7 @@ pub mod virtual_network_links {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3092,7 +3092,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -3160,7 +3160,7 @@ pub mod virtual_network_links {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3169,7 +3169,7 @@ pub mod virtual_network_links {
             pub(crate) parameters: models::VirtualNetworkLinkPatch,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -3225,7 +3225,7 @@ pub mod virtual_network_links {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3233,7 +3233,7 @@ pub mod virtual_network_links {
             pub(crate) virtual_network_link_name: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -3280,14 +3280,14 @@ pub mod virtual_network_links {
         use super::models;
         type Response = models::VirtualNetworkLinkListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) dns_forwarding_ruleset_name: String,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);

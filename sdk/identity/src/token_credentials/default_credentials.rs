@@ -51,7 +51,6 @@ impl DefaultAzureCredentialBuilder {
             + self.include_managed_identity_credential as usize;
         let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(source_count);
         if self.include_environment_credential {
-            #[cfg(feature = "enable_reqwest")]
             sources.push(DefaultAzureCredentialEnum::Environment(
                 super::EnvironmentCredential::default(),
             ));
@@ -72,7 +71,6 @@ impl DefaultAzureCredentialBuilder {
 
 /// Types of TokenCredential supported by DefaultAzureCredential
 pub enum DefaultAzureCredentialEnum {
-    #[cfg(feature = "enable_reqwest")]
     /// `TokenCredential` from environment variable.
     Environment(super::EnvironmentCredential),
     /// `TokenCredential` from managed identity that has been assigned in this deployment environment.
@@ -86,7 +84,6 @@ pub enum DefaultAzureCredentialEnum {
 impl TokenCredential for DefaultAzureCredentialEnum {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         match self {
-            #[cfg(feature = "enable_reqwest")]
             DefaultAzureCredentialEnum::Environment(credential) => {
                 credential.get_token(resource).await.context(
                     ErrorKind::Credential,

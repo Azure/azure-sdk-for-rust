@@ -124,18 +124,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "This lists all the available Microsoft Support REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -178,15 +178,15 @@ pub mod services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the Azure services available for support ticket creation. For **Technical** issues, select the Service Id that maps to the Azure service/product as displayed in the **Services** drop-down list on the Azure portal's [New support request](https://portal.azure.com/#blade/Microsoft_Azure_Support/HelpAndSupportBlade/overview) page. Always use the service and its corresponding problem classification(s) obtained programmatically for support ticket creation. This practice ensures that you always have the most recent set of service and problem classification Ids."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Gets a specific Azure service for support ticket creation."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: Name of the Azure service."]
-        pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -196,10 +196,10 @@ pub mod services {
         use super::models;
         type Response = models::ServicesListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -240,11 +240,11 @@ pub mod services {
         use super::models;
         type Response = models::Service;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -293,8 +293,8 @@ pub mod problem_classifications {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: Name of the Azure service for which the problem classifications need to be retrieved."]
-        pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, service_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -304,8 +304,8 @@ pub mod problem_classifications {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: Name of the Azure service available for support."]
         #[doc = "* `problem_classification_name`: Name of problem classification."]
-        pub fn get(&self, service_name: impl Into<String>, problem_classification_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>, problem_classification_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 problem_classification_name: problem_classification_name.into(),
@@ -316,11 +316,11 @@ pub mod problem_classifications {
         use super::models;
         type Response = models::ProblemClassificationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -365,12 +365,12 @@ pub mod problem_classifications {
         use super::models;
         type Response = models::ProblemClassification;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) problem_classification_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -425,8 +425,8 @@ pub mod support_tickets {
             &self,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
             subscription_id: impl Into<String>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 check_name_availability_input: check_name_availability_input.into(),
                 subscription_id: subscription_id.into(),
@@ -436,8 +436,8 @@ pub mod support_tickets {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription Id."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -449,8 +449,8 @@ pub mod support_tickets {
         #[doc = "Arguments:"]
         #[doc = "* `support_ticket_name`: Support ticket name."]
         #[doc = "* `subscription_id`: Azure subscription Id."]
-        pub fn get(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 subscription_id: subscription_id.into(),
@@ -467,8 +467,8 @@ pub mod support_tickets {
             support_ticket_name: impl Into<String>,
             create_support_ticket_parameters: impl Into<models::SupportTicketDetails>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 create_support_ticket_parameters: create_support_ticket_parameters.into(),
@@ -486,8 +486,8 @@ pub mod support_tickets {
             support_ticket_name: impl Into<String>,
             update_support_ticket: impl Into<models::UpdateSupportTicket>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 update_support_ticket: update_support_ticket.into(),
@@ -499,12 +499,12 @@ pub mod support_tickets {
         use super::models;
         type Response = models::CheckNameAvailabilityOutput;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -549,13 +549,13 @@ pub mod support_tickets {
         use super::models;
         type Response = models::SupportTicketsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The number of values to return in the collection. Default is 25 and max is 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -641,12 +641,12 @@ pub mod support_tickets {
         use super::models;
         type Response = models::SupportTicketDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -695,13 +695,13 @@ pub mod support_tickets {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) create_support_ticket_parameters: models::SupportTicketDetails,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -749,13 +749,13 @@ pub mod support_tickets {
         use super::models;
         type Response = models::SupportTicketDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) update_support_ticket: models::UpdateSupportTicket,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -813,8 +813,8 @@ pub mod communications {
             support_ticket_name: impl Into<String>,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
             subscription_id: impl Into<String>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 check_name_availability_input: check_name_availability_input.into(),
@@ -826,8 +826,8 @@ pub mod communications {
         #[doc = "Arguments:"]
         #[doc = "* `support_ticket_name`: Support ticket name."]
         #[doc = "* `subscription_id`: Azure subscription Id."]
-        pub fn list(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 subscription_id: subscription_id.into(),
@@ -846,8 +846,8 @@ pub mod communications {
             support_ticket_name: impl Into<String>,
             communication_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 communication_name: communication_name.into(),
@@ -867,8 +867,8 @@ pub mod communications {
             communication_name: impl Into<String>,
             create_communication_parameters: impl Into<models::CommunicationDetails>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 communication_name: communication_name.into(),
@@ -881,13 +881,13 @@ pub mod communications {
         use super::models;
         type Response = models::CheckNameAvailabilityOutput;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -933,14 +933,14 @@ pub mod communications {
         use super::models;
         type Response = models::CommunicationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The number of values to return in the collection. Default is 10 and max is 10."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
@@ -1027,13 +1027,13 @@ pub mod communications {
         use super::models;
         type Response = models::CommunicationDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) communication_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1083,14 +1083,14 @@ pub mod communications {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) communication_name: String,
             pub(crate) create_communication_parameters: models::CommunicationDetails,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

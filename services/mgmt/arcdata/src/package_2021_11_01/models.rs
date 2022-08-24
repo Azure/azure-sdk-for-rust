@@ -34,7 +34,7 @@ pub struct DataControllerProperties {
     #[serde(rename = "uploadWatermark", default, skip_serializing_if = "Option::is_none")]
     pub upload_watermark: Option<UploadWatermark>,
     #[doc = "Last uploaded date from Kubernetes cluster. Defaults to current date time"]
-    #[serde(rename = "lastUploadedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUploadedDate", default, with = "azure_core::date::rfc3339::option")]
     pub last_uploaded_date: Option<time::OffsetDateTime>,
     #[doc = "Username and password for basic login authentication."]
     #[serde(rename = "basicLoginInformation", default, skip_serializing_if = "Option::is_none")]
@@ -532,7 +532,7 @@ pub struct SqlManagedInstanceProperties {
     #[serde(rename = "basicLoginInformation", default, skip_serializing_if = "Option::is_none")]
     pub basic_login_information: Option<BasicLoginInformation>,
     #[doc = "Last uploaded date from Kubernetes cluster. Defaults to current date time"]
-    #[serde(rename = "lastUploadedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUploadedDate", default, with = "azure_core::date::rfc3339::option")]
     pub last_uploaded_date: Option<time::OffsetDateTime>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -744,7 +744,7 @@ pub struct SqlServerInstanceProperties {
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<sql_server_instance_properties::LicenseType>,
     #[doc = "Timestamp of last Azure Defender status update."]
-    #[serde(rename = "azureDefenderStatusLastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "azureDefenderStatusLastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub azure_defender_status_last_updated: Option<time::OffsetDateTime>,
     #[doc = "Status of Azure Defender."]
     #[serde(rename = "azureDefenderStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1042,13 +1042,13 @@ impl UploadServicePrincipal {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadWatermark {
     #[doc = "Last uploaded date for metrics from kubernetes cluster. Defaults to current date time"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub metrics: Option<time::OffsetDateTime>,
     #[doc = "Last uploaded date for logs from kubernetes cluster. Defaults to current date time"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub logs: Option<time::OffsetDateTime>,
     #[doc = "Last uploaded date for usages from kubernetes cluster. Defaults to current date time"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub usages: Option<time::OffsetDateTime>,
 }
 impl UploadWatermark {
@@ -1066,7 +1066,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1075,7 +1075,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

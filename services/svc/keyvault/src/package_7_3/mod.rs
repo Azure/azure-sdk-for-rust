@@ -115,8 +115,8 @@ impl Client {
 }
 impl Client {
     #[doc = "Creates a full backup using a user-provided SAS token to an Azure blob storage container. This operation is supported only by the Managed HSM service."]
-    pub fn full_backup(&self) -> full_backup::Builder {
-        full_backup::Builder {
+    pub fn full_backup(&self) -> full_backup::RequestBuilder {
+        full_backup::RequestBuilder {
             client: self.clone(),
             azure_storage_blob_container_uri: None,
         }
@@ -125,15 +125,15 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `job_id`: The id returned as part of the backup request"]
-    pub fn full_backup_status(&self, job_id: impl Into<String>) -> full_backup_status::Builder {
-        full_backup_status::Builder {
+    pub fn full_backup_status(&self, job_id: impl Into<String>) -> full_backup_status::RequestBuilder {
+        full_backup_status::RequestBuilder {
             client: self.clone(),
             job_id: job_id.into(),
         }
     }
     #[doc = "Restores all key materials using the SAS token pointing to a previously stored Azure Blob storage backup folder"]
-    pub fn full_restore_operation(&self) -> full_restore_operation::Builder {
-        full_restore_operation::Builder {
+    pub fn full_restore_operation(&self) -> full_restore_operation::RequestBuilder {
+        full_restore_operation::RequestBuilder {
             client: self.clone(),
             restore_blob_details: None,
         }
@@ -142,8 +142,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `job_id`: The Job Id returned part of the restore operation"]
-    pub fn restore_status(&self, job_id: impl Into<String>) -> restore_status::Builder {
-        restore_status::Builder {
+    pub fn restore_status(&self, job_id: impl Into<String>) -> restore_status::RequestBuilder {
+        restore_status::RequestBuilder {
             client: self.clone(),
             job_id: job_id.into(),
         }
@@ -152,8 +152,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key to be restored from the user supplied backup"]
-    pub fn selective_key_restore_operation(&self, key_name: impl Into<String>) -> selective_key_restore_operation::Builder {
-        selective_key_restore_operation::Builder {
+    pub fn selective_key_restore_operation(&self, key_name: impl Into<String>) -> selective_key_restore_operation::RequestBuilder {
+        selective_key_restore_operation::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             restore_blob_details: None,
@@ -161,8 +161,8 @@ impl Client {
     }
     #[doc = "List certificates in a specified key vault"]
     #[doc = "The GetCertificates operation returns the set of certificates resources in the specified key vault. This operation requires the certificates/list permission."]
-    pub fn get_certificates(&self) -> get_certificates::Builder {
-        get_certificates::Builder {
+    pub fn get_certificates(&self) -> get_certificates::RequestBuilder {
+        get_certificates::RequestBuilder {
             client: self.clone(),
             maxresults: None,
             include_pending: None,
@@ -173,37 +173,37 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate."]
-    pub fn delete_certificate(&self, certificate_name: impl Into<String>) -> delete_certificate::Builder {
-        delete_certificate::Builder {
+    pub fn delete_certificate(&self, certificate_name: impl Into<String>) -> delete_certificate::RequestBuilder {
+        delete_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
     #[doc = "Lists the certificate contacts for a specified key vault."]
     #[doc = "The GetCertificateContacts operation returns the set of certificate contact resources in the specified key vault. This operation requires the certificates/managecontacts permission."]
-    pub fn get_certificate_contacts(&self) -> get_certificate_contacts::Builder {
-        get_certificate_contacts::Builder { client: self.clone() }
+    pub fn get_certificate_contacts(&self) -> get_certificate_contacts::RequestBuilder {
+        get_certificate_contacts::RequestBuilder { client: self.clone() }
     }
     #[doc = "Sets the certificate contacts for the specified key vault."]
     #[doc = "Sets the certificate contacts for the specified key vault. This operation requires the certificates/managecontacts permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `contacts`: The contacts for the key vault certificate."]
-    pub fn set_certificate_contacts(&self, contacts: impl Into<models::Contacts>) -> set_certificate_contacts::Builder {
-        set_certificate_contacts::Builder {
+    pub fn set_certificate_contacts(&self, contacts: impl Into<models::Contacts>) -> set_certificate_contacts::RequestBuilder {
+        set_certificate_contacts::RequestBuilder {
             client: self.clone(),
             contacts: contacts.into(),
         }
     }
     #[doc = "Deletes the certificate contacts for a specified key vault."]
     #[doc = "Deletes the certificate contacts for a specified key vault certificate. This operation requires the certificates/managecontacts permission."]
-    pub fn delete_certificate_contacts(&self) -> delete_certificate_contacts::Builder {
-        delete_certificate_contacts::Builder { client: self.clone() }
+    pub fn delete_certificate_contacts(&self) -> delete_certificate_contacts::RequestBuilder {
+        delete_certificate_contacts::RequestBuilder { client: self.clone() }
     }
     #[doc = "List certificate issuers for a specified key vault."]
     #[doc = "The GetCertificateIssuers operation returns the set of certificate issuer resources in the specified key vault. This operation requires the certificates/manageissuers/getissuers permission."]
-    pub fn get_certificate_issuers(&self) -> get_certificate_issuers::Builder {
-        get_certificate_issuers::Builder {
+    pub fn get_certificate_issuers(&self) -> get_certificate_issuers::RequestBuilder {
+        get_certificate_issuers::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
@@ -213,8 +213,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `issuer_name`: The name of the issuer."]
-    pub fn get_certificate_issuer(&self, issuer_name: impl Into<String>) -> get_certificate_issuer::Builder {
-        get_certificate_issuer::Builder {
+    pub fn get_certificate_issuer(&self, issuer_name: impl Into<String>) -> get_certificate_issuer::RequestBuilder {
+        get_certificate_issuer::RequestBuilder {
             client: self.clone(),
             issuer_name: issuer_name.into(),
         }
@@ -229,8 +229,8 @@ impl Client {
         &self,
         issuer_name: impl Into<String>,
         parameter: impl Into<models::CertificateIssuerSetParameters>,
-    ) -> set_certificate_issuer::Builder {
-        set_certificate_issuer::Builder {
+    ) -> set_certificate_issuer::RequestBuilder {
+        set_certificate_issuer::RequestBuilder {
             client: self.clone(),
             issuer_name: issuer_name.into(),
             parameter: parameter.into(),
@@ -246,8 +246,8 @@ impl Client {
         &self,
         issuer_name: impl Into<String>,
         parameter: impl Into<models::CertificateIssuerUpdateParameters>,
-    ) -> update_certificate_issuer::Builder {
-        update_certificate_issuer::Builder {
+    ) -> update_certificate_issuer::RequestBuilder {
+        update_certificate_issuer::RequestBuilder {
             client: self.clone(),
             issuer_name: issuer_name.into(),
             parameter: parameter.into(),
@@ -258,8 +258,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `issuer_name`: The name of the issuer."]
-    pub fn delete_certificate_issuer(&self, issuer_name: impl Into<String>) -> delete_certificate_issuer::Builder {
-        delete_certificate_issuer::Builder {
+    pub fn delete_certificate_issuer(&self, issuer_name: impl Into<String>) -> delete_certificate_issuer::RequestBuilder {
+        delete_certificate_issuer::RequestBuilder {
             client: self.clone(),
             issuer_name: issuer_name.into(),
         }
@@ -274,8 +274,8 @@ impl Client {
         &self,
         certificate_name: impl Into<String>,
         parameters: impl Into<models::CertificateCreateParameters>,
-    ) -> create_certificate::Builder {
-        create_certificate::Builder {
+    ) -> create_certificate::RequestBuilder {
+        create_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             parameters: parameters.into(),
@@ -291,8 +291,8 @@ impl Client {
         &self,
         certificate_name: impl Into<String>,
         parameters: impl Into<models::CertificateImportParameters>,
-    ) -> import_certificate::Builder {
-        import_certificate::Builder {
+    ) -> import_certificate::RequestBuilder {
+        import_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             parameters: parameters.into(),
@@ -303,8 +303,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate."]
-    pub fn get_certificate_versions(&self, certificate_name: impl Into<String>) -> get_certificate_versions::Builder {
-        get_certificate_versions::Builder {
+    pub fn get_certificate_versions(&self, certificate_name: impl Into<String>) -> get_certificate_versions::RequestBuilder {
+        get_certificate_versions::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             maxresults: None,
@@ -315,8 +315,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate in a given key vault."]
-    pub fn get_certificate_policy(&self, certificate_name: impl Into<String>) -> get_certificate_policy::Builder {
-        get_certificate_policy::Builder {
+    pub fn get_certificate_policy(&self, certificate_name: impl Into<String>) -> get_certificate_policy::RequestBuilder {
+        get_certificate_policy::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -331,8 +331,8 @@ impl Client {
         &self,
         certificate_name: impl Into<String>,
         certificate_policy: impl Into<models::CertificatePolicy>,
-    ) -> update_certificate_policy::Builder {
-        update_certificate_policy::Builder {
+    ) -> update_certificate_policy::RequestBuilder {
+        update_certificate_policy::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_policy: certificate_policy.into(),
@@ -344,8 +344,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate in the given vault."]
     #[doc = "* `certificate_version`: The version of the certificate. This URI fragment is optional. If not specified, the latest version of the certificate is returned."]
-    pub fn get_certificate(&self, certificate_name: impl Into<String>, certificate_version: impl Into<String>) -> get_certificate::Builder {
-        get_certificate::Builder {
+    pub fn get_certificate(
+        &self,
+        certificate_name: impl Into<String>,
+        certificate_version: impl Into<String>,
+    ) -> get_certificate::RequestBuilder {
+        get_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_version: certificate_version.into(),
@@ -363,8 +367,8 @@ impl Client {
         certificate_name: impl Into<String>,
         certificate_version: impl Into<String>,
         parameters: impl Into<models::CertificateUpdateParameters>,
-    ) -> update_certificate::Builder {
-        update_certificate::Builder {
+    ) -> update_certificate::RequestBuilder {
+        update_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_version: certificate_version.into(),
@@ -376,8 +380,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate."]
-    pub fn get_certificate_operation(&self, certificate_name: impl Into<String>) -> get_certificate_operation::Builder {
-        get_certificate_operation::Builder {
+    pub fn get_certificate_operation(&self, certificate_name: impl Into<String>) -> get_certificate_operation::RequestBuilder {
+        get_certificate_operation::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -392,8 +396,8 @@ impl Client {
         &self,
         certificate_name: impl Into<String>,
         certificate_operation: impl Into<models::CertificateOperationUpdateParameter>,
-    ) -> update_certificate_operation::Builder {
-        update_certificate_operation::Builder {
+    ) -> update_certificate_operation::RequestBuilder {
+        update_certificate_operation::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_operation: certificate_operation.into(),
@@ -404,8 +408,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate."]
-    pub fn delete_certificate_operation(&self, certificate_name: impl Into<String>) -> delete_certificate_operation::Builder {
-        delete_certificate_operation::Builder {
+    pub fn delete_certificate_operation(&self, certificate_name: impl Into<String>) -> delete_certificate_operation::RequestBuilder {
+        delete_certificate_operation::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -420,8 +424,8 @@ impl Client {
         &self,
         certificate_name: impl Into<String>,
         parameters: impl Into<models::CertificateMergeParameters>,
-    ) -> merge_certificate::Builder {
-        merge_certificate::Builder {
+    ) -> merge_certificate::RequestBuilder {
+        merge_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
             parameters: parameters.into(),
@@ -432,8 +436,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate."]
-    pub fn backup_certificate(&self, certificate_name: impl Into<String>) -> backup_certificate::Builder {
-        backup_certificate::Builder {
+    pub fn backup_certificate(&self, certificate_name: impl Into<String>) -> backup_certificate::RequestBuilder {
+        backup_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -443,16 +447,16 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: The parameters to restore the certificate."]
-    pub fn restore_certificate(&self, parameters: impl Into<models::CertificateRestoreParameters>) -> restore_certificate::Builder {
-        restore_certificate::Builder {
+    pub fn restore_certificate(&self, parameters: impl Into<models::CertificateRestoreParameters>) -> restore_certificate::RequestBuilder {
+        restore_certificate::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
     #[doc = "Lists the deleted certificates in the specified vault currently available for recovery."]
     #[doc = "The GetDeletedCertificates operation retrieves the certificates in the current vault which are in a deleted state and ready for recovery or purging. This operation includes deletion-specific information. This operation requires the certificates/get/list permission. This operation can only be enabled on soft-delete enabled vaults."]
-    pub fn get_deleted_certificates(&self) -> get_deleted_certificates::Builder {
-        get_deleted_certificates::Builder {
+    pub fn get_deleted_certificates(&self) -> get_deleted_certificates::RequestBuilder {
+        get_deleted_certificates::RequestBuilder {
             client: self.clone(),
             maxresults: None,
             include_pending: None,
@@ -463,8 +467,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate"]
-    pub fn get_deleted_certificate(&self, certificate_name: impl Into<String>) -> get_deleted_certificate::Builder {
-        get_deleted_certificate::Builder {
+    pub fn get_deleted_certificate(&self, certificate_name: impl Into<String>) -> get_deleted_certificate::RequestBuilder {
+        get_deleted_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -474,8 +478,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the certificate"]
-    pub fn purge_deleted_certificate(&self, certificate_name: impl Into<String>) -> purge_deleted_certificate::Builder {
-        purge_deleted_certificate::Builder {
+    pub fn purge_deleted_certificate(&self, certificate_name: impl Into<String>) -> purge_deleted_certificate::RequestBuilder {
+        purge_deleted_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -485,8 +489,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `certificate_name`: The name of the deleted certificate"]
-    pub fn recover_deleted_certificate(&self, certificate_name: impl Into<String>) -> recover_deleted_certificate::Builder {
-        recover_deleted_certificate::Builder {
+    pub fn recover_deleted_certificate(&self, certificate_name: impl Into<String>) -> recover_deleted_certificate::RequestBuilder {
+        recover_deleted_certificate::RequestBuilder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
@@ -497,8 +501,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name for the new key. The system will generate the version name for the new key."]
     #[doc = "* `parameters`: The parameters to create a key."]
-    pub fn create_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyCreateParameters>) -> create_key::Builder {
-        create_key::Builder {
+    pub fn create_key(
+        &self,
+        key_name: impl Into<String>,
+        parameters: impl Into<models::KeyCreateParameters>,
+    ) -> create_key::RequestBuilder {
+        create_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             parameters: parameters.into(),
@@ -509,8 +517,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of key to be rotated. The system will generate a new version in the specified key."]
-    pub fn rotate_key(&self, key_name: impl Into<String>) -> rotate_key::Builder {
-        rotate_key::Builder {
+    pub fn rotate_key(&self, key_name: impl Into<String>) -> rotate_key::RequestBuilder {
+        rotate_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -521,8 +529,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: Name for the imported key."]
     #[doc = "* `parameters`: The parameters to import a key."]
-    pub fn import_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyImportParameters>) -> import_key::Builder {
-        import_key::Builder {
+    pub fn import_key(
+        &self,
+        key_name: impl Into<String>,
+        parameters: impl Into<models::KeyImportParameters>,
+    ) -> import_key::RequestBuilder {
+        import_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             parameters: parameters.into(),
@@ -533,8 +545,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key to delete."]
-    pub fn delete_key(&self, key_name: impl Into<String>) -> delete_key::Builder {
-        delete_key::Builder {
+    pub fn delete_key(&self, key_name: impl Into<String>) -> delete_key::RequestBuilder {
+        delete_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -545,8 +557,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key to get."]
     #[doc = "* `key_version`: Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If not specified, the latest version of the key is returned."]
-    pub fn get_key(&self, key_name: impl Into<String>, key_version: impl Into<String>) -> get_key::Builder {
-        get_key::Builder {
+    pub fn get_key(&self, key_name: impl Into<String>, key_version: impl Into<String>) -> get_key::RequestBuilder {
+        get_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -564,8 +576,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyUpdateParameters>,
-    ) -> update_key::Builder {
-        update_key::Builder {
+    ) -> update_key::RequestBuilder {
+        update_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -577,8 +589,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key."]
-    pub fn get_key_versions(&self, key_name: impl Into<String>) -> get_key_versions::Builder {
-        get_key_versions::Builder {
+    pub fn get_key_versions(&self, key_name: impl Into<String>) -> get_key_versions::RequestBuilder {
+        get_key_versions::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             maxresults: None,
@@ -586,8 +598,8 @@ impl Client {
     }
     #[doc = "List keys in the specified vault."]
     #[doc = "Retrieves a list of the keys in the Key Vault as JSON Web Key structures that contain the public part of a stored key. The LIST operation is applicable to all key types, however only the base key identifier, attributes, and tags are provided in the response. Individual versions of a key are not listed in the response. This operation requires the keys/list permission."]
-    pub fn get_keys(&self) -> get_keys::Builder {
-        get_keys::Builder {
+    pub fn get_keys(&self) -> get_keys::RequestBuilder {
+        get_keys::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
@@ -597,8 +609,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key."]
-    pub fn backup_key(&self, key_name: impl Into<String>) -> backup_key::Builder {
-        backup_key::Builder {
+    pub fn backup_key(&self, key_name: impl Into<String>) -> backup_key::RequestBuilder {
+        backup_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -608,8 +620,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: The parameters to restore the key."]
-    pub fn restore_key(&self, parameters: impl Into<models::KeyRestoreParameters>) -> restore_key::Builder {
-        restore_key::Builder {
+    pub fn restore_key(&self, parameters: impl Into<models::KeyRestoreParameters>) -> restore_key::RequestBuilder {
+        restore_key::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
@@ -626,8 +638,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyOperationsParameters>,
-    ) -> encrypt::Builder {
-        encrypt::Builder {
+    ) -> encrypt::RequestBuilder {
+        encrypt::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -646,8 +658,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyOperationsParameters>,
-    ) -> decrypt::Builder {
-        decrypt::Builder {
+    ) -> decrypt::RequestBuilder {
+        decrypt::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -666,8 +678,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeySignParameters>,
-    ) -> sign::Builder {
-        sign::Builder {
+    ) -> sign::RequestBuilder {
+        sign::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -686,8 +698,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyVerifyParameters>,
-    ) -> verify::Builder {
-        verify::Builder {
+    ) -> verify::RequestBuilder {
+        verify::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -706,8 +718,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyOperationsParameters>,
-    ) -> wrap_key::Builder {
-        wrap_key::Builder {
+    ) -> wrap_key::RequestBuilder {
+        wrap_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -726,8 +738,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyOperationsParameters>,
-    ) -> unwrap_key::Builder {
-        unwrap_key::Builder {
+    ) -> unwrap_key::RequestBuilder {
+        unwrap_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -746,8 +758,8 @@ impl Client {
         key_name: impl Into<String>,
         key_version: impl Into<String>,
         parameters: impl Into<models::KeyReleaseParameters>,
-    ) -> release::Builder {
-        release::Builder {
+    ) -> release::RequestBuilder {
+        release::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -756,8 +768,8 @@ impl Client {
     }
     #[doc = "Lists the deleted keys in the specified vault."]
     #[doc = "Retrieves a list of the keys in the Key Vault as JSON Web Key structures that contain the public part of a deleted key. This operation includes deletion-specific information. The Get Deleted Keys operation is applicable for vaults enabled for soft-delete. While the operation can be invoked on any vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/list permission."]
-    pub fn get_deleted_keys(&self) -> get_deleted_keys::Builder {
-        get_deleted_keys::Builder {
+    pub fn get_deleted_keys(&self) -> get_deleted_keys::RequestBuilder {
+        get_deleted_keys::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
@@ -767,8 +779,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key."]
-    pub fn get_deleted_key(&self, key_name: impl Into<String>) -> get_deleted_key::Builder {
-        get_deleted_key::Builder {
+    pub fn get_deleted_key(&self, key_name: impl Into<String>) -> get_deleted_key::RequestBuilder {
+        get_deleted_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -778,8 +790,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key"]
-    pub fn purge_deleted_key(&self, key_name: impl Into<String>) -> purge_deleted_key::Builder {
-        purge_deleted_key::Builder {
+    pub fn purge_deleted_key(&self, key_name: impl Into<String>) -> purge_deleted_key::RequestBuilder {
+        purge_deleted_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -789,8 +801,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the deleted key."]
-    pub fn recover_deleted_key(&self, key_name: impl Into<String>) -> recover_deleted_key::Builder {
-        recover_deleted_key::Builder {
+    pub fn recover_deleted_key(&self, key_name: impl Into<String>) -> recover_deleted_key::RequestBuilder {
+        recover_deleted_key::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -800,8 +812,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `key_name`: The name of the key in a given key vault."]
-    pub fn get_key_rotation_policy(&self, key_name: impl Into<String>) -> get_key_rotation_policy::Builder {
-        get_key_rotation_policy::Builder {
+    pub fn get_key_rotation_policy(&self, key_name: impl Into<String>) -> get_key_rotation_policy::RequestBuilder {
+        get_key_rotation_policy::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
         }
@@ -816,8 +828,8 @@ impl Client {
         &self,
         key_name: impl Into<String>,
         key_rotation_policy: impl Into<models::KeyRotationPolicy>,
-    ) -> update_key_rotation_policy::Builder {
-        update_key_rotation_policy::Builder {
+    ) -> update_key_rotation_policy::RequestBuilder {
+        update_key_rotation_policy::RequestBuilder {
             client: self.clone(),
             key_name: key_name.into(),
             key_rotation_policy: key_rotation_policy.into(),
@@ -828,8 +840,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: The request object to get random bytes."]
-    pub fn get_random_bytes(&self, parameters: impl Into<models::GetRandomBytesRequest>) -> get_random_bytes::Builder {
-        get_random_bytes::Builder {
+    pub fn get_random_bytes(&self, parameters: impl Into<models::GetRandomBytesRequest>) -> get_random_bytes::RequestBuilder {
+        get_random_bytes::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
@@ -840,8 +852,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
     #[doc = "* `parameters`: The parameters for setting the secret."]
-    pub fn set_secret(&self, secret_name: impl Into<String>, parameters: impl Into<models::SecretSetParameters>) -> set_secret::Builder {
-        set_secret::Builder {
+    pub fn set_secret(
+        &self,
+        secret_name: impl Into<String>,
+        parameters: impl Into<models::SecretSetParameters>,
+    ) -> set_secret::RequestBuilder {
+        set_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
             parameters: parameters.into(),
@@ -852,8 +868,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
-    pub fn delete_secret(&self, secret_name: impl Into<String>) -> delete_secret::Builder {
-        delete_secret::Builder {
+    pub fn delete_secret(&self, secret_name: impl Into<String>) -> delete_secret::RequestBuilder {
+        delete_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
@@ -864,8 +880,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
     #[doc = "* `secret_version`: The version of the secret. This URI fragment is optional. If not specified, the latest version of the secret is returned."]
-    pub fn get_secret(&self, secret_name: impl Into<String>, secret_version: impl Into<String>) -> get_secret::Builder {
-        get_secret::Builder {
+    pub fn get_secret(&self, secret_name: impl Into<String>, secret_version: impl Into<String>) -> get_secret::RequestBuilder {
+        get_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
             secret_version: secret_version.into(),
@@ -883,8 +899,8 @@ impl Client {
         secret_name: impl Into<String>,
         secret_version: impl Into<String>,
         parameters: impl Into<models::SecretUpdateParameters>,
-    ) -> update_secret::Builder {
-        update_secret::Builder {
+    ) -> update_secret::RequestBuilder {
+        update_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
             secret_version: secret_version.into(),
@@ -893,8 +909,8 @@ impl Client {
     }
     #[doc = "List secrets in a specified key vault."]
     #[doc = "The Get Secrets operation is applicable to the entire vault. However, only the base secret identifier and its attributes are provided in the response. Individual secret versions are not listed in the response. This operation requires the secrets/list permission."]
-    pub fn get_secrets(&self) -> get_secrets::Builder {
-        get_secrets::Builder {
+    pub fn get_secrets(&self) -> get_secrets::RequestBuilder {
+        get_secrets::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
@@ -904,8 +920,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
-    pub fn get_secret_versions(&self, secret_name: impl Into<String>) -> get_secret_versions::Builder {
-        get_secret_versions::Builder {
+    pub fn get_secret_versions(&self, secret_name: impl Into<String>) -> get_secret_versions::RequestBuilder {
+        get_secret_versions::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
             maxresults: None,
@@ -913,8 +929,8 @@ impl Client {
     }
     #[doc = "Lists deleted secrets for the specified vault."]
     #[doc = "The Get Deleted Secrets operation returns the secrets that have been deleted for a vault enabled for soft-delete. This operation requires the secrets/list permission."]
-    pub fn get_deleted_secrets(&self) -> get_deleted_secrets::Builder {
-        get_deleted_secrets::Builder {
+    pub fn get_deleted_secrets(&self) -> get_deleted_secrets::RequestBuilder {
+        get_deleted_secrets::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
@@ -924,8 +940,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
-    pub fn get_deleted_secret(&self, secret_name: impl Into<String>) -> get_deleted_secret::Builder {
-        get_deleted_secret::Builder {
+    pub fn get_deleted_secret(&self, secret_name: impl Into<String>) -> get_deleted_secret::RequestBuilder {
+        get_deleted_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
@@ -935,8 +951,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
-    pub fn purge_deleted_secret(&self, secret_name: impl Into<String>) -> purge_deleted_secret::Builder {
-        purge_deleted_secret::Builder {
+    pub fn purge_deleted_secret(&self, secret_name: impl Into<String>) -> purge_deleted_secret::RequestBuilder {
+        purge_deleted_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
@@ -946,8 +962,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the deleted secret."]
-    pub fn recover_deleted_secret(&self, secret_name: impl Into<String>) -> recover_deleted_secret::Builder {
-        recover_deleted_secret::Builder {
+    pub fn recover_deleted_secret(&self, secret_name: impl Into<String>) -> recover_deleted_secret::RequestBuilder {
+        recover_deleted_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
@@ -957,8 +973,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `secret_name`: The name of the secret."]
-    pub fn backup_secret(&self, secret_name: impl Into<String>) -> backup_secret::Builder {
-        backup_secret::Builder {
+    pub fn backup_secret(&self, secret_name: impl Into<String>) -> backup_secret::RequestBuilder {
+        backup_secret::RequestBuilder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
@@ -968,23 +984,23 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: The parameters to restore the secret."]
-    pub fn restore_secret(&self, parameters: impl Into<models::SecretRestoreParameters>) -> restore_secret::Builder {
-        restore_secret::Builder {
+    pub fn restore_secret(&self, parameters: impl Into<models::SecretRestoreParameters>) -> restore_secret::RequestBuilder {
+        restore_secret::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
     #[doc = "List storage accounts managed by the specified key vault. This operation requires the storage/list permission."]
-    pub fn get_storage_accounts(&self) -> get_storage_accounts::Builder {
-        get_storage_accounts::Builder {
+    pub fn get_storage_accounts(&self) -> get_storage_accounts::RequestBuilder {
+        get_storage_accounts::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
     }
     #[doc = "Lists deleted storage accounts for the specified vault."]
     #[doc = "The Get Deleted Storage Accounts operation returns the storage accounts that have been deleted for a vault enabled for soft-delete. This operation requires the storage/list permission."]
-    pub fn get_deleted_storage_accounts(&self) -> get_deleted_storage_accounts::Builder {
-        get_deleted_storage_accounts::Builder {
+    pub fn get_deleted_storage_accounts(&self) -> get_deleted_storage_accounts::RequestBuilder {
+        get_deleted_storage_accounts::RequestBuilder {
             client: self.clone(),
             maxresults: None,
         }
@@ -994,8 +1010,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn get_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> get_deleted_storage_account::Builder {
-        get_deleted_storage_account::Builder {
+    pub fn get_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> get_deleted_storage_account::RequestBuilder {
+        get_deleted_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
@@ -1005,8 +1021,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn purge_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> purge_deleted_storage_account::Builder {
-        purge_deleted_storage_account::Builder {
+    pub fn purge_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> purge_deleted_storage_account::RequestBuilder {
+        purge_deleted_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
@@ -1016,8 +1032,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn recover_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> recover_deleted_storage_account::Builder {
-        recover_deleted_storage_account::Builder {
+    pub fn recover_deleted_storage_account(
+        &self,
+        storage_account_name: impl Into<String>,
+    ) -> recover_deleted_storage_account::RequestBuilder {
+        recover_deleted_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
@@ -1027,8 +1046,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn backup_storage_account(&self, storage_account_name: impl Into<String>) -> backup_storage_account::Builder {
-        backup_storage_account::Builder {
+    pub fn backup_storage_account(&self, storage_account_name: impl Into<String>) -> backup_storage_account::RequestBuilder {
+        backup_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
@@ -1038,8 +1057,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: The parameters to restore the storage account."]
-    pub fn restore_storage_account(&self, parameters: impl Into<models::StorageRestoreParameters>) -> restore_storage_account::Builder {
-        restore_storage_account::Builder {
+    pub fn restore_storage_account(
+        &self,
+        parameters: impl Into<models::StorageRestoreParameters>,
+    ) -> restore_storage_account::RequestBuilder {
+        restore_storage_account::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
@@ -1048,8 +1070,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn get_storage_account(&self, storage_account_name: impl Into<String>) -> get_storage_account::Builder {
-        get_storage_account::Builder {
+    pub fn get_storage_account(&self, storage_account_name: impl Into<String>) -> get_storage_account::RequestBuilder {
+        get_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
@@ -1063,8 +1085,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         parameters: impl Into<models::StorageAccountCreateParameters>,
-    ) -> set_storage_account::Builder {
-        set_storage_account::Builder {
+    ) -> set_storage_account::RequestBuilder {
+        set_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             parameters: parameters.into(),
@@ -1079,8 +1101,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         parameters: impl Into<models::StorageAccountUpdateParameters>,
-    ) -> update_storage_account::Builder {
-        update_storage_account::Builder {
+    ) -> update_storage_account::RequestBuilder {
+        update_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             parameters: parameters.into(),
@@ -1090,8 +1112,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn delete_storage_account(&self, storage_account_name: impl Into<String>) -> delete_storage_account::Builder {
-        delete_storage_account::Builder {
+    pub fn delete_storage_account(&self, storage_account_name: impl Into<String>) -> delete_storage_account::RequestBuilder {
+        delete_storage_account::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
@@ -1105,8 +1127,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         parameters: impl Into<models::StorageAccountRegenerteKeyParameters>,
-    ) -> regenerate_storage_account_key::Builder {
-        regenerate_storage_account_key::Builder {
+    ) -> regenerate_storage_account_key::RequestBuilder {
+        regenerate_storage_account_key::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             parameters: parameters.into(),
@@ -1116,8 +1138,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn get_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_sas_definitions::Builder {
-        get_sas_definitions::Builder {
+    pub fn get_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_sas_definitions::RequestBuilder {
+        get_sas_definitions::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             maxresults: None,
@@ -1128,8 +1150,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    pub fn get_deleted_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_deleted_sas_definitions::Builder {
-        get_deleted_sas_definitions::Builder {
+    pub fn get_deleted_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_deleted_sas_definitions::RequestBuilder {
+        get_deleted_sas_definitions::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             maxresults: None,
@@ -1145,8 +1167,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         sas_definition_name: impl Into<String>,
-    ) -> get_deleted_sas_definition::Builder {
-        get_deleted_sas_definition::Builder {
+    ) -> get_deleted_sas_definition::RequestBuilder {
+        get_deleted_sas_definition::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
@@ -1162,8 +1184,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         sas_definition_name: impl Into<String>,
-    ) -> recover_deleted_sas_definition::Builder {
-        recover_deleted_sas_definition::Builder {
+    ) -> recover_deleted_sas_definition::RequestBuilder {
+        recover_deleted_sas_definition::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
@@ -1178,8 +1200,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         sas_definition_name: impl Into<String>,
-    ) -> get_sas_definition::Builder {
-        get_sas_definition::Builder {
+    ) -> get_sas_definition::RequestBuilder {
+        get_sas_definition::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
@@ -1196,8 +1218,8 @@ impl Client {
         storage_account_name: impl Into<String>,
         sas_definition_name: impl Into<String>,
         parameters: impl Into<models::SasDefinitionCreateParameters>,
-    ) -> set_sas_definition::Builder {
-        set_sas_definition::Builder {
+    ) -> set_sas_definition::RequestBuilder {
+        set_sas_definition::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
@@ -1215,8 +1237,8 @@ impl Client {
         storage_account_name: impl Into<String>,
         sas_definition_name: impl Into<String>,
         parameters: impl Into<models::SasDefinitionUpdateParameters>,
-    ) -> update_sas_definition::Builder {
-        update_sas_definition::Builder {
+    ) -> update_sas_definition::RequestBuilder {
+        update_sas_definition::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
@@ -1232,8 +1254,8 @@ impl Client {
         &self,
         storage_account_name: impl Into<String>,
         sas_definition_name: impl Into<String>,
-    ) -> delete_sas_definition::Builder {
-        delete_sas_definition::Builder {
+    ) -> delete_sas_definition::RequestBuilder {
+        delete_sas_definition::RequestBuilder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
@@ -1244,11 +1266,11 @@ pub mod full_backup {
     use super::models;
     type Response = models::FullBackupOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) azure_storage_blob_container_uri: Option<models::SasTokenParameter>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Azure blob shared access signature token pointing to a valid Azure blob container where full backup needs to be stored. This token needs to be valid for at least next 24 hours from the time of making this call"]
         pub fn azure_storage_blob_container_uri(mut self, azure_storage_blob_container_uri: impl Into<models::SasTokenParameter>) -> Self {
             self.azure_storage_blob_container_uri = Some(azure_storage_blob_container_uri.into());
@@ -1299,11 +1321,11 @@ pub mod full_backup_status {
     use super::models;
     type Response = models::FullBackupOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) job_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1343,11 +1365,11 @@ pub mod full_restore_operation {
     use super::models;
     type Response = models::RestoreOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) restore_blob_details: Option<models::RestoreOperationParameters>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The Azure blob SAS token pointing to a folder where the previous successful full backup was stored"]
         pub fn restore_blob_details(mut self, restore_blob_details: impl Into<models::RestoreOperationParameters>) -> Self {
             self.restore_blob_details = Some(restore_blob_details.into());
@@ -1398,11 +1420,11 @@ pub mod restore_status {
     use super::models;
     type Response = models::RestoreOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) job_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1442,12 +1464,12 @@ pub mod selective_key_restore_operation {
     use super::models;
     type Response = models::SelectiveKeyRestoreOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) restore_blob_details: Option<models::SelectiveKeyRestoreOperationParameters>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The Azure blob SAS token pointing to a folder where the previous successful full backup was stored"]
         pub fn restore_blob_details(mut self, restore_blob_details: impl Into<models::SelectiveKeyRestoreOperationParameters>) -> Self {
             self.restore_blob_details = Some(restore_blob_details.into());
@@ -1498,12 +1520,12 @@ pub mod get_certificates {
     use super::models;
     type Response = models::CertificateListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
         pub(crate) include_pending: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -1587,11 +1609,11 @@ pub mod delete_certificate {
     use super::models;
     type Response = models::DeletedCertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1631,10 +1653,10 @@ pub mod get_certificate_contacts {
     use super::models;
     type Response = models::Contacts;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1674,11 +1696,11 @@ pub mod set_certificate_contacts {
     use super::models;
     type Response = models::Contacts;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) contacts: models::Contacts,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1719,10 +1741,10 @@ pub mod delete_certificate_contacts {
     use super::models;
     type Response = models::Contacts;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1762,11 +1784,11 @@ pub mod get_certificate_issuers {
     use super::models;
     type Response = models::CertificateIssuerListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -1840,11 +1862,11 @@ pub mod get_certificate_issuer {
     use super::models;
     type Response = models::IssuerBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1884,12 +1906,12 @@ pub mod set_certificate_issuer {
     use super::models;
     type Response = models::IssuerBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
         pub(crate) parameter: models::CertificateIssuerSetParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1930,12 +1952,12 @@ pub mod update_certificate_issuer {
     use super::models;
     type Response = models::IssuerBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
         pub(crate) parameter: models::CertificateIssuerUpdateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1976,11 +1998,11 @@ pub mod delete_certificate_issuer {
     use super::models;
     type Response = models::IssuerBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2020,12 +2042,12 @@ pub mod create_certificate {
     use super::models;
     type Response = models::CertificateOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) parameters: models::CertificateCreateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2070,12 +2092,12 @@ pub mod import_certificate {
     use super::models;
     type Response = models::CertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) parameters: models::CertificateImportParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2120,12 +2142,12 @@ pub mod get_certificate_versions {
     use super::models;
     type Response = models::CertificateListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -2203,11 +2225,11 @@ pub mod get_certificate_policy {
     use super::models;
     type Response = models::CertificatePolicy;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2251,12 +2273,12 @@ pub mod update_certificate_policy {
     use super::models;
     type Response = models::CertificatePolicy;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_policy: models::CertificatePolicy,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2301,12 +2323,12 @@ pub mod get_certificate {
     use super::models;
     type Response = models::CertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_version: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2351,13 +2373,13 @@ pub mod update_certificate {
     use super::models;
     type Response = models::CertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_version: String,
         pub(crate) parameters: models::CertificateUpdateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2403,11 +2425,11 @@ pub mod get_certificate_operation {
     use super::models;
     type Response = models::CertificateOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2451,12 +2473,12 @@ pub mod update_certificate_operation {
     use super::models;
     type Response = models::CertificateOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_operation: models::CertificateOperationUpdateParameter,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2501,11 +2523,11 @@ pub mod delete_certificate_operation {
     use super::models;
     type Response = models::CertificateOperation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2549,12 +2571,12 @@ pub mod merge_certificate {
     use super::models;
     type Response = models::CertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) parameters: models::CertificateMergeParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2599,11 +2621,11 @@ pub mod backup_certificate {
     use super::models;
     type Response = models::BackupCertificateResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2648,11 +2670,11 @@ pub mod restore_certificate {
     use super::models;
     type Response = models::CertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::CertificateRestoreParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2693,12 +2715,12 @@ pub mod get_deleted_certificates {
     use super::models;
     type Response = models::DeletedCertificateListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
         pub(crate) include_pending: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -2782,11 +2804,11 @@ pub mod get_deleted_certificate {
     use super::models;
     type Response = models::DeletedCertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2830,11 +2852,11 @@ pub mod purge_deleted_certificate {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2874,11 +2896,11 @@ pub mod recover_deleted_certificate {
     use super::models;
     type Response = models::CertificateBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2923,12 +2945,12 @@ pub mod create_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) parameters: models::KeyCreateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2969,11 +2991,11 @@ pub mod rotate_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3014,12 +3036,12 @@ pub mod import_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) parameters: models::KeyImportParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3060,11 +3082,11 @@ pub mod delete_key {
     use super::models;
     type Response = models::DeletedKeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3104,12 +3126,12 @@ pub mod get_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3149,13 +3171,13 @@ pub mod update_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyUpdateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3196,12 +3218,12 @@ pub mod get_key_versions {
     use super::models;
     type Response = models::KeyListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -3275,11 +3297,11 @@ pub mod get_keys {
     use super::models;
     type Response = models::KeyListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -3353,11 +3375,11 @@ pub mod backup_key {
     use super::models;
     type Response = models::BackupKeyResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3398,11 +3420,11 @@ pub mod restore_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::KeyRestoreParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3443,13 +3465,13 @@ pub mod encrypt {
     use super::models;
     type Response = models::KeyOperationResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3495,13 +3517,13 @@ pub mod decrypt {
     use super::models;
     type Response = models::KeyOperationResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3547,13 +3569,13 @@ pub mod sign {
     use super::models;
     type Response = models::KeyOperationResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeySignParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3599,13 +3621,13 @@ pub mod verify {
     use super::models;
     type Response = models::KeyVerifyResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyVerifyParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3651,13 +3673,13 @@ pub mod wrap_key {
     use super::models;
     type Response = models::KeyOperationResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3703,13 +3725,13 @@ pub mod unwrap_key {
     use super::models;
     type Response = models::KeyOperationResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3755,13 +3777,13 @@ pub mod release {
     use super::models;
     type Response = models::KeyReleaseResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyReleaseParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3807,11 +3829,11 @@ pub mod get_deleted_keys {
     use super::models;
     type Response = models::DeletedKeyListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -3885,11 +3907,11 @@ pub mod get_deleted_key {
     use super::models;
     type Response = models::DeletedKeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3929,11 +3951,11 @@ pub mod purge_deleted_key {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -3969,11 +3991,11 @@ pub mod recover_deleted_key {
     use super::models;
     type Response = models::KeyBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4014,11 +4036,11 @@ pub mod get_key_rotation_policy {
     use super::models;
     type Response = models::KeyRotationPolicy;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4058,12 +4080,12 @@ pub mod update_key_rotation_policy {
     use super::models;
     type Response = models::KeyRotationPolicy;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_rotation_policy: models::KeyRotationPolicy,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4104,11 +4126,11 @@ pub mod get_random_bytes {
     use super::models;
     type Response = models::RandomBytes;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::GetRandomBytesRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4149,12 +4171,12 @@ pub mod set_secret {
     use super::models;
     type Response = models::SecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) parameters: models::SecretSetParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4195,11 +4217,11 @@ pub mod delete_secret {
     use super::models;
     type Response = models::DeletedSecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4239,12 +4261,12 @@ pub mod get_secret {
     use super::models;
     type Response = models::SecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) secret_version: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4289,13 +4311,13 @@ pub mod update_secret {
     use super::models;
     type Response = models::SecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) secret_version: String,
         pub(crate) parameters: models::SecretUpdateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4341,11 +4363,11 @@ pub mod get_secrets {
     use super::models;
     type Response = models::SecretListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -4419,12 +4441,12 @@ pub mod get_secret_versions {
     use super::models;
     type Response = models::SecretListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -4498,11 +4520,11 @@ pub mod get_deleted_secrets {
     use super::models;
     type Response = models::DeletedSecretListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -4576,11 +4598,11 @@ pub mod get_deleted_secret {
     use super::models;
     type Response = models::DeletedSecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4620,11 +4642,11 @@ pub mod purge_deleted_secret {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4660,11 +4682,11 @@ pub mod recover_deleted_secret {
     use super::models;
     type Response = models::SecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4705,11 +4727,11 @@ pub mod backup_secret {
     use super::models;
     type Response = models::BackupSecretResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4750,11 +4772,11 @@ pub mod restore_secret {
     use super::models;
     type Response = models::SecretBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::SecretRestoreParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4795,11 +4817,11 @@ pub mod get_storage_accounts {
     use super::models;
     type Response = models::StorageListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -4873,11 +4895,11 @@ pub mod get_deleted_storage_accounts {
     use super::models;
     type Response = models::DeletedStorageListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -4951,11 +4973,11 @@ pub mod get_deleted_storage_account {
     use super::models;
     type Response = models::DeletedStorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -4995,11 +5017,11 @@ pub mod purge_deleted_storage_account {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5035,11 +5057,11 @@ pub mod recover_deleted_storage_account {
     use super::models;
     type Response = models::StorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5084,11 +5106,11 @@ pub mod backup_storage_account {
     use super::models;
     type Response = models::BackupStorageResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5129,11 +5151,11 @@ pub mod restore_storage_account {
     use super::models;
     type Response = models::StorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::StorageRestoreParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5174,11 +5196,11 @@ pub mod get_storage_account {
     use super::models;
     type Response = models::StorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5218,12 +5240,12 @@ pub mod set_storage_account {
     use super::models;
     type Response = models::StorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) parameters: models::StorageAccountCreateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5264,12 +5286,12 @@ pub mod update_storage_account {
     use super::models;
     type Response = models::StorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) parameters: models::StorageAccountUpdateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5310,11 +5332,11 @@ pub mod delete_storage_account {
     use super::models;
     type Response = models::DeletedStorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5354,12 +5376,12 @@ pub mod regenerate_storage_account_key {
     use super::models;
     type Response = models::StorageBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) parameters: models::StorageAccountRegenerteKeyParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5404,12 +5426,12 @@ pub mod get_sas_definitions {
     use super::models;
     type Response = models::SasDefinitionListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -5484,12 +5506,12 @@ pub mod get_deleted_sas_definitions {
     use super::models;
     type Response = models::DeletedSasDefinitionListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) maxresults: Option<i32>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
@@ -5567,12 +5589,12 @@ pub mod get_deleted_sas_definition {
     use super::models;
     type Response = models::DeletedSasDefinitionBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5617,12 +5639,12 @@ pub mod recover_deleted_sas_definition {
     use super::models;
     type Response = models::SasDefinitionBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5668,12 +5690,12 @@ pub mod get_sas_definition {
     use super::models;
     type Response = models::SasDefinitionBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5718,13 +5740,13 @@ pub mod set_sas_definition {
     use super::models;
     type Response = models::SasDefinitionBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
         pub(crate) parameters: models::SasDefinitionCreateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5770,13 +5792,13 @@ pub mod update_sas_definition {
     use super::models;
     type Response = models::SasDefinitionBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
         pub(crate) parameters: models::SasDefinitionUpdateParameters,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5822,12 +5844,12 @@ pub mod delete_sas_definition {
     use super::models;
     type Response = models::DeletedSasDefinitionBundle;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5877,8 +5899,8 @@ pub mod role_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role definition to get. Managed HSM only supports '/'."]
         #[doc = "* `role_definition_name`: The name of the role definition to get."]
-        pub fn get(&self, scope: impl Into<String>, role_definition_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, role_definition_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_name: role_definition_name.into(),
@@ -5895,8 +5917,8 @@ pub mod role_definitions {
             scope: impl Into<String>,
             role_definition_name: impl Into<String>,
             parameters: impl Into<models::RoleDefinitionCreateParameters>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_name: role_definition_name.into(),
@@ -5908,8 +5930,8 @@ pub mod role_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role definition to delete. Managed HSM only supports '/'."]
         #[doc = "* `role_definition_name`: The name (GUID) of the role definition to delete."]
-        pub fn delete(&self, scope: impl Into<String>, role_definition_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, role_definition_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_name: role_definition_name.into(),
@@ -5919,8 +5941,8 @@ pub mod role_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role definition."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -5931,12 +5953,12 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5981,13 +6003,13 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_name: String,
             pub(crate) parameters: models::RoleDefinitionCreateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6033,12 +6055,12 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6083,12 +6105,12 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use atScopeAndBelow filter to search below the given scope as well."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -6172,8 +6194,8 @@ pub mod role_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role assignment."]
         #[doc = "* `role_assignment_name`: The name of the role assignment to get."]
-        pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
@@ -6190,8 +6212,8 @@ pub mod role_assignments {
             scope: impl Into<String>,
             role_assignment_name: impl Into<String>,
             parameters: impl Into<models::RoleAssignmentCreateParameters>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
@@ -6203,8 +6225,8 @@ pub mod role_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role assignment to delete."]
         #[doc = "* `role_assignment_name`: The name of the role assignment to delete."]
-        pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
@@ -6214,8 +6236,8 @@ pub mod role_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role assignments."]
-        pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
-            list_for_scope::Builder {
+        pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::RequestBuilder {
+            list_for_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -6226,12 +6248,12 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6276,13 +6298,13 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6328,12 +6350,12 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6378,12 +6400,12 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -6463,46 +6485,46 @@ pub mod hsm_security_domain {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the Security Domain download operation status"]
-        pub fn download_pending(&self) -> download_pending::Builder {
-            download_pending::Builder { client: self.0.clone() }
+        pub fn download_pending(&self) -> download_pending::RequestBuilder {
+            download_pending::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Retrieves the Security Domain from the managed HSM. Calling this endpoint can be used to activate a provisioned managed HSM resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `certificate_info_object`: The Security Domain download operation requires customer to provide N certificates (minimum 3 and maximum 10) containing a public key in JWK format."]
-        pub fn download(&self, certificate_info_object: impl Into<models::CertificateInfoObject>) -> download::Builder {
-            download::Builder {
+        pub fn download(&self, certificate_info_object: impl Into<models::CertificateInfoObject>) -> download::RequestBuilder {
+            download::RequestBuilder {
                 client: self.0.clone(),
                 certificate_info_object: certificate_info_object.into(),
             }
         }
         #[doc = "Retrieve Security Domain transfer key"]
-        pub fn transfer_key(&self) -> transfer_key::Builder {
-            transfer_key::Builder { client: self.0.clone() }
+        pub fn transfer_key(&self) -> transfer_key::RequestBuilder {
+            transfer_key::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Restore the provided Security Domain."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `security_domain`: The Security Domain to be restored."]
-        pub fn upload(&self, security_domain: impl Into<models::SecurityDomainObject>) -> upload::Builder {
-            upload::Builder {
+        pub fn upload(&self, security_domain: impl Into<models::SecurityDomainObject>) -> upload::RequestBuilder {
+            upload::RequestBuilder {
                 client: self.0.clone(),
                 security_domain: security_domain.into(),
             }
         }
         #[doc = "Get Security Domain upload operation status"]
-        pub fn upload_pending(&self) -> upload_pending::Builder {
-            upload_pending::Builder { client: self.0.clone() }
+        pub fn upload_pending(&self) -> upload_pending::RequestBuilder {
+            upload_pending::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod download_pending {
         use super::models;
         type Response = models::SecurityDomainOperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6539,11 +6561,11 @@ pub mod hsm_security_domain {
         use super::models;
         type Response = models::SecurityDomainObject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) certificate_info_object: models::CertificateInfoObject,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -6585,10 +6607,10 @@ pub mod hsm_security_domain {
         use super::models;
         type Response = models::TransferKey;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6632,11 +6654,11 @@ pub mod hsm_security_domain {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) security_domain: models::SecurityDomainObject,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -6676,10 +6698,10 @@ pub mod hsm_security_domain {
         use super::models;
         type Response = models::SecurityDomainOperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

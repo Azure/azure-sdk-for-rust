@@ -133,8 +133,8 @@ pub mod blob {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
-        pub fn start_upload(&self, name: impl Into<String>) -> start_upload::Builder {
-            start_upload::Builder {
+        pub fn start_upload(&self, name: impl Into<String>) -> start_upload::RequestBuilder {
+            start_upload::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -145,8 +145,8 @@ pub mod blob {
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `digest`: Digest of a BLOB"]
         #[doc = "* `range`: Format : bytes=<start>-<end>,  HTTP Range header specifying blob chunk."]
-        pub fn get_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> get_chunk::Builder {
-            get_chunk::Builder {
+        pub fn get_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> get_chunk::RequestBuilder {
+            get_chunk::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
@@ -159,8 +159,13 @@ pub mod blob {
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `digest`: Digest of a BLOB"]
         #[doc = "* `range`: Format : bytes=<start>-<end>,  HTTP Range header specifying blob chunk."]
-        pub fn check_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> check_chunk::Builder {
-            check_chunk::Builder {
+        pub fn check_chunk(
+            &self,
+            name: impl Into<String>,
+            digest: impl Into<String>,
+            range: impl Into<String>,
+        ) -> check_chunk::RequestBuilder {
+            check_chunk::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
@@ -172,8 +177,8 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `digest`: Digest of a BLOB"]
-        pub fn get(&self, name: impl Into<String>, digest: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, name: impl Into<String>, digest: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
@@ -184,8 +189,8 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `digest`: Digest of a BLOB"]
-        pub fn delete(&self, name: impl Into<String>, digest: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, name: impl Into<String>, digest: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
@@ -196,8 +201,8 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `digest`: Digest of a BLOB"]
-        pub fn check(&self, name: impl Into<String>, digest: impl Into<String>) -> check::Builder {
-            check::Builder {
+        pub fn check(&self, name: impl Into<String>, digest: impl Into<String>) -> check::RequestBuilder {
+            check::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
@@ -209,8 +214,8 @@ pub mod blob {
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `from`: Name of the source repository."]
         #[doc = "* `mount`: Digest of blob to mount from the source repository."]
-        pub fn mount(&self, name: impl Into<String>, from: impl Into<String>, mount: impl Into<String>) -> mount::Builder {
-            mount::Builder {
+        pub fn mount(&self, name: impl Into<String>, from: impl Into<String>, mount: impl Into<String>) -> mount::RequestBuilder {
+            mount::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 from: from.into(),
@@ -221,8 +226,8 @@ pub mod blob {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
-        pub fn get_status(&self, next_blob_uuid_link: impl Into<String>) -> get_status::Builder {
-            get_status::Builder {
+        pub fn get_status(&self, next_blob_uuid_link: impl Into<String>) -> get_status::RequestBuilder {
+            get_status::RequestBuilder {
                 client: self.0.clone(),
                 next_blob_uuid_link: next_blob_uuid_link.into(),
             }
@@ -232,8 +237,8 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `digest`: Digest of a BLOB"]
         #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
-        pub fn end_upload(&self, digest: impl Into<String>, next_blob_uuid_link: impl Into<String>) -> end_upload::Builder {
-            end_upload::Builder {
+        pub fn end_upload(&self, digest: impl Into<String>, next_blob_uuid_link: impl Into<String>) -> end_upload::RequestBuilder {
+            end_upload::RequestBuilder {
                 client: self.0.clone(),
                 digest: digest.into(),
                 next_blob_uuid_link: next_blob_uuid_link.into(),
@@ -245,8 +250,8 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `value`: Raw data of blob"]
         #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
-        pub fn upload(&self, value: impl Into<serde_json::Value>, next_blob_uuid_link: impl Into<String>) -> upload::Builder {
-            upload::Builder {
+        pub fn upload(&self, value: impl Into<serde_json::Value>, next_blob_uuid_link: impl Into<String>) -> upload::RequestBuilder {
+            upload::RequestBuilder {
                 client: self.0.clone(),
                 value: value.into(),
                 next_blob_uuid_link: next_blob_uuid_link.into(),
@@ -256,8 +261,8 @@ pub mod blob {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
-        pub fn cancel_upload(&self, next_blob_uuid_link: impl Into<String>) -> cancel_upload::Builder {
-            cancel_upload::Builder {
+        pub fn cancel_upload(&self, next_blob_uuid_link: impl Into<String>) -> cancel_upload::RequestBuilder {
+            cancel_upload::RequestBuilder {
                 client: self.0.clone(),
                 next_blob_uuid_link: next_blob_uuid_link.into(),
             }
@@ -267,11 +272,11 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -309,13 +314,13 @@ pub mod blob {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
             pub(crate) range: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -358,13 +363,13 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
             pub(crate) range: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -403,12 +408,12 @@ pub mod blob {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -445,12 +450,12 @@ pub mod blob {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -487,12 +492,12 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -525,13 +530,13 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) from: String,
             pub(crate) mount: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -569,11 +574,11 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_blob_uuid_link: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -606,13 +611,13 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) digest: String,
             pub(crate) next_blob_uuid_link: String,
             pub(crate) value: Option<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional raw data of blob"]
             pub fn value(mut self, value: impl Into<serde_json::Value>) -> Self {
                 self.value = Some(value.into());
@@ -657,12 +662,12 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) value: serde_json::Value,
             pub(crate) next_blob_uuid_link: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -696,11 +701,11 @@ pub mod blob {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_blob_uuid_link: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -735,18 +740,18 @@ pub mod v2_support {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Tells whether this Docker Registry instance supports Docker Registry HTTP API v2"]
-        pub fn check(&self) -> check::Builder {
-            check::Builder { client: self.0.clone() }
+        pub fn check(&self) -> check::RequestBuilder {
+            check::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod check {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -785,8 +790,8 @@ pub mod manifests {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
-        pub fn get(&self, name: impl Into<String>, reference: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, name: impl Into<String>, reference: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -804,8 +809,8 @@ pub mod manifests {
             name: impl Into<String>,
             reference: impl Into<String>,
             payload: impl Into<models::Manifest>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -817,8 +822,8 @@ pub mod manifests {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
-        pub fn delete(&self, name: impl Into<String>, reference: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, name: impl Into<String>, reference: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -828,8 +833,8 @@ pub mod manifests {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
-        pub fn get_list(&self, name: impl Into<String>) -> get_list::Builder {
-            get_list::Builder {
+        pub fn get_list(&self, name: impl Into<String>) -> get_list::RequestBuilder {
+            get_list::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 last: None,
@@ -842,8 +847,8 @@ pub mod manifests {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
-        pub fn get_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_attributes::Builder {
-            get_attributes::Builder {
+        pub fn get_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_attributes::RequestBuilder {
+            get_attributes::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -854,8 +859,8 @@ pub mod manifests {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
-        pub fn update_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_attributes::Builder {
-            update_attributes::Builder {
+        pub fn update_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_attributes::RequestBuilder {
+            update_attributes::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -867,13 +872,13 @@ pub mod manifests {
         use super::models;
         type Response = models::ManifestWrapper;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
             pub(crate) accept: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Accept header string delimited by comma. For example, application/vnd.docker.distribution.manifest.v2+json"]
             pub fn accept(mut self, accept: impl Into<String>) -> Self {
                 self.accept = Some(accept.into());
@@ -923,13 +928,13 @@ pub mod manifests {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
             pub(crate) payload: models::Manifest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -972,12 +977,12 @@ pub mod manifests {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1015,14 +1020,14 @@ pub mod manifests {
         use super::models;
         type Response = models::AcrManifests;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) last: Option<String>,
             pub(crate) n: Option<i64>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
             pub fn last(mut self, last: impl Into<String>) -> Self {
                 self.last = Some(last.into());
@@ -1083,12 +1088,12 @@ pub mod manifests {
         use super::models;
         type Response = models::ManifestAttributes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1130,13 +1135,13 @@ pub mod manifests {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
             pub(crate) value: Option<models::ManifestChangeableAttributes>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Manifest attribute value"]
             pub fn value(mut self, value: impl Into<models::ManifestChangeableAttributes>) -> Self {
                 self.value = Some(value.into());
@@ -1186,8 +1191,8 @@ pub mod repository {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List repositories"]
-        pub fn get_list(&self) -> get_list::Builder {
-            get_list::Builder {
+        pub fn get_list(&self) -> get_list::RequestBuilder {
+            get_list::RequestBuilder {
                 client: self.0.clone(),
                 last: None,
                 n: None,
@@ -1197,8 +1202,8 @@ pub mod repository {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
-        pub fn get_attributes(&self, name: impl Into<String>) -> get_attributes::Builder {
-            get_attributes::Builder {
+        pub fn get_attributes(&self, name: impl Into<String>) -> get_attributes::RequestBuilder {
+            get_attributes::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -1207,8 +1212,8 @@ pub mod repository {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
-        pub fn update_attributes(&self, name: impl Into<String>) -> update_attributes::Builder {
-            update_attributes::Builder {
+        pub fn update_attributes(&self, name: impl Into<String>) -> update_attributes::RequestBuilder {
+            update_attributes::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 value: None,
@@ -1218,8 +1223,8 @@ pub mod repository {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
-        pub fn delete(&self, name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -1229,12 +1234,12 @@ pub mod repository {
         use super::models;
         type Response = models::Repositories;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) last: Option<String>,
             pub(crate) n: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
             pub fn last(mut self, last: impl Into<String>) -> Self {
                 self.last = Some(last.into());
@@ -1287,11 +1292,11 @@ pub mod repository {
         use super::models;
         type Response = models::RepositoryAttributes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1328,12 +1333,12 @@ pub mod repository {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) value: Option<models::RepositoryChangeableAttributes>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Repository attribute value"]
             pub fn value(mut self, value: impl Into<models::RepositoryChangeableAttributes>) -> Self {
                 self.value = Some(value.into());
@@ -1376,11 +1381,11 @@ pub mod repository {
         use super::models;
         type Response = models::DeletedRepository;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1422,8 +1427,8 @@ pub mod tag {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
-        pub fn get_list(&self, name: impl Into<String>) -> get_list::Builder {
-            get_list::Builder {
+        pub fn get_list(&self, name: impl Into<String>) -> get_list::RequestBuilder {
+            get_list::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 last: None,
@@ -1437,8 +1442,8 @@ pub mod tag {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: Tag name"]
-        pub fn get_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_attributes::Builder {
-            get_attributes::Builder {
+        pub fn get_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_attributes::RequestBuilder {
+            get_attributes::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -1449,8 +1454,8 @@ pub mod tag {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: Tag name"]
-        pub fn update_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_attributes::Builder {
-            update_attributes::Builder {
+        pub fn update_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_attributes::RequestBuilder {
+            update_attributes::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -1462,8 +1467,8 @@ pub mod tag {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the image (including the namespace)"]
         #[doc = "* `reference`: Tag name"]
-        pub fn delete(&self, name: impl Into<String>, reference: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, name: impl Into<String>, reference: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 reference: reference.into(),
@@ -1474,7 +1479,7 @@ pub mod tag {
         use super::models;
         type Response = models::TagList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) last: Option<String>,
@@ -1482,7 +1487,7 @@ pub mod tag {
             pub(crate) orderby: Option<String>,
             pub(crate) digest: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
             pub fn last(mut self, last: impl Into<String>) -> Self {
                 self.last = Some(last.into());
@@ -1551,12 +1556,12 @@ pub mod tag {
         use super::models;
         type Response = models::TagAttributes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1598,13 +1603,13 @@ pub mod tag {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
             pub(crate) value: Option<models::TagChangeableAttributes>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tag attribute value"]
             pub fn value(mut self, value: impl Into<models::TagChangeableAttributes>) -> Self {
                 self.value = Some(value.into());
@@ -1652,12 +1657,12 @@ pub mod tag {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) reference: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1701,8 +1706,8 @@ pub mod refresh_tokens {
         #[doc = "Arguments:"]
         #[doc = "* `grant_type`: Can take a value of access_token_refresh_token, or access_token, or refresh_token"]
         #[doc = "* `service`: Indicates the name of your Azure container registry."]
-        pub fn get_from_exchange(&self, grant_type: impl Into<String>, service: impl Into<String>) -> get_from_exchange::Builder {
-            get_from_exchange::Builder {
+        pub fn get_from_exchange(&self, grant_type: impl Into<String>, service: impl Into<String>) -> get_from_exchange::RequestBuilder {
+            get_from_exchange::RequestBuilder {
                 client: self.0.clone(),
                 grant_type: grant_type.into(),
                 service: service.into(),
@@ -1716,7 +1721,7 @@ pub mod refresh_tokens {
         use super::models;
         type Response = models::RefreshToken;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) grant_type: String,
             pub(crate) service: String,
@@ -1724,7 +1729,7 @@ pub mod refresh_tokens {
             pub(crate) refresh_token: Option<String>,
             pub(crate) access_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "AAD tenant associated to the AAD credentials."]
             pub fn tenant(mut self, tenant: impl Into<String>) -> Self {
                 self.tenant = Some(tenant.into());
@@ -1788,8 +1793,8 @@ pub mod access_tokens {
         #[doc = "Arguments:"]
         #[doc = "* `service`: Indicates the name of your Azure container registry."]
         #[doc = "* `scope`: Expected to be a valid scope, and can be specified more than once for multiple scope requests. You can obtain this from the Www-Authenticate response header from the challenge."]
-        pub fn get_from_login(&self, service: impl Into<String>, scope: impl Into<String>) -> get_from_login::Builder {
-            get_from_login::Builder {
+        pub fn get_from_login(&self, service: impl Into<String>, scope: impl Into<String>) -> get_from_login::RequestBuilder {
+            get_from_login::RequestBuilder {
                 client: self.0.clone(),
                 service: service.into(),
                 scope: scope.into(),
@@ -1808,8 +1813,8 @@ pub mod access_tokens {
             service: impl Into<String>,
             scope: impl Into<String>,
             refresh_token: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 grant_type: grant_type.into(),
                 service: service.into(),
@@ -1822,12 +1827,12 @@ pub mod access_tokens {
         use super::models;
         type Response = models::AccessToken;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service: String,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1868,14 +1873,14 @@ pub mod access_tokens {
         use super::models;
         type Response = models::AccessToken;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) grant_type: String,
             pub(crate) service: String,
             pub(crate) scope: String,
             pub(crate) refresh_token: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

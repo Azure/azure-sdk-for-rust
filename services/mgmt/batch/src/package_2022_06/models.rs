@@ -55,10 +55,10 @@ pub struct ApplicationPackageProperties {
     #[serde(rename = "storageUrl", default, skip_serializing_if = "Option::is_none")]
     pub storage_url: Option<String>,
     #[doc = "The UTC time at which the Azure Storage URL will expire."]
-    #[serde(rename = "storageUrlExpiry", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "storageUrlExpiry", default, with = "azure_core::date::rfc3339::option")]
     pub storage_url_expiry: Option<time::OffsetDateTime>,
     #[doc = "The time at which the package was last activated, if the package is active."]
-    #[serde(rename = "lastActivationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastActivationTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_activation_time: Option<time::OffsetDateTime>,
 }
 impl ApplicationPackageProperties {
@@ -733,12 +733,16 @@ pub struct CertificateProperties {
     pub certificate_base_properties: CertificateBaseProperties,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<certificate_properties::ProvisioningState>,
-    #[serde(rename = "provisioningStateTransitionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "provisioningStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub provisioning_state_transition_time: Option<time::OffsetDateTime>,
     #[doc = "The previous provisioned state of the resource"]
     #[serde(rename = "previousProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub previous_provisioning_state: Option<certificate_properties::PreviousProvisioningState>,
-    #[serde(rename = "previousProvisioningStateTransitionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "previousProvisioningStateTransitionTime",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub previous_provisioning_state_transition_time: Option<time::OffsetDateTime>,
     #[doc = "The public key of the certificate."]
     #[serde(rename = "publicData", default, skip_serializing_if = "Option::is_none")]
@@ -1768,17 +1772,17 @@ pub struct PoolProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "This is the last time at which the pool level data, such as the targetDedicatedNodes or autoScaleSettings, changed. It does not factor in node-level changes such as a compute node changing state."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<pool_properties::ProvisioningState>,
-    #[serde(rename = "provisioningStateTransitionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "provisioningStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub provisioning_state_transition_time: Option<time::OffsetDateTime>,
     #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state: Option<pool_properties::AllocationState>,
-    #[serde(rename = "allocationStateTransitionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub allocation_state_transition_time: Option<time::OffsetDateTime>,
     #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (https://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
@@ -2042,7 +2046,7 @@ pub struct ResizeOperationStatus {
     pub resize_timeout: Option<String>,
     #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "This property is set only if an error occurred during the last pool resize, and only when the pool allocationState is Steady."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

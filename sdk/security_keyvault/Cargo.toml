@@ -13,15 +13,15 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1"
 futures = "0.3"
 base64 = "0.13"
-reqwest = { version = "0.11", features = ["json"] }
-time = "0.3.10"
+time = "0.3"
 const_format = "0.2.13"
 serde_json = "1.0"
 url = "2.2"
 serde = { version = "1.0", features = ["derive"] }
-azure_core = { path = "../core", version = "0.4"}
+azure_core = { path = "../core", version = "0.4", no-default-features = true }
 
 [dev-dependencies]
 azure_identity = { path = "../identity", default_features = false }
@@ -30,4 +30,6 @@ async-trait = "0.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["azure_core/enable_reqwest"]
+default = ["enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]

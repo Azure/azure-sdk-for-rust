@@ -595,10 +595,10 @@ pub struct RoleAssignmentPropertiesWithScope {
     #[serde(rename = "conditionVersion", default, skip_serializing_if = "Option::is_none")]
     pub condition_version: Option<String>,
     #[doc = "Time it was created"]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "Time it was updated"]
-    #[serde(rename = "updatedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
     pub updated_on: Option<time::OffsetDateTime>,
     #[doc = "Id of the user who created the assignment"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]

@@ -1,56 +1,59 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{
+    error::Error, headers::Headers, CollectedResponse, Continuable, Method, Pageable,
+};
 use url::Url;
 
 operation! {
+    #[stream]
     ListSecrets,
     client: SecretClient,
 }
 
 impl ListSecretsBuilder {
-    pub fn into_future(mut self) -> ListSecrets {
-        Box::pin(async move {
-            let mut secrets = Vec::<KeyVaultSecretBaseIdentifier>::new();
+    pub fn into_stream(self) -> Pageable<KeyVaultGetSecretsResponse, Error> {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let mut ctx = self.context.clone();
+            async move {
+                let mut uri = this.client.keyvault_client.vault_url.clone();
+                uri.set_path("secrets");
 
-            let mut uri = self.client.client.vault_url.clone();
-            uri.set_path("secrets");
-
-            loop {
-                let resp_body = self
-                    .client
-                    .client
-                    .request(reqwest::Method::GET, uri.to_string(), None)
-                    .await?;
-                let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body)
-                    .with_context(ErrorKind::DataConversion, || {
-                        format!(
-                            "failed to parse KeyVaultGetSecretsResponse. resp_body: {resp_body}"
-                        )
-                    })?;
-
-                secrets.extend(
-                    response
-                        .value
-                        .into_iter()
-                        .map(|s| KeyVaultSecretBaseIdentifier {
-                            id: s.id.clone(),
-                            name: s.id.split('/').last().unwrap().to_owned(),
-                            enabled: s.attributes.enabled,
-                            created_on: s.attributes.created,
-                            updated_on: s.attributes.updated,
-                        })
-                        .collect::<Vec<KeyVaultSecretBaseIdentifier>>(),
-                );
-
-                match response.next_link {
-                    None => break,
-                    Some(u) => uri = Url::parse(&u).unwrap(),
+                if let Some(continuation) = continuation {
+                    uri = Url::parse(&continuation)?;
                 }
-            }
 
-            Ok(secrets)
-        })
+                let headers = Headers::new();
+                let mut request = this.client.keyvault_client.finalize_request(
+                    uri,
+                    Method::Get,
+                    headers,
+                    None,
+                )?;
+
+                let response = this
+                    .client
+                    .keyvault_client
+                    .send(&mut ctx, &mut request)
+                    .await?;
+
+                let response = CollectedResponse::from_response(response).await?;
+                let body = response.body();
+
+                let response = serde_json::from_slice::<KeyVaultGetSecretsResponse>(body)?;
+                Ok(response)
+            }
+        };
+        Pageable::new(make_request)
     }
 }
 
-type ListSecretsResponse = Vec<KeyVaultSecretBaseIdentifier>;
+type ListSecretsResponse = KeyVaultGetSecretsResponse;
+
+impl Continuable for ListSecretsResponse {
+    type Continuation = String;
+
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}

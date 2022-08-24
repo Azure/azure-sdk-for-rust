@@ -164,10 +164,10 @@ pub struct DeletedVaultProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The deleted date."]
-    #[serde(rename = "deletionDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletionDate", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_date: Option<time::OffsetDateTime>,
     #[doc = "The scheduled purged date."]
-    #[serde(rename = "scheduledPurgeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_purge_date: Option<time::OffsetDateTime>,
     #[doc = "Tags of the original vault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

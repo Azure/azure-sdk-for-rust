@@ -42,7 +42,7 @@ pub struct AzureFileShareRecoveryPoint {
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<String>,
     #[doc = "Time at which this backup copy was created."]
-    #[serde(rename = "recoveryPointTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time: Option<time::OffsetDateTime>,
     #[doc = "Contains Url to the snapshot of fileshare, if applicable"]
     #[serde(rename = "fileShareSnapshotUri", default, skip_serializing_if = "Option::is_none")]
@@ -248,7 +248,7 @@ pub struct AzureFileshareProtectedItem {
     #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_status: Option<String>,
     #[doc = "Timestamp of the last backup operation on this backup item."]
-    #[serde(rename = "lastBackupTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastBackupTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_backup_time: Option<time::OffsetDateTime>,
     #[doc = "Health details of different KPIs"]
     #[serde(rename = "kpisHealths", default, skip_serializing_if = "Option::is_none")]
@@ -366,7 +366,7 @@ pub mod azure_fileshare_protected_item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFileshareProtectedItemExtendedInfo {
     #[doc = "The oldest backup copy available for this item in the service."]
-    #[serde(rename = "oldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "oldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "Number of available backup copies associated with this backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
@@ -378,7 +378,7 @@ pub struct AzureFileshareProtectedItemExtendedInfo {
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<String>,
     #[doc = "The resource state sync time for this backup item."]
-    #[serde(rename = "resourceStateSyncTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "resourceStateSyncTime", default, with = "azure_core::date::rfc3339::option")]
     pub resource_state_sync_time: Option<time::OffsetDateTime>,
 }
 impl AzureFileshareProtectedItemExtendedInfo {
@@ -511,10 +511,10 @@ pub struct AzureIaaSvmJobTaskDetails {
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[doc = "The start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The instanceId."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
@@ -567,7 +567,7 @@ pub struct AzureIaaSvmProtectedItem {
     #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_status: Option<String>,
     #[doc = "Timestamp of the last backup operation on this backup item."]
-    #[serde(rename = "lastBackupTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastBackupTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_backup_time: Option<time::OffsetDateTime>,
     #[doc = "Data ID of the protected item."]
     #[serde(rename = "protectedItemDataId", default, skip_serializing_if = "Option::is_none")]
@@ -692,7 +692,7 @@ pub mod azure_iaa_svm_protected_item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmProtectedItemExtendedInfo {
     #[doc = "The oldest backup copy available for this backup item."]
-    #[serde(rename = "oldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "oldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "Number of backup copies available for this backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
@@ -784,7 +784,7 @@ pub mod azure_sql_protected_item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlProtectedItemExtendedInfo {
     #[doc = "The oldest backup copy available for this item in the service."]
-    #[serde(rename = "oldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "oldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "Number of available backup copies associated with this backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
@@ -913,7 +913,7 @@ pub struct AzureVmWorkloadProtectedItem {
     #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_status: Option<azure_vm_workload_protected_item::LastBackupStatus>,
     #[doc = "Timestamp of the last backup operation on this backup item."]
-    #[serde(rename = "lastBackupTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastBackupTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_backup_time: Option<time::OffsetDateTime>,
     #[doc = "Error Detail class which encapsulates Code, Message and Recommendations."]
     #[serde(rename = "lastBackupErrorDetail", default, skip_serializing_if = "Option::is_none")]
@@ -1090,7 +1090,7 @@ pub mod azure_vm_workload_protected_item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureVmWorkloadProtectedItemExtendedInfo {
     #[doc = "The oldest backup copy available for this backup item."]
-    #[serde(rename = "oldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "oldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "Number of backup copies available for this backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
@@ -1256,7 +1256,7 @@ pub struct AzureWorkloadPointInTimeRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_restore_request: AzureWorkloadRestoreRequest,
     #[doc = "PointInTime value"]
-    #[serde(rename = "pointInTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time: Option<time::OffsetDateTime>,
 }
 impl AzureWorkloadPointInTimeRestoreRequest {
@@ -1273,7 +1273,7 @@ pub struct AzureWorkloadRecoveryPoint {
     #[serde(flatten)]
     pub recovery_point: RecoveryPoint,
     #[doc = "UTC time at which recovery point was created"]
-    #[serde(rename = "recoveryPointTimeInUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveryPointTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "Type of restore point"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -1483,7 +1483,7 @@ pub struct AzureWorkloadSapHanaPointInTimeRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest,
     #[doc = "PointInTime value"]
-    #[serde(rename = "pointInTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time: Option<time::OffsetDateTime>,
 }
 impl AzureWorkloadSapHanaPointInTimeRestoreRequest {
@@ -1543,7 +1543,7 @@ pub struct AzureWorkloadSqlPointInTimeRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_sql_restore_request: AzureWorkloadSqlRestoreRequest,
     #[doc = "PointInTime value"]
-    #[serde(rename = "pointInTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time: Option<time::OffsetDateTime>,
 }
 impl AzureWorkloadSqlPointInTimeRestoreRequest {
@@ -1575,7 +1575,7 @@ impl AzureWorkloadSqlRecoveryPoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWorkloadSqlRecoveryPointExtendedInfo {
     #[doc = "UTC time at which data directory info was captured"]
-    #[serde(rename = "dataDirectoryTimeInUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "dataDirectoryTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
     pub data_directory_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "List of data directory paths during restore operation."]
     #[serde(rename = "dataDirectoryPaths", default, skip_serializing_if = "Vec::is_empty")]
@@ -1758,10 +1758,10 @@ pub mod bms_backup_summaries_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsrpQueryObject {
     #[doc = "Backup copies created after this time."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "Backup copies created before this time."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "RestorePoint type"]
     #[serde(rename = "restorePointQueryType", default, skip_serializing_if = "Option::is_none")]
@@ -1838,7 +1838,7 @@ pub struct BackupManagementUsage {
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
     pub quota_period: Option<String>,
     #[doc = "Next reset time of usage."]
-    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_reset_time: Option<time::OffsetDateTime>,
     #[doc = "Current value of usage."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
@@ -2383,19 +2383,19 @@ pub struct DpmProtectedItemExtendedInfo {
     #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_status: Option<String>,
     #[doc = "Last refresh time on backup item."]
-    #[serde(rename = "lastRefreshedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastRefreshedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_refreshed_at: Option<time::OffsetDateTime>,
     #[doc = "Oldest cloud recovery point time."]
-    #[serde(rename = "oldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "oldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "cloud recovery point count."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_count: Option<i32>,
     #[doc = "Oldest disk recovery point time."]
-    #[serde(rename = "onPremiseOldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "onPremiseOldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub on_premise_oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "latest disk recovery point time."]
-    #[serde(rename = "onPremiseLatestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "onPremiseLatestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub on_premise_latest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "disk recovery point count."]
     #[serde(rename = "onPremiseRecoveryPointCount", default, skip_serializing_if = "Option::is_none")]
@@ -2530,10 +2530,10 @@ pub struct DpmJobTaskDetails {
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[doc = "The start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Time elapsed for task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2713,7 +2713,7 @@ pub struct GenericRecoveryPoint {
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<String>,
     #[doc = "Time at which this backup copy was created."]
-    #[serde(rename = "recoveryPointTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time: Option<time::OffsetDateTime>,
     #[doc = "Additional information associated with this backup copy."]
     #[serde(rename = "recoveryPointAdditionalInfo", default, skip_serializing_if = "Option::is_none")]
@@ -2739,7 +2739,7 @@ pub struct IaasVmRecoveryPoint {
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<String>,
     #[doc = "Time at which this backup copy was created."]
-    #[serde(rename = "recoveryPointTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time: Option<time::OffsetDateTime>,
     #[doc = "Additional information associated with this backup copy."]
     #[serde(rename = "recoveryPointAdditionalInfo", default, skip_serializing_if = "Option::is_none")]
@@ -3000,10 +3000,10 @@ pub struct Job {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "ActivityId of job."]
     #[serde(rename = "activityId", default, skip_serializing_if = "Option::is_none")]
@@ -3099,10 +3099,10 @@ pub struct JobQueryObject {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
     #[doc = "Job has started at this time. Value is in UTC."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Job has ended at this time. Value is in UTC."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl JobQueryObject {
@@ -3432,7 +3432,7 @@ pub struct MabFileFolderProtectedItem {
     #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_status: Option<String>,
     #[doc = "Timestamp of the last backup operation on this backup item."]
-    #[serde(rename = "lastBackupTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastBackupTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_backup_time: Option<time::OffsetDateTime>,
     #[doc = "Protected, ProtectionStopped, IRPending or ProtectionError"]
     #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
@@ -3462,10 +3462,10 @@ impl MabFileFolderProtectedItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MabFileFolderProtectedItemExtendedInfo {
     #[doc = "Last time when the agent data synced to service."]
-    #[serde(rename = "lastRefreshedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastRefreshedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_refreshed_at: Option<time::OffsetDateTime>,
     #[doc = "The oldest backup copy available."]
-    #[serde(rename = "oldestRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "oldestRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub oldest_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "Number of backup copies associated with the backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
@@ -3683,10 +3683,10 @@ pub struct MabJobTaskDetails {
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[doc = "The start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Time elapsed for task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3773,10 +3773,10 @@ pub struct OperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_status::Status>,
     #[doc = "Operation start time. Format: ISO-8601."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Operation end time. Format: ISO-8601."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Error information associated with operation status call."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3943,10 +3943,10 @@ impl OperationStatusRecoveryPointExtendedInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PointInTimeRange {
     #[doc = "Start time of the time range for log recovery."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the time range for log recovery."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl PointInTimeRange {
@@ -3976,7 +3976,7 @@ pub struct ProtectedItem {
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
     #[doc = "Timestamp when the last (latest) backup copy was created for this backup item."]
-    #[serde(rename = "lastRecoveryPoint", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastRecoveryPoint", default, with = "azure_core::date::rfc3339::option")]
     pub last_recovery_point: Option<time::OffsetDateTime>,
     #[doc = "Name of the backup set the backup item belongs to"]
     #[serde(rename = "backupSetName", default, skip_serializing_if = "Option::is_none")]
@@ -3985,7 +3985,7 @@ pub struct ProtectedItem {
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<protected_item::CreateMode>,
     #[doc = "Time for deferred deletion in UTC"]
-    #[serde(rename = "deferredDeleteTimeInUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deferredDeleteTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
     pub deferred_delete_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "Flag to identify whether the DS is scheduled for deferred delete"]
     #[serde(rename = "isScheduledForDeferredDelete", default, skip_serializing_if = "Option::is_none")]

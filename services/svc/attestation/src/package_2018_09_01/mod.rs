@@ -125,8 +125,8 @@ pub mod policy {
         #[doc = "Arguments:"]
         #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
         #[doc = "* `policy_jws`: JSON Web Signature (See RFC7515) expressing the new policy"]
-        pub fn prepare_to_set(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> prepare_to_set::Builder {
-            prepare_to_set::Builder {
+        pub fn prepare_to_set(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> prepare_to_set::RequestBuilder {
+            prepare_to_set::RequestBuilder {
                 client: self.0.clone(),
                 tee: tee.into(),
                 policy_jws: policy_jws.into(),
@@ -136,8 +136,8 @@ pub mod policy {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
-        pub fn get(&self, tee: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, tee: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 tee: tee.into(),
             }
@@ -147,8 +147,8 @@ pub mod policy {
         #[doc = "Arguments:"]
         #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
         #[doc = "* `policy_jws`: JSON Web Signature with an empty policy document"]
-        pub fn reset(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> reset::Builder {
-            reset::Builder {
+        pub fn reset(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> reset::RequestBuilder {
+            reset::RequestBuilder {
                 client: self.0.clone(),
                 tee: tee.into(),
                 policy_jws: policy_jws.into(),
@@ -159,8 +159,8 @@ pub mod policy {
         #[doc = "Arguments:"]
         #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
         #[doc = "* `new_attestation_policy`: JWT Expressing the new policy"]
-        pub fn set(&self, tee: impl Into<String>, new_attestation_policy: impl Into<String>) -> set::Builder {
-            set::Builder {
+        pub fn set(&self, tee: impl Into<String>, new_attestation_policy: impl Into<String>) -> set::RequestBuilder {
+            set::RequestBuilder {
                 client: self.0.clone(),
                 tee: tee.into(),
                 new_attestation_policy: new_attestation_policy.into(),
@@ -171,12 +171,12 @@ pub mod policy {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tee: String,
             pub(crate) policy_jws: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -219,11 +219,11 @@ pub mod policy {
         use super::models;
         type Response = models::AttestationPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tee: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -265,12 +265,12 @@ pub mod policy {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tee: String,
             pub(crate) policy_jws: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -313,12 +313,12 @@ pub mod policy {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tee: String,
             pub(crate) new_attestation_policy: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -359,15 +359,15 @@ pub mod policy_certificates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the set of certificates used to express policy for the current tenant."]
-        pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Removes the specified policy management certificate. Note that the final policy management certificate cannot be removed."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_certificate_to_remove`: An RFC7519 JSON Web Token containing a claim named \"maa-policyCertificate\" whose value is an RFC7517 JSON Web Key which specifies a new key to update. The RFC7519 JWT must be signed with one of the existing signing certificates"]
-        pub fn remove(&self, policy_certificate_to_remove: impl Into<String>) -> remove::Builder {
-            remove::Builder {
+        pub fn remove(&self, policy_certificate_to_remove: impl Into<String>) -> remove::RequestBuilder {
+            remove::RequestBuilder {
                 client: self.0.clone(),
                 policy_certificate_to_remove: policy_certificate_to_remove.into(),
             }
@@ -376,8 +376,8 @@ pub mod policy_certificates {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_certificate_to_add`: An RFC7519 JSON Web Token containing a claim named \"maa-policyCertificate\" whose value is an RFC7517 JSON Web Key which specifies a new key to add. The RFC7519 JWT must be signed with one of the existing signing certificates"]
-        pub fn add(&self, policy_certificate_to_add: impl Into<String>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, policy_certificate_to_add: impl Into<String>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 policy_certificate_to_add: policy_certificate_to_add.into(),
             }
@@ -387,10 +387,10 @@ pub mod policy_certificates {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -430,11 +430,11 @@ pub mod policy_certificates {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_certificate_to_remove: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -475,11 +475,11 @@ pub mod policy_certificates {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_certificate_to_add: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -523,18 +523,18 @@ pub mod signing_certificates {
     impl Client {
         #[doc = "Retrieves the attestation signing keys in use by the attestation service"]
         #[doc = "Retrieves metadata signing certificates in use by the attestation service"]
-        pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -574,18 +574,18 @@ pub mod metadata_configuration {
     impl Client {
         #[doc = "Retrieves the OpenID Configuration data for the Azure Attestation Service"]
         #[doc = "Retrieves metadata about the attestation signing keys in use by the attestation service"]
-        pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

@@ -464,7 +464,7 @@ pub struct SecurityConnectorProperties {
     #[serde(rename = "hierarchyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_identifier: Option<String>,
     #[doc = "The date on which the trial period will end, if applicable. Trial period exists for 30 days after upgrading to payed offerings."]
-    #[serde(rename = "hierarchyIdentifierTrialEndDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "hierarchyIdentifierTrialEndDate", default, with = "azure_core::date::rfc3339::option")]
     pub hierarchy_identifier_trial_end_date: Option<time::OffsetDateTime>,
     #[doc = "The multi cloud resource's cloud name."]
     #[serde(rename = "environmentName", default, skip_serializing_if = "Option::is_none")]
@@ -788,7 +788,7 @@ pub mod defender_fo_databases_aws_offering {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ServicePrincipalSecretMetadata {
             #[doc = "expiration date of service principal secret"]
-            #[serde(rename = "expiryDate", with = "azure_core::date::rfc3339::option")]
+            #[serde(rename = "expiryDate", default, with = "azure_core::date::rfc3339::option")]
             pub expiry_date: Option<time::OffsetDateTime>,
             #[doc = "region of parameter store where secret is kept"]
             #[serde(rename = "parameterStoreRegion", default, skip_serializing_if = "Option::is_none")]
@@ -1653,7 +1653,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1662,7 +1662,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

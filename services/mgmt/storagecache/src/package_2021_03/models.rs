@@ -559,10 +559,10 @@ pub struct CacheUpgradeStatus {
     #[serde(rename = "firmwareUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub firmware_update_status: Option<cache_upgrade_status::FirmwareUpdateStatus>,
     #[doc = "Time at which the pending firmware update will automatically be installed on the Cache."]
-    #[serde(rename = "firmwareUpdateDeadline", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "firmwareUpdateDeadline", default, with = "azure_core::date::rfc3339::option")]
     pub firmware_update_deadline: Option<time::OffsetDateTime>,
     #[doc = "Time of the last successful firmware update."]
-    #[serde(rename = "lastFirmwareUpdate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastFirmwareUpdate", default, with = "azure_core::date::rfc3339::option")]
     pub last_firmware_update: Option<time::OffsetDateTime>,
     #[doc = "When firmwareUpdateAvailable is true, this field holds the version string for the update."]
     #[serde(rename = "pendingFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
@@ -841,7 +841,7 @@ impl CloudErrorBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
     #[doc = "The time when the condition was raised."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The issue requiring attention."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1540,7 +1540,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1549,7 +1549,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

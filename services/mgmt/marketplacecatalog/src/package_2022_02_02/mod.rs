@@ -115,8 +115,12 @@ pub mod search {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns a list of azure private store marketplace catalog offers and total count and facets"]
-        pub fn post_arm(&self, x_ms_client_tenant_id: impl Into<String>, request: impl Into<models::SearchRequest>) -> post_arm::Builder {
-            post_arm::Builder {
+        pub fn post_arm(
+            &self,
+            x_ms_client_tenant_id: impl Into<String>,
+            request: impl Into<models::SearchRequest>,
+        ) -> post_arm::RequestBuilder {
+            post_arm::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_client_tenant_id: x_ms_client_tenant_id.into(),
                 request: request.into(),
@@ -128,13 +132,13 @@ pub mod search {
         use super::models;
         type Response = models::SearchResponseDto;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_client_tenant_id: String,
             pub(crate) request: models::SearchRequest,
             pub(crate) x_ms_app: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn x_ms_app(mut self, x_ms_app: impl Into<String>) -> Self {
                 self.x_ms_app = Some(x_ms_app.into());
                 self
@@ -185,18 +189,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Microsoft.Marketplace REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

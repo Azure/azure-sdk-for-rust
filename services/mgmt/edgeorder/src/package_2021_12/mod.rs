@@ -106,8 +106,8 @@ impl Client {
 }
 impl Client {
     #[doc = "This method gets all the operations that are exposed for customer."]
-    pub fn list_operations(&self) -> list_operations::Builder {
-        list_operations::Builder { client: self.clone() }
+    pub fn list_operations(&self) -> list_operations::RequestBuilder {
+        list_operations::RequestBuilder { client: self.clone() }
     }
     #[doc = "Lists all the addresses available under the subscription."]
     #[doc = ""]
@@ -116,8 +116,8 @@ impl Client {
     pub fn list_addresses_at_subscription_level(
         &self,
         subscription_id: impl Into<String>,
-    ) -> list_addresses_at_subscription_level::Builder {
-        list_addresses_at_subscription_level::Builder {
+    ) -> list_addresses_at_subscription_level::RequestBuilder {
+        list_addresses_at_subscription_level::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             filter: None,
@@ -133,8 +133,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         product_families_request: impl Into<models::ProductFamiliesRequest>,
-    ) -> list_product_families::Builder {
-        list_product_families::Builder {
+    ) -> list_product_families::RequestBuilder {
+        list_product_families::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             product_families_request: product_families_request.into(),
@@ -151,8 +151,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         configurations_request: impl Into<models::ConfigurationsRequest>,
-    ) -> list_configurations::Builder {
-        list_configurations::Builder {
+    ) -> list_configurations::RequestBuilder {
+        list_configurations::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             configurations_request: configurations_request.into(),
@@ -163,8 +163,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: The ID of the target subscription."]
-    pub fn list_product_families_metadata(&self, subscription_id: impl Into<String>) -> list_product_families_metadata::Builder {
-        list_product_families_metadata::Builder {
+    pub fn list_product_families_metadata(&self, subscription_id: impl Into<String>) -> list_product_families_metadata::RequestBuilder {
+        list_product_families_metadata::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             skip_token: None,
@@ -174,8 +174,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: The ID of the target subscription."]
-    pub fn list_order_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_order_at_subscription_level::Builder {
-        list_order_at_subscription_level::Builder {
+    pub fn list_order_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_order_at_subscription_level::RequestBuilder {
+        list_order_at_subscription_level::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             skip_token: None,
@@ -188,8 +188,8 @@ impl Client {
     pub fn list_order_items_at_subscription_level(
         &self,
         subscription_id: impl Into<String>,
-    ) -> list_order_items_at_subscription_level::Builder {
-        list_order_items_at_subscription_level::Builder {
+    ) -> list_order_items_at_subscription_level::RequestBuilder {
+        list_order_items_at_subscription_level::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             filter: None,
@@ -206,8 +206,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> list_addresses_at_resource_group_level::Builder {
-        list_addresses_at_resource_group_level::Builder {
+    ) -> list_addresses_at_resource_group_level::RequestBuilder {
+        list_addresses_at_resource_group_level::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -226,8 +226,8 @@ impl Client {
         address_name: impl Into<String>,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> get_address_by_name::Builder {
-        get_address_by_name::Builder {
+    ) -> get_address_by_name::RequestBuilder {
+        get_address_by_name::RequestBuilder {
             client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
@@ -247,8 +247,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         address_resource: impl Into<models::AddressResource>,
-    ) -> create_address::Builder {
-        create_address::Builder {
+    ) -> create_address::RequestBuilder {
+        create_address::RequestBuilder {
             client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
@@ -269,8 +269,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         address_update_parameter: impl Into<models::AddressUpdateParameter>,
-    ) -> update_address::Builder {
-        update_address::Builder {
+    ) -> update_address::RequestBuilder {
+        update_address::RequestBuilder {
             client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
@@ -290,8 +290,8 @@ impl Client {
         address_name: impl Into<String>,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> delete_address_by_name::Builder {
-        delete_address_by_name::Builder {
+    ) -> delete_address_by_name::RequestBuilder {
+        delete_address_by_name::RequestBuilder {
             client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
@@ -307,8 +307,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> list_order_at_resource_group_level::Builder {
-        list_order_at_resource_group_level::Builder {
+    ) -> list_order_at_resource_group_level::RequestBuilder {
+        list_order_at_resource_group_level::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -328,8 +328,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> get_order_by_name::Builder {
-        get_order_by_name::Builder {
+    ) -> get_order_by_name::RequestBuilder {
+        get_order_by_name::RequestBuilder {
             client: self.clone(),
             order_name: order_name.into(),
             subscription_id: subscription_id.into(),
@@ -346,8 +346,8 @@ impl Client {
         &self,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> list_order_items_at_resource_group_level::Builder {
-        list_order_items_at_resource_group_level::Builder {
+    ) -> list_order_items_at_resource_group_level::RequestBuilder {
+        list_order_items_at_resource_group_level::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -367,8 +367,8 @@ impl Client {
         order_item_name: impl Into<String>,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> get_order_item_by_name::Builder {
-        get_order_item_by_name::Builder {
+    ) -> get_order_item_by_name::RequestBuilder {
+        get_order_item_by_name::RequestBuilder {
             client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
@@ -389,8 +389,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         order_item_resource: impl Into<models::OrderItemResource>,
-    ) -> create_order_item::Builder {
-        create_order_item::Builder {
+    ) -> create_order_item::RequestBuilder {
+        create_order_item::RequestBuilder {
             client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
@@ -411,8 +411,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         order_item_update_parameter: impl Into<models::OrderItemUpdateParameter>,
-    ) -> update_order_item::Builder {
-        update_order_item::Builder {
+    ) -> update_order_item::RequestBuilder {
+        update_order_item::RequestBuilder {
             client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
@@ -432,8 +432,8 @@ impl Client {
         order_item_name: impl Into<String>,
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
-    ) -> delete_order_item_by_name::Builder {
-        delete_order_item_by_name::Builder {
+    ) -> delete_order_item_by_name::RequestBuilder {
+        delete_order_item_by_name::RequestBuilder {
             client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
@@ -453,8 +453,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         cancellation_reason: impl Into<models::CancellationReason>,
-    ) -> cancel_order_item::Builder {
-        cancel_order_item::Builder {
+    ) -> cancel_order_item::RequestBuilder {
+        cancel_order_item::RequestBuilder {
             client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
@@ -475,8 +475,8 @@ impl Client {
         subscription_id: impl Into<String>,
         resource_group_name: impl Into<String>,
         return_order_item_details: impl Into<models::ReturnOrderItemDetails>,
-    ) -> return_order_item::Builder {
-        return_order_item::Builder {
+    ) -> return_order_item::RequestBuilder {
+        return_order_item::RequestBuilder {
             client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
@@ -489,10 +489,10 @@ pub mod list_operations {
     use super::models;
     type Response = models::OperationListResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -558,13 +558,13 @@ pub mod list_addresses_at_subscription_level {
     use super::models;
     type Response = models::AddressResourceList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) filter: Option<String>,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$filter is supported to filter based on shipping address properties. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -650,14 +650,14 @@ pub mod list_product_families {
     use super::models;
     type Response = models::ProductFamilies;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) product_families_request: models::ProductFamiliesRequest,
         pub(crate) expand: Option<String>,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$expand is supported on configurations parameter for product, which provides details on the configurations for the product."]
         pub fn expand(mut self, expand: impl Into<String>) -> Self {
             self.expand = Some(expand.into());
@@ -744,13 +744,13 @@ pub mod list_configurations {
     use super::models;
     type Response = models::Configurations;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) configurations_request: models::ConfigurationsRequest,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$skipToken is supported on list of configurations, which provides the next page in the list of configurations."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
@@ -829,12 +829,12 @@ pub mod list_product_families_metadata {
     use super::models;
     type Response = models::ProductFamiliesMetadata;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$skipToken is supported on list of product families metadata, which provides the next page in the list of product families metadata."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
@@ -913,12 +913,12 @@ pub mod list_order_at_subscription_level {
     use super::models;
     type Response = models::OrderResourceList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$skipToken is supported on Get list of order, which provides the next page in the list of order."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
@@ -996,14 +996,14 @@ pub mod list_order_items_at_subscription_level {
     use super::models;
     type Response = models::OrderItemResourceList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) filter: Option<String>,
         pub(crate) expand: Option<String>,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$filter is supported to filter based on order id. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -1097,14 +1097,14 @@ pub mod list_addresses_at_resource_group_level {
     use super::models;
     type Response = models::AddressResourceList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$filter is supported to filter based on shipping address properties. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -1191,13 +1191,13 @@ pub mod get_address_by_name {
     use super::models;
     type Response = models::AddressResource;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1247,14 +1247,14 @@ pub mod create_address {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) address_resource: models::AddressResource,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -1307,7 +1307,7 @@ pub mod update_address {
         Ok200(models::AddressResource),
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
@@ -1315,7 +1315,7 @@ pub mod update_address {
         pub(crate) address_update_parameter: models::AddressUpdateParameter,
         pub(crate) if_match: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the job on the server matches this value."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
@@ -1377,13 +1377,13 @@ pub mod delete_address_by_name {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -1428,13 +1428,13 @@ pub mod list_order_at_resource_group_level {
     use super::models;
     type Response = models::OrderResourceList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$skipToken is supported on Get list of order, which provides the next page in the list of order."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
@@ -1513,14 +1513,14 @@ pub mod get_order_by_name {
     use super::models;
     type Response = models::OrderResource;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1567,7 +1567,7 @@ pub mod list_order_items_at_resource_group_level {
     use super::models;
     type Response = models::OrderItemResourceList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1575,7 +1575,7 @@ pub mod list_order_items_at_resource_group_level {
         pub(crate) expand: Option<String>,
         pub(crate) skip_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$filter is supported to filter based on order id. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
@@ -1670,14 +1670,14 @@ pub mod get_order_item_by_name {
     use super::models;
     type Response = models::OrderItemResource;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) expand: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "$expand is supported on device details, forward shipping details and reverse shipping details parameters. Each of these can be provided as a comma separated list. Device Details for order item provides details on the devices of the product, Forward and Reverse Shipping details provide forward and reverse shipping details respectively."]
         pub fn expand(mut self, expand: impl Into<String>) -> Self {
             self.expand = Some(expand.into());
@@ -1735,14 +1735,14 @@ pub mod create_order_item {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) order_item_resource: models::OrderItemResource,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -1795,7 +1795,7 @@ pub mod update_order_item {
         Ok200(models::OrderItemResource),
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
@@ -1803,7 +1803,7 @@ pub mod update_order_item {
         pub(crate) order_item_update_parameter: models::OrderItemUpdateParameter,
         pub(crate) if_match: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the order on the server matches this value."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
@@ -1865,13 +1865,13 @@ pub mod delete_order_item_by_name {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -1920,14 +1920,14 @@ pub mod cancel_order_item {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) cancellation_reason: models::CancellationReason,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1975,14 +1975,14 @@ pub mod return_order_item {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) return_order_item_details: models::ReturnOrderItemDetails,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({

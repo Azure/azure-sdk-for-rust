@@ -104,7 +104,7 @@ pub struct CertificateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
     #[doc = "The certificate's expiration date and time."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "The certificate's thumbprint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -113,10 +113,10 @@ pub struct CertificateProperties {
     #[serde(rename = "isVerified", default, skip_serializing_if = "Option::is_none")]
     pub is_verified: Option<bool>,
     #[doc = "The certificate's create date and time."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The certificate's last update date and time."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub updated: Option<time::OffsetDateTime>,
     #[doc = "The certificate content"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -134,7 +134,7 @@ pub struct CertificatePropertiesWithNonce {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
     #[doc = "The certificate's expiration date and time."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "The certificate's thumbprint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -143,10 +143,10 @@ pub struct CertificatePropertiesWithNonce {
     #[serde(rename = "isVerified", default, skip_serializing_if = "Option::is_none")]
     pub is_verified: Option<bool>,
     #[doc = "The certificate's create date and time."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The certificate's last update date and time."]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub updated: Option<time::OffsetDateTime>,
     #[doc = "The certificate's verification code that will be used for proof of possession."]
     #[serde(rename = "verificationCode", default, skip_serializing_if = "Option::is_none")]
@@ -242,13 +242,13 @@ pub struct EndpointHealthData {
     #[serde(rename = "lastKnownError", default, skip_serializing_if = "Option::is_none")]
     pub last_known_error: Option<String>,
     #[doc = "Time at which the last known error occurred"]
-    #[serde(rename = "lastKnownErrorTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "lastKnownErrorTime", default, with = "azure_core::date::rfc1123::option")]
     pub last_known_error_time: Option<time::OffsetDateTime>,
     #[doc = "Last time iot hub successfully sent a message to the endpoint"]
-    #[serde(rename = "lastSuccessfulSendAttemptTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "lastSuccessfulSendAttemptTime", default, with = "azure_core::date::rfc1123::option")]
     pub last_successful_send_attempt_time: Option<time::OffsetDateTime>,
     #[doc = "Last time iot hub tried to send a message to the endpoint"]
-    #[serde(rename = "lastSendAttemptTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "lastSendAttemptTime", default, with = "azure_core::date::rfc1123::option")]
     pub last_send_attempt_time: Option<time::OffsetDateTime>,
 }
 impl EndpointHealthData {
@@ -1308,10 +1308,10 @@ pub struct JobResponse {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
     #[doc = "The start time of the job."]
-    #[serde(rename = "startTimeUtc", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc1123::option")]
     pub start_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The time the job stopped processing."]
-    #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc1123::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The type of the job."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -2914,7 +2914,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2923,7 +2923,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -22,7 +22,7 @@ pub struct ConfluentAgreementProperties {
     #[serde(rename = "privacyPolicyLink", default, skip_serializing_if = "Option::is_none")]
     pub privacy_policy_link: Option<String>,
     #[doc = "Date and time in UTC of when the terms were accepted. This is empty if Accepted is false."]
-    #[serde(rename = "retrieveDatetime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "retrieveDatetime", default, with = "azure_core::date::rfc3339::option")]
     pub retrieve_datetime: Option<time::OffsetDateTime>,
     #[doc = "Terms signature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -238,7 +238,7 @@ impl OrganizationResourceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrganizationResourceProperties {
     #[doc = "The creation time of the resource."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Provision states for confluent RP"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

@@ -140,8 +140,8 @@ pub mod o_auth2_permission_grant {
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for the list operation."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
-            list_next::Builder {
+        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::RequestBuilder {
+            list_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -151,8 +151,8 @@ pub mod o_auth2_permission_grant {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -162,8 +162,8 @@ pub mod o_auth2_permission_grant {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn create(&self, tenant_id: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, tenant_id: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 body: None,
@@ -174,8 +174,8 @@ pub mod o_auth2_permission_grant {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of a permission grant."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -186,12 +186,12 @@ pub mod o_auth2_permission_grant {
         use super::models;
         type Response = models::OAuth2PermissionGrantListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -262,12 +262,12 @@ pub mod o_auth2_permission_grant {
         use super::models;
         type Response = models::OAuth2PermissionGrantListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "This is the Service Principal ObjectId associated with the app"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -342,12 +342,12 @@ pub mod o_auth2_permission_grant {
         use super::models;
         type Response = models::OAuth2PermissionGrant;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) body: Option<models::OAuth2PermissionGrant>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The relevant app Service Principal Object Id and the Service Principal Object Id you want to grant."]
             pub fn body(mut self, body: impl Into<models::OAuth2PermissionGrant>) -> Self {
                 self.body = Some(body.into());
@@ -398,12 +398,12 @@ pub mod o_auth2_permission_grant {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -454,8 +454,8 @@ pub mod signed_in_user {
             &self,
             next_link: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> list_owned_objects_next::Builder {
-            list_owned_objects_next::Builder {
+        ) -> list_owned_objects_next::RequestBuilder {
+            list_owned_objects_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -465,8 +465,8 @@ pub mod signed_in_user {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get(&self, tenant_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, tenant_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
             }
@@ -475,8 +475,8 @@ pub mod signed_in_user {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_owned_objects(&self, tenant_id: impl Into<String>) -> list_owned_objects::Builder {
-            list_owned_objects::Builder {
+        pub fn list_owned_objects(&self, tenant_id: impl Into<String>) -> list_owned_objects::RequestBuilder {
+            list_owned_objects::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
             }
@@ -486,12 +486,12 @@ pub mod signed_in_user {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -562,11 +562,11 @@ pub mod signed_in_user {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -606,11 +606,11 @@ pub mod signed_in_user {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -682,8 +682,8 @@ pub mod groups {
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for the list operation."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
-            list_next::Builder {
+        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::RequestBuilder {
+            list_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -698,8 +698,8 @@ pub mod groups {
             &self,
             next_link: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> get_group_members_next::Builder {
-            get_group_members_next::Builder {
+        ) -> get_group_members_next::RequestBuilder {
+            get_group_members_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -714,8 +714,8 @@ pub mod groups {
             &self,
             parameters: impl Into<models::CheckGroupMembershipParameters>,
             tenant_id: impl Into<String>,
-        ) -> is_member_of::Builder {
-            is_member_of::Builder {
+        ) -> is_member_of::RequestBuilder {
+            is_member_of::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 tenant_id: tenant_id.into(),
@@ -732,8 +732,8 @@ pub mod groups {
             group_object_id: impl Into<String>,
             member_object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> remove_member::Builder {
-            remove_member::Builder {
+        ) -> remove_member::RequestBuilder {
+            remove_member::RequestBuilder {
                 client: self.0.clone(),
                 group_object_id: group_object_id.into(),
                 member_object_id: member_object_id.into(),
@@ -751,8 +751,8 @@ pub mod groups {
             group_object_id: impl Into<String>,
             parameters: impl Into<models::GroupAddMemberParameters>,
             tenant_id: impl Into<String>,
-        ) -> add_member::Builder {
-            add_member::Builder {
+        ) -> add_member::RequestBuilder {
+            add_member::RequestBuilder {
                 client: self.0.clone(),
                 group_object_id: group_object_id.into(),
                 parameters: parameters.into(),
@@ -763,8 +763,8 @@ pub mod groups {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -775,8 +775,8 @@ pub mod groups {
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: The parameters for the group to create."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn create(&self, parameters: impl Into<models::GroupCreateParameters>, tenant_id: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, parameters: impl Into<models::GroupCreateParameters>, tenant_id: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 tenant_id: tenant_id.into(),
@@ -787,8 +787,8 @@ pub mod groups {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the group whose members should be retrieved."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get_group_members(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get_group_members::Builder {
-            get_group_members::Builder {
+        pub fn get_group_members(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get_group_members::RequestBuilder {
+            get_group_members::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -799,8 +799,8 @@ pub mod groups {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the user for which to get group information."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -811,8 +811,8 @@ pub mod groups {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the group to delete."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -829,8 +829,8 @@ pub mod groups {
             object_id: impl Into<String>,
             parameters: impl Into<models::GroupGetMemberGroupsParameters>,
             tenant_id: impl Into<String>,
-        ) -> get_member_groups::Builder {
-            get_member_groups::Builder {
+        ) -> get_member_groups::RequestBuilder {
+            get_member_groups::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -843,8 +843,8 @@ pub mod groups {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the group for which to get owners."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_owners(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::Builder {
-            list_owners::Builder {
+        pub fn list_owners(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::RequestBuilder {
+            list_owners::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -861,8 +861,8 @@ pub mod groups {
             object_id: impl Into<String>,
             parameters: impl Into<models::AddOwnerParameters>,
             tenant_id: impl Into<String>,
-        ) -> add_owner::Builder {
-            add_owner::Builder {
+        ) -> add_owner::RequestBuilder {
+            add_owner::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -880,8 +880,8 @@ pub mod groups {
             object_id: impl Into<String>,
             owner_object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> remove_owner::Builder {
-            remove_owner::Builder {
+        ) -> remove_owner::RequestBuilder {
+            remove_owner::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 owner_object_id: owner_object_id.into(),
@@ -893,12 +893,12 @@ pub mod groups {
         use super::models;
         type Response = models::GroupListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -969,12 +969,12 @@ pub mod groups {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1045,12 +1045,12 @@ pub mod groups {
         use super::models;
         type Response = models::CheckGroupMembershipResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::CheckGroupMembershipParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1091,13 +1091,13 @@ pub mod groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_object_id: String,
             pub(crate) member_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1139,13 +1139,13 @@ pub mod groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) group_object_id: String,
             pub(crate) parameters: models::GroupAddMemberParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1187,12 +1187,12 @@ pub mod groups {
         use super::models;
         type Response = models::GroupListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1266,12 +1266,12 @@ pub mod groups {
         use super::models;
         type Response = models::AdGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::GroupCreateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1312,12 +1312,12 @@ pub mod groups {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1388,12 +1388,12 @@ pub mod groups {
         use super::models;
         type Response = models::AdGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1438,12 +1438,12 @@ pub mod groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1484,13 +1484,13 @@ pub mod groups {
         use super::models;
         type Response = models::GroupGetMemberGroupsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::GroupGetMemberGroupsParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1537,12 +1537,12 @@ pub mod groups {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1613,13 +1613,13 @@ pub mod groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::AddOwnerParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1661,13 +1661,13 @@ pub mod groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) owner_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1715,8 +1715,8 @@ pub mod applications {
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for the list operation."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
-            list_next::Builder {
+        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::RequestBuilder {
+            list_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -1726,8 +1726,8 @@ pub mod applications {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -1738,8 +1738,12 @@ pub mod applications {
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: The parameters for creating an application."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn create(&self, parameters: impl Into<models::ApplicationCreateParameters>, tenant_id: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(
+            &self,
+            parameters: impl Into<models::ApplicationCreateParameters>,
+            tenant_id: impl Into<String>,
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 tenant_id: tenant_id.into(),
@@ -1750,8 +1754,8 @@ pub mod applications {
         #[doc = "Arguments:"]
         #[doc = "* `application_object_id`: Application object ID."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -1768,8 +1772,8 @@ pub mod applications {
             application_object_id: impl Into<String>,
             parameters: impl Into<models::ApplicationUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> patch::Builder {
-            patch::Builder {
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 parameters: parameters.into(),
@@ -1781,8 +1785,8 @@ pub mod applications {
         #[doc = "Arguments:"]
         #[doc = "* `application_object_id`: Application object ID."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn delete(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -1794,8 +1798,8 @@ pub mod applications {
         #[doc = "Arguments:"]
         #[doc = "* `application_object_id`: The object ID of the application for which to get owners."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_owners(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::Builder {
-            list_owners::Builder {
+        pub fn list_owners(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::RequestBuilder {
+            list_owners::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -1812,8 +1816,8 @@ pub mod applications {
             application_object_id: impl Into<String>,
             parameters: impl Into<models::AddOwnerParameters>,
             tenant_id: impl Into<String>,
-        ) -> add_owner::Builder {
-            add_owner::Builder {
+        ) -> add_owner::RequestBuilder {
+            add_owner::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 parameters: parameters.into(),
@@ -1831,8 +1835,8 @@ pub mod applications {
             application_object_id: impl Into<String>,
             owner_object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> remove_owner::Builder {
-            remove_owner::Builder {
+        ) -> remove_owner::RequestBuilder {
+            remove_owner::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 owner_object_id: owner_object_id.into(),
@@ -1848,8 +1852,8 @@ pub mod applications {
             &self,
             application_object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> list_key_credentials::Builder {
-            list_key_credentials::Builder {
+        ) -> list_key_credentials::RequestBuilder {
+            list_key_credentials::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -1866,8 +1870,8 @@ pub mod applications {
             application_object_id: impl Into<String>,
             parameters: impl Into<models::KeyCredentialsUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> update_key_credentials::Builder {
-            update_key_credentials::Builder {
+        ) -> update_key_credentials::RequestBuilder {
+            update_key_credentials::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 parameters: parameters.into(),
@@ -1883,8 +1887,8 @@ pub mod applications {
             &self,
             application_object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> list_password_credentials::Builder {
-            list_password_credentials::Builder {
+        ) -> list_password_credentials::RequestBuilder {
+            list_password_credentials::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -1901,8 +1905,8 @@ pub mod applications {
             application_object_id: impl Into<String>,
             parameters: impl Into<models::PasswordCredentialsUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> update_password_credentials::Builder {
-            update_password_credentials::Builder {
+        ) -> update_password_credentials::RequestBuilder {
+            update_password_credentials::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 parameters: parameters.into(),
@@ -1918,8 +1922,8 @@ pub mod applications {
             &self,
             tenant_id: impl Into<String>,
             application_id: impl Into<String>,
-        ) -> get_service_principals_id_by_app_id::Builder {
-            get_service_principals_id_by_app_id::Builder {
+        ) -> get_service_principals_id_by_app_id::RequestBuilder {
+            get_service_principals_id_by_app_id::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 application_id: application_id.into(),
@@ -1930,12 +1934,12 @@ pub mod applications {
         use super::models;
         type Response = models::ApplicationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2006,12 +2010,12 @@ pub mod applications {
         use super::models;
         type Response = models::ApplicationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filters to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2085,12 +2089,12 @@ pub mod applications {
         use super::models;
         type Response = models::Application;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::ApplicationCreateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2131,12 +2135,12 @@ pub mod applications {
         use super::models;
         type Response = models::Application;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2181,13 +2185,13 @@ pub mod applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) parameters: models::ApplicationUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2229,12 +2233,12 @@ pub mod applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2275,12 +2279,12 @@ pub mod applications {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2351,13 +2355,13 @@ pub mod applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) parameters: models::AddOwnerParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2399,13 +2403,13 @@ pub mod applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) owner_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2447,12 +2451,12 @@ pub mod applications {
         use super::models;
         type Response = models::KeyCredentialListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2498,13 +2502,13 @@ pub mod applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) parameters: models::KeyCredentialsUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2546,12 +2550,12 @@ pub mod applications {
         use super::models;
         type Response = models::PasswordCredentialListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2597,13 +2601,13 @@ pub mod applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) parameters: models::PasswordCredentialsUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2645,12 +2649,12 @@ pub mod applications {
         use super::models;
         type Response = models::ServicePrincipalObjectResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) application_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2701,8 +2705,8 @@ pub mod deleted_applications {
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for the list operation."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
-            list_next::Builder {
+        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::RequestBuilder {
+            list_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -2713,8 +2717,8 @@ pub mod deleted_applications {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: Application object ID."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn restore(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> restore::Builder {
-            restore::Builder {
+        pub fn restore(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> restore::RequestBuilder {
+            restore::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -2724,8 +2728,8 @@ pub mod deleted_applications {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -2736,8 +2740,8 @@ pub mod deleted_applications {
         #[doc = "Arguments:"]
         #[doc = "* `application_object_id`: Application object ID."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn hard_delete(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> hard_delete::Builder {
-            hard_delete::Builder {
+        pub fn hard_delete(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> hard_delete::RequestBuilder {
+            hard_delete::RequestBuilder {
                 client: self.0.clone(),
                 application_object_id: application_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -2748,12 +2752,12 @@ pub mod deleted_applications {
         use super::models;
         type Response = models::ApplicationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2824,12 +2828,12 @@ pub mod deleted_applications {
         use super::models;
         type Response = models::Application;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2875,12 +2879,12 @@ pub mod deleted_applications {
         use super::models;
         type Response = models::ApplicationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2955,12 +2959,12 @@ pub mod deleted_applications {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3007,8 +3011,8 @@ pub mod service_principals {
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for the list operation."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
-            list_next::Builder {
+        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::RequestBuilder {
+            list_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -3018,8 +3022,8 @@ pub mod service_principals {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -3034,8 +3038,8 @@ pub mod service_principals {
             &self,
             parameters: impl Into<models::ServicePrincipalCreateParameters>,
             tenant_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 tenant_id: tenant_id.into(),
@@ -3046,8 +3050,8 @@ pub mod service_principals {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the service principal to get."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3064,8 +3068,8 @@ pub mod service_principals {
             object_id: impl Into<String>,
             parameters: impl Into<models::ServicePrincipalUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -3077,8 +3081,8 @@ pub mod service_principals {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the service principal to delete."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3093,8 +3097,8 @@ pub mod service_principals {
             &self,
             object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> list_app_role_assigned_to::Builder {
-            list_app_role_assigned_to::Builder {
+        ) -> list_app_role_assigned_to::RequestBuilder {
+            list_app_role_assigned_to::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3109,8 +3113,8 @@ pub mod service_principals {
             &self,
             object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> list_app_role_assignments::Builder {
-            list_app_role_assignments::Builder {
+        ) -> list_app_role_assignments::RequestBuilder {
+            list_app_role_assignments::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3122,8 +3126,8 @@ pub mod service_principals {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the service principal for which to get owners."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_owners(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::Builder {
-            list_owners::Builder {
+        pub fn list_owners(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::RequestBuilder {
+            list_owners::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3140,8 +3144,8 @@ pub mod service_principals {
             object_id: impl Into<String>,
             parameters: impl Into<models::AddOwnerParameters>,
             tenant_id: impl Into<String>,
-        ) -> add_owner::Builder {
-            add_owner::Builder {
+        ) -> add_owner::RequestBuilder {
+            add_owner::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -3159,8 +3163,8 @@ pub mod service_principals {
             object_id: impl Into<String>,
             owner_object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> remove_owner::Builder {
-            remove_owner::Builder {
+        ) -> remove_owner::RequestBuilder {
+            remove_owner::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 owner_object_id: owner_object_id.into(),
@@ -3172,8 +3176,12 @@ pub mod service_principals {
         #[doc = "Arguments:"]
         #[doc = "* `object_id`: The object ID of the service principal for which to get keyCredentials."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_key_credentials(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_key_credentials::Builder {
-            list_key_credentials::Builder {
+        pub fn list_key_credentials(
+            &self,
+            object_id: impl Into<String>,
+            tenant_id: impl Into<String>,
+        ) -> list_key_credentials::RequestBuilder {
+            list_key_credentials::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3190,8 +3198,8 @@ pub mod service_principals {
             object_id: impl Into<String>,
             parameters: impl Into<models::KeyCredentialsUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> update_key_credentials::Builder {
-            update_key_credentials::Builder {
+        ) -> update_key_credentials::RequestBuilder {
+            update_key_credentials::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -3207,8 +3215,8 @@ pub mod service_principals {
             &self,
             object_id: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> list_password_credentials::Builder {
-            list_password_credentials::Builder {
+        ) -> list_password_credentials::RequestBuilder {
+            list_password_credentials::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -3225,8 +3233,8 @@ pub mod service_principals {
             object_id: impl Into<String>,
             parameters: impl Into<models::PasswordCredentialsUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> update_password_credentials::Builder {
-            update_password_credentials::Builder {
+        ) -> update_password_credentials::RequestBuilder {
+            update_password_credentials::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -3238,12 +3246,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::ServicePrincipalListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3314,12 +3322,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::ServicePrincipalListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3393,12 +3401,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::ServicePrincipal;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::ServicePrincipalCreateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3439,12 +3447,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::ServicePrincipal;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3489,13 +3497,13 @@ pub mod service_principals {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::ServicePrincipalUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3537,12 +3545,12 @@ pub mod service_principals {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3583,12 +3591,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::AppRoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3659,12 +3667,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::AppRoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3735,12 +3743,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3811,13 +3819,13 @@ pub mod service_principals {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::AddOwnerParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3859,13 +3867,13 @@ pub mod service_principals {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) owner_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3907,12 +3915,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::KeyCredentialListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3958,13 +3966,13 @@ pub mod service_principals {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::KeyCredentialsUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4006,12 +4014,12 @@ pub mod service_principals {
         use super::models;
         type Response = models::PasswordCredentialListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4057,13 +4065,13 @@ pub mod service_principals {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::PasswordCredentialsUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4111,8 +4119,8 @@ pub mod users {
         #[doc = "Arguments:"]
         #[doc = "* `next_link`: Next link for the list operation."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
-            list_next::Builder {
+        pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::RequestBuilder {
+            list_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -4122,8 +4130,8 @@ pub mod users {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -4136,8 +4144,8 @@ pub mod users {
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Parameters to create a user."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn create(&self, parameters: impl Into<models::UserCreateParameters>, tenant_id: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, parameters: impl Into<models::UserCreateParameters>, tenant_id: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 tenant_id: tenant_id.into(),
@@ -4148,8 +4156,8 @@ pub mod users {
         #[doc = "Arguments:"]
         #[doc = "* `upn_or_object_id`: The object ID or principal name of the user for which to get information."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get(&self, upn_or_object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, upn_or_object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 upn_or_object_id: upn_or_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -4166,8 +4174,8 @@ pub mod users {
             upn_or_object_id: impl Into<String>,
             parameters: impl Into<models::UserUpdateParameters>,
             tenant_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 upn_or_object_id: upn_or_object_id.into(),
                 parameters: parameters.into(),
@@ -4179,8 +4187,8 @@ pub mod users {
         #[doc = "Arguments:"]
         #[doc = "* `upn_or_object_id`: The object ID or principal name of the user to delete."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn delete(&self, upn_or_object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, upn_or_object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 upn_or_object_id: upn_or_object_id.into(),
                 tenant_id: tenant_id.into(),
@@ -4197,8 +4205,8 @@ pub mod users {
             object_id: impl Into<String>,
             parameters: impl Into<models::UserGetMemberGroupsParameters>,
             tenant_id: impl Into<String>,
-        ) -> get_member_groups::Builder {
-            get_member_groups::Builder {
+        ) -> get_member_groups::RequestBuilder {
+            get_member_groups::RequestBuilder {
                 client: self.0.clone(),
                 object_id: object_id.into(),
                 parameters: parameters.into(),
@@ -4210,12 +4218,12 @@ pub mod users {
         use super::models;
         type Response = models::UserListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4286,14 +4294,14 @@ pub mod users {
         use super::models;
         type Response = models::UserListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
             pub(crate) top: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4383,12 +4391,12 @@ pub mod users {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::UserCreateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4429,12 +4437,12 @@ pub mod users {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) upn_or_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4479,13 +4487,13 @@ pub mod users {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) upn_or_object_id: String,
             pub(crate) parameters: models::UserUpdateParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4527,12 +4535,12 @@ pub mod users {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) upn_or_object_id: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4573,13 +4581,13 @@ pub mod users {
         use super::models;
         type Response = models::UserGetMemberGroupsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) object_id: String,
             pub(crate) parameters: models::UserGetMemberGroupsParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4636,8 +4644,8 @@ pub mod objects {
             &self,
             next_link: impl Into<String>,
             tenant_id: impl Into<String>,
-        ) -> get_objects_by_object_ids_next::Builder {
-            get_objects_by_object_ids_next::Builder {
+        ) -> get_objects_by_object_ids_next::RequestBuilder {
+            get_objects_by_object_ids_next::RequestBuilder {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
@@ -4652,8 +4660,8 @@ pub mod objects {
             &self,
             parameters: impl Into<models::GetObjectsParameters>,
             tenant_id: impl Into<String>,
-        ) -> get_objects_by_object_ids::Builder {
-            get_objects_by_object_ids::Builder {
+        ) -> get_objects_by_object_ids::RequestBuilder {
+            get_objects_by_object_ids::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 tenant_id: tenant_id.into(),
@@ -4664,12 +4672,12 @@ pub mod objects {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4741,12 +4749,12 @@ pub mod objects {
         use super::models;
         type Response = models::DirectoryObjectListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::GetObjectsParameters,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4819,8 +4827,8 @@ pub mod domains {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, tenant_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
                 filter: None,
@@ -4831,8 +4839,8 @@ pub mod domains {
         #[doc = "Arguments:"]
         #[doc = "* `domain_name`: name of the domain."]
         #[doc = "* `tenant_id`: The tenant ID."]
-        pub fn get(&self, domain_name: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, domain_name: impl Into<String>, tenant_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 domain_name: domain_name.into(),
                 tenant_id: tenant_id.into(),
@@ -4843,12 +4851,12 @@ pub mod domains {
         use super::models;
         type Response = models::DomainListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4897,12 +4905,12 @@ pub mod domains {
         use super::models;
         type Response = models::Domain;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) domain_name: String,
             pub(crate) tenant_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

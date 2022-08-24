@@ -125,8 +125,8 @@ pub mod usage_aggregates {
             reported_start_time: impl Into<time::OffsetDateTime>,
             reported_end_time: impl Into<time::OffsetDateTime>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 reported_start_time: reported_start_time.into(),
                 reported_end_time: reported_end_time.into(),
@@ -141,7 +141,7 @@ pub mod usage_aggregates {
         use super::models;
         type Response = models::UsageAggregationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) reported_start_time: time::OffsetDateTime,
             pub(crate) reported_end_time: time::OffsetDateTime,
@@ -150,7 +150,7 @@ pub mod usage_aggregates {
             pub(crate) aggregation_granularity: Option<String>,
             pub(crate) continuation_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "`True` returns usage data in instance-level detail, `false` causes server-side aggregation with fewer details. For example, if you have 3 website instances, by default you will get 3 line items for website consumption. If you specify showDetails = false, the data will be aggregated as a single line item for website consumption within the time period (for the given subscriptionId, meterId, usageStartTime and usageEndTime)."]
             pub fn show_details(mut self, show_details: bool) -> Self {
                 self.show_details = Some(show_details);
@@ -262,8 +262,8 @@ pub mod rate_card {
         #[doc = "Arguments:"]
         #[doc = "* `filter`: The filter to apply on the operation. It ONLY supports the 'eq' and 'and' logical operators at this time. All the 4 query parameters 'OfferDurableId',  'Currency', 'Locale', 'Region' are required to be a part of the $filter."]
         #[doc = "* `subscription_id`: It uniquely identifies Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn get(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 filter: filter.into(),
                 subscription_id: subscription_id.into(),
@@ -274,12 +274,12 @@ pub mod rate_card {
         use super::models;
         type Response = models::ResourceRateCardInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
