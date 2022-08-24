@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::Headers, CollectedResponse, Method};
 
 operation! {
     CertificateBackup,
@@ -10,21 +10,25 @@ operation! {
 impl CertificateBackupBuilder {
     pub fn into_future(mut self) -> CertificateBackup {
         Box::pin(async move {
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("certificates/{}/backup", self.name));
-            uri.set_query(Some(API_VERSION_PARAM));
 
-            let response_body = self
+            let headers = Headers::new();
+            let mut request =
+                self.client
+                    .keyvault_client
+                    .finalize_request(uri, Method::Post, headers, None)?;
+
+            let response = self
                 .client
-                .client
-                .request(reqwest::Method::POST, uri.to_string(), None)
+                .keyvault_client
+                .send(&mut self.context, &mut request)
                 .await?;
 
-            let backup_blob = serde_json::from_str::<CertificateBackupResponse>(&response_body)
-                .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse certificate backup response. uri: {uri}")
-                })?;
+            let response = CollectedResponse::from_response(response).await?;
+            let body = response.body();
 
+            let backup_blob = serde_json::from_slice(body)?;
             Ok(backup_blob)
         })
     }
