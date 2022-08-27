@@ -17,7 +17,7 @@ fn main() -> Result<()> {
 }
 
 fn check(readmes: &[SpecReadme]) -> Result<()> {
-    let mut services = BTreeSet::new();
+    // let mut services = BTreeSet::new();
     let mut tags = 0;
     for readme in readmes {
         let readme_path = readme.readme();
@@ -26,23 +26,48 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
             match Spec::read_files(&input_files) {
                 Ok(spec) => {
                     for operation in spec.operations()? {
-                        let respones = autorust_codegen::status_codes::get_success_responses(&operation.responses);
-                        if respones.len() > 1 {
-                            let mut codes: Vec<_> = respones.into_iter().map(|(sc, rsp)| sc).collect();
-                            codes.sort();
+                        let responses = autorust_codegen::status_codes::get_success_responses(&operation.responses);
+                        // if respones.len() > 1 {
+                        //     // let mut codes: Vec<_> = respones.into_iter().map(|(sc, rsp)| sc).collect();
+                        //     // codes.sort();
 
-                            if codes
-                                == vec![
-                                    StatusCode::Code(200),
-                                    StatusCode::Code(201),
-                                    StatusCode::Code(202),
-                                    StatusCode::Code(204),
-                                ]
-                            {
-                                println!("{} {} {:?} {:?}", readme.spec(), &tag.name(), operation.id, codes);
+                        //     // if codes
+                        //     //     == vec![
+                        //     //         StatusCode::Code(200),
+                        //     //         StatusCode::Code(201),
+                        //     //         StatusCode::Code(202),
+                        //     //         StatusCode::Code(204),
+                        //     //     ]
+                        //     // {
+                        //     //     println!("{} {} {:?} {:?}", readme.spec(), &tag.name(), operation.id, codes);
+                        //     // }
+
+                        //     services.insert(codes);
+                        // }
+
+                        for (sc, rsp) in responses.iter() {
+                            for hdr in &rsp.headers {
+                                match hdr.1 {
+                                    autorust_openapi::ReferenceOr::Reference {
+                                        reference,
+                                        title,
+                                        description,
+                                        type_,
+                                        read_only,
+                                        x_ms_client_flatten,
+                                        xml,
+                                        x_nullable,
+                                    } => {
+                                        println!("{} {} {:?} using header reference", readme.spec(), &tag.name(), operation.id);
+                                    },
+                                    autorust_openapi::ReferenceOr::Item(item) => {
+                                        if Some(true) == item.required {
+                                            println!("{} {} {:?}", readme.spec(), &tag.name(), operation.id);
+                                        }
+                                    }
+                                    _ => (),
+                                }
                             }
-
-                            services.insert(codes);
                         }
                     }
                     // let versions = spec.api_versions();
@@ -62,9 +87,9 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
     }
     // println!();
     // println!("{} tags", tags);
-    println!("{} services:", services.len());
-    for service in services {
-        println!("  {:?}", service);
-    }
+    // println!("{} services:", services.len());
+    // for service in services {
+    //     println!("  {:?}", service);
+    // }
     Ok(())
 }

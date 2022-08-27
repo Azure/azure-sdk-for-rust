@@ -27,4 +27,9 @@ pub struct Header {
     /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-header-collection-prefix
     #[serde(rename = "x-ms-header-collection-prefix", skip_serializing_if = "Option::is_none")]
     pub x_ms_header_collection_prefix: Option<String>,
+
+    // https://github.com/OAI/OpenAPI-Specification/issues/321
+    // https://github.com/spec-first/connexion/pull/1293/files#diff-e4ea03dfac177f5d76a7f6662e64bdef20ef417cf76eb31cd762e1844427f5f3R1161
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
 }
