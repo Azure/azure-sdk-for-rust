@@ -17,7 +17,6 @@ pub mod parsing_xml;
 pub mod storage_shared_key_credential;
 mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
-pub mod xml;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IPRange {
