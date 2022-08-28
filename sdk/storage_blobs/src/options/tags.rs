@@ -154,7 +154,7 @@ impl Header for Tags {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_storage::xml::read_xml;
+    use azure_core::xml::read_xml;
 
     #[test]
     fn parse_tags_xml() -> azure_core::Result<()> {

@@ -1,6 +1,5 @@
-use azure_core::prelude::*;
-use azure_core::Response as HttpResponse;
-use azure_storage::{headers::CommonStorageResponseHeaders, xml::read_xml};
+use azure_core::{prelude::*, xml::read_xml, Response as HttpResponse};
+use azure_storage::headers::CommonStorageResponseHeaders;
 
 use crate::prelude::BlobServiceClient;
 

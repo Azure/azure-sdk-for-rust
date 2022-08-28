@@ -1,6 +1,8 @@
 use crate::prelude::*;
-use azure_core::{date, headers::Headers, prelude::*, Method, Response as AzureResponse};
-use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
+use azure_core::{
+    date, headers::Headers, prelude::*, xml::read_xml, Method, Response as AzureResponse,
+};
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 

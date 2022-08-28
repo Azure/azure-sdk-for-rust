@@ -4,9 +4,9 @@ use azure_core::{
     error::Error,
     headers::{date_from_headers, request_id_from_headers, Headers},
     prelude::*,
+    xml::read_xml,
     Pageable, RequestId, Response as AzureResponse,
 };
-use azure_storage::xml::read_xml;
 use time::OffsetDateTime;
 
 operation! {

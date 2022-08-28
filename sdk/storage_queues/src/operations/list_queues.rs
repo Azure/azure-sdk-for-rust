@@ -1,8 +1,9 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    error::Error, headers::Headers, prelude::*, Method, Pageable, Response as AzureResponse,
+    error::Error, headers::Headers, prelude::*, xml::read_xml, Method, Pageable,
+    Response as AzureResponse,
 };
-use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 operation! {
