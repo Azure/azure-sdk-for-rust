@@ -105,20 +105,33 @@ impl Spec {
         }
     }
 
-    pub fn consumes(&self) -> Vec<&str> {
-        let mut versions: Vec<_> = self
-            .docs()
+    fn consumes(&self) -> impl Iterator<Item = &str> {
+        self.docs()
             .values()
             .filter(|doc| !doc.paths().is_empty())
             .flat_map(|api| &api.consumes)
             .map(String::as_str)
-            .collect();
-        versions.sort_unstable();
-        versions
     }
 
     pub fn pick_consumes(&self) -> Option<&str> {
-        crate::content_type::pick_consumes(self.consumes())
+        crate::content_type::pick(self.consumes())
+    }
+
+    fn produces(&self) -> impl Iterator<Item = &str> {
+        self.docs()
+            .values()
+            .filter(|doc| !doc.paths().is_empty())
+            .flat_map(|api| &api.produces)
+            .map(String::as_str)
+    }
+
+    pub fn pick_produces(&self) -> Option<&str> {
+        crate::content_type::pick(self.produces())
+    }
+
+    pub fn has_xml(&self) -> bool {
+        self.pick_consumes() == Some(crate::content_type::APPLICATION_XML)
+            || self.pick_produces() == Some(crate::content_type::APPLICATION_XML)
     }
 
     /// get a list of `api-version`s used

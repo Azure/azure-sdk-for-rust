@@ -4,7 +4,7 @@
 use autorust_codegen::{
     crates::{list_crate_names, list_dirs},
     gen, get_mgmt_readmes, get_svc_readmes,
-    jinja::{CargoToml, CheckAllServicesYml, PublishSdksYml, PublishServicesYml},
+    jinja::{CheckAllServicesYml, PublishSdksYml, PublishServicesYml, WorkspaceCargoToml},
     Error, ErrorKind, Result, RunConfig,
 };
 use clap::Parser;
@@ -98,8 +98,8 @@ fn gen_services_workspace(only_packages: &[&str]) -> Result<()> {
             .collect()
     };
 
-    let yml = CargoToml { dirs };
-    yml.create("../Cargo.toml")?;
+    let toml = WorkspaceCargoToml { dirs };
+    toml.create("../Cargo.toml")?;
     Ok(())
 }
 

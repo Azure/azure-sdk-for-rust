@@ -146,6 +146,12 @@ impl TypeNameCode {
     pub fn is_bytes(&self) -> bool {
         self.type_name == Some(TypeName::Bytes)
     }
+    pub fn set_as_bytes(&mut self) {
+        self.type_name = Some(TypeName::Bytes);
+    }
+    pub fn is_value(&self) -> bool {
+        self.type_name == Some(TypeName::Value)
+    }
     pub fn is_date_time(&self) -> bool {
         self.type_name == Some(TypeName::DateTime)
     }
