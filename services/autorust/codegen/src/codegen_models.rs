@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{type_name_gen, TypeNameCode},
+    codegen::TypeNameCode,
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
@@ -318,7 +318,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
         if let Some(pageable) = operation.pageable.as_ref() {
             for response in operation.responses.values() {
                 if let Some(schema) = &response.schema {
-                    let pageable_name = type_name_gen(&get_type_name_for_schema_ref(schema)?)?.to_string();
+                    let pageable_name = TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.to_string();
                     // in some cases, the same struct is used multiple times for
                     // responses (such as a get and list for a given object
                     // type).  In these cases, what we see is a next_link_name
@@ -380,7 +380,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 
 fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode)> {
     let id = property_name.to_camel_case_ident()?;
-    let value = type_name_gen(&property.type_name()?)?;
+    let value = TypeNameCode::new(&property.type_name()?)?;
     Ok((id, value))
 }
 
@@ -562,7 +562,7 @@ fn create_enum(
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
     let items = schema.array_items()?;
     let typ = schema.name()?.to_camel_case_ident()?;
-    let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?)?;
+    let items_typ = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -868,7 +868,7 @@ fn create_struct_field_code(
                 })
             } else {
                 Ok(StructFieldCode {
-                    type_name: type_name_gen(&property.type_name()?)?,
+                    type_name: TypeNameCode::new(&property.type_name()?)?,
                     code: None,
                 })
             }

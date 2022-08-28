@@ -79,28 +79,6 @@ fn id_models() -> Ident {
     parse_ident("models").unwrap()
 }
 
-pub fn type_name_gen(type_name: &TypeName) -> Result<TypeNameCode> {
-    let mut type_name_code = match type_name {
-        TypeName::Reference(name) => {
-            let idt = parse_ident(&name.to_pascal_case())?;
-            TypeNameCode::from(idt).allow_qualify_models(true)
-        }
-        TypeName::Array(vec_items_typ) => type_name_gen(vec_items_typ)?.incr_vec_count(),
-        TypeName::Value => TypeNameCode::from(tp_json_value()),
-        TypeName::Bytes => TypeNameCode::from(tp_bytes()),
-        TypeName::Int32 => TypeNameCode::from(tp_i32()).allow_impl_into(false),
-        TypeName::Int64 => TypeNameCode::from(tp_i64()).allow_impl_into(false),
-        TypeName::Float32 => TypeNameCode::from(tp_f32()).allow_impl_into(false),
-        TypeName::Float64 => TypeNameCode::from(tp_f64()).allow_impl_into(false),
-        TypeName::Boolean => TypeNameCode::from(tp_bool()).allow_impl_into(false),
-        TypeName::String => TypeNameCode::from(tp_string()),
-        TypeName::DateTime => TypeNameCode::from(tp_date_time()),
-        TypeName::DateTimeRfc1123 => TypeNameCode::from(tp_date_time()),
-    };
-    type_name_code.type_name = Some(type_name.clone());
-    Ok(type_name_code)
-}
-
 // any word character or `-` between curly braces
 pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{([\w-]+)\}").unwrap());
 
@@ -140,6 +118,28 @@ pub struct TypeNameCode {
 }
 
 impl TypeNameCode {
+    pub fn new(type_name: &TypeName) -> Result<Self> {
+        let mut type_name_code = match type_name {
+            TypeName::Reference(name) => {
+                let idt = parse_ident(&name.to_pascal_case())?;
+                TypeNameCode::from(idt).allow_qualify_models(true)
+            }
+            TypeName::Array(vec_items_typ) => TypeNameCode::new(vec_items_typ)?.incr_vec_count(),
+            TypeName::Value => TypeNameCode::from(tp_json_value()),
+            TypeName::Bytes => TypeNameCode::from(tp_bytes()),
+            TypeName::Int32 => TypeNameCode::from(tp_i32()).allow_impl_into(false),
+            TypeName::Int64 => TypeNameCode::from(tp_i64()).allow_impl_into(false),
+            TypeName::Float32 => TypeNameCode::from(tp_f32()).allow_impl_into(false),
+            TypeName::Float64 => TypeNameCode::from(tp_f64()).allow_impl_into(false),
+            TypeName::Boolean => TypeNameCode::from(tp_bool()).allow_impl_into(false),
+            TypeName::String => TypeNameCode::from(tp_string()),
+            TypeName::DateTime => TypeNameCode::from(tp_date_time()),
+            TypeName::DateTimeRfc1123 => TypeNameCode::from(tp_date_time()),
+        };
+        type_name_code.type_name = Some(type_name.clone());
+        Ok(type_name_code)
+    }
+
     pub fn is_string(&self) -> bool {
         self.type_name == Some(TypeName::String)
     }
@@ -147,7 +147,9 @@ impl TypeNameCode {
         self.type_name == Some(TypeName::Bytes)
     }
     pub fn set_as_bytes(&mut self) {
+        self.force_value = false;
         self.type_name = Some(TypeName::Bytes);
+        self.type_path = tp_bytes();
     }
     pub fn is_value(&self) -> bool {
         self.type_name == Some(TypeName::Value)
@@ -477,10 +479,20 @@ mod tests {
 
     #[test]
     fn test_disallow_impl_into() -> Result<()> {
-        let mut tp = type_name_gen(&TypeName::Int32)?;
+        let mut tp = TypeNameCode::new(&TypeName::Int32)?;
         tp = tp.impl_into(true);
         assert!(!tp.has_impl_into());
         assert_eq!("i32", tp.to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_set_as_bytes() -> Result<()> {
+        let mut tp = TypeNameCode::new(&TypeName::Int32)?;
+        tp = tp.force_value(true);
+        tp.set_as_bytes();
+        assert!(tp.is_bytes());
+        assert_eq!("bytes :: Bytes", tp.to_string());
         Ok(())
     }
 }

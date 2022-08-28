@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{parse_path_params, type_name_gen, PARAM_RE},
+    codegen::{parse_path_params, PARAM_RE},
     codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
@@ -683,7 +683,7 @@ impl ResponseCode {
         if let Some(tp) = response_type {
             let mut tp = tp.clone();
             if tp.is_value() && self.produces_xml() {
-                tp.set_as_bytes()
+                tp.set_as_bytes();
             }
             return Some(tp);
         }
@@ -701,12 +701,11 @@ impl ToTokens for ResponseCode {
             pub struct Response(azure_core::Response);
         });
         if let Some(response_type) = self.response_type() {
-            let produces_xml = self.produces_xml();
-            let deserialize_body = if response_type.is_bytes() || (response_type.is_value() && produces_xml) {
+            let deserialize_body = if response_type.is_bytes() {
                 quote! {
                     let body = bytes;
                 }
-            } else if produces_xml {
+            } else if self.produces_xml() {
                 quote! {
                     let body: #response_type = azure_core::xml::read_xml(&bytes)?;
                 }
@@ -990,7 +989,9 @@ impl FunctionParams {
             let name = param.name().to_owned();
             let description = param.description().clone();
             let variable_name = name.to_snake_case_ident()?;
-            let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
+            let type_name = TypeNameCode::new(&param.type_name()?)?
+                .qualify_models(true)
+                .optional(!param.required());
             let kind = ParamKind::from(param.type_());
             let collection_format = param.collection_format().clone();
             params.push(FunctionParam {
@@ -1248,7 +1249,9 @@ impl ToTokens for RequestBuilderSettersCode {
 
 pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true)))
+        Ok(Some(
+            TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true),
+        ))
     } else {
         Ok(None)
     }
