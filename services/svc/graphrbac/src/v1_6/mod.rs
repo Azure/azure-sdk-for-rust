@@ -396,7 +396,7 @@ pub mod o_auth2_permission_grant {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::OAuth2PermissionGrant> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -600,7 +600,7 @@ pub mod signed_in_user {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::User> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1094,7 +1094,7 @@ pub mod groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CheckGroupMembershipResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1304,7 +1304,7 @@ pub mod groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AdGroup> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1433,7 +1433,7 @@ pub mod groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AdGroup> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1525,7 +1525,7 @@ pub mod groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::GroupGetMemberGroupsResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2118,7 +2118,7 @@ pub mod applications {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Application> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2168,7 +2168,7 @@ pub mod applications {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Application> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2460,7 +2460,7 @@ pub mod applications {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::KeyCredentialListResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2552,7 +2552,7 @@ pub mod applications {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PasswordCredentialListResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2643,7 +2643,7 @@ pub mod applications {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ServicePrincipalObjectResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2826,7 +2826,7 @@ pub mod deleted_applications {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Application> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -3396,7 +3396,7 @@ pub mod service_principals {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ServicePrincipal> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -3446,7 +3446,7 @@ pub mod service_principals {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ServicePrincipal> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -3896,7 +3896,7 @@ pub mod service_principals {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::KeyCredentialListResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -3988,7 +3988,7 @@ pub mod service_principals {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PasswordCredentialListResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -4359,7 +4359,7 @@ pub mod users {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::User> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -4409,7 +4409,7 @@ pub mod users {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::User> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -4542,7 +4542,7 @@ pub mod users {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::UserGetMemberGroupsResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -4819,7 +4819,7 @@ pub mod domains {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::DomainListResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -4869,7 +4869,7 @@ pub mod domains {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Domain> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }

@@ -376,7 +376,7 @@ pub mod management_groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ManagementGroup> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -436,7 +436,7 @@ pub mod management_groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ManagementGroup> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -495,7 +495,7 @@ pub mod management_groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ManagementGroup> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -553,7 +553,7 @@ pub mod management_groups {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AzureAsyncOperationResults> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -892,7 +892,7 @@ pub mod hierarchy_settings {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::HierarchySettingsList> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -940,7 +940,7 @@ pub mod hierarchy_settings {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::HierarchySettings> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -990,7 +990,7 @@ pub mod hierarchy_settings {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::HierarchySettings> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1040,7 +1040,7 @@ pub mod hierarchy_settings {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::HierarchySettings> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1232,7 +1232,7 @@ pub mod check_name_availability {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityResult> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1279,7 +1279,7 @@ pub mod start_tenant_backfill {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::TenantBackfillStatusResult> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1326,7 +1326,7 @@ pub mod tenant_backfill_status {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::TenantBackfillStatusResult> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }

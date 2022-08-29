@@ -187,7 +187,7 @@ pub mod data_policy_manifests {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::DataPolicyManifest> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -525,7 +525,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -577,7 +577,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -629,7 +629,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -679,7 +679,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1106,7 +1106,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1152,7 +1152,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1198,7 +1198,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1242,7 +1242,7 @@ pub mod policy_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyAssignment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1444,7 +1444,7 @@ pub mod policy_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1496,7 +1496,7 @@ pub mod policy_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1583,7 +1583,7 @@ pub mod policy_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1633,7 +1633,7 @@ pub mod policy_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1685,7 +1685,7 @@ pub mod policy_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2209,7 +2209,7 @@ pub mod policy_set_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicySetDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2261,7 +2261,7 @@ pub mod policy_set_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicySetDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2348,7 +2348,7 @@ pub mod policy_set_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicySetDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2581,7 +2581,7 @@ pub mod policy_set_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicySetDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2628,7 +2628,7 @@ pub mod policy_set_definitions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicySetDefinition> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2931,7 +2931,7 @@ pub mod policy_exemptions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyExemption> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2983,7 +2983,7 @@ pub mod policy_exemptions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PolicyExemption> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }

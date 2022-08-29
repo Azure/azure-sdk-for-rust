@@ -398,7 +398,7 @@ pub mod saa_s {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -449,7 +449,7 @@ pub mod saa_s {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -535,7 +535,7 @@ pub mod saa_s {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -680,7 +680,7 @@ pub mod saas_resource_list_access_token {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::AccessTokenResult> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1080,7 +1080,7 @@ pub mod saas_subscription_level {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1135,7 +1135,7 @@ pub mod saas_subscription_level {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1190,7 +1190,7 @@ pub mod saas_subscription_level {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1329,7 +1329,7 @@ pub mod saas_subscription_level {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AccessTokenResult> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1477,7 +1477,7 @@ pub mod saa_s_operation {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SaasResource> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }

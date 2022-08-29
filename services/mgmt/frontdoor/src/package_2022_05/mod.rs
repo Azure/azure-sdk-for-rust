@@ -366,7 +366,7 @@ pub mod policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::WebApplicationFirewallPolicy> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -421,7 +421,7 @@ pub mod policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::WebApplicationFirewallPolicy> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -476,7 +476,7 @@ pub mod policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::WebApplicationFirewallPolicy> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -678,7 +678,7 @@ pub mod front_door_name_availability {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityOutput> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -750,7 +750,7 @@ pub mod front_door_name_availability_with_subscription {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityOutput> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1072,7 +1072,7 @@ pub mod front_doors {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::FrontDoor> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1127,7 +1127,7 @@ pub mod front_doors {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::FrontDoor> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1223,7 +1223,7 @@ pub mod front_doors {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ValidateCustomDomainOutput> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1452,7 +1452,7 @@ pub mod frontend_endpoints {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::FrontendEndpoint> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1830,7 +1830,7 @@ pub mod rules_engines {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RulesEngine> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -1887,7 +1887,7 @@ pub mod rules_engines {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RulesEngine> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2254,7 +2254,7 @@ pub mod network_experiment_profiles {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Profile> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2309,7 +2309,7 @@ pub mod network_experiment_profiles {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Profile> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2364,7 +2364,7 @@ pub mod network_experiment_profiles {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Profile> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2761,7 +2761,7 @@ pub mod experiments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Experiment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2818,7 +2818,7 @@ pub mod experiments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Experiment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -2875,7 +2875,7 @@ pub mod experiments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Experiment> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -3058,7 +3058,7 @@ pub mod reports {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::LatencyScorecard> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -3141,7 +3141,7 @@ pub mod reports {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Timeseries> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }

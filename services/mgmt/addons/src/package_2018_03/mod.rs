@@ -158,7 +158,7 @@ pub mod operations {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::OperationListValue> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -283,7 +283,7 @@ pub mod support_plan_types {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanResponseEnvelope> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -336,7 +336,7 @@ pub mod support_plan_types {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanResponseEnvelope> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -389,7 +389,7 @@ pub mod support_plan_types {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanResponseEnvelope> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -438,7 +438,7 @@ pub mod support_plan_types {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanInfo> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }

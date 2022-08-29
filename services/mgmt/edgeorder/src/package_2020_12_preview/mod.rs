@@ -1259,7 +1259,7 @@ pub mod get_address_by_name {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::AddressResource> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1314,7 +1314,7 @@ pub mod create_address {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::AddressResource> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1551,7 +1551,7 @@ pub mod get_order_by_name {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::OrderResource> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1718,7 +1718,7 @@ pub mod get_order_item_by_name {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::OrderItemResource> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }
@@ -1773,7 +1773,7 @@ pub mod create_order_item {
         }
         #[doc = "Send the request and return the response body."]
         pub async fn into_body(self) -> azure_core::Result<models::OrderItemResource> {
-            self.send().await?.into_body().await
+            self.into_future().await?.into_body().await
         }
     }
 }

@@ -213,7 +213,7 @@ pub mod public_offers {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::CatalogItem> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -275,7 +275,7 @@ pub mod public_offers {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PageResultOfCatalogItem> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }

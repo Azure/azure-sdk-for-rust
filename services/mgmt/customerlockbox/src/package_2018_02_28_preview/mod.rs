@@ -260,7 +260,7 @@ pub mod get {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::TenantOptInResponse> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -444,7 +444,7 @@ pub mod requests {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::LockboxRequestResponse> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
@@ -496,7 +496,7 @@ pub mod requests {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Approval> {
-                self.send().await?.into_body().await
+                self.into_future().await?.into_body().await
             }
         }
     }
