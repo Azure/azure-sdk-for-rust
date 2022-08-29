@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     key_create_params.attributes = Some(key_attributes);
 
     println!("Creating key '{}' in key vault '{}'.", key_name, keyvault_name);
-    client.create_key(&key_name, key_create_params).send().await?;
+    client.create_key(&key_name, key_create_params).into_future().await?;
     println!("Key '{}' created!", key_name);
 
     Ok(())
