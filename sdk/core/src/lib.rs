@@ -36,6 +36,9 @@ pub mod util;
 
 use uuid::Uuid;
 
+#[cfg(feature = "xml")]
+pub mod xml;
+
 pub use bytes_stream::*;
 pub use constants::*;
 pub use context::Context;

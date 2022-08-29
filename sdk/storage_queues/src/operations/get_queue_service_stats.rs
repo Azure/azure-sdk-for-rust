@@ -3,9 +3,10 @@ use azure_core::{
     date,
     error::{ErrorKind, ResultExt},
     headers::Headers,
+    xml::read_xml,
     Method, Response as AzureResponse,
 };
-use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 

@@ -1,5 +1,4 @@
-use crate::xml::read_xml;
-use azure_core::date;
+use azure_core::{date, xml::read_xml};
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -117,7 +116,6 @@ struct AccessPolicy {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::xml::read_xml;
 
     #[test]
     fn parse_from_xml() {

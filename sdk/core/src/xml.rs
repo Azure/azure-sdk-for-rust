@@ -1,10 +1,10 @@
-use azure_core::error::{ErrorKind, ResultExt};
+use crate::error::{ErrorKind, ResultExt};
 
 /// The UTF8 [byte order marker](https://en.wikipedia.org/wiki/Byte_order_mark)
 const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// Reads the XML from bytes.
-pub fn read_xml<'de, T: serde::de::Deserialize<'de>>(body: &[u8]) -> azure_core::Result<T> {
+pub fn read_xml<'de, T: serde::de::Deserialize<'de>>(body: &[u8]) -> crate::Result<T> {
     serde_xml_rs::from_reader(slice_bom(body)).with_context(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         let xml = std::str::from_utf8(body).unwrap_or("<XML IS NOT UTF-8>");
@@ -24,6 +24,7 @@ fn slice_bom(bytes: &[u8]) -> &[u8] {
 #[cfg(test)]
 mod test {
     use super::*;
+    use serde::Deserialize;
 
     #[test]
     fn test_slice_bom() {
