@@ -176,7 +176,7 @@ pub mod best_practices {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -224,7 +224,7 @@ pub mod best_practices {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -298,7 +298,7 @@ pub mod best_practices_versions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -348,7 +348,7 @@ pub mod best_practices_versions {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -512,7 +512,7 @@ pub mod configuration_profiles {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -565,7 +565,7 @@ pub mod configuration_profiles {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -619,7 +619,7 @@ pub mod configuration_profiles {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -665,7 +665,7 @@ pub mod configuration_profiles {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -713,7 +713,7 @@ pub mod configuration_profiles {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -763,7 +763,7 @@ pub mod configuration_profiles {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -908,7 +908,7 @@ pub mod configuration_profiles_versions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -963,7 +963,7 @@ pub mod configuration_profiles_versions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1011,7 +1011,7 @@ pub mod configuration_profiles_versions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1061,7 +1061,7 @@ pub mod configuration_profiles_versions {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1268,7 +1268,7 @@ pub mod configuration_profile_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1316,7 +1316,7 @@ pub mod configuration_profile_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1357,7 +1357,7 @@ pub mod configuration_profile_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1400,7 +1400,7 @@ pub mod configuration_profile_assignments {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1446,7 +1446,7 @@ pub mod configuration_profile_assignments {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1496,7 +1496,7 @@ pub mod configuration_profile_assignments {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1547,7 +1547,7 @@ pub mod configuration_profile_assignments {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1594,7 +1594,7 @@ pub mod configuration_profile_assignments {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1648,7 +1648,7 @@ pub mod operations {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1750,7 +1750,7 @@ pub mod reports {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1798,7 +1798,7 @@ pub mod reports {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1869,7 +1869,7 @@ pub mod service_principals {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1917,7 +1917,7 @@ pub mod service_principals {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2043,7 +2043,7 @@ pub mod configuration_profile_hcrp_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2091,7 +2091,7 @@ pub mod configuration_profile_hcrp_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2132,7 +2132,7 @@ pub mod configuration_profile_hcrp_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2229,7 +2229,7 @@ pub mod hcrp_reports {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2277,7 +2277,7 @@ pub mod hcrp_reports {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2399,7 +2399,7 @@ pub mod configuration_profile_hci_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2447,7 +2447,7 @@ pub mod configuration_profile_hci_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2488,7 +2488,7 @@ pub mod configuration_profile_hci_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2585,7 +2585,7 @@ pub mod hci_reports {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2633,7 +2633,7 @@ pub mod hci_reports {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

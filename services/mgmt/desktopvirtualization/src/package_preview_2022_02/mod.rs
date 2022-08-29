@@ -361,7 +361,7 @@ pub mod workspaces {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -414,7 +414,7 @@ pub mod workspaces {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -473,7 +473,7 @@ pub mod workspaces {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -523,7 +523,7 @@ pub mod workspaces {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -858,7 +858,7 @@ pub mod scaling_plans {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -911,7 +911,7 @@ pub mod scaling_plans {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -970,7 +970,7 @@ pub mod scaling_plans {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1020,7 +1020,7 @@ pub mod scaling_plans {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1419,7 +1419,7 @@ pub mod application_groups {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1472,7 +1472,7 @@ pub mod application_groups {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1531,7 +1531,7 @@ pub mod application_groups {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1581,7 +1581,7 @@ pub mod application_groups {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2021,7 +2021,7 @@ pub mod applications {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2069,7 +2069,7 @@ pub mod applications {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2123,7 +2123,7 @@ pub mod applications {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2168,7 +2168,7 @@ pub mod applications {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2356,7 +2356,7 @@ pub mod desktops {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2409,7 +2409,7 @@ pub mod desktops {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2673,7 +2673,7 @@ pub mod host_pools {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2726,7 +2726,7 @@ pub mod host_pools {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2785,7 +2785,7 @@ pub mod host_pools {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2841,7 +2841,7 @@ pub mod host_pools {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3048,7 +3048,7 @@ pub mod host_pools {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3337,7 +3337,7 @@ pub mod user_sessions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3384,7 +3384,7 @@ pub mod user_sessions {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3500,7 +3500,7 @@ pub mod user_sessions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3544,7 +3544,7 @@ pub mod user_sessions {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3686,7 +3686,7 @@ pub mod session_hosts {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3752,7 +3752,7 @@ pub mod session_hosts {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3813,7 +3813,7 @@ pub mod session_hosts {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4064,7 +4064,7 @@ pub mod msix_packages {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4119,7 +4119,7 @@ pub mod msix_packages {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4180,7 +4180,7 @@ pub mod msix_packages {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4232,7 +4232,7 @@ pub mod msix_packages {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4733,7 +4733,7 @@ pub mod private_endpoint_connections {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4781,7 +4781,7 @@ pub mod private_endpoint_connections {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4822,7 +4822,7 @@ pub mod private_endpoint_connections {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4942,7 +4942,7 @@ pub mod private_endpoint_connections {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4990,7 +4990,7 @@ pub mod private_endpoint_connections {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5031,7 +5031,7 @@ pub mod private_endpoint_connections {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
