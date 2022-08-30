@@ -1,34 +1,37 @@
 [package]
-name = "azure_messaging_servicebus"
-version = "0.4.0"
-description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
-readme = "README.md"
 authors = ["Microsoft Corp."]
-license = "MIT"
-repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
 documentation = "https://docs.rs/azure_messaging_servicebus"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+license = "MIT"
+name = "azure_messaging_servicebus"
+readme = "README.md"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+version = "0.4.0"
 
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.4" }
+async-trait = "0.1"
+azure_core = {path = "../core", version = "0.4"}
 base64 = "0.13"
-time = "0.3.10"
-log = "0.4"
-url = "2.2"
-hmac = "0.12"
-sha2 = "0.10"
-ring = "0.16"
 bytes = "1.0"
+hmac = "0.12"
+http = "0.2"
+log = "0.4"
+ring = "0.16"
+sha2 = "0.10"
+time = "0.3.10"
+tokio-util = "0.7.3"
+url = "2.2"
 
 [dev-dependencies]
-futures = "0.3"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.9"
+futures = "0.3"
+tokio = {version = "1.0", features = ["macros", "rt-multi-thread"]}
 
 [features]
 default = ["azure_core/enable_reqwest"]
