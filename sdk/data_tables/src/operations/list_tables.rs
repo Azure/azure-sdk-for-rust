@@ -81,7 +81,7 @@ impl TryFrom<CollectedResponse> for ListTablesResponse {
 
         let continuation_next_table_name = response
             .headers()
-            .get_optional_string(&HeaderName::from_static("x-ms-continuation-NextTableName"));
+            .get_optional_string(&HeaderName::from_static("x-ms-continuation-nexttablename"));
 
         Ok(ListTablesResponse {
             common_storage_response_headers: response.headers().try_into()?,
