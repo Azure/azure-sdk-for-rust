@@ -29,7 +29,7 @@ pub(crate) trait TransportRuleManager {
     async fn create_rule(
         &mut self,
         properties: RuleProperties,
-        cancellation_token: Option<CancellationToken>,
+        cancellation_token: impl Into<Option<CancellationToken>>,
     ) -> Result<(), Self::Error>;
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
@@ -46,7 +46,7 @@ pub(crate) trait TransportRuleManager {
     async fn delete_rule(
         &mut self,
         rule_name: impl Into<String>,
-        cancellation_token: Option<CancellationToken>,
+        cancellation_token: impl Into<Option<CancellationToken>>,
     ) -> Result<(), Self::Error>;
 
     /// Get all rules associated with the subscription.
@@ -65,7 +65,7 @@ pub(crate) trait TransportRuleManager {
         &mut self,
         skip: i32,
         top: i32,
-        cancellation_token: Option<CancellationToken>,
+        cancellation_token: impl Into<Option<CancellationToken>>,
     ) -> Result<Vec<RuleProperties>, Self::Error>;
 
     /// Closes the connection to the transport rule manager instance.
@@ -76,6 +76,6 @@ pub(crate) trait TransportRuleManager {
     ///   cancel the operation.
     async fn close(
         &mut self,
-        cancellation_token: Option<CancellationToken>,
+        cancellation_token: impl Into<Option<CancellationToken>>,
     ) -> Result<(), Self::Error>;
 }
