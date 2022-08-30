@@ -3,9 +3,7 @@ extern crate azure_core;
 
 mod account;
 mod certificates;
-mod clients;
+pub mod clients;
 mod keys;
 pub mod prelude;
 mod secrets;
-
-pub use clients::*;
