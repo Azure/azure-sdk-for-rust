@@ -6,6 +6,7 @@ pub mod amqp;
 pub mod client;
 pub mod constants;
 pub mod core;
+pub mod diagnostics;
 pub mod prelude;
 pub mod primitives;
 pub mod receiver;
