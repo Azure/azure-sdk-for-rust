@@ -173,6 +173,7 @@ pub struct HeaderName(std::borrow::Cow<'static, str>);
 
 impl HeaderName {
     pub const fn from_static(s: &'static str) -> Self {
+        ensure_no_uppercase(s);
         Self(std::borrow::Cow::Borrowed(s))
     }
 
@@ -190,6 +191,19 @@ impl HeaderName {
 
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
+    }
+}
+
+/// Ensures the supplied string does not contain any uppercase ascii characters
+const fn ensure_no_uppercase(s: &str) {
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let byte = bytes[i];
+        if byte >= 65u8 && byte <= 90u8 {
+            panic!("header names must not contain any uppercase letters");
+        }
+        i += 1;
     }
 }
 
