@@ -4,6 +4,7 @@
 pub mod administration;
 pub mod amqp;
 pub mod client;
+pub mod constants;
 pub mod core;
 pub mod prelude;
 pub mod primitives;
