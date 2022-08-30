@@ -94,6 +94,23 @@ pub(crate) mod private {
     /// TODO:
     #[async_trait]
     pub trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy {
+        async fn run_operation_not_verbose<F, T1, Fut, S>(
+            &mut self,
+            operation: F,
+            t1: T1,
+            scope: S,
+            cancellation_token: CancellationToken,
+        ) -> Result<(), Self::Error>
+        where
+            F: Fn(T1, Duration, CancellationToken) -> Fut + Send,
+            T1: Send,
+            Fut: Future<Output = Result<Self::Ok, Self::Error>>,
+            S: TransportConnectionScope + Send,
+        {
+            self.run_operation(operation, t1, scope, cancellation_token, false)
+                .await
+        }
+
         async fn run_operation<F, T1, Fut, S>(
             &mut self,
             operation: F,
