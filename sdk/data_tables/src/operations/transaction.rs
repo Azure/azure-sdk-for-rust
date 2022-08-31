@@ -8,7 +8,7 @@ use azure_core::{
     prelude::*,
     CollectedResponse, Etag, Method, Request, StatusCode,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Serialize;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;

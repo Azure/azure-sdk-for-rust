@@ -1,4 +1,5 @@
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
+use azure_storage_blobs::prelude::*;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -10,8 +11,9 @@ async fn main() -> azure_core::Result<()> {
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
     let storage_client = StorageClient::new_access_key(&account, &access_key);
+    let blob_service_client = storage_client.blob_service_client();
 
-    let account = storage_client
+    let account = blob_service_client
         .get_account_information()
         .into_future()
         .await?;

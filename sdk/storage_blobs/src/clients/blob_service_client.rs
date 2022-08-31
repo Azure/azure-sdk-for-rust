@@ -1,6 +1,6 @@
 use crate::service::operations::*;
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{ServiceType, StorageClient};
+use azure_storage::clients::{ServiceType, StorageClient};
 
 pub trait AsBlobServiceClient {
     fn blob_service_client(&self) -> BlobServiceClient;
@@ -20,6 +20,10 @@ pub struct BlobServiceClient {
 impl BlobServiceClient {
     pub(crate) fn new(storage_client: StorageClient) -> Self {
         Self { storage_client }
+    }
+
+    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
+        GetAccountInformationBuilder::new(self.clone())
     }
 
     pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {

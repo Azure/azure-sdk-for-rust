@@ -6,7 +6,7 @@ use azure_core::{
     Body, Method, Request, Response, Url,
 };
 use azure_storage::{
-    core::clients::{ServiceType, StorageClient, StorageCredentials},
+    clients::{ServiceType, StorageClient, StorageCredentials},
     prelude::BlobSasPermissions,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},

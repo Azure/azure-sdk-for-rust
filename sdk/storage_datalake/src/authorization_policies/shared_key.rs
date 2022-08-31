@@ -1,7 +1,7 @@
 use azure_core::headers::{self, HeaderName, HeaderValue, Headers};
 use azure_core::{date, Method};
 use azure_core::{Context, Policy, PolicyResult, Request};
-use azure_storage::{core::storage_shared_key_credential::StorageSharedKeyCredential, hmac::sign};
+use azure_storage::{hmac::sign, storage_shared_key_credential::StorageSharedKeyCredential};
 use std::sync::Arc;
 use time::OffsetDateTime;
 

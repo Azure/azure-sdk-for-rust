@@ -1,4 +1,4 @@
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use chrono::*;
 use url::Url;
 

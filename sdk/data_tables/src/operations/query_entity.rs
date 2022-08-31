@@ -5,7 +5,7 @@ use azure_core::{
     prelude::*,
     AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 

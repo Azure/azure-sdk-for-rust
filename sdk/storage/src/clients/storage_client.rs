@@ -1,5 +1,4 @@
 use crate::authorization_policy::AuthorizationPolicy;
-use crate::operations::*;
 use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
@@ -476,19 +475,6 @@ impl StorageClient {
             .await
     }
 
-    /// Prepares' an `azure_core::Request`.
-    pub(crate) fn blob_storage_request(
-        &self,
-        http_method: azure_core::Method,
-    ) -> azure_core::Result<Request> {
-        self.finalize_request(
-            self.blob_storage_url().clone(),
-            http_method,
-            Headers::new(),
-            None,
-        )
-    }
-
     pub fn shared_access_signature(
         &self,
         resource: AccountSasResource,
@@ -515,10 +501,6 @@ impl StorageClient {
         I: IntoIterator<Item = &'a str>,
     {
         Self::url_with_segments(self.queue_storage_url().to_owned(), segments)
-    }
-
-    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
-        GetAccountInformationBuilder::new(self.clone())
     }
 
     pub fn url_with_segments<'a, I>(

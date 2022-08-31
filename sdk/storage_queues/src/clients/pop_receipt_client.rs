@@ -1,6 +1,6 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::StorageClient;
+use azure_storage::clients::StorageClient;
 
 #[derive(Debug, Clone)]
 pub struct PopReceiptClient {

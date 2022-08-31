@@ -1,6 +1,6 @@
 use azure_core::StatusCode;
 use azure_data_tables::{operations::InsertEntityResponse, prelude::*};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 

@@ -1,6 +1,6 @@
 use crate::{operations::*, QueueServiceProperties};
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{ServiceType, StorageClient};
+use azure_storage::clients::{ServiceType, StorageClient};
 use std::fmt::Debug;
 
 pub trait AsQueueServiceClient {
