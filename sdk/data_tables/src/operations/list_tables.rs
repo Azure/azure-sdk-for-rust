@@ -2,7 +2,7 @@ use crate::prelude::*;
 use azure_core::{
     error::Error, headers::*, prelude::*, AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 
 operation! {

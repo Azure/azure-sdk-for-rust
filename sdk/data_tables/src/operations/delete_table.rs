@@ -4,7 +4,7 @@ use azure_core::{
     headers::*,
     Method, Response,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 
 operation! {

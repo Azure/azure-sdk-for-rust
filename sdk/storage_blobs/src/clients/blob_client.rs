@@ -9,7 +9,7 @@ use azure_core::{
     prelude::*,
     Body, Method, Request, Response, StatusCode,
 };
-use azure_storage::core::{
+use azure_storage::{
     clients::StorageCredentials,
     prelude::*,
     shared_access_signature::{

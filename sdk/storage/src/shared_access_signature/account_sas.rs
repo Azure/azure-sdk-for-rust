@@ -1,4 +1,4 @@
-use crate::core::{
+use crate::{
     hmac::sign,
     shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
 };

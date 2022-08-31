@@ -2,7 +2,7 @@ use crate::prelude::*;
 use azure_core::{
     date, headers::Headers, prelude::*, xml::read_xml, Method, Response as AzureResponse,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 

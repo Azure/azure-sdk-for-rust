@@ -1,6 +1,6 @@
 use crate::service::operations::*;
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{ServiceType, StorageClient};
+use azure_storage::clients::{ServiceType, StorageClient};
 
 pub trait AsBlobServiceClient {
     fn blob_service_client(&self) -> BlobServiceClient;

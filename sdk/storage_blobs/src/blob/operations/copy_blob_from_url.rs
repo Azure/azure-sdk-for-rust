@@ -4,9 +4,7 @@ use crate::{
 };
 use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::{
-    core::{copy_id_from_headers, CopyId},
-    headers::content_md5_from_headers_optional,
-    ConsistencyMD5,
+    copy_id_from_headers, headers::content_md5_from_headers_optional, ConsistencyMD5, CopyId,
 };
 use std::convert::{TryFrom, TryInto};
 use time::OffsetDateTime;

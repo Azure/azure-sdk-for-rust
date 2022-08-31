@@ -2,7 +2,7 @@ use crate::clients::DataLakeClient;
 use crate::file_system::{FileSystem, FileSystemList};
 use azure_core::{error::Error, prelude::*, Pageable, Response};
 use azure_core::{AppendToUrlQuery, Request};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 type ListFileSystems = Pageable<ListFileSystemsResponse, Error>;

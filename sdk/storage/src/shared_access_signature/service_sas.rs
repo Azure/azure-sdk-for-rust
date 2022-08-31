@@ -1,6 +1,6 @@
 use crate::{
-    core::shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
     hmac,
+    shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
 };
 use std::fmt;
 use time::OffsetDateTime;

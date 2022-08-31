@@ -1,6 +1,6 @@
 use crate::{operations::*, PopReceipt, PopReceiptClient, QueueStoredAccessPolicy};
 use azure_core::{prelude::*, Context, Request, Response};
-use azure_storage::core::clients::{ServiceType, StorageClient};
+use azure_storage::clients::{ServiceType, StorageClient};
 use std::fmt::Debug;
 
 pub trait AsQueueClient<QN: Into<String>> {

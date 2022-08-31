@@ -1,5 +1,5 @@
 use azure_identity::{device_code_flow, refresh_token};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 use std::env;

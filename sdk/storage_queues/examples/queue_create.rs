@@ -2,7 +2,7 @@
 extern crate log;
 use azure_core::{date, prelude::*};
 
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 use time::OffsetDateTime;
 

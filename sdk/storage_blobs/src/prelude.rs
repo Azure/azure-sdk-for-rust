@@ -7,4 +7,4 @@ pub use crate::{
         ContainerClient, ContainerLeaseClient,
     },
 };
-pub use azure_storage::core::{StoredAccessPolicy, StoredAccessPolicyList};
+pub use azure_storage::{StoredAccessPolicy, StoredAccessPolicyList};

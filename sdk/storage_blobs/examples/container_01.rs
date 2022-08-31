@@ -1,5 +1,5 @@
 use azure_core::{date, prelude::*};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
