@@ -44,7 +44,7 @@ impl ListContainersBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.client.storage_client.blob_storage_url().clone();
+                let mut url = this.client.url().clone();
 
                 url.query_pairs_mut().append_pair("comp", "list");
 
@@ -64,12 +64,9 @@ impl ListContainersBuilder {
                 }
                 this.max_results.append_to_url_query(&mut url);
 
-                let mut request = this.client.storage_client.finalize_request(
-                    url,
-                    Method::Get,
-                    Headers::new(),
-                    None,
-                )?;
+                let mut request =
+                    this.client
+                        .finalize_request(url, Method::Get, Headers::new(), None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 

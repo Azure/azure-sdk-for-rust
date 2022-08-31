@@ -438,30 +438,7 @@ impl StorageClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        let dt = OffsetDateTime::now_utc();
-        let time = date::to_rfc1123(&dt);
-
-        let mut request = Request::new(url, method);
-        for (k, v) in headers {
-            request.insert_header(k, v);
-        }
-
-        // let's add content length to avoid "chunking" errors.
-        match request_body {
-            Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
-            None => request.insert_header(CONTENT_LENGTH, "0"),
-        };
-
-        request.insert_header(MS_DATE, time);
-        request.insert_header(VERSION, AZURE_VERSION);
-
-        if let Some(request_body) = request_body {
-            request.set_body(request_body);
-        } else {
-            request.set_body(azure_core::EMPTY_BODY);
-        };
-
-        Ok(request)
+        finalize_request(url, method, headers, request_body)
     }
 
     pub async fn send(
@@ -522,6 +499,33 @@ impl StorageClient {
     }
 }
 
+pub fn finalize_request(
+    url: Url,
+    method: Method,
+    headers: Headers,
+    request_body: Option<Body>,
+) -> Result<Request, Error> {
+    let dt = OffsetDateTime::now_utc();
+    let time = date::to_rfc1123(&dt);
+    let mut request = Request::new(url, method);
+    for (k, v) in headers {
+        request.insert_header(k, v);
+    }
+    // let's add content length to avoid "chunking" errors.
+    match request_body {
+        Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
+        None => request.insert_header(CONTENT_LENGTH, "0"),
+    };
+    request.insert_header(MS_DATE, time);
+    request.insert_header(VERSION, AZURE_VERSION);
+    if let Some(request_body) = request_body {
+        request.set_body(request_body);
+    } else {
+        request.set_body(azure_core::EMPTY_BODY);
+    };
+    Ok(request)
+}
+
 fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
     // Any base url will do: we just need to parse the SAS token
     // to get its query pairs.
@@ -564,7 +568,10 @@ fn get_endpoint_uri(
 }
 
 /// Create a Pipeline from StorageOptions
-fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
+pub fn new_pipeline_from_options(
+    options: StorageOptions,
+    credentials: StorageCredentials,
+) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 
     // The `AuthorizationPolicy` must be the **last** retry policy.

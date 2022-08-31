@@ -3,10 +3,10 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Body, Method, Request, Response, Url,
+    Body, Method, Pipeline, Request, Response, Url,
 };
 use azure_storage::{
-    clients::{ServiceType, StorageClient, StorageCredentials},
+    clients::{ServiceType, StorageCredentials, StorageOptions},
     prelude::BlobSasPermissions,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
@@ -15,26 +15,16 @@ use azure_storage::{
 };
 use time::OffsetDateTime;
 
-pub trait AsContainerClient {
-    fn container_client(&self, container_name: impl Into<String>) -> ContainerClient;
-}
-
-impl AsContainerClient for StorageClient {
-    fn container_client(&self, container_name: impl Into<String>) -> ContainerClient {
-        ContainerClient::new(self.clone(), container_name.into())
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct ContainerClient {
-    storage_client: StorageClient,
+    service_client: BlobServiceClient,
     container_name: String,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(storage_client: StorageClient, container_name: String) -> Self {
+    pub(crate) fn new(service_client: BlobServiceClient, container_name: String) -> Self {
         Self {
-            storage_client,
+            service_client,
             container_name,
         }
     }
@@ -86,30 +76,26 @@ impl ContainerClient {
         &self.container_name
     }
 
-    pub fn storage_client(&self) -> &StorageClient {
-        &self.storage_client
-    }
+    // pub fn shared_access_signature(
+    //     &self,
+    //     permissions: BlobSasPermissions,
+    //     expiry: OffsetDateTime,
+    // ) -> azure_core::Result<BlobSharedAccessSignature> {
+    //     let canonicalized_resource = format!(
+    //         "/blob/{}/{}",
+    //         self.storage_client().account(),
+    //         self.container_name(),
+    //     );
 
-    pub fn shared_access_signature(
-        &self,
-        permissions: BlobSasPermissions,
-        expiry: OffsetDateTime,
-    ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let canonicalized_resource = format!(
-            "/blob/{}/{}",
-            self.storage_client().account(),
-            self.container_name(),
-        );
-
-        match self.storage_client().storage_credentials() {
-            StorageCredentials::Key(_, key) => Ok(
-                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
-            ),
-            _ => Err(Error::message(ErrorKind::Credential,
-                "Shared access signature generation - SAS can be generated only from key and account clients",
-            )),
-        }
-    }
+    //     match self.storage_client().storage_credentials() {
+    //         StorageCredentials::Key(_, key) => Ok(
+    //             BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
+    //         ),
+    //         _ => Err(Error::message(ErrorKind::Credential,
+    //             "Shared access signature generation - SAS can be generated only from key and account clients",
+    //         )),
+    //     }
+    // }
 
     pub fn generate_signed_container_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
     where
@@ -122,8 +108,10 @@ impl ContainerClient {
 
     /// Full URL for the container.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        self.storage_client
-            .blob_url_with_segments(Some(self.container_name.as_str()).into_iter())
+        let mut url = self.service_client.url();
+        url.set_path(&self.container_name);
+        // TODO: get rid of result
+        Ok(url)
     }
 
     pub(crate) async fn send(
@@ -131,9 +119,7 @@ impl ContainerClient {
         context: &mut Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Blob)
-            .await
+        self.service_client.send(context, request).await
     }
 
     pub(crate) fn finalize_request(
@@ -143,7 +129,7 @@ impl ContainerClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.storage_client
+        self.service_client
             .finalize_request(url, method, headers, request_body)
     }
 }

@@ -9,10 +9,10 @@ async fn get_account_information() {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let blob_service_client = storage_client.blob_service_client();
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
 
-    blob_service_client
+    blob_service
         .get_account_information()
         .into_future()
         .await

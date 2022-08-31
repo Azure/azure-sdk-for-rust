@@ -529,11 +529,12 @@ fn send_check() {
     );
 }
 
-fn initialize() -> StorageClient {
+fn initialize() -> BlobServiceClient {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    StorageClient::new_access_key(&account, &access_key)
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    BlobServiceClient::new(account, storage_credentials)
 }

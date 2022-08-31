@@ -6,6 +6,6 @@ mod container_lease_client;
 
 pub use blob_client::BlobClient;
 pub use blob_lease_client::BlobLeaseClient;
-pub use blob_service_client::{AsBlobServiceClient, BlobServiceClient};
-pub use container_client::{AsContainerClient, ContainerClient};
+pub use blob_service_client::{BlobServiceClient, BlobServiceClientBuilder, CloudLocation};
+pub use container_client::ContainerClient;
 pub use container_lease_client::ContainerLeaseClient;

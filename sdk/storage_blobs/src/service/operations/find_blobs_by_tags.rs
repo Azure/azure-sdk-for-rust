@@ -18,7 +18,7 @@ impl FindBlobsByTagsBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.client.storage_client.blob_storage_url().clone();
+                let mut url = this.client.url().clone();
 
                 url.query_pairs_mut().append_pair("comp", "blobs");
                 if let Some(next_marker) = next_marker {
@@ -26,7 +26,7 @@ impl FindBlobsByTagsBuilder {
                         .append_pair("next", next_marker.as_str());
                 }
                 url.query_pairs_mut().append_pair("where", &this.expression);
-                let mut request = this.client.storage_client.finalize_request(
+                let mut request = this.client.finalize_request(
                     url,
                     azure_core::Method::Get,
                     azure_core::headers::Headers::new(),

@@ -11,17 +11,14 @@ operation! {
 impl GetAccountInformationBuilder {
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
-            let mut url = self.client.storage_client.blob_storage_url().clone();
+            let mut url = self.client.url().clone();
 
             for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
                 url.query_pairs_mut().append_pair(k, v);
             }
-            let mut request = self.client.storage_client.finalize_request(
-                url,
-                Method::Get,
-                Headers::new(),
-                None,
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

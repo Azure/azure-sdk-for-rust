@@ -8,8 +8,9 @@ async fn main() -> azure_core::Result<()> {
     let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT");
     let container = std::env::var("STORAGE_CONTAINER").expect("Set env variable STORAGE_CONTAINER");
 
-    let storage_client = StorageClient::new_anonymous(&account);
-    let container_client = storage_client.container_client(container);
+    let storage_credentials = StorageCredentials::Anonymous;
+    let container_client =
+        BlobServiceClient::new(account, storage_credentials).container_client(container);
 
     let mut blob_stream = container_client.list_blobs().into_stream();
     while let Some(blob_entry) = blob_stream.next().await {

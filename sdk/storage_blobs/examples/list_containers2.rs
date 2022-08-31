@@ -17,10 +17,10 @@ async fn main() -> azure_core::Result<()> {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let blob_service_client = storage_client.blob_service_client();
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let service_client = BlobServiceClient::new(&account, storage_credentials);
 
-    let response = blob_service_client
+    let response = service_client
         .list_containers()
         .into_stream()
         .next()
@@ -28,7 +28,7 @@ async fn main() -> azure_core::Result<()> {
         .expect("stream failed")?;
     println!("response = {:#?}", response);
 
-    let response = storage_client
+    let response = service_client
         .container_client("$logs")
         .list_blobs()
         .into_stream()

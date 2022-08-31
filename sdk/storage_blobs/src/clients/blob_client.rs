@@ -204,28 +204,28 @@ impl BlobClient {
         ClearPageBuilder::new(self.clone(), ba512_range)
     }
 
-    /// Create a shared access signature.
-    pub fn shared_access_signature(
-        &self,
-        permissions: BlobSasPermissions,
-        expiry: OffsetDateTime,
-    ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let canonicalized_resource = format!(
-            "/blob/{}/{}/{}",
-            self.container_client.storage_client().account(),
-            self.container_client.container_name(),
-            self.blob_name()
-        );
+    // /// Create a shared access signature.
+    // pub fn shared_access_signature(
+    //     &self,
+    //     permissions: BlobSasPermissions,
+    //     expiry: OffsetDateTime,
+    // ) -> azure_core::Result<BlobSharedAccessSignature> {
+    //     let canonicalized_resource = format!(
+    //         "/blob/{}/{}/{}",
+    //         self.container_client.storage_client().account(),
+    //         self.container_client.container_name(),
+    //         self.blob_name()
+    //     );
 
-        match self.storage_client().storage_credentials() {
-            StorageCredentials::Key(ref _account, ref key) => Ok(
-                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
-            ),
-            _ => Err(Error::message(ErrorKind::Credential,
-                "Shared access signature generation - SAS can be generated only from key and account clients",
-            )),
-        }
-    }
+    //     match self.storage_client().storage_credentials() {
+    //         StorageCredentials::Key(ref _account, ref key) => Ok(
+    //             BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
+    //         ),
+    //         _ => Err(Error::message(ErrorKind::Credential,
+    //             "Shared access signature generation - SAS can be generated only from key and account clients",
+    //         )),
+    //     }
+    // }
 
     /// Create a signed blob url
     pub fn generate_signed_blob_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
@@ -262,10 +262,6 @@ impl BlobClient {
     /// Turn into a `BlobLeaseClient`
     pub fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient {
         BlobLeaseClient::new(self.clone(), lease_id)
-    }
-
-    pub fn storage_client(&self) -> &StorageClient {
-        self.container_client.storage_client()
     }
 
     pub fn container_client(&self) -> &ContainerClient {
@@ -311,12 +307,13 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account
-            .container_client(container_name)
-            .blob_client(blob_name)
-            .generate_signed_blob_url(sas)
-            .expect("build url failed")
+        todo!("replace the following code")
+        // let storage_account = StorageClient::new_emulator_default();
+        // storage_account
+        //     .container_client(container_name)
+        //     .blob_client(blob_name)
+        //     .generate_signed_blob_url(sas)
+        //     .expect("build url failed")
     }
 
     #[test]

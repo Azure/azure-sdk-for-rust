@@ -1,5 +1,5 @@
 pub use crate::{
-    clients::StorageClient,
+    clients::{StorageClient, StorageCredentials},
     consistency::{ConsistencyCRC64, ConsistencyMD5},
     shared_access_signature::{
         account_sas::{AccountSasPermissions, AccountSasResource, AccountSasResourceType},
