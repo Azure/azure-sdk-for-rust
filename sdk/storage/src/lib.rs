@@ -11,9 +11,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub mod account;
 mod authorization_policy;
 pub mod core;
 
 pub use crate::core::*;
-pub use account::*;

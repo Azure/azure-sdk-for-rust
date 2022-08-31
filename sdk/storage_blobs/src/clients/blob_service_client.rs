@@ -22,6 +22,10 @@ impl BlobServiceClient {
         Self { storage_client }
     }
 
+    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
+        GetAccountInformationBuilder::new(self.clone())
+    }
+
     pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {
         FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
