@@ -77,7 +77,7 @@ impl ContainerClient {
     }
 
     pub(crate) fn credentials(&self) -> &StorageCredentials {
-        &self.service_client.credentials()
+        self.service_client.credentials()
     }
 
     /// Create a shared access signature.
@@ -119,9 +119,9 @@ impl ContainerClient {
     pub fn url(&self) -> azure_core::Result<url::Url> {
         let container_name = self
             .container_name()
-            .strip_prefix("/")
+            .strip_prefix('/')
             .unwrap_or_else(|| self.container_name());
-        let sep = if self.service_client.url()?.path().ends_with("/") {
+        let sep = if self.service_client.url()?.path().ends_with('/') {
             ""
         } else {
             "/"

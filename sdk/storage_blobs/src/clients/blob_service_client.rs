@@ -130,7 +130,7 @@ impl BlobServiceClient {
         permissions: AccountSasPermissions,
     ) -> azure_core::Result<AccountSharedAccessSignature> {
         shared_access_signature(
-            &self.credentials(),
+            self.credentials(),
             AccountSasResource::Blob,
             resource_type,
             expiry,
