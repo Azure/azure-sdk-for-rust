@@ -53,11 +53,12 @@ impl StorageCredentials {
 
     /// Create a Shared Access Signature (SAS) token based credential
     ///
-    /// SAS tokens provide delegated access to resources in a storage account
-    /// with granular control over how the client can access data in the
-    /// account.
+    /// SAS token are HTTP query strings that provide delegated access to
+    /// resources in a storage account with granular control over how the client
+    /// can access data in the account.
     ///
-    /// ref: https://docs.microsoft.com/azure/storage/common/storage-sas-overview
+    /// ref: Understanding SAS authentication: https://docs.microsoft.com/azure/storage/common/storage-sas-overview
+    /// ref: Creating a SAS Token: https://docs.microsoft.com/en-us/azure/applied-ai-services/form-recognizer/create-sas-tokens
     pub fn sas_token<S>(token: S) -> azure_core::Result<Self>
     where
         S: AsRef<str>,
