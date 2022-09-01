@@ -15,11 +15,11 @@ use time::OffsetDateTime;
 use url::Url;
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
-/// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
 pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 
 /// The well-known account key used by Azurite and the legacy Azure Storage Emulator.
-/// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
@@ -42,7 +42,7 @@ impl StorageCredentials {
     /// authorize access to data in your storage account via Shared Key
     /// authorization.
     ///
-    /// ref: https://docs.microsoft.com/azure/storage/common/storage-account-keys-manage
+    /// ref: <https://docs.microsoft.com/azure/storage/common/storage-account-keys-manage>
     pub fn access_key<A, K>(account: A, key: K) -> Self
     where
         A: Into<String>,
@@ -57,8 +57,8 @@ impl StorageCredentials {
     /// resources in a storage account with granular control over how the client
     /// can access data in the account.
     ///
-    /// ref: Understanding SAS authentication: https://docs.microsoft.com/azure/storage/common/storage-sas-overview
-    /// ref: Creating a SAS Token: https://docs.microsoft.com/en-us/azure/applied-ai-services/form-recognizer/create-sas-tokens
+    /// * ref: [Grant limited access to Azure Storage resources using shared access signatures (SAS)](https://docs.microsoft.com/azure/storage/common/storage-sas-overview)
+    /// * ref: [Create SAS tokens for storage containers](https://docs.microsoft.com/azure/applied-ai-services/form-recognizer/create-sas-tokens)
     pub fn sas_token<S>(token: S) -> azure_core::Result<Self>
     where
         S: AsRef<str>,
@@ -76,7 +76,7 @@ impl StorageCredentials {
     /// manage access tokens, this method is provided for manual management of
     /// Oauth2 tokens.
     ///
-    /// ref: https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory
+    /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>
     pub fn bearer_token<T>(token: T) -> Self
     where
         T: Into<String>,
@@ -100,7 +100,7 @@ impl StorageCredentials {
     /// let storage_credentials = StorageCredentials::token_credential(token_credential);
     /// ```
     ///
-    /// ref: https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory
+    /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>
     pub fn token_credential(credential: Arc<dyn TokenCredential>) -> Self {
         Self::TokenCredential(credential)
     }
@@ -115,7 +115,7 @@ impl StorageCredentials {
     /// anonymous access, clients can read data in that container without
     /// authorizing the request.
     ///
-    /// ref: https://docs.microsoft.com/azure/storage/blobs/anonymous-read-access-configure
+    /// ref: <https://docs.microsoft.com/azure/storage/blobs/anonymous-read-access-configure>
     pub fn anonymous() -> Self {
         Self::Anonymous
     }
