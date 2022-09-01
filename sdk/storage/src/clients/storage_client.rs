@@ -34,6 +34,16 @@ pub enum StorageCredentials {
     Anonymous,
 }
 
+impl StorageCredentials {
+    pub fn new_sas_token<S>(token: S) -> azure_core::Result<Self>
+    where
+        S: AsRef<str>,
+    {
+        let params = get_sas_token_parms(token.as_ref())?;
+        Ok(Self::SASToken(params))
+    }
+}
+
 impl std::fmt::Debug for StorageCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
@@ -181,8 +191,7 @@ impl StorageClient {
     {
         let account = account.into();
 
-        let storage_credentials =
-            StorageCredentials::SASToken(get_sas_token_parms(sas_token.as_ref())?);
+        let storage_credentials = StorageCredentials::new_sas_token(sas_token)?;
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -270,9 +279,7 @@ impl StorageClient {
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
 
-                let storage_credentials =  StorageCredentials::SASToken(get_sas_token_parms(
-                    sas_token,
-                )?);
+                let storage_credentials =  StorageCredentials::new_sas_token(sas_token)?;
                 let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
                 Ok(Self {
@@ -295,7 +302,7 @@ impl StorageClient {
                 file_endpoint,
                 ..
             } => {
-                let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
+                let storage_credentials = StorageCredentials::new_sas_token(sas_token)?;
                 let pipeline =
                 new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
