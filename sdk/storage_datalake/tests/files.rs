@@ -12,7 +12,7 @@ async fn file_create_delete() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-create-delete";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
@@ -48,7 +48,7 @@ async fn file_upload() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-read";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
@@ -85,7 +85,7 @@ async fn file_read() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-upload";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
@@ -125,7 +125,7 @@ async fn file_rename() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-rename";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
@@ -186,7 +186,7 @@ async fn file_get_properties() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-get-properties";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let create_fs_response = file_system_client.create().into_future().await?;
     assert!(

@@ -10,6 +10,7 @@ pub struct DeleteFileSystemBuilder {
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl DeleteFileSystemBuilder {
@@ -19,6 +20,7 @@ impl DeleteFileSystemBuilder {
             if_modified_since_condition: None,
             client_request_id: None,
             timeout: None,
+            context: Context::new(),
         }
     }
 
@@ -30,7 +32,7 @@ impl DeleteFileSystemBuilder {
 
     pub fn into_future(self) -> DeleteFileSystem {
         let this = self.clone();
-        let ctx = self.client.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -43,11 +45,7 @@ impl DeleteFileSystemBuilder {
             request.insert_headers(&this.if_modified_since_condition);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
 
             DeleteFileSystemResponse::try_from(response).await
         })

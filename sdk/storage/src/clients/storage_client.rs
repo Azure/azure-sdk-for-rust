@@ -154,6 +154,18 @@ pub enum ServiceType {
     Queue,
     // File,
     Table,
+    DataLake,
+}
+
+impl ServiceType {
+    pub fn subdomain(&self) -> &str {
+        match self {
+            ServiceType::Blob => "blob",
+            ServiceType::Queue => "queue",
+            ServiceType::Table => "table",
+            ServiceType::DataLake => "dfs",
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

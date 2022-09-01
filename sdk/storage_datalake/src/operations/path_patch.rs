@@ -32,7 +32,7 @@ where
 }
 
 impl<C: PathClient + 'static> PatchPathBuilder<C> {
-    pub(crate) fn new(client: C, context: Context) -> Self {
+    pub(crate) fn new(client: C) -> Self {
         Self {
             client,
             acl: None,
@@ -47,7 +47,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             client_request_id: None,
             properties: None,
             bytes: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -69,7 +69,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
 
     pub fn into_future(self) -> PatchPath {
         let this = self.clone();
-        let ctx = self.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -99,11 +99,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
                 request.insert_headers(&ContentLength::new(0));
             }
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
 
             PatchPathResponse::try_from(response).await
         })

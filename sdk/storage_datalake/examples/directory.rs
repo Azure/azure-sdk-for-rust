@@ -1,10 +1,10 @@
-use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_storage::prelude::StorageCredentials;
 use azure_storage_datalake::prelude::*;
 use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let data_lake_client = create_data_lake_client().await.unwrap();
+    let data_lake_client = create_data_lake_client();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-example00-{}",
@@ -12,7 +12,7 @@ async fn main() -> azure_core::Result<()> {
     );
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");
@@ -64,14 +64,12 @@ async fn main() -> azure_core::Result<()> {
     Ok(())
 }
 
-async fn create_data_lake_client() -> azure_core::Result<DataLakeClient> {
+fn create_data_lake_client() -> DataLakeClient {
     let account_name = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
     let account_key = std::env::var("ADLSGEN2_STORAGE_ACCESS_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCESS_KEY first!");
 
-    Ok(DataLakeClient::new(
-        StorageSharedKeyCredential::new(account_name, account_key),
-        None,
-    ))
+    let storage_credentials = StorageCredentials::Key(account_name.clone(), account_key);
+    DataLakeClient::new(account_name, storage_credentials)
 }

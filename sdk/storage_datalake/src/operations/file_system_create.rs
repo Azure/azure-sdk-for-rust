@@ -2,6 +2,7 @@ use crate::clients::FileSystemClient;
 use crate::util::*;
 use crate::Properties;
 use azure_core::prelude::{ClientRequestId, ContentLength, Timeout};
+use azure_core::Context;
 use azure_core::Request;
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
@@ -17,6 +18,7 @@ pub struct CreateFileSystemBuilder {
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     properties: Option<Properties>,
+    context: Context,
 }
 
 impl CreateFileSystemBuilder {
@@ -26,6 +28,7 @@ impl CreateFileSystemBuilder {
             client_request_id: None,
             timeout: None,
             properties: None,
+            context: Context::new(),
         }
     }
 
@@ -37,7 +40,7 @@ impl CreateFileSystemBuilder {
 
     pub fn into_future(self) -> CreateFileSystem {
         let this = self.clone();
-        let ctx = self.client.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -50,11 +53,7 @@ impl CreateFileSystemBuilder {
             request.insert_headers(&this.properties);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
 
             CreateFileSystemResponse::try_from(response).await
         })

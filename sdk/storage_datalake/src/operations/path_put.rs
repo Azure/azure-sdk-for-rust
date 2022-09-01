@@ -27,7 +27,7 @@ where
 }
 
 impl<C: PathClient + 'static> PutPathBuilder<C> {
-    pub(crate) fn new(client: C, context: Context) -> Self {
+    pub(crate) fn new(client: C) -> Self {
         Self {
             client,
             mode: None,
@@ -38,7 +38,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
             client_request_id: None,
             properties: None,
             timeout: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -128,7 +128,7 @@ where
 }
 
 impl<C: PathClient + 'static> RenamePathBuilder<C> {
-    pub(crate) fn new(client: C, context: Context) -> Self {
+    pub(crate) fn new(client: C) -> Self {
         Self {
             client,
             mode: None,
@@ -139,7 +139,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
             rename_source: None,
             properties: None,
             timeout: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -157,7 +157,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
 
     pub fn into_future(self) -> RenamePath {
         let this = self.clone();
-        let ctx = self.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -177,10 +177,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
             request.insert_headers(&this.rename_source);
             request.insert_headers(&ContentLength::new(0));
 
-            self.client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            self.client.pipeline().send(&mut ctx, &mut request).await?;
 
             Ok(())
         })
