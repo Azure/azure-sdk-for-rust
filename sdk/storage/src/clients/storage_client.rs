@@ -35,12 +35,35 @@ pub enum StorageCredentials {
 }
 
 impl StorageCredentials {
+    pub fn new_storage_key<A, K>(account: A, key: K) -> Self
+    where
+        A: Into<String>,
+        K: Into<String>,
+    {
+        Self::Key(account.into(), key.into())
+    }
+
     pub fn new_sas_token<S>(token: S) -> azure_core::Result<Self>
     where
         S: AsRef<str>,
     {
         let params = get_sas_token_parms(token.as_ref())?;
         Ok(Self::SASToken(params))
+    }
+
+    pub fn new_bearer_token<T>(token: T) -> Self
+    where
+        T: Into<String>,
+    {
+        Self::BearerToken(token.into())
+    }
+
+    pub fn new_token_credential(credential: Arc<dyn TokenCredential>) -> Self {
+        Self::TokenCredential(credential)
+    }
+
+    pub fn new_anonymous() -> Self {
+        Self::Anonymous
     }
 }
 
@@ -98,8 +121,7 @@ impl StorageClient {
         K: Into<String>,
     {
         let account = account.into();
-        let key = key.into();
-        let storage_credentials = StorageCredentials::Key(account.clone(), key);
+        let storage_credentials = StorageCredentials::new_storage_key(account.clone(), key);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -164,9 +186,9 @@ impl StorageClient {
         K: Into<String>,
     {
         let account = account.into();
-        let key = key.into();
-        let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
-        let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials);
+        let storage_credentials = StorageCredentials::new_storage_key(account.clone(), key);
+        let pipeline =
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
         let blob_storage_url = Url::parse(&format!("{}{}", blob_storage_url, account)).unwrap();
         let table_storage_url = Url::parse(&format!("{}{}", table_storage_url, account)).unwrap();
         let queue_storage_url = Url::parse(&format!("{}{}", queue_storage_url, account)).unwrap();
@@ -178,7 +200,7 @@ impl StorageClient {
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(account.clone(), key),
+            storage_credentials,
             account,
             pipeline,
         }
@@ -217,8 +239,7 @@ impl StorageClient {
         BT: Into<String>,
     {
         let account = account.into();
-        let bearer_token = bearer_token.into();
-        let storage_credentials = StorageCredentials::BearerToken(bearer_token);
+        let storage_credentials = StorageCredentials::new_bearer_token(bearer_token);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -244,7 +265,7 @@ impl StorageClient {
         A: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::TokenCredential(token_credential);
+        let storage_credentials = StorageCredentials::new_token_credential(token_credential);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -325,7 +346,7 @@ impl StorageClient {
                 ..
             } => {
 
-                let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
+                let storage_credentials = StorageCredentials::new_storage_key(account, key);
                 let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
                 storage_credentials,
@@ -354,7 +375,7 @@ impl StorageClient {
         A: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::Anonymous;
+        let storage_credentials = StorageCredentials::new_anonymous();
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
