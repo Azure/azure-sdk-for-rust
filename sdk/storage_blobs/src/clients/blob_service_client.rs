@@ -219,10 +219,10 @@ pub static EMULATOR_CREDENTIALS: Lazy<StorageCredentials> = Lazy::new(|| {
 });
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
-/// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
 pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 
 /// The well-known account key used by Azurite and the legacy Azure Storage Emulator.
-/// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";

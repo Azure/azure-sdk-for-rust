@@ -28,7 +28,7 @@ use url::form_urlencoded;
 ///           * 0 through 9 (numbers)
 ///           * Valid special characters: space, plus, minus, period, colon, equals, underscore, forward slash ( +-.:=_/)
 ///
-/// Ref: https://docs.microsoft.com/en-us/azure/storage/blobs/storage-manage-find-blobs
+/// ref: <https://docs.microsoft.com/en-us/azure/storage/blobs/storage-manage-find-blobs>
 pub struct Tags {
     pub tag_set: TagSet,
 }

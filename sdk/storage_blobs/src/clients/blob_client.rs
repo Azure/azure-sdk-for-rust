@@ -93,7 +93,7 @@ impl BlobClient {
     /// This operation is only allowed on Hierarchical Namespace enabled
     /// accounts.
     ///
-    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry>
     pub fn set_blob_expiry(&self, blob_expiry: BlobExpiry) -> SetBlobExpiryBuilder {
         SetBlobExpiryBuilder::new(self.clone(), blob_expiry)
     }
