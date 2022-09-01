@@ -14,7 +14,7 @@ use time::OffsetDateTime;
 
 use super::ContainerClient;
 
-/// A builder for the cosmos client.
+/// A builder for the blob service client.
 #[derive(Debug, Clone)]
 pub struct BlobServiceClientBuilder {
     cloud_location: CloudLocation,
@@ -177,7 +177,7 @@ pub enum CloudLocation {
         account: String,
         credentials: StorageCredentials,
     },
-    /// Use the well-known Cosmos emulator
+    /// Use the well-known emulator
     Emulator { address: String, port: u16 },
     /// A custom base URL
     Custom {
