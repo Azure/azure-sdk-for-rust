@@ -35,7 +35,15 @@ pub enum StorageCredentials {
 }
 
 impl StorageCredentials {
-    pub fn new_storage_key<A, K>(account: A, key: K) -> Self
+    /// Create an Access Key based credential
+    ///
+    /// When you create a storage account, Azure generates two 512-bit storage
+    /// account access keys for that account. These keys can be used to
+    /// authorize access to data in your storage account via Shared Key
+    /// authorization.
+    ///
+    /// ref: https://docs.microsoft.com/azure/storage/common/storage-account-keys-manage
+    pub fn access_key<A, K>(account: A, key: K) -> Self
     where
         A: Into<String>,
         K: Into<String>,
@@ -43,7 +51,14 @@ impl StorageCredentials {
         Self::Key(account.into(), key.into())
     }
 
-    pub fn new_sas_token<S>(token: S) -> azure_core::Result<Self>
+    /// Create a Shared Access Signature (SAS) token based credential
+    ///
+    /// SAS tokens provide delegated access to resources in a storage account
+    /// with granular control over how the client can access data in the
+    /// account.
+    ///
+    /// ref: https://docs.microsoft.com/azure/storage/common/storage-sas-overview
+    pub fn sas_token<S>(token: S) -> azure_core::Result<Self>
     where
         S: AsRef<str>,
     {
@@ -51,18 +66,56 @@ impl StorageCredentials {
         Ok(Self::SASToken(params))
     }
 
-    pub fn new_bearer_token<T>(token: T) -> Self
+    /// Create an Bearer Token based credential
+    ///
+    /// Azure Storage accepts OAuth 2.0 access tokens from the Azure AD tenant
+    /// associated with the subscription that contains the storage account.
+    ///
+    /// While `StorageCredentials::TokenCredential` is the preferred way to
+    /// manage access tokens, this method is provided for manual management of
+    /// Oauth2 tokens.
+    ///
+    /// ref: https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory
+    pub fn bearer_token<T>(token: T) -> Self
     where
         T: Into<String>,
     {
         Self::BearerToken(token.into())
     }
 
-    pub fn new_token_credential(credential: Arc<dyn TokenCredential>) -> Self {
+    /// Create a TokenCredential based credential
+    ///
+    /// Azure Storage accepts OAuth 2.0 access tokens from the Azure AD tenant
+    /// associated with the subscription that contains the storage account.
+    ///
+    /// Token Credentials can be created and automatically updated using
+    /// `azure_identity`.
+    ///
+    /// ```
+    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_storage::prelude::*;
+    /// use std::sync::Arc;
+    /// let token_credential = Arc::new(DefaultAzureCredential::default());
+    /// let storage_credentials = StorageCredentials::token_credential(token_credential);
+    /// ```
+    ///
+    /// ref: https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory
+    pub fn token_credential(credential: Arc<dyn TokenCredential>) -> Self {
         Self::TokenCredential(credential)
     }
 
-    pub fn new_anonymous() -> Self {
+    /// Create an anonymous credential
+    ///
+    /// Azure Storage supports optional anonymous public read access for
+    /// containers and blobs. By default, anonymous access to data in a storage
+    /// account data is not permitted. Unless anonymous access is explicitly
+    /// enabled, all requests to a container and its blobs must be authorized.
+    /// When a container's public access level setting is configured to permit
+    /// anonymous access, clients can read data in that container without
+    /// authorizing the request.
+    ///
+    /// ref: https://docs.microsoft.com/azure/storage/blobs/anonymous-read-access-configure
+    pub fn anonymous() -> Self {
         Self::Anonymous
     }
 }
@@ -121,7 +174,7 @@ impl StorageClient {
         K: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::new_storage_key(account.clone(), key);
+        let storage_credentials = StorageCredentials::access_key(account.clone(), key);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -186,7 +239,7 @@ impl StorageClient {
         K: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::new_storage_key(account.clone(), key);
+        let storage_credentials = StorageCredentials::access_key(account.clone(), key);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
         let blob_storage_url = Url::parse(&format!("{}{}", blob_storage_url, account)).unwrap();
@@ -213,7 +266,7 @@ impl StorageClient {
     {
         let account = account.into();
 
-        let storage_credentials = StorageCredentials::new_sas_token(sas_token)?;
+        let storage_credentials = StorageCredentials::sas_token(sas_token)?;
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -239,7 +292,7 @@ impl StorageClient {
         BT: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::new_bearer_token(bearer_token);
+        let storage_credentials = StorageCredentials::bearer_token(bearer_token);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -265,7 +318,7 @@ impl StorageClient {
         A: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::new_token_credential(token_credential);
+        let storage_credentials = StorageCredentials::token_credential(token_credential);
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
@@ -300,7 +353,7 @@ impl StorageClient {
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
 
-                let storage_credentials =  StorageCredentials::new_sas_token(sas_token)?;
+                let storage_credentials =  StorageCredentials::sas_token(sas_token)?;
                 let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
                 Ok(Self {
@@ -323,7 +376,7 @@ impl StorageClient {
                 file_endpoint,
                 ..
             } => {
-                let storage_credentials = StorageCredentials::new_sas_token(sas_token)?;
+                let storage_credentials = StorageCredentials::sas_token(sas_token)?;
                 let pipeline =
                 new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
@@ -346,7 +399,7 @@ impl StorageClient {
                 ..
             } => {
 
-                let storage_credentials = StorageCredentials::new_storage_key(account, key);
+                let storage_credentials = StorageCredentials::access_key(account, key);
                 let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
                 storage_credentials,
@@ -375,7 +428,7 @@ impl StorageClient {
         A: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::new_anonymous();
+        let storage_credentials = StorageCredentials::anonymous();
         let pipeline =
             new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
