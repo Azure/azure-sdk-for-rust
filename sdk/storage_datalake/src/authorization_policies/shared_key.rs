@@ -64,8 +64,6 @@ fn generate_authorization(
 ) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(http_headers, url, http_method, storage_account_name);
 
-    trace!("str_to_sign == {}", str_to_sign);
-
     let auth = sign(&str_to_sign, shared_key)?;
 
     Ok(format!("SharedKey {}:{}", storage_account_name, auth))
