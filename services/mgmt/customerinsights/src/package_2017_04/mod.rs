@@ -173,6 +173,22 @@ pub mod operations {
                 let body: models::OperationListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -362,6 +378,22 @@ pub mod hubs {
                 let body: models::Hub = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -372,7 +404,7 @@ pub mod hubs {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -401,7 +433,7 @@ pub mod hubs {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Hub> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -414,6 +446,22 @@ pub mod hubs {
                 let body: models::Hub = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -425,7 +473,7 @@ pub mod hubs {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -455,7 +503,7 @@ pub mod hubs {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Hub> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -468,6 +516,22 @@ pub mod hubs {
                 let body: models::Hub = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -479,7 +543,7 @@ pub mod hubs {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -509,7 +573,7 @@ pub mod hubs {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::Hub> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -526,7 +590,7 @@ pub mod hubs {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -563,6 +627,22 @@ pub mod hubs {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::HubListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -642,6 +722,22 @@ pub mod hubs {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::HubListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -839,6 +935,22 @@ pub mod profiles {
                 let body: models::ProfileResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -856,7 +968,7 @@ pub mod profiles {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -889,7 +1001,7 @@ pub mod profiles {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ProfileResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -901,6 +1013,22 @@ pub mod profiles {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ProfileResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -915,7 +1043,7 @@ pub mod profiles {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -946,7 +1074,7 @@ pub mod profiles {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ProfileResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -970,7 +1098,7 @@ pub mod profiles {
             }
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1011,6 +1139,22 @@ pub mod profiles {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ProfileListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -1102,6 +1246,22 @@ pub mod profiles {
                 let body: Vec<models::KpiDefinition> = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -1113,7 +1273,7 @@ pub mod profiles {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1137,7 +1297,7 @@ pub mod profiles {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<Vec<models::KpiDefinition>> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1246,6 +1406,22 @@ pub mod interactions {
                 let body: models::InteractionResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -1263,7 +1439,7 @@ pub mod interactions {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1296,7 +1472,7 @@ pub mod interactions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::InteractionResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1308,6 +1484,22 @@ pub mod interactions {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::InteractionResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -1322,7 +1514,7 @@ pub mod interactions {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1353,7 +1545,7 @@ pub mod interactions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::InteractionResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1365,6 +1557,22 @@ pub mod interactions {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::InteractionListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -1456,6 +1664,22 @@ pub mod interactions {
                 let body: models::SuggestRelationshipLinksResponse = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -1467,7 +1691,7 @@ pub mod interactions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1491,7 +1715,7 @@ pub mod interactions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::SuggestRelationshipLinksResponse> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1598,6 +1822,22 @@ pub mod relationships {
                 let body: models::RelationshipResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -1609,7 +1849,7 @@ pub mod relationships {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1639,7 +1879,7 @@ pub mod relationships {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RelationshipResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1651,6 +1891,22 @@ pub mod relationships {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::RelationshipResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -1665,7 +1921,7 @@ pub mod relationships {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1696,7 +1952,7 @@ pub mod relationships {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RelationshipResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1714,7 +1970,7 @@ pub mod relationships {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1752,6 +2008,22 @@ pub mod relationships {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::RelationshipListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -1928,6 +2200,22 @@ pub mod relationship_links {
                 let body: models::RelationshipLinkResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -1939,7 +2227,7 @@ pub mod relationship_links {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1969,7 +2257,7 @@ pub mod relationship_links {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RelationshipLinkResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -1981,6 +2269,22 @@ pub mod relationship_links {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::RelationshipLinkResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -1995,7 +2299,7 @@ pub mod relationship_links {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2026,7 +2330,7 @@ pub mod relationship_links {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RelationshipLinkResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2044,7 +2348,7 @@ pub mod relationship_links {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2082,6 +2386,22 @@ pub mod relationship_links {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::RelationshipLinkListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -2280,6 +2600,22 @@ pub mod authorization_policies {
                 let body: models::AuthorizationPolicyResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -2291,7 +2627,7 @@ pub mod authorization_policies {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2321,7 +2657,7 @@ pub mod authorization_policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AuthorizationPolicyResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2333,6 +2669,22 @@ pub mod authorization_policies {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::AuthorizationPolicyResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -2346,7 +2698,7 @@ pub mod authorization_policies {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2377,7 +2729,7 @@ pub mod authorization_policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AuthorizationPolicyResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2389,6 +2741,22 @@ pub mod authorization_policies {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::AuthorizationPolicyListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -2471,6 +2839,22 @@ pub mod authorization_policies {
                 let body: models::AuthorizationPolicy = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -2482,7 +2866,7 @@ pub mod authorization_policies {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2506,7 +2890,7 @@ pub mod authorization_policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AuthorizationPolicy> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2519,6 +2903,22 @@ pub mod authorization_policies {
                 let body: models::AuthorizationPolicy = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -2530,7 +2930,7 @@ pub mod authorization_policies {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2554,7 +2954,7 @@ pub mod authorization_policies {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AuthorizationPolicy> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2661,6 +3061,22 @@ pub mod connectors {
                 let body: models::ConnectorResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -2672,7 +3088,7 @@ pub mod connectors {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2702,7 +3118,7 @@ pub mod connectors {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ConnectorResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2714,6 +3130,22 @@ pub mod connectors {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ConnectorResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -2728,7 +3160,7 @@ pub mod connectors {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2759,7 +3191,7 @@ pub mod connectors {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ConnectorResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -2777,7 +3209,7 @@ pub mod connectors {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2815,6 +3247,22 @@ pub mod connectors {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ConnectorListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -3003,6 +3451,22 @@ pub mod connector_mappings {
                 let body: models::ConnectorMappingResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -3015,7 +3479,7 @@ pub mod connector_mappings {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3046,7 +3510,7 @@ pub mod connector_mappings {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ConnectorMappingResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -3058,6 +3522,22 @@ pub mod connector_mappings {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ConnectorMappingResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -3072,7 +3552,7 @@ pub mod connector_mappings {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3104,7 +3584,7 @@ pub mod connector_mappings {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ConnectorMappingResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -3122,7 +3602,7 @@ pub mod connector_mappings {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3161,6 +3641,22 @@ pub mod connector_mappings {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ConnectorMappingListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -3361,6 +3857,22 @@ pub mod kpi {
                 let body: models::KpiResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -3372,7 +3884,7 @@ pub mod kpi {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3402,7 +3914,7 @@ pub mod kpi {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::KpiResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -3414,6 +3926,22 @@ pub mod kpi {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::KpiResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -3428,7 +3956,7 @@ pub mod kpi {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3459,7 +3987,7 @@ pub mod kpi {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::KpiResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -3477,7 +4005,7 @@ pub mod kpi {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3520,7 +4048,7 @@ pub mod kpi {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3559,6 +4087,22 @@ pub mod kpi {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::KpiListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -3688,6 +4232,22 @@ pub mod widget_types {
                 let body: models::WidgetTypeListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -3769,6 +4329,22 @@ pub mod widget_types {
                 let body: models::WidgetTypeResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -3780,7 +4356,7 @@ pub mod widget_types {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3810,7 +4386,7 @@ pub mod widget_types {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::WidgetTypeResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -3926,6 +4502,22 @@ pub mod views {
                 let body: models::ViewListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -4010,6 +4602,22 @@ pub mod views {
                 let body: models::ViewResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -4022,7 +4630,7 @@ pub mod views {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4054,7 +4662,7 @@ pub mod views {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ViewResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -4066,6 +4674,22 @@ pub mod views {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::ViewResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -4079,7 +4703,7 @@ pub mod views {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4110,7 +4734,7 @@ pub mod views {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ViewResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -4128,7 +4752,7 @@ pub mod views {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4263,6 +4887,22 @@ pub mod links {
                 let body: models::LinkResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -4274,7 +4914,7 @@ pub mod links {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4304,7 +4944,7 @@ pub mod links {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::LinkResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -4316,6 +4956,22 @@ pub mod links {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::LinkResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -4330,7 +4986,7 @@ pub mod links {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4361,7 +5017,7 @@ pub mod links {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::LinkResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -4378,7 +5034,7 @@ pub mod links {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4416,6 +5072,22 @@ pub mod links {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::LinkListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -4522,6 +5194,22 @@ pub mod roles {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::RoleListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -4698,6 +5386,22 @@ pub mod role_assignments {
                 let body: models::RoleAssignmentListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -4779,6 +5483,22 @@ pub mod role_assignments {
                 let body: models::RoleAssignmentResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -4790,7 +5510,7 @@ pub mod role_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4820,7 +5540,7 @@ pub mod role_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -4832,6 +5552,22 @@ pub mod role_assignments {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::RoleAssignmentResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -4846,7 +5582,7 @@ pub mod role_assignments {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4877,7 +5613,7 @@ pub mod role_assignments {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -4894,7 +5630,7 @@ pub mod role_assignments {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4983,6 +5719,22 @@ pub mod images {
                 let body: models::ImageDefinition = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -4994,7 +5746,7 @@ pub mod images {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5018,7 +5770,7 @@ pub mod images {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ImageDefinition> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5031,6 +5783,22 @@ pub mod images {
                 let body: models::ImageDefinition = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -5042,7 +5810,7 @@ pub mod images {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5066,7 +5834,7 @@ pub mod images {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::ImageDefinition> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5242,6 +6010,22 @@ pub mod predictions {
                 let body: models::PredictionResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -5253,7 +6037,7 @@ pub mod predictions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5283,7 +6067,7 @@ pub mod predictions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PredictionResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5295,6 +6079,22 @@ pub mod predictions {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::PredictionResourceFormat = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -5309,7 +6109,7 @@ pub mod predictions {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5340,7 +6140,7 @@ pub mod predictions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PredictionResourceFormat> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5358,7 +6158,7 @@ pub mod predictions {
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5397,6 +6197,22 @@ pub mod predictions {
                 let body: models::PredictionTrainingResults = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -5408,7 +6224,7 @@ pub mod predictions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5432,7 +6248,7 @@ pub mod predictions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PredictionTrainingResults> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5445,6 +6261,22 @@ pub mod predictions {
                 let body: models::PredictionModelStatus = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -5456,7 +6288,7 @@ pub mod predictions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5480,7 +6312,7 @@ pub mod predictions {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::PredictionModelStatus> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -5498,7 +6330,7 @@ pub mod predictions {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5537,6 +6369,22 @@ pub mod predictions {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::PredictionListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]

@@ -197,6 +197,22 @@ pub mod individual_enrollment {
                 let body: models::IndividualEnrollment = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -205,7 +221,7 @@ pub mod individual_enrollment {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -228,7 +244,7 @@ pub mod individual_enrollment {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::IndividualEnrollment> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -240,6 +256,22 @@ pub mod individual_enrollment {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::IndividualEnrollment = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -256,7 +288,7 @@ pub mod individual_enrollment {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -283,7 +315,7 @@ pub mod individual_enrollment {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::IndividualEnrollment> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -303,7 +335,7 @@ pub mod individual_enrollment {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -338,6 +370,22 @@ pub mod individual_enrollment {
                 let body: Vec<models::IndividualEnrollment> = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -358,7 +406,7 @@ pub mod individual_enrollment {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -388,7 +436,7 @@ pub mod individual_enrollment {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<Vec<models::IndividualEnrollment>> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -401,6 +449,22 @@ pub mod individual_enrollment {
                 let body: models::AttestationMechanism = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -409,7 +473,7 @@ pub mod individual_enrollment {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -434,7 +498,7 @@ pub mod individual_enrollment {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AttestationMechanism> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -447,6 +511,22 @@ pub mod individual_enrollment {
                 let body: models::BulkEnrollmentOperationResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -455,7 +535,7 @@ pub mod individual_enrollment {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -479,7 +559,7 @@ pub mod individual_enrollment {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::BulkEnrollmentOperationResult> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -571,6 +651,22 @@ pub mod enrollment_group {
                 let body: models::EnrollmentGroup = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -579,7 +675,7 @@ pub mod enrollment_group {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -602,7 +698,7 @@ pub mod enrollment_group {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -614,6 +710,22 @@ pub mod enrollment_group {
                 let bytes = self.0.into_body().collect().await?;
                 let body: models::EnrollmentGroup = serde_json::from_slice(&bytes)?;
                 Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
             }
         }
         #[derive(Clone)]
@@ -630,7 +742,7 @@ pub mod enrollment_group {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -657,7 +769,7 @@ pub mod enrollment_group {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -677,7 +789,7 @@ pub mod enrollment_group {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -712,6 +824,22 @@ pub mod enrollment_group {
                 let body: Vec<models::EnrollmentGroup> = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -732,7 +860,7 @@ pub mod enrollment_group {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -762,7 +890,7 @@ pub mod enrollment_group {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<Vec<models::EnrollmentGroup>> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -775,6 +903,22 @@ pub mod enrollment_group {
                 let body: models::AttestationMechanism = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -783,7 +927,7 @@ pub mod enrollment_group {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -811,7 +955,7 @@ pub mod enrollment_group {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::AttestationMechanism> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -824,6 +968,22 @@ pub mod enrollment_group {
                 let body: models::BulkEnrollmentGroupOperationResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -832,7 +992,7 @@ pub mod enrollment_group {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -856,7 +1016,7 @@ pub mod enrollment_group {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::BulkEnrollmentGroupOperationResult> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -908,6 +1068,22 @@ pub mod device_registration_state {
                 let body: models::DeviceRegistrationState = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -916,7 +1092,7 @@ pub mod device_registration_state {
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -939,7 +1115,7 @@ pub mod device_registration_state {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<models::DeviceRegistrationState> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
@@ -959,7 +1135,7 @@ pub mod device_registration_state {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -994,6 +1170,22 @@ pub mod device_registration_state {
                 let body: Vec<models::DeviceRegistrationState> = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -1014,7 +1206,7 @@ pub mod device_registration_state {
                 self
             }
             #[doc = "Send the request and returns the response."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1044,7 +1236,7 @@ pub mod device_registration_state {
             }
             #[doc = "Send the request and return the response body."]
             pub async fn into_body(self) -> azure_core::Result<Vec<models::DeviceRegistrationState>> {
-                self.into_future().await?.into_body().await
+                self.send().await?.into_body().await
             }
         }
     }
