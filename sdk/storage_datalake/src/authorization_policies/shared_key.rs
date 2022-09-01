@@ -64,11 +64,9 @@ fn generate_authorization(
 ) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(http_headers, url, http_method, storage_account_name);
 
-    // println!("\nstr_to_sign == {:?}\n", str_to_sign);
-    // debug!("str_to_sign == {}", str_to_sign);
+    trace!("str_to_sign == {}", str_to_sign);
 
     let auth = sign(&str_to_sign, shared_key)?;
-    // debug!("auth == {:?}", auth);
 
     Ok(format!("SharedKey {}:{}", storage_account_name, auth))
 }
@@ -178,8 +176,6 @@ fn canonicalized_resource(account: &str, u: &url::Url) -> String {
         for qparam in qps {
             // find correct parameter
             let ret = lexy_sort(&query_pairs, &qparam);
-
-            // debug!("adding to can_res {:?}", ret);
 
             can_res = can_res + &qparam.to_lowercase() + ":";
 
