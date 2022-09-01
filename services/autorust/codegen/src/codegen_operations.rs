@@ -3,8 +3,8 @@ use crate::{
     codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
+    status_codes::get_status_code_ident,
     status_codes::get_success_responses,
-    status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
 use crate::{content_type, Result};
@@ -642,7 +642,6 @@ struct Pageable {
 /// A single status code response of an operation.
 #[derive(Clone)]
 struct StatusResponseCode {
-    name: Ident,
     status_code_name: Ident,
     response_type: Option<TypeNameCode>,
 }
@@ -653,7 +652,6 @@ impl ResponseCode {
         let responses = &operation.0.responses;
         for (status_code, rsp) in &get_success_responses(responses) {
             status_responses.push(StatusResponseCode {
-                name: get_response_type_ident(status_code)?,
                 status_code_name: get_status_code_ident(status_code)?,
                 response_type: create_response_type(rsp)?,
             });
@@ -664,67 +662,62 @@ impl ResponseCode {
         })
     }
 
-    fn is_single_response(&self) -> bool {
-        self.status_responses.len() == 1
+    /// Get the response type for the HTTP response body
+    fn response_type(&self) -> Option<&TypeNameCode> {
+        let responses = &self.status_responses;
+        if responses.is_empty() {
+            return None;
+        }
+        responses[0].response_type.as_ref()
     }
 }
 
 impl ToTokens for ResponseCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.is_single_response() {
-            let tp = self.status_responses[0]
-                .response_type
-                .as_ref()
-                .map(TypeNameCode::to_token_stream)
-                .unwrap_or(quote! { () });
+        tokens.extend(quote! {
+            pub struct Response(azure_core::Response);
+        });
+        let response_type = &self.response_type();
+        if let Some(response_type) = response_type {
+            let deserialize_body = if TypeNameCode::is_bytes(response_type) {
+                quote! {
+                    let body = bytes;
+                }
+            } else {
+                quote! {
+                    let body: #response_type = serde_json::from_slice(&bytes)?;
+                }
+            };
             tokens.extend(quote! {
-                type Response = #tp;
-            });
-        } else {
-            let mut success_responses_ts = TokenStream::new();
-            let mut continuation_response = TokenStream::new();
-            for status_response in &self.status_responses {
-                let response_type = &status_response.response_type;
-                let code = match response_type {
-                    Some(response_type) => quote! { (#response_type) },
-                    None => quote! {},
-                };
-                let enum_type_name = &status_response.name;
-                success_responses_ts.extend(quote! { #enum_type_name#code, });
-
-                let continuation = if response_type.is_some() {
-                    quote! {
-                        Self::#enum_type_name(x) => x.continuation(),
+                impl Response {
+                    pub async fn into_body(self) -> azure_core::Result<#response_type> {
+                        let bytes = self.0.into_body().collect().await?;
+                        #deserialize_body
+                        Ok(body)
                     }
-                } else {
-                    quote! { Self::#enum_type_name => None, }
-                };
-                continuation_response.extend(continuation);
-            }
-            tokens.extend(quote! {
-                #[derive(Debug)]
-                pub enum Response {
-                    #success_responses_ts
+                    pub fn into_raw_response(self) -> azure_core::Response {
+                        self.0
+                    }
+                    pub fn as_raw_response(&self) -> &azure_core::Response {
+                        &self.0
+                    }
+                }
+                impl From<Response> for azure_core::Response {
+                    fn from(rsp: Response) -> Self {
+                        rsp.into_raw_response()
+                    }
+                }
+                impl AsRef<azure_core::Response> for Response {
+                    fn as_ref(&self) -> &azure_core::Response {
+                        self.as_raw_response()
+                    }
                 }
             });
-
-            if self.pageable.is_some() {
-                tokens.extend(quote! {
-                    impl azure_core::Continuable for Response {
-                        type Continuation = String;
-                        fn continuation(&self) -> Option<Self::Continuation> {
-                            match self {
-                                #continuation_response
-                            }
-                        }
-                    }
-                });
-            }
         }
     }
 }
 
-/// The `into_future` function of the request builder.
+/// The `send` function of the request builder.
 struct RequestBuilderIntoFutureCode {
     new_request_code: NewRequestCode,
     request_builder: SetRequestCode,
@@ -751,10 +744,6 @@ impl RequestBuilderIntoFutureCode {
             long_running_operation,
         })
     }
-
-    fn is_single_response(&self) -> bool {
-        self.response_code.status_responses.len() == 1
-    }
 }
 
 impl ToTokens for RequestBuilderIntoFutureCode {
@@ -771,34 +760,9 @@ impl ToTokens for RequestBuilderIntoFutureCode {
 
         let mut match_status = TokenStream::new();
         for status_response in &self.response_code.status_responses {
-            let response_type = &status_response.response_type;
-            let rsp_value = create_rsp_value(response_type.as_ref());
             let status_code_name = &status_response.status_code_name;
-            let response_type_name = &status_response.name;
-
-            let status_code_code = if self.is_single_response() {
-                match response_type {
-                    Some(_) => quote! {
-                        let rsp_body = rsp_stream.collect().await?;
-                        #rsp_value
-                        Ok(rsp_value)
-                    },
-                    None => quote! { Ok(()) },
-                }
-            } else {
-                match response_type {
-                    Some(_) => quote! {
-                        let rsp_body = rsp_stream.collect().await?;
-                        #rsp_value
-                        Ok(Response::#response_type_name(rsp_value))
-                    },
-                    None => quote! { Ok(Response::#response_type_name) },
-                }
-            };
             match_status.extend(quote! {
-                azure_core::StatusCode::#status_code_name => {
-                    #status_code_code
-                }
+                azure_core::StatusCode::#status_code_name => Ok(Response(rsp)),
             });
         }
         match_status.extend(quote! {
@@ -807,8 +771,20 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             }
         });
 
-        let basic_future = quote! {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        let into_body = if let Some(response_type) = self.response_code.response_type() {
+            quote! {
+                #[doc = "Send the request and return the response body."]
+                pub async fn into_body(self) -> azure_core::Result<#response_type> {
+                    self.send().await?.into_body().await
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        let send_future = quote! {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -816,14 +792,11 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                         #new_request_code
                         #request_builder
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            #match_status
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
+            #into_body
         };
 
         let fut = if let Some(pageable) = &self.response_code.pageable {
@@ -840,7 +813,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                 //
                 // Ref: https://github.com/Azure/azure-sdk-for-rust/issues/446
                 let mut fut = quote! { #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]};
-                fut.extend(basic_future);
+                fut.extend(send_future);
                 fut
             } else {
                 let mut stream_api_version = quote! {};
@@ -857,8 +830,9 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     };
                 }
 
+                let response_type = self.response_code.response_type().expect("pageable response has a body");
                 quote! {
-                    pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                    pub fn into_stream(self) -> azure_core::Pageable<#response_type, azure_core::error::Error> {
                         let make_request = move |continuation: Option<String>| {
                             let this = self.clone();
                             async move {
@@ -881,10 +855,11 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                         this.client.send(&mut req).await?
                                     }
                                 };
-                                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                                match rsp_status {
-                                    #match_status
-                                }
+                                let rsp =
+                                    match rsp.status() {
+                                        #match_status
+                                    };
+                                rsp?.into_body().await
                             }
                         };
 
@@ -904,10 +879,10 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             //
             // ref: https://github.com/Azure/azure-sdk-for-rust/issues/741
             let mut fut = quote! {#[doc = "only the first response will be fetched as long running operations are not supported yet"]};
-            fut.extend(basic_future);
+            fut.extend(send_future);
             fut
         } else {
-            basic_future
+            send_future
         };
         tokens.extend(fut);
     }
@@ -937,18 +912,6 @@ impl ToTokens for OperationModuleCode {
 
             }
         })
-    }
-}
-
-fn create_rsp_value(tp: Option<&TypeNameCode>) -> TokenStream {
-    if tp.map(TypeNameCode::is_bytes) == Some(true) {
-        quote! {
-            let rsp_value = rsp_body;
-        }
-    } else {
-        quote! {
-            let rsp_value: #tp = serde_json::from_slice(&rsp_body)?;
-        }
     }
 }
 

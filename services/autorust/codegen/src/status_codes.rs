@@ -31,28 +31,6 @@ pub fn get_status_code_ident(status_code: &StatusCode) -> Result<Ident> {
     parse_ident(&get_status_code_name(status_code)?.to_pascal_case())
 }
 
-fn response_name(status_code: HttpStatusCode) -> Result<String> {
-    let reason = status_code.canonical_reason().to_pascal_case();
-    let status_code = status_code as u16;
-    Ok(format!("{reason}{status_code}"))
-}
-
-/// The canonical name in camel case with the u16 appended.
-/// examples: Ok200, Created201, LoopDetected508
-pub fn get_response_type_name(status_code: &StatusCode) -> Result<String> {
-    match status_code {
-        StatusCode::Code(status_code) => {
-            let sc = try_from_u16(*status_code)?;
-            Ok(response_name(sc)?)
-        }
-        StatusCode::Default => Ok("DefaultResponse".to_owned()),
-    }
-}
-
-pub fn get_response_type_ident(status_code: &StatusCode) -> Result<Ident> {
-    parse_ident(&get_response_type_name(status_code)?)
-}
-
 fn is_success(status_code: &StatusCode) -> bool {
     match status_code {
         StatusCode::Code(status_code) => match try_from_u16(*status_code) {
@@ -76,17 +54,6 @@ pub fn get_success_responses(responses: &IndexMap<StatusCode, Response>) -> Inde
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_response_name() -> Result<()> {
-        assert_eq!("Ok200", response_name(HttpStatusCode::Ok)?);
-        assert_eq!("FailedDependency424", response_name(HttpStatusCode::FailedDependency)?);
-        assert_eq!(
-            "HttpVersionNotSupported505",
-            response_name(HttpStatusCode::HttpVersionNotSupported)?
-        );
-        Ok(())
-    }
 
     #[test]
     fn test_get_status_code_name() -> Result<()> {
