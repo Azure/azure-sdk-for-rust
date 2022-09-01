@@ -22,13 +22,14 @@ async fn main() -> azure_core::Result<()> {
         .nth(4)
         .expect("please specify destination blob name as fourth command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let blob_client = storage_client
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let blob_client = blob_service
         .container_client(&destination_container)
         .blob_client(&destination_blob);
 
-    let source_url = storage_client
-        .blob_storage_url()
+    let source_url = blob_service
+        .url()?
         .join(&source_container)?
         .join(&source_blob)?;
 

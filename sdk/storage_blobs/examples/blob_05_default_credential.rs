@@ -28,7 +28,8 @@ async fn main() -> azure_core::Result<()> {
         .get_token("https://storage.azure.com/")
         .await?;
 
-    let blob_client = StorageClient::new_bearer_token(&account, bearer_token.token.secret())
+    let storage_credentials = StorageCredentials::BearerToken(bearer_token.token.secret().into());
+    let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container)
         .blob_client(&blob);
 

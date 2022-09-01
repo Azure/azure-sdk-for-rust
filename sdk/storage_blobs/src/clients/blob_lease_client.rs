@@ -1,6 +1,5 @@
 use crate::{blob::operations::*, prelude::*};
 use azure_core::{headers::Headers, prelude::*, Body, Context, Method, Request, Response, Url};
-use azure_storage::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct BlobLeaseClient {
@@ -30,10 +29,6 @@ impl BlobLeaseClient {
 
     pub fn lease_id(&self) -> LeaseId {
         self.lease_id
-    }
-
-    pub fn storage_client(&self) -> &StorageClient {
-        self.blob_client.storage_client()
     }
 
     pub fn container_client(&self) -> &ContainerClient {

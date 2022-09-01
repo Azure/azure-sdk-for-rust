@@ -7,8 +7,7 @@ use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
     headers::*,
-    prelude::Timeout,
-    Body, ClientOptions, Context, Method, Pipeline, Request, Response, TimeoutPolicy,
+    Body, ClientOptions, Context, Method, Pipeline, Request, Response,
 };
 use azure_core::{date, Policy, TransportOptions};
 use std::sync::Arc;
@@ -92,7 +91,7 @@ impl StorageClient {
         let key = key.into();
         let storage_credentials = StorageCredentials::Key(account.clone(), key);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -157,7 +156,7 @@ impl StorageClient {
         let account = account.into();
         let key = key.into();
         let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
-        let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials);
+        let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials);
         let blob_storage_url = Url::parse(&format!("{}{}", blob_storage_url, account)).unwrap();
         let table_storage_url = Url::parse(&format!("{}{}", table_storage_url, account)).unwrap();
         let queue_storage_url = Url::parse(&format!("{}{}", queue_storage_url, account)).unwrap();
@@ -185,7 +184,7 @@ impl StorageClient {
         let storage_credentials =
             StorageCredentials::SASToken(get_sas_token_parms(sas_token.as_ref())?);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Ok(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob")?,
@@ -212,7 +211,7 @@ impl StorageClient {
         let bearer_token = bearer_token.into();
         let storage_credentials = StorageCredentials::BearerToken(bearer_token);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -238,7 +237,7 @@ impl StorageClient {
         let account = account.into();
         let storage_credentials = StorageCredentials::TokenCredential(token_credential);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -274,7 +273,7 @@ impl StorageClient {
                 let storage_credentials =  StorageCredentials::SASToken(get_sas_token_parms(
                     sas_token,
                 )?);
-                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
                 Ok(Self {
                     storage_credentials,
@@ -298,7 +297,7 @@ impl StorageClient {
             } => {
                 let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
                 let pipeline =
-                new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
                     storage_credentials,
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
@@ -320,7 +319,7 @@ impl StorageClient {
             } => {
 
                 let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
-                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
                 storage_credentials,
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
@@ -350,7 +349,7 @@ impl StorageClient {
         let account = account.into();
         let storage_credentials = StorageCredentials::Anonymous;
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -379,13 +378,7 @@ impl StorageClient {
     ) -> Self {
         let account = account.into();
         let options = ClientOptions::new(TransportOptions::new_custom_policy(transport_policy));
-        let pipeline = new_pipeline_from_options(
-            StorageOptions {
-                options,
-                timeout_policy: Default::default(),
-            },
-            storage_credentials.clone(),
-        );
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
             table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
@@ -438,30 +431,7 @@ impl StorageClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        let dt = OffsetDateTime::now_utc();
-        let time = date::to_rfc1123(&dt);
-
-        let mut request = Request::new(url, method);
-        for (k, v) in headers {
-            request.insert_header(k, v);
-        }
-
-        // let's add content length to avoid "chunking" errors.
-        match request_body {
-            Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
-            None => request.insert_header(CONTENT_LENGTH, "0"),
-        };
-
-        request.insert_header(MS_DATE, time);
-        request.insert_header(VERSION, AZURE_VERSION);
-
-        if let Some(request_body) = request_body {
-            request.set_body(request_body);
-        } else {
-            request.set_body(azure_core::EMPTY_BODY);
-        };
-
-        Ok(request)
+        finalize_request(url, method, headers, request_body)
     }
 
     pub async fn send(
@@ -482,13 +452,15 @@ impl StorageClient {
         expiry: OffsetDateTime,
         permissions: AccountSasPermissions,
     ) -> azure_core::Result<AccountSharedAccessSignature> {
-        match &self.storage_credentials {
-            StorageCredentials::Key(account, key) => {
-                Ok(AccountSharedAccessSignature::new(account.clone(), key.clone(), resource, resource_type, expiry, permissions))
-            }
-            _ => Err(Error::message(ErrorKind::Other, "failed shared access signature generation. SAS can be generated only from key and account clients")),
-        }
+        shared_access_signature(
+            &self.storage_credentials,
+            resource,
+            resource_type,
+            expiry,
+            permissions,
+        )
     }
+
     pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
@@ -520,6 +492,48 @@ impl StorageClient {
         }
         Ok(url)
     }
+}
+
+pub fn shared_access_signature(
+    storage_credentials: &StorageCredentials,
+    resource: AccountSasResource,
+    resource_type: AccountSasResourceType,
+    expiry: OffsetDateTime,
+    permissions: AccountSasPermissions,
+) -> Result<AccountSharedAccessSignature, Error> {
+    match storage_credentials {
+            StorageCredentials::Key(account, key) => {
+                Ok(AccountSharedAccessSignature::new(account.clone(), key.clone(), resource, resource_type, expiry, permissions))
+            }
+            _ => Err(Error::message(ErrorKind::Credential, "failed shared access signature generation. SAS can be generated only from key and account clients")),
+        }
+}
+
+pub fn finalize_request(
+    url: Url,
+    method: Method,
+    headers: Headers,
+    request_body: Option<Body>,
+) -> Result<Request, Error> {
+    let dt = OffsetDateTime::now_utc();
+    let time = date::to_rfc1123(&dt);
+    let mut request = Request::new(url, method);
+    for (k, v) in headers {
+        request.insert_header(k, v);
+    }
+    // let's add content length to avoid "chunking" errors.
+    match request_body {
+        Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
+        None => request.insert_header(CONTENT_LENGTH, "0"),
+    };
+    request.insert_header(MS_DATE, time);
+    request.insert_header(VERSION, AZURE_VERSION);
+    if let Some(request_body) = request_body {
+        request.set_body(request_body);
+    } else {
+        request.set_body(azure_core::EMPTY_BODY);
+    };
+    Ok(request)
 }
 
 fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
@@ -563,39 +577,26 @@ fn get_endpoint_uri(
     })
 }
 
-/// Create a Pipeline from StorageOptions
-fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
+/// Create a Pipeline from ClientOptions
+pub fn new_pipeline_from_options(
+    options: ClientOptions,
+    credentials: StorageCredentials,
+) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 
     // The `AuthorizationPolicy` must be the **last** retry policy.
     // Policies can change the url and/or the headers, and the `AuthorizationPolicy`
     // must be able to inspect them or the resulting token will be invalid.
     let per_retry_policies = vec![
-        Arc::new(options.timeout_policy) as Arc<dyn azure_core::Policy>,
+        Arc::new(options.timeout.clone()) as Arc<dyn azure_core::Policy>,
         auth_policy,
     ];
 
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        options.options,
+        options,
         Vec::new(),
         per_retry_policies,
     )
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct StorageOptions {
-    options: ClientOptions,
-    timeout_policy: TimeoutPolicy,
-}
-
-impl StorageOptions {
-    fn new() -> StorageOptions {
-        Self::default()
-    }
-
-    pub fn set_timeout(&mut self, default_timeout: Timeout) {
-        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout))
-    }
 }

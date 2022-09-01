@@ -1,8 +1,10 @@
+use azure_core::TransportOptions;
 use azure_identity::DefaultAzureCredential;
-use azure_storage::clients::{StorageClient, StorageCredentials};
+use azure_storage::clients::StorageCredentials;
+use azure_storage_blobs::prelude::BlobServiceClient;
 use std::sync::Arc;
 
-pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<StorageClient> {
+pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<BlobServiceClient> {
     let account_name = (std::env::var(mock_transport::TESTING_MODE_KEY).as_deref()
         == Ok(mock_transport::TESTING_MODE_RECORD))
     .then(get_account)
@@ -11,13 +13,13 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Sto
         == Ok(mock_transport::TESTING_MODE_RECORD))
     .then(|| StorageCredentials::TokenCredential(Arc::new(DefaultAzureCredential::default())))
     .unwrap_or_else(|| StorageCredentials::BearerToken(String::default()));
-
-    let transport_policy = mock_transport::new_mock_transport(transaction_name.into());
-    Ok(StorageClient::new_mock(
-        account_name,
-        storage_credentials,
-        transport_policy,
-    ))
+    let transport_options = TransportOptions::new_custom_policy(
+        mock_transport::new_mock_transport(transaction_name.into()),
+    );
+    let client = BlobServiceClient::builder(account_name, storage_credentials)
+        .transport(transport_options)
+        .build();
+    Ok(client)
 }
 
 fn get_account() -> String {

@@ -14,21 +14,9 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify a non-existing container name as command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-
-    create_container_and_list(storage_client, &container_name).await?;
-
-    let storage_client = StorageClient::new_emulator_default();
-    create_container_and_list(storage_client, &container_name).await?;
-
-    Ok(())
-}
-
-async fn create_container_and_list(
-    storage_client: StorageClient,
-    container_name: &str,
-) -> azure_core::Result<()> {
-    let container_client = storage_client.container_client(container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container_client = blob_service.container_client(&container_name);
 
     container_client.create().into_future().await?;
 

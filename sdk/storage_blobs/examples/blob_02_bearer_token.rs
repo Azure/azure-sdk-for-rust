@@ -21,7 +21,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(4)
         .expect("please specify the bearer token as fourth command line parameter");
 
-    let blob_client = StorageClient::new_bearer_token(&account, bearer_token)
+    let storage_credentials = StorageCredentials::BearerToken(bearer_token);
+    let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container)
         .blob_client(&blob);
 

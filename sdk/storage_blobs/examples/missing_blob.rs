@@ -14,8 +14,9 @@ async fn main() -> azure_core::Result<()> {
     let container_name = format!("example-{}", Uuid::new_v4());
     let blob_name = format!("missing-{}.txt", Uuid::new_v4());
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let container_client = storage_client.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let service_client = BlobServiceClient::new(account, storage_credentials);
+    let container_client = service_client.container_client(&container_name);
     println!("creating container {}", container_name);
     container_client.create().into_future().await?;
 
