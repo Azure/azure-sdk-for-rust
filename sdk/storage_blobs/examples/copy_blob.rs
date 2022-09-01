@@ -29,16 +29,18 @@ async fn main() -> azure_core::Result<()> {
         .nth(4)
         .expect("please specify destination blob name as fourth command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(source_account.clone(), source_access_key);
-    let service_client = BlobServiceClient::new(source_account, storage_credentials);
-    let source_blob = service_client
-        .container_client(&source_container_name)
-        .blob_client(&source_blob_name);
-
-    let storage_credentials =
+    let destination_storage_credentials =
         StorageCredentials::Key(destination_account.clone(), destination_access_key);
-    let source_storage_client = BlobServiceClient::new(destination_account, storage_credentials);
-    let destination_blob = service_client
+    let destination_service_client =
+        BlobServiceClient::new(destination_account, destination_storage_credentials);
+    let destination_blob = destination_service_client
+        .container_client(&destination_container_name)
+        .blob_client(&destination_blob_name);
+
+    let source_storage_credentials =
+        StorageCredentials::Key(source_account.clone(), source_access_key);
+    let source_service_client = BlobServiceClient::new(source_account, source_storage_credentials);
+    let source_blob = source_service_client
         .container_client(&source_container_name)
         .blob_client(&source_blob_name);
 
@@ -46,9 +48,8 @@ async fn main() -> azure_core::Result<()> {
     let sas_url = {
         let now = OffsetDateTime::now_utc();
         let later = now + date::duration_from_hours(1);
-        let sas = source_storage_client
+        let sas = source_service_client
             .shared_access_signature(
-                AccountSasResource::Blob,
                 AccountSasResourceType::Object,
                 later,
                 AccountSasPermissions {

@@ -1,5 +1,4 @@
 use azure_storage_blobs::container::PublicAccess;
-use azure_storage_blobs::prelude::{AsBlobServiceClient, AsContainerClient};
 use bytes::Bytes;
 use futures::StreamExt;
 use log::trace;
@@ -12,9 +11,8 @@ async fn put_block_blob_and_snapshot() {
     const BLOB_NAME: &'static str = "test-container-put-block-blob-and-snapshot";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = setup::initialize("put_block_blob_and_snapshot").unwrap();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(CONTAINER_NAME);
+    let blob_service = setup::initialize("put_block_blob_and_snapshot").unwrap();
+    let container = blob_service.container_client(CONTAINER_NAME);
     let blob = container.blob_client(BLOB_NAME);
 
     if blob_service

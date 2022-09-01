@@ -71,7 +71,7 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_credentials =
         StorageCredentials::BearerToken(authorization.access_token().secret().to_owned());
-    let blob_service_client = BlobServiceClient::new(account, storage_credentials);
+    let blob_service_client = BlobServiceClient::new(storage_account_name, storage_credentials);
 
     // now we enumerate the containers in the
     // specified storage account.

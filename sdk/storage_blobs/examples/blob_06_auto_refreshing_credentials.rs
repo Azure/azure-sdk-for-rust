@@ -25,7 +25,7 @@ async fn main() -> azure_core::Result<()> {
     let creds = Arc::new(DefaultAzureCredential::default());
     let auto_creds = Arc::new(AutoRefreshingTokenCredential::new(creds));
 
-    let storage_credentials = StorageCredentials::TokenCredential(token_credential);
+    let storage_credentials = StorageCredentials::TokenCredential(auto_creds);
     let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container)
         .blob_client(&blob);

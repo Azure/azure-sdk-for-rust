@@ -17,9 +17,8 @@ use uuid::Uuid;
 async fn create_and_delete_container() -> azure_core::Result<()> {
     let container_name = format!("create-{}", Uuid::new_v4());
 
-    let storage_client = initialize();
-    let blob_service = storage_client.blob_service_client();
-    let container = storage_client.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
 
     container
         .create()
@@ -106,8 +105,8 @@ async fn put_and_get_block_list() {
     let container_name = format!("sdkrust{}", u);
     let name = "asd - ()krustputblock.txt";
 
-    let storage = initialize();
-    let container = storage.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(name);
 
     container
@@ -196,8 +195,7 @@ async fn put_and_get_block_list() {
 
 #[tokio::test]
 async fn list_containers() {
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
+    let blob_service = initialize();
     trace!("running list_containers");
 
     let mut stream = blob_service
@@ -217,9 +215,8 @@ async fn put_block_blob() {
     let container_name: &'static str = "rust-upload-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -260,9 +257,8 @@ async fn copy_blob() -> azure_core::Result<()> {
     let container_name = format!("copy-blob-{}", Uuid::new_v4());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -323,9 +319,8 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let container_name = format!("properties-{}", Uuid::new_v4());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -374,9 +369,8 @@ async fn put_block_blob_and_snapshot() {
     let container_name: &'static str = "rust-snapshot-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if blob_service
@@ -426,9 +420,8 @@ async fn set_blobtier() {
     let container_name: &'static str = "rust-set-blobtier-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service

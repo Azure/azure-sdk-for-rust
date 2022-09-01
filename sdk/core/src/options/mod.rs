@@ -1,6 +1,6 @@
-use crate::http_client;
 use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
 use crate::HttpClient;
+use crate::{http_client, TimeoutPolicy};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -28,6 +28,8 @@ pub struct ClientOptions {
     pub(crate) telemetry: TelemetryOptions,
     /// Transport options.
     pub(crate) transport: TransportOptions,
+    /// Transport options.
+    pub timeout: TimeoutPolicy,
 }
 
 impl ClientOptions {
@@ -38,6 +40,7 @@ impl ClientOptions {
             retry: RetryOptions::default(),
             telemetry: TelemetryOptions::default(),
             transport,
+            timeout: TimeoutPolicy::default(),
         }
     }
 
@@ -57,6 +60,7 @@ impl ClientOptions {
         retry: RetryOptions => retry,
         telemetry: TelemetryOptions => telemetry,
         transport: TransportOptions => transport,
+        timeout: TimeoutPolicy => timeout,
     }
 }
 

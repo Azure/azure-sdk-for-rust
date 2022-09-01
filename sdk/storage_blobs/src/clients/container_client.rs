@@ -6,7 +6,7 @@ use azure_core::{
     Body, Method, Pipeline, Request, Response, Url,
 };
 use azure_storage::{
-    clients::{ServiceType, StorageCredentials, StorageOptions},
+    clients::{ServiceType, StorageCredentials},
     prelude::BlobSasPermissions,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
@@ -76,26 +76,32 @@ impl ContainerClient {
         &self.container_name
     }
 
-    // pub fn shared_access_signature(
-    //     &self,
-    //     permissions: BlobSasPermissions,
-    //     expiry: OffsetDateTime,
-    // ) -> azure_core::Result<BlobSharedAccessSignature> {
-    //     let canonicalized_resource = format!(
-    //         "/blob/{}/{}",
-    //         self.storage_client().account(),
-    //         self.container_name(),
-    //     );
+    pub(crate) fn credentials(&self) -> &StorageCredentials {
+        &self.service_client.credentials()
+    }
 
-    //     match self.storage_client().storage_credentials() {
-    //         StorageCredentials::Key(_, key) => Ok(
-    //             BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
-    //         ),
-    //         _ => Err(Error::message(ErrorKind::Credential,
-    //             "Shared access signature generation - SAS can be generated only from key and account clients",
-    //         )),
-    //     }
-    // }
+    /// Create a shared access signature.
+    pub fn shared_access_signature(
+        &self,
+        permissions: BlobSasPermissions,
+        expiry: OffsetDateTime,
+    ) -> azure_core::Result<BlobSharedAccessSignature> {
+        match self.service_client.credentials() {
+            StorageCredentials::Key(account, ref key) => {
+
+        let canonicalized_resource = format!(
+            "/blob/{}/{}",
+            account,
+            self.container_name(),
+        );
+                Ok(
+                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
+            )},
+            _ => Err(Error::message(ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated only from key and account clients",
+            )),
+        }
+    }
 
     pub fn generate_signed_container_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
     where

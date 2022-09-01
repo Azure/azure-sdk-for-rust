@@ -23,7 +23,7 @@ async fn code() -> azure_core::Result<()> {
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let blob_service = BlobServiceClient::new(account, storage_credentials);
-    let container = blob_service.container_client(container_name);
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(file_name);
 
     if !blob_service

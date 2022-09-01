@@ -204,28 +204,29 @@ impl BlobClient {
         ClearPageBuilder::new(self.clone(), ba512_range)
     }
 
-    // /// Create a shared access signature.
-    // pub fn shared_access_signature(
-    //     &self,
-    //     permissions: BlobSasPermissions,
-    //     expiry: OffsetDateTime,
-    // ) -> azure_core::Result<BlobSharedAccessSignature> {
-    //     let canonicalized_resource = format!(
-    //         "/blob/{}/{}/{}",
-    //         self.container_client.storage_client().account(),
-    //         self.container_client.container_name(),
-    //         self.blob_name()
-    //     );
+    /// Create a shared access signature.
+    pub fn shared_access_signature(
+        &self,
+        permissions: BlobSasPermissions,
+        expiry: OffsetDateTime,
+    ) -> azure_core::Result<BlobSharedAccessSignature> {
+        match self.container_client.credentials() {
+            StorageCredentials::Key(account, ref key) => {
 
-    //     match self.storage_client().storage_credentials() {
-    //         StorageCredentials::Key(ref _account, ref key) => Ok(
-    //             BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
-    //         ),
-    //         _ => Err(Error::message(ErrorKind::Credential,
-    //             "Shared access signature generation - SAS can be generated only from key and account clients",
-    //         )),
-    //     }
-    // }
+        let canonicalized_resource = format!(
+            "/blob/{}/{}/{}",
+            account,
+            self.container_client.container_name(),
+            self.blob_name()
+        );
+                Ok(
+                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
+            )},
+            _ => Err(Error::message(ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated only from key and account clients",
+            )),
+        }
+    }
 
     /// Create a signed blob url
     pub fn generate_signed_blob_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
