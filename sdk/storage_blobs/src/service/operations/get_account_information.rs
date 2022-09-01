@@ -11,7 +11,7 @@ operation! {
 impl GetAccountInformationBuilder {
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
-            let mut url = self.client.url().clone();
+            let mut url = self.client.url()?;
 
             for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
                 url.query_pairs_mut().append_pair(k, v);

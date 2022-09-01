@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_storage::{clients::StorageCredentials, prelude::*};
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 

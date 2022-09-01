@@ -308,13 +308,12 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        todo!("replace the following code")
-        // let storage_account = StorageClient::new_emulator_default();
-        // storage_account
-        //     .container_client(container_name)
-        //     .blob_client(blob_name)
-        //     .generate_signed_blob_url(sas)
-        //     .expect("build url failed")
+        let service_client = BlobServiceClientBuilder::emulator().build();
+        service_client
+            .container_client(container_name)
+            .blob_client(blob_name)
+            .generate_signed_blob_url(sas)
+            .expect("build url failed")
     }
 
     #[test]

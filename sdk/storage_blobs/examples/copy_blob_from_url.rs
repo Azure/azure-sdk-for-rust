@@ -29,7 +29,7 @@ async fn main() -> azure_core::Result<()> {
         .blob_client(&destination_blob);
 
     let source_url = blob_service
-        .url()
+        .url()?
         .join(&source_container)?
         .join(&source_blob)?;
 

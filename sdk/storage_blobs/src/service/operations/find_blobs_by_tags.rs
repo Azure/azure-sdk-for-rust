@@ -18,7 +18,7 @@ impl FindBlobsByTagsBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.client.url().clone();
+                let mut url = this.client.url()?;
 
                 url.query_pairs_mut().append_pair("comp", "blobs");
                 if let Some(next_marker) = next_marker {

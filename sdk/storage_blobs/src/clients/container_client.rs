@@ -3,10 +3,10 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Body, Method, Pipeline, Request, Response, Url,
+    Body, Method, Request, Response, Url,
 };
 use azure_storage::{
-    clients::{ServiceType, StorageCredentials},
+    clients::StorageCredentials,
     prelude::BlobSasPermissions,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
@@ -114,9 +114,8 @@ impl ContainerClient {
 
     /// Full URL for the container.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        let mut url = self.service_client.url();
+        let mut url = self.service_client.url()?;
         url.set_path(&self.container_name);
-        // TODO: get rid of result
         Ok(url)
     }
 

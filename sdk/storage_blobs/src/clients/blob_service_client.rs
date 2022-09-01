@@ -9,6 +9,7 @@ use azure_storage::{
     prelude::{AccountSasPermissions, AccountSasResource, AccountSasResourceType},
     shared_access_signature::account_sas::AccountSharedAccessSignature,
 };
+use once_cell::sync::Lazy;
 use time::OffsetDateTime;
 
 use super::ContainerClient;
@@ -37,6 +38,15 @@ impl BlobServiceClientBuilder {
             options: ClientOptions::default(),
             cloud_location,
         }
+    }
+
+    /// Use the emulator with default settings
+    #[must_use]
+    pub fn emulator() -> Self {
+        Self::with_location(CloudLocation::Emulator {
+            address: "http://127.0.0.1".to_owned(),
+            port: 10000,
+        })
     }
 
     /// Convert the builder into a `BlobServiceClient` instance.
@@ -105,7 +115,7 @@ impl BlobServiceClient {
         ListContainersBuilder::new(self.clone())
     }
 
-    pub fn url(&self) -> url::Url {
+    pub fn url(&self) -> azure_core::Result<url::Url> {
         self.cloud_location.url()
     }
 
@@ -178,31 +188,33 @@ pub enum CloudLocation {
 
 impl CloudLocation {
     /// the base URL for a given cloud location
-    fn url(&self) -> url::Url {
-        // match self {
-        //     CloudLocation::Public { account, .. } => {
-        //         format!("https://{account}.documents.azure.com")
-        //     }
-        //     CloudLocation::China { account, .. } => format!("https://{account}.documents.azure.cn"),
-        //     CloudLocation::Custom { uri, .. } => uri.clone(),
-        //     CloudLocation::Emulator { address, port } => format!("https://{address}:{port}"),
-        // }
-        todo!()
+    fn url(&self) -> azure_core::Result<url::Url> {
+        let url = match self {
+            CloudLocation::Public { account, .. } => {
+                format!("https://{}.blob.core.windows.net", account)
+            }
+            CloudLocation::China { account, .. } => {
+                format!("https://{}.blob.core.chinacloudapi.cn", account)
+            }
+            CloudLocation::Custom { uri, .. } => uri.clone(),
+            CloudLocation::Emulator { address, port } => format!("https://{address}:{port}"),
+        };
+        Ok(url::Url::parse(&url)?)
     }
 
     fn credentials(&self) -> &StorageCredentials {
         match self {
             CloudLocation::Public { credentials, .. } => credentials,
             CloudLocation::China { credentials, .. } => credentials,
-            // CloudLocation::Emulator { .. } => StorageCredentials::Key(
-            //     EMULATOR_ACCOUNT.to_owned(),
-            //     EMULATOR_ACCOUNT_KEY.to_owned(),
-            // ),
-            CloudLocation::Emulator { .. } => todo!(),
+            CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
             CloudLocation::Custom { credentials, .. } => credentials,
         }
     }
 }
+
+pub static EMULATOR_CREDENTIALS: Lazy<StorageCredentials> = Lazy::new(|| {
+    StorageCredentials::Key(EMULATOR_ACCOUNT.to_owned(), EMULATOR_ACCOUNT_KEY.to_owned())
+});
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
 /// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
