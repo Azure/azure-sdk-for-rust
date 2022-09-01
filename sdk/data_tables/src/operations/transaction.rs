@@ -24,7 +24,7 @@ operation! {
 impl TransactionBuilder {
     /// Insert a new entity into a table
     ///
-    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity>
     pub fn insert<E: Serialize>(mut self, entity: E) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
 
@@ -47,7 +47,7 @@ impl TransactionBuilder {
     /// Update an existing entity in a table. The Update Entity operation
     /// replaces the entire entity and can be used to remove properties.
     ///
-    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2>
     pub fn update<RK: Into<String>, E: Serialize>(
         self,
         row_key: RK,
@@ -60,7 +60,7 @@ impl TransactionBuilder {
     /// in the table. Because this operation can insert or update an entity, it
     /// is also known as an upsert operation.
     ///
-    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-or-replace-entity
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/insert-or-replace-entity>
     pub fn insert_or_replace<RK: Into<String>, E: Serialize>(
         self,
         row_key: RK,
@@ -74,7 +74,7 @@ impl TransactionBuilder {
     /// operation does not replace the existing entity, as the Update Entity
     /// operation does.
     ///
-    /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/merge-entity
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/merge-entity>
     pub fn merge<RK: Into<String>, E: Serialize>(
         self,
         row_key: RK,
@@ -87,7 +87,7 @@ impl TransactionBuilder {
     /// in the table. Because this operation can insert or update an entity, it
     /// is also known as an upsert operation.
     ///
-    /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-or-merge-entity
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/insert-or-merge-entity>
     pub fn insert_or_merge<RK: Into<String>, E: Serialize>(
         self,
         row_key: RK,
@@ -99,7 +99,7 @@ impl TransactionBuilder {
 
     /// Delete an existing entity in a table.
     ///
-    /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1>
     pub fn delete<RK: Into<String>>(mut self, row_key: RK) -> azure_core::Result<Self> {
         let client = Arc::new(self.client.clone());
         let entity_client = client.entity_client(row_key)?;

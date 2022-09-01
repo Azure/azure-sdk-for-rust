@@ -423,7 +423,7 @@ impl StorageClient {
 
     /// Create a new anonymous storage client
     ///
-    /// Ref: https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal
+    /// ref: <https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal>
     pub fn new_anonymous<A>(account: A) -> Self
     where
         A: Into<String>,

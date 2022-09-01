@@ -1,5 +1,5 @@
 //! Implements the oauth2 crate http client interface using an `azure_core::HttpClient` instance.
-//! https://docs.rs/oauth2/latest/oauth2/#importing-oauth2-selecting-an-http-client-interface
+//! <https://docs.rs/oauth2/latest/oauth2/#importing-oauth2-selecting-an-http-client-interface>
 
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},

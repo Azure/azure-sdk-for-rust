@@ -1,7 +1,7 @@
 //! Azure date and time parsing and formatting
 
 // RFC 3339 vs ISO 8601
-// https://ijmacd.github.io/rfc3339-iso8601/
+// <https://ijmacd.github.io/rfc3339-iso8601/>
 
 use crate::error::{ErrorKind, ResultExt};
 use std::time::Duration;
@@ -18,7 +18,7 @@ pub mod rfc1123;
 
 /// RFC 3339: Date and Time on the Internet: Timestamps
 ///
-/// https://www.rfc-editor.org/rfc/rfc3339
+/// <https://www.rfc-editor.org/rfc/rfc3339>
 ///
 /// In Azure REST API specifications it is specified as `"format": "date-time"`.
 ///
@@ -31,7 +31,7 @@ pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
 
 /// RFC 3339: Date and Time on the Internet: Timestamps
 ///
-/// https://www.rfc-editor.org/rfc/rfc3339
+/// <https://www.rfc-editor.org/rfc/rfc3339>
 ///
 /// In Azure REST API specifications it is specified as `"format": "date-time"`.
 ///
@@ -43,15 +43,15 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
 
 /// RFC 1123: Requirements for Internet Hosts - Application and Support
 ///
-/// https://www.rfc-editor.org/rfc/rfc1123
+/// <https://www.rfc-editor.org/rfc/rfc1123>
 ///
 /// In Azure REST API specifications it is specified as `"format": "date-time-rfc1123"`.
 ///
 /// In .NET it is the `rfc1123pattern`.
-/// https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern
+/// <https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
 ///
 /// This format is also the preferred HTTP date format.
-/// https://httpwg.org/specs/rfc9110.html#http.date
+/// <https://httpwg.org/specs/rfc9110.html#http.date>
 ///
 /// Sun, 06 Nov 1994 08:49:37 GMT
 pub fn parse_rfc1123(s: &str) -> crate::Result<OffsetDateTime> {
@@ -68,15 +68,15 @@ const RFC1123_FORMAT: &[FormatItem] = format_description!(
 
 /// RFC 1123: Requirements for Internet Hosts - Application and Support
 ///
-/// https://www.rfc-editor.org/rfc/rfc1123
+/// <https://www.rfc-editor.org/rfc/rfc1123>
 ///
 /// In Azure REST API specifications it is specified as `"format": "date-time-rfc1123"`.
 ///
 /// In .NET it is the `rfc1123pattern`.
-/// https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern
+/// <https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
 ///
 /// This format is also the preferred HTTP date format.
-/// https://httpwg.org/specs/rfc9110.html#http.date
+/// <https://httpwg.org/specs/rfc9110.html#http.date>
 ///
 /// Sun, 06 Nov 1994 08:49:37 GMT
 pub fn to_rfc1123(date: &OffsetDateTime) -> String {
@@ -87,7 +87,7 @@ pub fn to_rfc1123(date: &OffsetDateTime) -> String {
 
 /// Similar to RFC 1123, but includes milliseconds.
 ///
-/// https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document
+/// <https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document>
 ///
 /// x-ms-last-state-change-utc: Fri, 25 Mar 2016 21:27:20.035 GMT
 pub fn parse_last_state_change(s: &str) -> crate::Result<OffsetDateTime> {
@@ -104,7 +104,7 @@ const LAST_STATE_CHANGE_FORMAT: &[FormatItem] = format_description!(
 
 /// Similar to preferred HTTP date format, but includes milliseconds
 ///
-/// https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document
+/// <https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document>
 ///
 /// x-ms-last-state-change-utc: Fri, 25 Mar 2016 21:27:20.035 GMT
 pub fn to_last_state_change(date: &OffsetDateTime) -> String {

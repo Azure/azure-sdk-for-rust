@@ -57,7 +57,7 @@ impl CertificateCredentialOptions {
     }
 
     /// The authority host to use for authentication requests.  The default is
-    /// https://login.microsoftonline.com.
+    /// <https://login.microsoftonline.com>.
     pub fn authority_host(&self) -> &str {
         &self.authority_host
     }
