@@ -179,19 +179,30 @@ fn new_pipeline_from_options(
 pub enum CloudLocation {
     /// Azure public cloud
     Public {
+        /// The account name
         account: String,
+        /// The auth token
         auth_token: AuthorizationToken,
     },
     /// Azure China cloud
     China {
+        /// The account name
         account: String,
+        /// The auth token
         auth_token: AuthorizationToken,
     },
     /// Use the well-known Cosmos emulator
-    Emulator { address: String, port: u16 },
+    Emulator {
+        /// The emulator's address
+        address: String,
+        /// The emulator's port
+        port: u16,
+    },
     /// A custom base URL
     Custom {
+        /// The uri
         uri: String,
+        /// The auth token
         auth_token: AuthorizationToken,
     },
 }
