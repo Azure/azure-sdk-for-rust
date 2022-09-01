@@ -19,7 +19,7 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let blob_client = BlobServiceClient::new(account, storage_credentials)
-        .container_client(&container_name)
+        .container_client(container_name)
         .blob_client("test1");
 
     // this example fills a 1 KB file with ASCII text and

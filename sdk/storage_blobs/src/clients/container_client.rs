@@ -88,17 +88,20 @@ impl ContainerClient {
     ) -> azure_core::Result<BlobSharedAccessSignature> {
         match self.service_client.credentials() {
             StorageCredentials::Key(account, ref key) => {
-
-        let canonicalized_resource = format!(
-            "/blob/{}/{}",
-            account,
-            self.container_name(),
-        );
-                Ok(
-                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
-            )},
-            _ => Err(Error::message(ErrorKind::Credential,
-                "Shared access signature generation - SAS can be generated only from key and account clients",
+                let canonicalized_resource =
+                    format!("/blob/{}/{}", account, self.container_name(),);
+                Ok(BlobSharedAccessSignature::new(
+                    key.to_string(),
+                    canonicalized_resource,
+                    permissions,
+                    expiry,
+                    BlobSignedResource::Blob,
+                ))
+            }
+            _ => Err(Error::message(
+                ErrorKind::Credential,
+                "Shared access signature generation - \
+                SAS can be generated only from key and account clients",
             )),
         }
     }
@@ -114,9 +117,18 @@ impl ContainerClient {
 
     /// Full URL for the container.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        let mut url = self.service_client.url()?;
-        url.set_path(&self.container_name);
-        Ok(url)
+        let container_name = self
+            .container_name()
+            .strip_prefix("/")
+            .unwrap_or_else(|| self.container_name());
+        let sep = if self.service_client.url()?.path().ends_with("/") {
+            ""
+        } else {
+            "/"
+        };
+
+        let url = format!("{}{}{}", self.service_client.url()?, sep, container_name);
+        Ok(url::Url::parse(&url)?)
     }
 
     pub(crate) async fn send(

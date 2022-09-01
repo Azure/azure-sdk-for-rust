@@ -14,7 +14,7 @@ async fn stream_list_blobs() {
     let container_name = "streamlistblobs235xx752zdve";
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
-    let blob_service = BlobServiceClient::new(&account, storage_credentials);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
     let container = blob_service.container_client(container_name);
 
     let page = blob_service

@@ -15,7 +15,7 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let container_client =
-        BlobServiceClient::new(&account, storage_credentials).container_client(&container);
+        BlobServiceClient::new(account, storage_credentials).container_client(&container);
 
     let mut count: usize = 0;
     let mut list_blobs = container_client.list_blobs().into_stream();

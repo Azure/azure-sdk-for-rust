@@ -27,8 +27,8 @@ fn code() -> azure_core::Result<()> {
     let later = now + date::duration_from_hours(1);
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
-    let service_client = BlobServiceClient::new(&account, storage_credentials);
-    let container_client = service_client.container_client(&container_name);
+    let service_client = BlobServiceClient::new(account, storage_credentials);
+    let container_client = service_client.container_client(container_name);
     let blob_client = container_client.blob_client(&blob_name);
 
     let sas = service_client

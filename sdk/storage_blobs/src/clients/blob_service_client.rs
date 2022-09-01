@@ -44,7 +44,7 @@ impl BlobServiceClientBuilder {
     #[must_use]
     pub fn emulator() -> Self {
         Self::with_location(CloudLocation::Emulator {
-            address: "http://127.0.0.1".to_owned(),
+            address: "127.0.0.1".to_owned(),
             port: 10000,
         })
     }
@@ -66,12 +66,12 @@ impl BlobServiceClientBuilder {
         self
     }
 
-    // /// Set the retry options.
-    // #[must_use]
-    // pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
-    //     self.options = self.options.retry(retry);
-    //     self
-    // }
+    /// Set the retry options.
+    #[must_use]
+    pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
+        self.options = self.options.retry(retry);
+        self
+    }
 
     /// Set the transport options.
     #[must_use]
@@ -197,7 +197,9 @@ impl CloudLocation {
                 format!("https://{}.blob.core.chinacloudapi.cn", account)
             }
             CloudLocation::Custom { uri, .. } => uri.clone(),
-            CloudLocation::Emulator { address, port } => format!("https://{address}:{port}"),
+            CloudLocation::Emulator { address, port } => {
+                format!("http://{address}:{port}/{EMULATOR_ACCOUNT}")
+            }
         };
         Ok(url::Url::parse(&url)?)
     }
