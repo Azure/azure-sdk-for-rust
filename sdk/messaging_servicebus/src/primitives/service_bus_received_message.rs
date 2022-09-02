@@ -646,12 +646,16 @@ impl ServiceBusReceivedMessage {
 
 /// <summary>Returns a string that represents the current message.</summary>
 /// <returns>The string representation of the current message.</returns>
-// public override string ToString()
-// {
-//     return string.Format(CultureInfo.CurrentCulture, "{{MessageId:{0}}}", MessageId);
-// }
 impl ToString for ServiceBusReceivedMessage {
     fn to_string(&self) -> String {
-        todo!()
+        match self.message_id() {
+            Some(id) => {
+                let mut s = String::from(r#"{MessageId:"#);
+                s.push_str(&id);
+                s.push('}');
+                s
+            }
+            None => String::from(r#"{MessageId:None"#),
+        }
     }
 }
