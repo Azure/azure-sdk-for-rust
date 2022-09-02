@@ -258,7 +258,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::StorageServiceProperties> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::StorageServiceProperties = serde_json::from_slice(&bytes)?;
+                let body: models::StorageServiceProperties = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -385,7 +385,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::StorageServiceStats> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::StorageServiceStats = serde_json::from_slice(&bytes)?;
+                let body: models::StorageServiceStats = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -461,7 +461,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListContainersSegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ListContainersSegmentResponse = serde_json::from_slice(&bytes)?;
+                let body: models::ListContainersSegmentResponse = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -592,7 +592,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UserDelegationKey> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::UserDelegationKey = serde_json::from_slice(&bytes)?;
+                let body: models::UserDelegationKey = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -699,9 +699,9 @@ pub mod service {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body = bytes;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -771,7 +771,7 @@ pub mod service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 self.send().await?.into_body().await
             }
         }
@@ -782,7 +782,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FilterBlobSegment> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::FilterBlobSegment = serde_json::from_slice(&bytes)?;
+                let body: models::FilterBlobSegment = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1584,7 +1584,7 @@ pub mod container {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SignedIdentifiers> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SignedIdentifiers = serde_json::from_slice(&bytes)?;
+                let body: models::SignedIdentifiers = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1910,9 +1910,9 @@ pub mod container {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body = bytes;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1987,7 +1987,7 @@ pub mod container {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 self.send().await?.into_body().await
             }
         }
@@ -1998,7 +1998,7 @@ pub mod container {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FilterBlobSegment> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::FilterBlobSegment = serde_json::from_slice(&bytes)?;
+                let body: models::FilterBlobSegment = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2511,7 +2511,7 @@ pub mod container {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListBlobsFlatSegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ListBlobsFlatSegmentResponse = serde_json::from_slice(&bytes)?;
+                let body: models::ListBlobsFlatSegmentResponse = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2647,7 +2647,7 @@ pub mod container {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListBlobsHierarchySegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ListBlobsHierarchySegmentResponse = serde_json::from_slice(&bytes)?;
+                let body: models::ListBlobsHierarchySegmentResponse = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3543,9 +3543,9 @@ pub mod blob {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body = bytes;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3738,7 +3738,7 @@ pub mod blob {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 self.send().await?.into_body().await
             }
         }
@@ -6077,9 +6077,9 @@ pub mod blob {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body = bytes;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -6252,7 +6252,7 @@ pub mod blob {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
                 self.send().await?.into_body().await
             }
         }
@@ -6263,7 +6263,7 @@ pub mod blob {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::BlobTags> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::BlobTags = serde_json::from_slice(&bytes)?;
+                let body: models::BlobTags = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -7767,7 +7767,7 @@ pub mod page_blob {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::PageList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::PageList = serde_json::from_slice(&bytes)?;
+                let body: models::PageList = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -7962,7 +7962,7 @@ pub mod page_blob {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::PageList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::PageList = serde_json::from_slice(&bytes)?;
+                let body: models::PageList = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -10694,7 +10694,7 @@ pub mod block_blob {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::BlockList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::BlockList = serde_json::from_slice(&bytes)?;
+                let body: models::BlockList = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
