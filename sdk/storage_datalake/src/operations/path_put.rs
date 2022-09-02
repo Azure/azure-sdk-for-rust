@@ -56,7 +56,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
 
     pub fn into_future(self) -> PutPath {
         let this = self.clone();
-        let ctx = self.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -76,11 +76,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
             request.insert_headers(&this.if_modified_since);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             PutPathResponse::try_from(response).await
         })
@@ -177,7 +173,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
             request.insert_headers(&this.rename_source);
             request.insert_headers(&ContentLength::new(0));
 
-            self.client.pipeline().send(&mut ctx, &mut request).await?;
+            self.client.send(&mut ctx, &mut request).await?;
 
             Ok(())
         })

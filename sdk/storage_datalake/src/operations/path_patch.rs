@@ -99,7 +99,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
                 request.insert_headers(&ContentLength::new(0));
             }
 
-            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             PatchPathResponse::try_from(response).await
         })

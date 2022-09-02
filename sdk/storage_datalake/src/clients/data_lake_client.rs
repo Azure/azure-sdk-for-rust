@@ -111,7 +111,13 @@ impl DataLakeClient {
         FileSystemClient::new(self.clone(), file_system_name.into())
     }
 
-    pub fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
+    pub(crate) async fn send(
+        &self,
+        ctx: &mut azure_core::Context,
+        request: &mut azure_core::Request,
+    ) -> azure_core::Result<azure_core::Response> {
+        self.pipeline
+            .send(ctx.insert(ServiceType::DataLake), request)
+            .await
     }
 }

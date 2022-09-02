@@ -1,7 +1,6 @@
 use super::{DataLakeClient, DirectoryClient, FileClient};
 use crate::operations::*;
 use crate::Properties;
-use azure_core::Pipeline;
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -70,7 +69,11 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.data_lake_client.pipeline()
+    pub(crate) async fn send(
+        &self,
+        ctx: &mut azure_core::Context,
+        request: &mut azure_core::Request,
+    ) -> azure_core::Result<azure_core::Response> {
+        self.data_lake_client.send(ctx, request).await
     }
 }

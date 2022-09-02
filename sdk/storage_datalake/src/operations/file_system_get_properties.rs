@@ -46,7 +46,7 @@ impl GetFileSystemPropertiesBuilder {
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             GetFileSystemPropertiesResponse::try_from(response).await
         })

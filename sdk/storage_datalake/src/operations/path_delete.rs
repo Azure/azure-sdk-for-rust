@@ -63,7 +63,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
             request.insert_headers(&this.if_match_condition);
             request.insert_headers(&this.if_modified_since);
 
-            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             DeletePathResponse::try_from(response).await
         })

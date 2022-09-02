@@ -2,7 +2,6 @@ use crate::operations::*;
 use crate::request_options::*;
 use crate::{clients::FileSystemClient, prelude::PathClient, Properties};
 use azure_core::prelude::IfMatchCondition;
-use azure_core::Pipeline;
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -11,6 +10,7 @@ pub struct DirectoryClient {
     dir_path: String,
 }
 
+#[async_trait::async_trait]
 impl PathClient for DirectoryClient {
     fn url(&self) -> azure_core::Result<Url> {
         let fs_url = self.file_system_client.url()?;
@@ -18,8 +18,12 @@ impl PathClient for DirectoryClient {
         Ok(self.file_system_client.url()?.join(&dir_path)?)
     }
 
-    fn pipeline(&self) -> &Pipeline {
-        self.file_system_client.pipeline()
+    async fn send(
+        &self,
+        ctx: &mut azure_core::Context,
+        request: &mut azure_core::Request,
+    ) -> crate::Result<azure_core::Response> {
+        self.file_system_client.send(ctx, request).await
     }
 }
 

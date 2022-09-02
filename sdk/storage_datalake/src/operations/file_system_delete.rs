@@ -45,7 +45,7 @@ impl DeleteFileSystemBuilder {
             request.insert_headers(&this.if_modified_since_condition);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             DeleteFileSystemResponse::try_from(response).await
         })

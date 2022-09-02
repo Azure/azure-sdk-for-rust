@@ -62,7 +62,7 @@ impl GetFileBuilder {
             request.insert_headers(&this.if_modified_since);
             request.insert_headers(&this.lease_id);
 
-            let response = self.client.pipeline().send(&mut ctx, &mut request).await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             GetFileResponse::try_from(response).await
         })

@@ -62,7 +62,7 @@ impl ListFileSystemsBuilder {
 
                 request.insert_headers(&this.client_request_id);
 
-                let response = this.client.pipeline().send(&mut ctx, &mut request).await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 ListFileSystemsResponse::try_from(response).await
             }
