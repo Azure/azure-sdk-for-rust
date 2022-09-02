@@ -60,7 +60,7 @@ impl DirectoryClient {
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
         let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
-        ListPathsBuilder::new(self.file_system_client.clone(), self.context().clone())
+        ListPathsBuilder::new(self.file_system_client.clone())
             .directory(dir_path)
             .recursive(true)
     }
@@ -102,31 +102,23 @@ impl DirectoryClient {
     where
         R: Into<Recursive>,
     {
-        DeletePathBuilder::new(
-            self.clone(),
-            Some(recursive.into()),
-            self.file_system_client.context.clone(),
-        )
+        DeletePathBuilder::new(self.clone()).recursive(recursive.into())
     }
 
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+        HeadPathBuilder::new(self.clone())
     }
 
     pub fn get_status(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathGetPropertiesAction::GetStatus)
+        HeadPathBuilder::new(self.clone()).action(PathGetPropertiesAction::GetStatus)
     }
 
     pub fn get_access_control_list(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathGetPropertiesAction::GetAccessControl)
+        HeadPathBuilder::new(self.clone()).action(PathGetPropertiesAction::GetAccessControl)
     }
 
     pub fn set_properties(&self, properties: impl Into<Properties>) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .properties(properties)
-            .action(PathUpdateAction::SetProperties)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetProperties).properties(properties)
     }
 
     pub fn set_access_control_list(
@@ -134,12 +126,12 @@ impl DirectoryClient {
         acl: impl Into<AccessControlList>,
         recursive: bool,
     ) -> PatchPathBuilder<Self> {
-        let builder =
-            PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone()).acl(acl);
-        if recursive {
-            builder.action(PathUpdateAction::SetAccessControlRecursive)
+        let action = if recursive {
+            PathUpdateAction::SetAccessControlRecursive
         } else {
-            builder.action(PathUpdateAction::SetAccessControl)
-        }
+            PathUpdateAction::SetAccessControl
+        };
+
+        PatchPathBuilder::new(self.clone(), action).acl(acl)
     }
 }

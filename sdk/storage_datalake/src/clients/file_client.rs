@@ -66,20 +66,17 @@ impl FileClient {
     where
         B: Into<Bytes>,
     {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathUpdateAction::Append)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::Append)
             .position(position)
             .bytes(bytes.into())
     }
 
     pub fn flush(&self, position: i64) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathUpdateAction::Flush)
-            .position(position)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::Flush).position(position)
     }
 
     pub fn read(&self) -> GetFileBuilder {
-        GetFileBuilder::new(self.clone(), self.file_system_client.context.clone())
+        GetFileBuilder::new(self.clone())
     }
 
     pub fn rename<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
@@ -104,35 +101,29 @@ impl FileClient {
     }
 
     pub fn delete(&self) -> DeletePathBuilder<Self> {
-        DeletePathBuilder::new(self.clone(), None, self.file_system_client.context.clone())
+        DeletePathBuilder::new(self.clone())
     }
 
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+        HeadPathBuilder::new(self.clone())
     }
 
     pub fn get_status(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathGetPropertiesAction::GetStatus)
+        HeadPathBuilder::new(self.clone()).action(PathGetPropertiesAction::GetStatus)
     }
 
     pub fn get_access_control_list(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathGetPropertiesAction::GetAccessControl)
+        HeadPathBuilder::new(self.clone()).action(PathGetPropertiesAction::GetAccessControl)
     }
 
     pub fn set_properties(&self, properties: impl Into<Properties>) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .properties(properties)
-            .action(PathUpdateAction::SetProperties)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetProperties).properties(properties)
     }
 
     pub fn set_access_control_list(
         &self,
         acl: impl Into<AccessControlList>,
     ) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .acl(acl)
-            .action(PathUpdateAction::SetAccessControl)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetAccessControl).acl(acl)
     }
 }

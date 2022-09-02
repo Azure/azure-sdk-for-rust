@@ -6,78 +6,40 @@ use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone)]
-pub struct HeadPathBuilder<C>
-where
-    C: PathClient,
-{
+operation! {
+    HeadPath<C: PathClient + 'static>,
     client: C,
-    action: Option<PathGetPropertiesAction>,
-    upn: Option<Upn>,
-    timeout: Option<Timeout>,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSinceCondition>,
-    client_request_id: Option<ClientRequestId>,
-    lease_id: Option<LeaseId>,
-    context: Context,
+    ?action: PathGetPropertiesAction,
+    ?upn: Upn,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?lease_id: LeaseId,
 }
 
 impl<C: PathClient + 'static> HeadPathBuilder<C> {
-    pub(crate) fn new(client: C, context: Context) -> Self {
-        Self {
-            client,
-            action: None,
-            upn: None,
-            timeout: None,
-            if_match_condition: None,
-            if_modified_since: None,
-            client_request_id: None,
-            lease_id: None,
-            context,
-        }
-    }
-
-    setters! {
-        action: PathGetPropertiesAction => Some(action),
-        upn: Upn => Some(upn),
-        timeout: Timeout => Some(timeout),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: IfModifiedSinceCondition => Some(if_modified_since),
-        client_request_id: ClientRequestId => Some(client_request_id),
-        lease_id: LeaseId => Some(lease_id),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> HeadPath {
-        let this = self.clone();
-        let ctx = self.context.clone();
-
         Box::pin(async move {
-            let mut url = this.client.url()?;
+            let mut url = self.client.url()?;
 
             self.action.append_to_url_query(&mut url);
             self.upn.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = Request::new(url, azure_core::Method::Head);
 
-            request.insert_headers(&this.client_request_id);
-            request.insert_headers(&this.if_match_condition);
-            request.insert_headers(&this.if_modified_since);
-            request.insert_headers(&this.lease_id);
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            request.insert_headers(&self.lease_id);
 
             let response = self
                 .client
                 .pipeline()
-                .send(&mut ctx.clone(), &mut request)
+                .send(&mut self.context.clone(), &mut request)
                 .await?;
 
             HeadPathResponse::try_from(response).await
         })
     }
 }
-
-azure_core::future!(HeadPath);
 
 #[derive(Debug, Clone)]
 pub struct HeadPathResponse {

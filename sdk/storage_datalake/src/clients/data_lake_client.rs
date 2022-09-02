@@ -100,7 +100,7 @@ impl DataLakeClient {
     }
 
     pub fn list_file_systems(&self) -> ListFileSystemsBuilder {
-        ListFileSystemsBuilder::new(self.clone(), Some(self.context.clone()))
+        ListFileSystemsBuilder::new(self.clone())
     }
 
     pub fn into_file_system_client<FS>(self, file_system_name: FS) -> FileSystemClient
