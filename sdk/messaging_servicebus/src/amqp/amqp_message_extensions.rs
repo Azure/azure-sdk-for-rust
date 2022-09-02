@@ -11,10 +11,13 @@ use fe2o3_amqp_types::{
 };
 use time::OffsetDateTime;
 
-use crate::constants::{MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH, MAX_SESSION_ID_LENGTH};
+use crate::constants::{
+    DEFAULT_OFFSET_DATE_TIME, MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH,
+    MAX_SESSION_ID_LENGTH,
+};
 
 use super::{
-    amqp_message_constants,
+    amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
     error::{not_supported_error, Error},
 };
 
@@ -43,8 +46,7 @@ pub(crate) trait AmqpMessageExt {
 
     fn reply_to(&self) -> Option<&str>;
 
-    // TODO: `time::OffsetDateTime` doesn't implement `Default`
-    fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime>;
+    fn scheduled_enqueue_time(&self) -> OffsetDateTime;
 }
 
 pub(crate) trait AmqpMessageMutExt {
@@ -224,11 +226,13 @@ impl<T> AmqpMessageExt for Message<T> {
             .map(|s| s.as_str())
     }
 
+    /// The default `DateTimeOffset` value from dotnet is taken as the default value
+    /// if the scheduled_enqueue_time is `None`
     #[inline]
-    fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime> {
+    fn scheduled_enqueue_time(&self) -> OffsetDateTime {
         self.message_annotations
-            .as_ref()?
-            .get(&amqp_message_constants::SCHEDULED_ENQUEUE_TIME_UTC_NAME as &dyn AnnotationKey)
+            .as_ref()
+            .and_then(|m| m.get(&SCHEDULED_ENQUEUE_TIME_UTC_NAME as &dyn AnnotationKey))
             .map(|value| match value {
                 Value::Timestamp(timestamp) => {
                     let millis = timestamp.milliseconds();
@@ -237,6 +241,7 @@ impl<T> AmqpMessageExt for Message<T> {
                 }
                 _ => unreachable!("Expecting a Timestamp"),
             })
+            .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
     }
 }
 

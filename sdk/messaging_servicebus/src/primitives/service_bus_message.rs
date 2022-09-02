@@ -258,7 +258,7 @@ impl ServiceBusMessage {
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will get enqueued, but the actual sending time
     /// depends on the queue's workload and its state.
     /// </remarks>
-    pub fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime> {
+    pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
         self.amqp_message.scheduled_enqueue_time()
     }
 
