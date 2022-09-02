@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, time::Duration};
 
 use fe2o3_amqp_types::{
     messaging::{Body, Data, Message, MessageId, Properties},
-    primitives::{Binary, Value},
+    primitives::{Binary, OrderedMap, Value},
 };
 use time::OffsetDateTime;
 
@@ -13,15 +13,14 @@ use crate::amqp::{
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
 
-pub(crate) type AmqpMessage = Message<Value>;
-
 /// The [ServiceBusMessage] is used to send data to Service Bus Queues and Topics. When receiving messages, the <see
 /// cref="ServiceBusReceivedMessage"/> is used.
 ///
 /// The message structure is discussed in detail in the [product
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 pub struct ServiceBusMessage {
-    pub(crate) amqp_message: AmqpMessage,
+    // TODO: change to generics?
+    pub(crate) amqp_message: Message<Value>,
 }
 
 impl Default for ServiceBusMessage {
@@ -53,13 +52,17 @@ impl From<ServiceBusReceivedMessage> for ServiceBusMessage {
 
 impl ServiceBusMessage {
     /// Gets the raw AMQP message
-    pub fn raw_amqp_message(&self) -> &AmqpMessage {
+    pub fn raw_amqp_message(&self) -> &Message<Value> {
         &self.amqp_message
     }
 
     /// Gets the body of the message
     pub fn body(&self) -> Result<&[u8], Error> {
         AmqpMessageExtensions::get_body(&self.amqp_message)
+    }
+
+    pub fn body_mut(&mut self) -> Result<&mut [u8], Error> {
+        AmqpMessageExtensions::get_body_mut(&mut self.amqp_message)
     }
 
     /// Sets the body of the message
@@ -308,7 +311,7 @@ impl ServiceBusMessage {
     /// <exception cref="System.Runtime.Serialization.SerializationException">
     ///   Occurs when the <see cref="ServiceBusMessage" /> is serialized for transport when an unsupported type is used as a property.
     /// </exception>
-    pub fn application_properties(&self) -> Option<&BTreeMap<String, Value>> {
+    pub fn application_properties(&self) -> Option<&OrderedMap<String, Value>> {
         todo!()
     }
 }

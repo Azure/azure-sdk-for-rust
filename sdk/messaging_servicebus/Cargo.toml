@@ -30,6 +30,7 @@ thiserror = "1.0"
 time = "0.3.10"
 tokio-util = "0.7.3"
 url = "2.2"
+uuid = "1"
 
 [dev-dependencies]
 env_logger = "0.9"

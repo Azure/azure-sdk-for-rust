@@ -11,7 +11,7 @@ use super::{
     error::{not_supported_error, Error},
 };
 
-pub struct AmqpMessageExtensions {}
+pub(crate) struct AmqpMessageExtensions {}
 
 impl AmqpMessageExtensions {
     // /// TODO: is this really necessary?
@@ -96,4 +96,27 @@ impl AmqpMessageExtensions {
             )),
         }
     }
+
+    pub fn get_body_mut<T>(message: &mut Message<T>) -> Result<&mut [u8], Error> {
+        match &mut message.body {
+            Body::Data(Data(buf)) => Ok(buf),
+            Body::Sequence(_) => Err(not_supported_error(
+                "Body::Sequence",
+                "body()",
+                "raw_amqp_message()",
+            )),
+            Body::Value(_) => Err(not_supported_error(
+                "Body::Value",
+                "body()",
+                "raw_amqp_message()",
+            )),
+            Body::Empty => Err(not_supported_error(
+                "Body::Empty",
+                "body()",
+                "raw_amqp_message()",
+            )),
+        }
+    }
+
+    // pub fn get_message_id<T>(message: &Message<T>) ->
 }
