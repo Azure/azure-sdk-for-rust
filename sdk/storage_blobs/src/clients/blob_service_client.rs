@@ -24,10 +24,10 @@ pub struct BlobServiceClientBuilder {
 impl BlobServiceClientBuilder {
     /// Create a new instance of `BlobServiceClientBuilder`.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
+    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
         Self::with_location(CloudLocation::Public {
             account: account.into(),
-            credentials,
+            credentials: credentials.into(),
         })
     }
 
@@ -90,7 +90,7 @@ pub struct BlobServiceClient {
 impl BlobServiceClient {
     /// Create a new `BlobServiceClient` which connects to the account's instance in the public Azure cloud.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
+    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
         BlobServiceClientBuilder::new(account, credentials).build()
     }
 
@@ -98,7 +98,7 @@ impl BlobServiceClient {
     #[must_use]
     pub fn builder(
         account: impl Into<String>,
-        credentials: StorageCredentials,
+        credentials: impl Into<StorageCredentials>,
     ) -> BlobServiceClientBuilder {
         BlobServiceClientBuilder::new(account, credentials)
     }
