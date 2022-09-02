@@ -2,12 +2,22 @@ use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     definitions::SequenceNo,
-    messaging::{ApplicationProperties, Message},
-    primitives::{OrderedMap, Value},
+    messaging::{
+        annotations::AnnotationKey, ApplicationProperties, Header, Message, MessageAnnotations,
+    },
+    primitives::{OrderedMap, SimpleValue, Timestamp, Value},
 };
 use time::OffsetDateTime;
 
-use crate::amqp::{amqp_message_extensions::AmqpMessageExt, error::Error};
+use crate::amqp::{
+    amqp_message_constants::{
+        self, DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
+        DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
+        LOCKED_UNTIL_NAME, SEQUENCE_NUMBER_NAME,
+    },
+    amqp_message_extensions::AmqpMessageExt,
+    error::Error,
+};
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
@@ -20,6 +30,8 @@ pub struct ServiceBusReceivedMessage {
     /// Change to generics?
     amqp_message: Message<Value>,
     is_settled: bool,
+    lock_token_uuid: uuid::Uuid,
+    pub(crate) partition_id: i16,
 }
 
 impl ServiceBusReceivedMessage {
@@ -234,23 +246,15 @@ impl ServiceBusReceivedMessage {
     ///    Number of deliveries that have been attempted for this message. The count is incremented when a message lock expires,
     ///    or the message is explicitly abandoned by the receiver. This property is read-only.
     /// </remarks>
-    // public int DeliveryCount
-    // {
-    //     get
-    //     {
-    //         return (int)AmqpMessage.Header.DeliveryCount;
-    //     }
-    //     internal set
-    //     {
-    //         AmqpMessage.Header.DeliveryCount = (uint)value;
-    //     }
-    // }
-    pub fn delivery_count(&self) -> u32 {
-        todo!()
+    pub fn delivery_count(&self) -> Option<u32> {
+        self.amqp_message.header.as_ref().map(|h| h.delivery_count)
     }
 
     pub(crate) fn set_delivery_count(&mut self, count: u32) {
-        todo!()
+        self.amqp_message
+            .header
+            .get_or_insert(Header::default())
+            .delivery_count = count;
     }
 
     /// <summary>Gets the date and time in UTC until which the message will be locked in the queue/subscription.</summary>
@@ -277,12 +281,37 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.LockedUntilName] = value.UtcDateTime;
     //     }
     // }
-    pub fn locked_until(&self) -> OffsetDateTime {
-        todo!()
+    pub fn locked_until(&self) -> Option<Result<OffsetDateTime, Error>> {
+        self.amqp_message
+            .message_annotations
+            .as_ref()?
+            .get(&amqp_message_constants::LOCKED_UNTIL_NAME as &dyn AnnotationKey)
+            .map(|value| match value {
+                Value::Timestamp(timestamp) => {
+                    let millis = timestamp.milliseconds();
+                    let duration = TimeSpan::milliseconds(millis);
+                    Ok(OffsetDateTime::UNIX_EPOCH + duration)
+                }
+                _ => Err(Error::InvalidValueType),
+            })
     }
 
+    /// # Panic
+    ///
+    /// Panics if timestamp exceeds the valid range of i64
     pub(crate) fn set_locked_until(&mut self, value: OffsetDateTime) {
-        todo!()
+        let timespan = value - OffsetDateTime::UNIX_EPOCH;
+        let millis = timespan.whole_milliseconds();
+        assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
+        let millis = Timestamp::from_milliseconds(millis as i64);
+
+        self.amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(
+                amqp_message_constants::LOCKED_UNTIL_NAME.into(),
+                millis.into(),
+            );
     }
 
     /// <summary>Gets the unique number assigned to a message by Service Bus.</summary>
@@ -310,11 +339,22 @@ impl ServiceBusReceivedMessage {
     //     }
     // }
     pub fn sequence_number(&self) -> i64 {
-        todo!()
+        self.amqp_message
+            .message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&SEQUENCE_NUMBER_NAME as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => *val,
+                _ => unreachable!("Expecting a Long"),
+            })
+            .unwrap_or(Default::default())
     }
 
     pub(crate) fn set_sequence_number(&mut self, value: i64) {
-        todo!()
+        self.amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(SEQUENCE_NUMBER_NAME.into(), value.into());
     }
 
     /// <summary>
@@ -341,21 +381,32 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.DeadLetterSourceName] = value;
     //     }
     // }
-    pub fn dead_letter_source(&self) -> &str {
-        todo!()
+    pub fn dead_letter_source(&self) -> Option<&str> {
+        self.amqp_message
+            .message_annotations
+            .as_ref()?
+            .get(&DEAD_LETTER_SOURCE_NAME as &dyn AnnotationKey)
+            .and_then(|value| match value {
+                Value::String(s) => Some(s.as_str()),
+                _ => unreachable!("Expecting a String"),
+            })
     }
 
     pub(crate) fn set_dead_letter_source(&mut self, value: impl Into<String>) {
-        todo!()
+        let value = value.into();
+        self.amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(DEAD_LETTER_SOURCE_NAME.into(), value.into());
     }
 
     // internal short PartitionId { get; set; }
     pub(crate) fn partition_id(&self) -> i16 {
-        todo!()
+        self.partition_id
     }
 
     pub(crate) fn set_partition_id(&mut self, value: i16) {
-        todo!()
+        self.partition_id = value
     }
 
     /// <summary>Gets the original sequence number of the message.</summary>
@@ -382,11 +433,22 @@ impl ServiceBusReceivedMessage {
     //     }
     // }
     pub fn enqueued_sequence_number(&self) -> i64 {
-        todo!()
+        self.amqp_message
+            .message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&ENQUEUE_SEQUENCE_NUMBER_NAME as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => *val,
+                _ => unreachable!("Expecting a Long"),
+            })
+            .unwrap_or(Default::default())
     }
 
     pub(crate) fn set_enqueued_sequence_number(&mut self, value: i64) {
-        todo!()
+        self.amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(ENQUEUE_SEQUENCE_NUMBER_NAME.into(), value.into());
     }
 
     /// <summary>Gets the date and time of the sent time in UTC.</summary>
@@ -413,22 +475,41 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.EnqueuedTimeUtcName] = value.UtcDateTime;
     //     }
     // }
-    pub fn enqueued_time(&self) -> OffsetDateTime {
-        todo!()
+    pub fn enqueued_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+        self.amqp_message
+            .message_annotations
+            .as_ref()?
+            .get(&ENQUEUED_TIME_UTC_NAME as &dyn AnnotationKey)
+            .map(|value| match value {
+                Value::Timestamp(timestamp) => {
+                    let millis = timestamp.milliseconds();
+                    let duration = TimeSpan::milliseconds(millis);
+                    Ok(OffsetDateTime::UNIX_EPOCH + duration)
+                }
+                _ => Err(Error::InvalidValueType),
+            })
     }
 
     pub(crate) fn set_enqueued_time(&mut self, value: OffsetDateTime) {
-        todo!()
+        let timespan = value - OffsetDateTime::UNIX_EPOCH;
+        let millis = timespan.whole_milliseconds();
+        assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
+        let millis = Timestamp::from_milliseconds(millis as i64);
+
+        self.amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(ENQUEUED_TIME_UTC_NAME.into(), millis.into());
     }
 
     // internal Guid LockTokenGuid { get; set; }
     // TODO: rename to lock_token_uuid?
-    pub(crate) fn lock_token_guid(&self) -> uuid::Uuid {
-        todo!()
+    pub(crate) fn lock_token_guid(&self) -> &uuid::Uuid {
+        &self.lock_token_uuid
     }
 
     pub(crate) fn set_lock_token_guid(&mut self, value: uuid::Uuid) {
-        todo!()
+        self.lock_token_uuid = value;
     }
 
     /// <summary>Gets the date and time in UTC at which the message is set to expire.</summary>
@@ -454,6 +535,15 @@ impl ServiceBusReceivedMessage {
     //     }
     // }
     pub fn expires_at(&self) -> OffsetDateTime {
+        // match self
+        //     .amqp_message
+        //     .properties
+        //     .as_ref()
+        //     .and_then(|p| p.absolute_expiry_time.as_ref())
+        // {
+        //     Some(_) => todo!(),
+        //     None => todo!(),
+        // };
         todo!()
     }
 
@@ -472,7 +562,14 @@ impl ServiceBusReceivedMessage {
     //     }
     // }
     pub fn dead_letter_reason(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message
+            .application_properties
+            .as_ref()?
+            .get(DEAD_LETTER_REASON_HEADER)
+            .map(|value| match value {
+                SimpleValue::String(s) => s.as_str(),
+                _ => unreachable!("Expecting a String"),
+            })
     }
 
     /// <summary>
@@ -490,7 +587,14 @@ impl ServiceBusReceivedMessage {
     //     }
     // }
     pub fn dead_letter_error_description(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message
+            .application_properties
+            .as_ref()?
+            .get(DEAD_LETTER_ERROR_DESCRIPTION_HEADER)
+            .map(|value| match value {
+                SimpleValue::String(s) => s.as_str(),
+                _ => unreachable!("Expecting a String"),
+            })
     }
 
     /// <summary>Gets the state of the message.</summary>
