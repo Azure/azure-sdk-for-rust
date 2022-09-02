@@ -92,10 +92,6 @@ impl DataLakeClient {
         DataLakeClientBuilder::new(account, credentials)
     }
 
-    // pub fn custom_dns_suffix(&self) -> Option<&str> {
-    //     self.custom_dns_suffix.as_deref()
-    // }
-
     pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
         self.cloud_location.url(ServiceType::DataLake)
     }
