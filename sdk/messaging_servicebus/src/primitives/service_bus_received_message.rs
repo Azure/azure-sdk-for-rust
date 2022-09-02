@@ -32,31 +32,26 @@ use super::service_bus_message_state::ServiceBusMessageState;
 /// The message structure is discussed in detail in the [product
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 pub struct ServiceBusReceivedMessage {
-    /// Change to generics?
-    pub(crate) amqp_message: Message<Value>,
-    is_settled: bool,
-    lock_token_uuid: uuid::Uuid,
-    pub(crate) partition_id: i16,
-}
-
-impl ServiceBusReceivedMessage {
     /// <summary>
     /// Indicates whether the user has settled the message as part of their callback.
     /// If they have done so, we will not autocomplete.
     /// </summary>
-    pub(crate) fn is_settled(&self) -> bool {
-        todo!()
-    }
+    pub(crate) is_settled: bool,
 
     /// <summary>
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
     /// </summary>
-    pub(crate) fn amqp_message(&self) -> &Message<Value> {
-        &self.amqp_message
-    }
+    /// TODO: Change to generics?
+    pub(crate) amqp_message: Message<Value>,
 
+    pub(crate) lock_token_uuid: uuid::Uuid,
+
+    pub(crate) partition_id: i16,
+}
+
+impl ServiceBusReceivedMessage {
     /// <summary>
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
@@ -408,15 +403,6 @@ impl ServiceBusReceivedMessage {
             .insert(DEAD_LETTER_SOURCE_NAME.into(), value.into());
     }
 
-    // internal short PartitionId { get; set; }
-    pub(crate) fn partition_id(&self) -> i16 {
-        self.partition_id
-    }
-
-    pub(crate) fn set_partition_id(&mut self, value: i16) {
-        self.partition_id = value
-    }
-
     /// <summary>Gets the original sequence number of the message.</summary>
     /// <value>The enqueued sequence number of the message.</value>
     /// <remarks>
@@ -509,16 +495,6 @@ impl ServiceBusReceivedMessage {
             .message_annotations
             .get_or_insert(MessageAnnotations::default())
             .insert(ENQUEUED_TIME_UTC_NAME.into(), millis.into());
-    }
-
-    // internal Guid LockTokenGuid { get; set; }
-    // TODO: rename to lock_token_uuid?
-    pub(crate) fn lock_token_guid(&self) -> &uuid::Uuid {
-        &self.lock_token_uuid
-    }
-
-    pub(crate) fn set_lock_token_guid(&mut self, value: uuid::Uuid) {
-        self.lock_token_uuid = value;
     }
 
     /// <summary>Gets the date and time in UTC at which the message is set to expire.</summary>
