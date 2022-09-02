@@ -16,19 +16,19 @@ operation! {
 
 impl CreateFileSystemBuilder {
     pub fn into_future(self) -> CreateFileSystem {
-        let this = self.clone();
-        let mut ctx = self.context.clone();
-
         Box::pin(async move {
-            let mut url = this.client.url()?;
+            let mut url = self.client.url()?;
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
             let mut request = Request::new(url, azure_core::Method::Put);
 
-            request.insert_headers(&this.properties);
+            request.insert_headers(&self.properties);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self.client.send(&mut ctx, &mut request).await?;
+            let response = self
+                .client
+                .send(&mut self.context.clone(), &mut request)
+                .await?;
 
             CreateFileSystemResponse::try_from(response).await
         })
