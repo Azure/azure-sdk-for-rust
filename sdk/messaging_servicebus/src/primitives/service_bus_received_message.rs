@@ -11,14 +11,17 @@ use fe2o3_amqp_types::{
 };
 use time::OffsetDateTime;
 
-use crate::amqp::{
-    amqp_message_constants::{
-        self, DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
-        DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
-        LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
+use crate::{
+    amqp::{
+        amqp_message_constants::{
+            self, DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
+            DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
+            LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
+        },
+        amqp_message_extensions::AmqpMessageExt,
+        error::Error,
     },
-    amqp_message_extensions::AmqpMessageExt,
-    error::Error,
+    constants::{DEFAULT_OFFSET_DATE_TIME, MAX_OFFSET_DATE_TIME},
 };
 
 use super::service_bus_message_state::ServiceBusMessageState;
@@ -145,8 +148,11 @@ impl ServiceBusReceivedMessage {
     ///      setting and it is silently adjusted if it does.
     ///      See <a href="https://docs.microsoft.com/azure/service-bus-messaging/message-expiration">Expiration</a>
     /// </remarks>
-    pub fn time_to_live(&self) -> Option<TimeSpan> {
-        self.amqp_message.time_to_live()
+    pub fn time_to_live(&self) -> TimeSpan {
+        match self.amqp_message.time_to_live() {
+            Some(ttl) => ttl,
+            None => TimeSpan::MAX, // TODO: is this the same as in dotnet sdk?
+        }
     }
 
     /// <summary>Gets the correlation identifier.</summary>
@@ -477,11 +483,11 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.EnqueuedTimeUtcName] = value.UtcDateTime;
     //     }
     // }
-    pub fn enqueued_time(&self) -> Option<OffsetDateTime> {
+    pub fn enqueued_time(&self) -> OffsetDateTime {
         self.amqp_message
             .message_annotations
-            .as_ref()?
-            .get(&ENQUEUED_TIME_UTC_NAME as &dyn AnnotationKey)
+            .as_ref()
+            .and_then(|m| m.get(&ENQUEUED_TIME_UTC_NAME as &dyn AnnotationKey))
             .map(|value| match value {
                 Value::Timestamp(timestamp) => {
                     let millis = timestamp.milliseconds();
@@ -490,6 +496,7 @@ impl ServiceBusReceivedMessage {
                 }
                 _ => unreachable!("Expecting a Timestamp"),
             })
+            .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
     }
 
     pub(crate) fn set_enqueued_time(&mut self, value: OffsetDateTime) {
@@ -537,16 +544,27 @@ impl ServiceBusReceivedMessage {
     //     }
     // }
     pub fn expires_at(&self) -> OffsetDateTime {
-        // match self
-        //     .amqp_message
-        //     .properties
-        //     .as_ref()
-        //     .and_then(|p| p.absolute_expiry_time.as_ref())
-        // {
-        //     Some(_) => todo!(),
-        //     None => todo!(),
-        // };
-        todo!()
+        match self
+            .amqp_message
+            .properties
+            .as_ref()
+            .and_then(|p| p.absolute_expiry_time.as_ref())
+        {
+            Some(timestamp) => {
+                let millis = timestamp.milliseconds();
+                let duration = TimeSpan::milliseconds(millis);
+                OffsetDateTime::UNIX_EPOCH + duration
+            }
+            None => {
+                let ttl = self.time_to_live();
+                let enqueue_time = self.enqueued_time();
+                if ttl >= MAX_OFFSET_DATE_TIME - enqueue_time {
+                    MAX_OFFSET_DATE_TIME
+                } else {
+                    enqueue_time + ttl
+                }
+            }
+        }
     }
 
     /// <summary>

@@ -49,3 +49,6 @@ pub const DEFAULT_SCOPE: &str = "https://servicebus.azure.net/.default";
 /// dotnet SDK (Azure.Messaging.ServiceBus).
 pub(crate) const DEFAULT_OFFSET_DATE_TIME: OffsetDateTime =
     time::macros::datetime!(0001-01-01 12:00:00 AM +00:00);
+
+pub(crate) const MAX_OFFSET_DATE_TIME: OffsetDateTime =
+    time::macros::datetime!(9999-12-31 11:59:59 PM +00:00);
