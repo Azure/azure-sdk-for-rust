@@ -33,7 +33,7 @@ use super::service_bus_message_state::ServiceBusMessageState;
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 pub struct ServiceBusReceivedMessage {
     /// Change to generics?
-    amqp_message: Message<Value>,
+    pub(crate) amqp_message: Message<Value>,
     is_settled: bool,
     lock_token_uuid: uuid::Uuid,
     pub(crate) partition_id: i16,
