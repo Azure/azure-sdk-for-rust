@@ -11,7 +11,8 @@ pub use file_system_client::FileSystemClient;
 use azure_core::{Context, Request, Response};
 use std::fmt::Debug;
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait PathClient: Debug + Clone + Send + Sync {
     fn url(&self) -> azure_core::Result<url::Url>;
     async fn send(&self, ctx: &mut Context, request: &mut Request) -> crate::Result<Response>;
