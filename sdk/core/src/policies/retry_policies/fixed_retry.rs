@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-/// Retry policy with fixed back-off.
+/// Retry policy with a fixed back-off.
 ///
 /// Retry policy with fixed back-off (with an added random delay up to 256 ms). Each retry will
 /// happen at least after the same, configured sleep time. The policy will retry until the maximum number of
