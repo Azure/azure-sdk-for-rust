@@ -1,6 +1,7 @@
 use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
-use crate::HttpClient;
 use crate::{http_client, TimeoutPolicy};
+use crate::{HttpClient, RetryPolicy};
+use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -11,9 +12,9 @@ use std::time::Duration;
 /// You can override default options and even add your own per-call or per-retry policies:
 ///
 /// ```
-/// use azure_core::{ClientOptions, RetryOptions, TelemetryOptions};
+/// use azure_core::{ClientOptions, ExponentialRetryOptions, RetryOptions, TelemetryOptions};
 /// let options: ClientOptions = ClientOptions::default()
-///     .retry(RetryOptions::default().max_retries(10u32))
+///     .retry(RetryOptions::exponential(ExponentialRetryOptions::default().max_retries(10u32)))
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
 /// ```
 #[derive(Clone, Debug, Default)]
@@ -65,24 +66,38 @@ impl ClientOptions {
 }
 
 /// The algorithm to apply when calculating the delay between retry attempts.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RetryMode {
+#[derive(Clone)]
+enum RetryMode {
     /// Retry attempts will delay based on a back-off strategy,
     /// where each attempt will increase the duration that it waits before retrying.
     ///
     /// This is the default.
-    Exponential,
+    Exponential(ExponentialRetryOptions),
 
     /// Retry attempts happen at fixed intervals; each delay is a consistent duration.
-    Fixed,
+    Fixed(FixedRetryOptions),
+
+    /// A custom retry policy
+    Custom(Arc<dyn Policy>),
 
     /// Do not retry attempts.
     None,
 }
 
+impl Debug for RetryMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RetryMode::Exponential(o) => write!(f, "Exponetial({o:?})"),
+            RetryMode::Fixed(o) => write!(f, "Fixed({o:?})"),
+            RetryMode::Custom(_) => write!(f, "Custom"),
+            RetryMode::None => write!(f, "None"),
+        }
+    }
+}
+
 impl Default for RetryMode {
     fn default() -> Self {
-        RetryMode::Exponential
+        RetryMode::Exponential(ExponentialRetryOptions::default())
     }
 }
 
@@ -90,15 +105,133 @@ impl Default for RetryMode {
 ///
 /// Note that not all requests can be retried. These options will only be used
 /// when a retry is attempted.
-#[derive(Clone, Debug)]
+///
+/// The default is an exponential retry policy using the default `ExponentialRetryOptions`.
+#[derive(Clone, Debug, Default)]
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.
-    ///
-    /// The default is `RetryMode::Exponential`
-    pub mode: RetryMode,
+    mode: RetryMode,
+}
 
-    /// The delay between retry attempts for a fixed algorithm
-    /// or the delay on which to base calculations for a back-off-based approach.
+impl RetryOptions {
+    /// A retry strategy where attempts happen at intervals that get exponentially longer with each retry.
+    pub fn exponential(options: ExponentialRetryOptions) -> Self {
+        Self {
+            mode: RetryMode::Exponential(options),
+        }
+    }
+
+    /// A retry strategy where attempts happen at fixed intervals; each delay is a consistent duration.
+    pub fn fixed(options: FixedRetryOptions) -> Self {
+        Self {
+            mode: RetryMode::Fixed(options),
+        }
+    }
+
+    /// A custom retry using the supplied retry policy.
+    pub fn custom<T: RetryPolicy + Debug + Send + Sync + 'static>(policy: T) -> Self {
+        Self {
+            mode: RetryMode::Custom(Arc::new(policy)),
+        }
+    }
+
+    /// No retries will be attempted.
+    pub fn none() -> Self {
+        Self {
+            mode: RetryMode::None,
+        }
+    }
+
+    pub(crate) fn to_policy(&self) -> Arc<dyn Policy> {
+        match &self.mode {
+            RetryMode::Exponential(options) => Arc::new(ExponentialRetryPolicy::new(
+                options.initial_delay,
+                options.max_retries,
+                options.max_total_elapsed,
+                options.max_delay,
+            )),
+            RetryMode::Fixed(options) => Arc::new(FixedRetryPolicy::new(
+                options.delay,
+                options.max_retries,
+                options.max_total_elapsed,
+            )),
+            RetryMode::Custom(c) => c.clone(),
+            RetryMode::None => Arc::new(NoRetryPolicy::default()),
+        }
+    }
+}
+
+/// Options for how an exponential retry strategy should behave.
+///
+/// # Example
+///
+/// Configuring retry to be exponential with 10 retries max and an initial delay of 1 second.
+/// ```
+/// # use core::time::Duration; use azure_core::RetryOptions; use azure_core::ExponentialRetryOptions;
+/// RetryOptions::exponential(
+///    ExponentialRetryOptions::default()
+///        .max_retries(10u32)
+///        .initial_delay(Duration::from_secs(1)),
+/// );
+/// ```
+#[derive(Clone, Debug)]
+pub struct ExponentialRetryOptions {
+    /// The initial delay between retry attempts. The delay will increase with each retry.
+    ///
+    /// The default is 200 milliseconds.
+    pub initial_delay: Duration,
+
+    /// The maximum number of retry attempts before giving up.
+    ///
+    /// The default is 8.
+    pub max_retries: u32,
+
+    /// The maximum permissible elapsed time since starting to retry before giving up.
+    ///
+    /// The default is 1 minute.
+    pub max_total_elapsed: Duration,
+
+    /// The maximum permissible time between retries.
+    ///
+    /// The default is 30 seconds. For SRE reasons, this is only respected when above 1 second.
+    pub max_delay: Duration,
+}
+
+impl ExponentialRetryOptions {
+    setters! {
+        initial_delay: Duration => initial_delay,
+        max_retries: u32 => max_retries,
+        max_total_elapsed: Duration => max_total_elapsed,
+        max_delay: Duration => max_delay,
+    }
+}
+
+impl Default for ExponentialRetryOptions {
+    fn default() -> Self {
+        Self {
+            initial_delay: Duration::from_millis(200),
+            max_retries: 8,
+            max_total_elapsed: Duration::from_secs(60),
+            max_delay: Duration::from_secs(30),
+        }
+    }
+}
+
+/// Options for how a fixed retry strategy should behave.
+///
+/// # Example
+///
+/// Configuring retry to be fixed with 10 retries max.
+/// ```
+/// # use azure_core::RetryOptions; use azure_core::FixedRetryOptions;
+/// RetryOptions::fixed(
+///    FixedRetryOptions::default()
+///        .max_retries(10u32)
+/// );
+/// ```
+#[derive(Clone, Debug)]
+pub struct FixedRetryOptions {
+    /// The delay between retry attempts.
     ///
     /// The default is 200 milliseconds.
     pub delay: Duration,
@@ -111,52 +244,23 @@ pub struct RetryOptions {
     /// The maximum permissible elapsed time since starting to retry.
     ///
     /// The default is 1 minute.
-    pub max_elapsed: Duration,
-
-    /// The maximum permissible time between retries.
-    ///
-    /// The default is 30 seconds. For SRE reasons, this is only respected when above 1 second.
-    /// This option is ignored when using retry modes that do not change their delay time.
-    pub max_delay: Duration,
+    pub max_total_elapsed: Duration,
 }
 
-impl RetryOptions {
+impl FixedRetryOptions {
     setters! {
-        mode: RetryMode => mode,
         delay: Duration => delay,
         max_retries: u32 => max_retries,
-        max_elapsed: Duration => max_elapsed,
-        max_delay: Duration => max_delay,
+        max_total_elapsed: Duration => max_total_elapsed,
     }
 }
 
-impl Default for RetryOptions {
+impl Default for FixedRetryOptions {
     fn default() -> Self {
-        RetryOptions {
-            mode: RetryMode::default(),
+        Self {
             delay: Duration::from_millis(200),
             max_retries: 8,
-            max_elapsed: Duration::from_secs(60),
-            max_delay: Duration::from_secs(30),
-        }
-    }
-}
-
-impl RetryOptions {
-    pub(crate) fn to_policy(&self) -> Arc<dyn Policy> {
-        match self.mode {
-            RetryMode::Exponential => Arc::new(ExponentialRetryPolicy::new(
-                self.delay,
-                self.max_retries,
-                self.max_elapsed,
-                self.max_delay,
-            )),
-            RetryMode::Fixed => Arc::new(FixedRetryPolicy::new(
-                self.delay,
-                self.max_retries,
-                self.max_elapsed,
-            )),
-            RetryMode::None => Arc::new(NoRetryPolicy::default()),
+            max_total_elapsed: Duration::from_secs(60),
         }
     }
 }

@@ -51,11 +51,11 @@ mod tests {
 
     #[test]
     fn exponentialy_increases_correctly() {
-        let options = crate::options::RetryOptions::default();
+        let options = crate::options::ExponentialRetryOptions::default();
         let policy = ExponentialRetryPolicy::new(
-            options.delay,
+            options.initial_delay,
             options.max_retries,
-            options.max_elapsed,
+            options.max_total_elapsed,
             options.max_delay,
         );
 

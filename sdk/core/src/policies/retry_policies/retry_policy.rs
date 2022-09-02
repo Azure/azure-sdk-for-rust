@@ -18,7 +18,7 @@ use std::time::Duration;
 /// `wait` can be implemented in more complex cases where a simple test of time
 /// is not enough.
 #[async_trait]
-pub trait RetryPolicy {
+pub trait RetryPolicy: Sync {
     /// Determine if no more retries should be performed.
     ///
     /// Must return true if no more retries should be attempted.
