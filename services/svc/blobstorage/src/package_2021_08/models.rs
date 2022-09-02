@@ -198,10 +198,10 @@ pub struct BlobItemInternal {
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<BlobMetadata>,
     #[doc = "Blob tags"]
-    #[serde(rename = "BlobTags", default, skip_serializing_if = "Option::is_none")]
-    pub blob_tags: Option<BlobTags>,
-    #[serde(rename = "ObjectReplicationMetadata", default, skip_serializing_if = "Option::is_none")]
-    pub object_replication_metadata: Option<ObjectReplicationMetadata>,
+    #[serde(rename = "Tags", default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<BlobTags>,
+    #[serde(rename = "OrMetadata", default, skip_serializing_if = "Option::is_none")]
+    pub or_metadata: Option<ObjectReplicationMetadata>,
     #[serde(rename = "HasVersionsOnly", default, skip_serializing_if = "Option::is_none")]
     pub has_versions_only: Option<bool>,
 }
@@ -215,8 +215,8 @@ impl BlobItemInternal {
             is_current_version: None,
             properties,
             metadata: None,
-            blob_tags: None,
-            object_replication_metadata: None,
+            tags: None,
+            or_metadata: None,
             has_versions_only: None,
         }
     }
@@ -418,12 +418,12 @@ impl BlobTag {
 #[doc = "Blob tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobTags {
-    #[serde(rename = "BlobTagSet")]
-    pub blob_tag_set: Vec<BlobTag>,
+    #[serde(rename = "TagSet", default, skip_serializing_if = "Vec::is_empty")]
+    pub tag_set: Vec<BlobTag>,
 }
 impl BlobTags {
-    pub fn new(blob_tag_set: Vec<BlobTag>) -> Self {
-        Self { blob_tag_set }
+    pub fn new() -> Self {
+        Self { tag_set: Vec::new() }
     }
 }
 #[doc = "Represents a single block in a block blob.  It describes the block's ID and size."]
@@ -625,8 +625,8 @@ pub struct DelimitedTextConfiguration {
     #[serde(rename = "EscapeChar", default, skip_serializing_if = "Option::is_none")]
     pub escape_char: Option<String>,
     #[doc = "Represents whether the data has headers."]
-    #[serde(rename = "HeadersPresent", default, skip_serializing_if = "Option::is_none")]
-    pub headers_present: Option<bool>,
+    #[serde(rename = "HasHeaders", default, skip_serializing_if = "Option::is_none")]
+    pub has_headers: Option<bool>,
 }
 impl DelimitedTextConfiguration {
     pub fn new() -> Self {
@@ -1110,8 +1110,8 @@ pub struct ListBlobsFlatSegmentResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobFlatListSegment,
+    #[serde(rename = "Blobs", default, skip_serializing_if = "Option::is_none")]
+    pub blobs: Option<BlobFlatListSegment>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
@@ -1122,14 +1122,14 @@ impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
     }
 }
 impl ListBlobsFlatSegmentResponse {
-    pub fn new(service_endpoint: String, container_name: String, segment: BlobFlatListSegment) -> Self {
+    pub fn new(service_endpoint: String, container_name: String) -> Self {
         Self {
             service_endpoint,
             container_name,
             prefix: None,
             marker: None,
             max_results: None,
-            segment,
+            blobs: None,
             next_marker: None,
         }
     }
@@ -1149,8 +1149,8 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub max_results: Option<i64>,
     #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
     pub delimiter: Option<String>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobHierarchyListSegment,
+    #[serde(rename = "Blobs", default, skip_serializing_if = "Option::is_none")]
+    pub blobs: Option<BlobHierarchyListSegment>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
@@ -1161,7 +1161,7 @@ impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
     }
 }
 impl ListBlobsHierarchySegmentResponse {
-    pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
+    pub fn new(service_endpoint: String, container_name: String) -> Self {
         Self {
             service_endpoint,
             container_name,
@@ -1169,7 +1169,7 @@ impl ListBlobsHierarchySegmentResponse {
             marker: None,
             max_results: None,
             delimiter: None,
-            segment,
+            blobs: None,
             next_marker: None,
         }
     }
@@ -1185,10 +1185,15 @@ pub struct ListContainersSegmentResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
-    #[serde(rename = "ContainerItems")]
-    pub container_items: Vec<ContainerItem>,
+    #[serde(rename = "Containers")]
+    pub containers: Containers,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Containers {
+    #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+    pub container_items: Vec<ContainerItem>,
 }
 impl azure_core::Continuable for ListContainersSegmentResponse {
     type Continuation = String;
@@ -1197,13 +1202,13 @@ impl azure_core::Continuable for ListContainersSegmentResponse {
     }
 }
 impl ListContainersSegmentResponse {
-    pub fn new(service_endpoint: String, container_items: Vec<ContainerItem>) -> Self {
+    pub fn new(service_endpoint: String) -> Self {
         Self {
             service_endpoint,
             prefix: None,
             marker: None,
             max_results: None,
-            container_items,
+            containers: Default::default(),
             next_marker: None,
         }
     }

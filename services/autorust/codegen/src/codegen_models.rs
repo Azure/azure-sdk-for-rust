@@ -20,6 +20,15 @@ struct PropertyGen {
     schema: SchemaGen,
 }
 
+impl PropertyGen {
+    fn name(&self) -> &str {
+        if let Some(xml_name) = self.schema.xml_name() {
+            return xml_name;
+        }
+        self.name.as_str()
+    }
+}
+
 #[derive(Clone)]
 struct SchemaGen {
     ref_key: Option<RefKey>,
@@ -50,7 +59,45 @@ impl SchemaGen {
         }
     }
 
+    /// Replaces the name of the element/attribute used for the described schema property.
+    /// When defined within the Items Object (items), it will affect the name of the individual
+    /// XML elements within the list. When defined alongside type being array (outside the items),
+    /// it will affect the wrapping element and only if wrapped is true. If wrapped is false, it will be ignored.
+    ///
+    /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    fn xml_name(&self) -> Option<&str> {
+        self.schema.common.xml.as_ref().map(|xml| xml.name.as_deref()).flatten()
+    }
+
+    /// Declares whether the property definition translates to an attribute instead of an element.
+    /// Default value is false.
+    ///
+    /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    fn xml_attribute(&self) -> bool {
+        self.schema
+            .common
+            .xml
+            .as_ref()
+            .map(|xml| xml.attribute)
+            .flatten()
+            .unwrap_or_default()
+    }
+
+    /// MAY be used only for an array definition. Signifies whether the array is wrapped (for example,
+    /// <books><book/><book/></books>) or unwrapped (<book/><book/>). Default value is false.
+    /// The definition takes effect only when defined alongside type being array (outside the items).
+    ///
+    /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    fn xml_wrapped(&self) -> bool {
+        self.schema.common.xml.as_ref().map(|xml| xml.wrapped).flatten().unwrap_or_default()
+    }
+
     fn name(&self) -> Result<&str> {
+        // if self.xml_wrapped() {
+        if let Some(xml_name) = self.xml_name() {
+            return Ok(xml_name);
+        }
+        // }
         Ok(&self
             .ref_key
             .as_ref()
@@ -597,7 +644,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let mut field_names = HashMap::new();
 
     for property in schema.properties() {
-        let property_name = property.name.as_str();
+        let property_name = property.name();
         let field_name = property_name.to_snake_case_ident()?;
         let prop_nm = &PropertyName {
             file_path: schema.doc_file.clone(),
