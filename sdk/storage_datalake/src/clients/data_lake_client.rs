@@ -126,7 +126,7 @@ impl DataLakeClient {
         // We then set the new request to the old request so that callers observe any changes.
         let mut r = azure_storage::clients::finalize_request(
             request.url().clone(),
-            request.method().clone(),
+            *request.method(),
             request.headers().clone(),
             Some(request.body().clone()),
         )?;
