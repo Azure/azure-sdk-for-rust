@@ -31,15 +31,6 @@ impl DataLakeClientBuilder {
         }
     }
 
-    /// Use the emulator with default settings
-    #[must_use]
-    pub fn emulator() -> Self {
-        Self::with_location(CloudLocation::Emulator {
-            address: "127.0.0.1".to_owned(),
-            port: 10000,
-        })
-    }
-
     /// Convert the builder into a `DataLakeClient` instance.
     #[must_use]
     pub fn build(self) -> DataLakeClient {
