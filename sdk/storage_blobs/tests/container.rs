@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::{container::PublicAccess, prelude::*};
 use std::time::Duration;
 
@@ -65,11 +65,12 @@ async fn break_lease() {
     container.delete().into_future().await.unwrap();
 }
 
-fn initialize() -> StorageClient {
+fn initialize() -> BlobServiceClient {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    StorageClient::new_access_key(&account, &access_key)
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    BlobServiceClient::new(account, storage_credentials)
 }

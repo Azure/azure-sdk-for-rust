@@ -3,7 +3,7 @@ use crate::{
     prelude::*,
 };
 use azure_core::{headers::*, prelude::*, RequestId};
-use azure_storage::core::{copy_id_from_headers, CopyId};
+use azure_storage::{copy_id_from_headers, CopyId};
 use std::convert::{TryFrom, TryInto};
 use time::OffsetDateTime;
 use url::Url;

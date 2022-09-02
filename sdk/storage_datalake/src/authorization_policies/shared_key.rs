@@ -1,7 +1,7 @@
 use azure_core::headers::{self, HeaderName, HeaderValue, Headers};
 use azure_core::{date, Method};
 use azure_core::{Context, Policy, PolicyResult, Request};
-use azure_storage::{core::storage_shared_key_credential::StorageSharedKeyCredential, hmac::sign};
+use azure_storage::{hmac::sign, storage_shared_key_credential::StorageSharedKeyCredential};
 use std::sync::Arc;
 use time::OffsetDateTime;
 
@@ -45,7 +45,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
             request.method(),
             &self.credential.account_name,
             &self.credential.account_key,
-        );
+        )?;
 
         request.insert_header(headers::AUTHORIZATION, HeaderValue::from(auth));
 
@@ -61,16 +61,16 @@ fn generate_authorization(
     http_method: &Method,
     storage_account_name: &str,
     shared_key: &str,
-) -> String {
+) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(http_headers, url, http_method, storage_account_name);
 
     // println!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
-    let auth = sign(&str_to_sign, shared_key).unwrap();
+    let auth = sign(&str_to_sign, shared_key)?;
     // debug!("auth == {:?}", auth);
 
-    format!("SharedKey {}:{}", storage_account_name, auth)
+    Ok(format!("SharedKey {}:{}", storage_account_name, auth))
 }
 
 #[allow(unknown_lints)]

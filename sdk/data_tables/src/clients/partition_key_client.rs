@@ -1,6 +1,6 @@
 use crate::{operations::*, prelude::*, transaction::TransactionOperations};
 use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
-use azure_storage::core::clients::StorageClient;
+use azure_storage::clients::StorageClient;
 
 #[derive(Debug, Clone)]
 pub struct PartitionKeyClient {

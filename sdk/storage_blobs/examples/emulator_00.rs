@@ -1,4 +1,3 @@
-use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 
@@ -7,7 +6,7 @@ async fn main() -> azure_core::Result<()> {
     env_logger::init();
 
     // this is how you use the emulator.
-    let storage_account = StorageClient::new_emulator_default();
+    let storage_account = BlobServiceClientBuilder::emulator().build();
     let container_client = storage_account.container_client("emulcont");
 
     // create container

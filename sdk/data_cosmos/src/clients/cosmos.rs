@@ -10,7 +10,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 /// The well-known account key used by Azure Cosmos DB Emulator.
-/// https://docs.microsoft.com/azure/cosmos-db/local-emulator?tabs=ssl-netstd21#connect-with-emulator-apis
+/// <https://docs.microsoft.com/azure/cosmos-db/local-emulator?tabs=ssl-netstd21#connect-with-emulator-apis>
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
@@ -179,19 +179,30 @@ fn new_pipeline_from_options(
 pub enum CloudLocation {
     /// Azure public cloud
     Public {
+        /// The account name
         account: String,
+        /// The auth token
         auth_token: AuthorizationToken,
     },
     /// Azure China cloud
     China {
+        /// The account name
         account: String,
+        /// The auth token
         auth_token: AuthorizationToken,
     },
     /// Use the well-known Cosmos emulator
-    Emulator { address: String, port: u16 },
+    Emulator {
+        /// The emulator's address
+        address: String,
+        /// The emulator's port
+        port: u16,
+    },
     /// A custom base URL
     Custom {
+        /// The uri
         uri: String,
+        /// The auth token
         auth_token: AuthorizationToken,
     },
 }

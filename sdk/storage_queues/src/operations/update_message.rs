@@ -6,7 +6,7 @@ use azure_core::{
     prelude::*,
     Method, Response as AzureResponse,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 

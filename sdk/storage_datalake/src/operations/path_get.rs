@@ -2,7 +2,7 @@ use crate::clients::{FileClient, PathClient};
 use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
 use azure_core::{prelude::*, Request};
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use std::convert::TryInto;
 use time::OffsetDateTime;

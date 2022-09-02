@@ -25,7 +25,7 @@ use azure_core::{
     headers::{self, etag_from_headers, HeaderName},
     CollectedResponse, Etag,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 use url::Url;

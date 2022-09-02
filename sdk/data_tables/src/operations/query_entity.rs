@@ -5,7 +5,7 @@ use azure_core::{
     prelude::*,
     AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 
@@ -115,11 +115,11 @@ impl<E: DeserializeOwned + Send + Sync> TryFrom<CollectedResponse> for QueryEnti
         let headers = response.headers();
 
         let next_partition_key = headers.get_optional_string(&HeaderName::from_static(
-            "x-ms-continuation-NextPartitionKey",
+            "x-ms-continuation-nextpartitionkey",
         ));
 
         let next_row_key =
-            headers.get_optional_string(&HeaderName::from_static("x-ms-continuation-NextRowKey"));
+            headers.get_optional_string(&HeaderName::from_static("x-ms-continuation-nextrowkey"));
 
         Ok(QueryEntityResponse {
             common_storage_response_headers: response.headers().try_into()?,

@@ -5,7 +5,7 @@ use azure_core::{
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
 use azure_core::{prelude::*, Request};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 

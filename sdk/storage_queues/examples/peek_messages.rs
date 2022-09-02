@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 
 #[tokio::main]

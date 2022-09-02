@@ -1,6 +1,6 @@
 use crate::{
-    core::shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
     hmac,
+    shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
 };
 use std::fmt;
 use time::OffsetDateTime;
@@ -29,20 +29,20 @@ impl fmt::Display for BlobSignedResource {
 
 #[derive(Default)]
 pub struct BlobSasPermissions {
-    pub read: bool,              // r - Container | Directory | Blob
-    pub add: bool,               // a - Container | Directory | Blob
-    pub create: bool,            // c - Container | Directory | Blob
-    pub write: bool,             // w - Container | Directory | Blob
-    pub delete: bool,            // d - Container | Directory | Blob
-    pub delete_version: bool,    // x - Container | Blob
-    pub permantent_delete: bool, // y - Blob
-    pub list: bool,              // l - Container | Directory
-    pub tags: bool,              // t - Tags
-    pub move_: bool,             // m - Container | Directory | Blob
-    pub execute: bool,           // e - Container | Directory | Blob
-    pub ownership: bool,         // o - Container | Directory | Blob
-    pub permissions: bool,       // p - Container | Directory | Blob
-                                 // SetImmunabilityPolicy: bool, // i  -- container
+    pub read: bool,             // r - Container | Directory | Blob
+    pub add: bool,              // a - Container | Directory | Blob
+    pub create: bool,           // c - Container | Directory | Blob
+    pub write: bool,            // w - Container | Directory | Blob
+    pub delete: bool,           // d - Container | Directory | Blob
+    pub delete_version: bool,   // x - Container | Blob
+    pub permanent_delete: bool, // y - Blob
+    pub list: bool,             // l - Container | Directory
+    pub tags: bool,             // t - Tags
+    pub move_: bool,            // m - Container | Directory | Blob
+    pub execute: bool,          // e - Container | Directory | Blob
+    pub ownership: bool,        // o - Container | Directory | Blob
+    pub permissions: bool,      // p - Container | Directory | Blob
+                                // SetImmunabilityPolicy: bool, // i  -- container
 }
 
 impl fmt::Display for BlobSasPermissions {
@@ -65,7 +65,7 @@ impl fmt::Display for BlobSasPermissions {
         if self.delete_version {
             write!(f, "x")?
         };
-        if self.permantent_delete {
+        if self.permanent_delete {
             write!(f, "y")?
         };
         if self.list {

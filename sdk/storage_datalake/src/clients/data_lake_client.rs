@@ -5,8 +5,8 @@ use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystemsBuilder;
 use azure_core::auth::TokenCredential;
 use azure_core::{ClientOptions, Context, Pipeline};
-use azure_storage::core::clients::ServiceType;
-use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_storage::clients::ServiceType;
+use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use std::sync::Arc;
 
 const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";

@@ -1,6 +1,6 @@
 use crate::{container::public_access_from_header, prelude::*};
 use azure_core::{headers::*, prelude::*, Body, Method};
-use azure_storage::core::StoredAccessPolicyList;
+use azure_storage::StoredAccessPolicyList;
 
 operation! {
     SetACL,

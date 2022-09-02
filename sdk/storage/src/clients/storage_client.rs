@@ -1,5 +1,4 @@
 use crate::authorization_policy::AuthorizationPolicy;
-use crate::operations::*;
 use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
@@ -8,8 +7,7 @@ use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
     headers::*,
-    prelude::Timeout,
-    Body, ClientOptions, Context, Method, Pipeline, Request, Response, TimeoutPolicy,
+    Body, ClientOptions, Context, Method, Pipeline, Request, Response,
 };
 use azure_core::{date, Policy, TransportOptions};
 use std::sync::Arc;
@@ -17,11 +15,11 @@ use time::OffsetDateTime;
 use url::Url;
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
-/// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
 pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 
 /// The well-known account key used by Azurite and the legacy Azure Storage Emulator.
-/// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
@@ -34,6 +32,93 @@ pub enum StorageCredentials {
     BearerToken(String),
     TokenCredential(Arc<dyn TokenCredential>),
     Anonymous,
+}
+
+impl StorageCredentials {
+    /// Create an Access Key based credential
+    ///
+    /// When you create a storage account, Azure generates two 512-bit storage
+    /// account access keys for that account. These keys can be used to
+    /// authorize access to data in your storage account via Shared Key
+    /// authorization.
+    ///
+    /// ref: <https://docs.microsoft.com/azure/storage/common/storage-account-keys-manage>
+    pub fn access_key<A, K>(account: A, key: K) -> Self
+    where
+        A: Into<String>,
+        K: Into<String>,
+    {
+        Self::Key(account.into(), key.into())
+    }
+
+    /// Create a Shared Access Signature (SAS) token based credential
+    ///
+    /// SAS token are HTTP query strings that provide delegated access to
+    /// resources in a storage account with granular control over how the client
+    /// can access data in the account.
+    ///
+    /// * ref: [Grant limited access to Azure Storage resources using shared access signatures (SAS)](https://docs.microsoft.com/azure/storage/common/storage-sas-overview)
+    /// * ref: [Create SAS tokens for storage containers](https://docs.microsoft.com/azure/applied-ai-services/form-recognizer/create-sas-tokens)
+    pub fn sas_token<S>(token: S) -> azure_core::Result<Self>
+    where
+        S: AsRef<str>,
+    {
+        let params = get_sas_token_parms(token.as_ref())?;
+        Ok(Self::SASToken(params))
+    }
+
+    /// Create an Bearer Token based credential
+    ///
+    /// Azure Storage accepts OAuth 2.0 access tokens from the Azure AD tenant
+    /// associated with the subscription that contains the storage account.
+    ///
+    /// While `StorageCredentials::TokenCredential` is the preferred way to
+    /// manage access tokens, this method is provided for manual management of
+    /// Oauth2 tokens.
+    ///
+    /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>
+    pub fn bearer_token<T>(token: T) -> Self
+    where
+        T: Into<String>,
+    {
+        Self::BearerToken(token.into())
+    }
+
+    /// Create a TokenCredential based credential
+    ///
+    /// Azure Storage accepts OAuth 2.0 access tokens from the Azure AD tenant
+    /// associated with the subscription that contains the storage account.
+    ///
+    /// Token Credentials can be created and automatically updated using
+    /// `azure_identity`.
+    ///
+    /// ```
+    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_storage::prelude::*;
+    /// use std::sync::Arc;
+    /// let token_credential = Arc::new(DefaultAzureCredential::default());
+    /// let storage_credentials = StorageCredentials::token_credential(token_credential);
+    /// ```
+    ///
+    /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>
+    pub fn token_credential(credential: Arc<dyn TokenCredential>) -> Self {
+        Self::TokenCredential(credential)
+    }
+
+    /// Create an anonymous credential
+    ///
+    /// Azure Storage supports optional anonymous public read access for
+    /// containers and blobs. By default, anonymous access to data in a storage
+    /// account data is not permitted. Unless anonymous access is explicitly
+    /// enabled, all requests to a container and its blobs must be authorized.
+    /// When a container's public access level setting is configured to permit
+    /// anonymous access, clients can read data in that container without
+    /// authorizing the request.
+    ///
+    /// ref: <https://docs.microsoft.com/azure/storage/blobs/anonymous-read-access-configure>
+    pub fn anonymous() -> Self {
+        Self::Anonymous
+    }
 }
 
 impl std::fmt::Debug for StorageCredentials {
@@ -90,10 +175,9 @@ impl StorageClient {
         K: Into<String>,
     {
         let account = account.into();
-        let key = key.into();
-        let storage_credentials = StorageCredentials::Key(account.clone(), key);
+        let storage_credentials = StorageCredentials::access_key(account.clone(), key);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -156,9 +240,9 @@ impl StorageClient {
         K: Into<String>,
     {
         let account = account.into();
-        let key = key.into();
-        let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
-        let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials);
+        let storage_credentials = StorageCredentials::access_key(account.clone(), key);
+        let pipeline =
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
         let blob_storage_url = Url::parse(&format!("{}{}", blob_storage_url, account)).unwrap();
         let table_storage_url = Url::parse(&format!("{}{}", table_storage_url, account)).unwrap();
         let queue_storage_url = Url::parse(&format!("{}{}", queue_storage_url, account)).unwrap();
@@ -170,7 +254,7 @@ impl StorageClient {
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(account.clone(), key),
+            storage_credentials,
             account,
             pipeline,
         }
@@ -183,10 +267,9 @@ impl StorageClient {
     {
         let account = account.into();
 
-        let storage_credentials =
-            StorageCredentials::SASToken(get_sas_token_parms(sas_token.as_ref())?);
+        let storage_credentials = StorageCredentials::sas_token(sas_token)?;
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Ok(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob")?,
@@ -210,10 +293,9 @@ impl StorageClient {
         BT: Into<String>,
     {
         let account = account.into();
-        let bearer_token = bearer_token.into();
-        let storage_credentials = StorageCredentials::BearerToken(bearer_token);
+        let storage_credentials = StorageCredentials::bearer_token(bearer_token);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -237,9 +319,9 @@ impl StorageClient {
         A: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::TokenCredential(token_credential);
+        let storage_credentials = StorageCredentials::token_credential(token_credential);
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -272,10 +354,8 @@ impl StorageClient {
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
 
-                let storage_credentials =  StorageCredentials::SASToken(get_sas_token_parms(
-                    sas_token,
-                )?);
-                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                let storage_credentials =  StorageCredentials::sas_token(sas_token)?;
+                let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
                 Ok(Self {
                     storage_credentials,
@@ -297,9 +377,9 @@ impl StorageClient {
                 file_endpoint,
                 ..
             } => {
-                let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
+                let storage_credentials = StorageCredentials::sas_token(sas_token)?;
                 let pipeline =
-                new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
                     storage_credentials,
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
@@ -320,8 +400,8 @@ impl StorageClient {
                 ..
             } => {
 
-                let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
-                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                let storage_credentials = StorageCredentials::access_key(account, key);
+                let pipeline = new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
                 Ok(Self {
                 storage_credentials,
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
@@ -343,15 +423,15 @@ impl StorageClient {
 
     /// Create a new anonymous storage client
     ///
-    /// Ref: https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal
+    /// ref: <https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal>
     pub fn new_anonymous<A>(account: A) -> Self
     where
         A: Into<String>,
     {
         let account = account.into();
-        let storage_credentials = StorageCredentials::Anonymous;
+        let storage_credentials = StorageCredentials::anonymous();
         let pipeline =
-            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+            new_pipeline_from_options(ClientOptions::default(), storage_credentials.clone());
 
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -380,13 +460,7 @@ impl StorageClient {
     ) -> Self {
         let account = account.into();
         let options = ClientOptions::new(TransportOptions::new_custom_policy(transport_policy));
-        let pipeline = new_pipeline_from_options(
-            StorageOptions {
-                options,
-                timeout_policy: Default::default(),
-            },
-            storage_credentials.clone(),
-        );
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
         Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
             table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
@@ -439,30 +513,7 @@ impl StorageClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        let dt = OffsetDateTime::now_utc();
-        let time = date::to_rfc1123(&dt);
-
-        let mut request = Request::new(url, method);
-        for (k, v) in headers {
-            request.insert_header(k, v);
-        }
-
-        // let's add content length to avoid "chunking" errors.
-        match request_body {
-            Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
-            None => request.insert_header(CONTENT_LENGTH, "0"),
-        };
-
-        request.insert_header(MS_DATE, time);
-        request.insert_header(VERSION, AZURE_VERSION);
-
-        if let Some(request_body) = request_body {
-            request.set_body(request_body);
-        } else {
-            request.set_body(azure_core::EMPTY_BODY);
-        };
-
-        Ok(request)
+        finalize_request(url, method, headers, request_body)
     }
 
     pub async fn send(
@@ -476,19 +527,6 @@ impl StorageClient {
             .await
     }
 
-    /// Prepares' an `azure_core::Request`.
-    pub(crate) fn blob_storage_request(
-        &self,
-        http_method: azure_core::Method,
-    ) -> azure_core::Result<Request> {
-        self.finalize_request(
-            self.blob_storage_url().clone(),
-            http_method,
-            Headers::new(),
-            None,
-        )
-    }
-
     pub fn shared_access_signature(
         &self,
         resource: AccountSasResource,
@@ -496,13 +534,15 @@ impl StorageClient {
         expiry: OffsetDateTime,
         permissions: AccountSasPermissions,
     ) -> azure_core::Result<AccountSharedAccessSignature> {
-        match &self.storage_credentials {
-            StorageCredentials::Key(account, key) => {
-                Ok(AccountSharedAccessSignature::new(account.clone(), key.clone(), resource, resource_type, expiry, permissions))
-            }
-            _ => Err(Error::message(ErrorKind::Other, "failed shared access signature generation. SAS can be generated only from key and account clients")),
-        }
+        shared_access_signature(
+            &self.storage_credentials,
+            resource,
+            resource_type,
+            expiry,
+            permissions,
+        )
     }
+
     pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
@@ -515,10 +555,6 @@ impl StorageClient {
         I: IntoIterator<Item = &'a str>,
     {
         Self::url_with_segments(self.queue_storage_url().to_owned(), segments)
-    }
-
-    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
-        GetAccountInformationBuilder::new(self.clone())
     }
 
     pub fn url_with_segments<'a, I>(
@@ -538,6 +574,48 @@ impl StorageClient {
         }
         Ok(url)
     }
+}
+
+pub fn shared_access_signature(
+    storage_credentials: &StorageCredentials,
+    resource: AccountSasResource,
+    resource_type: AccountSasResourceType,
+    expiry: OffsetDateTime,
+    permissions: AccountSasPermissions,
+) -> Result<AccountSharedAccessSignature, Error> {
+    match storage_credentials {
+            StorageCredentials::Key(account, key) => {
+                Ok(AccountSharedAccessSignature::new(account.clone(), key.clone(), resource, resource_type, expiry, permissions))
+            }
+            _ => Err(Error::message(ErrorKind::Credential, "failed shared access signature generation. SAS can be generated only from key and account clients")),
+        }
+}
+
+pub fn finalize_request(
+    url: Url,
+    method: Method,
+    headers: Headers,
+    request_body: Option<Body>,
+) -> Result<Request, Error> {
+    let dt = OffsetDateTime::now_utc();
+    let time = date::to_rfc1123(&dt);
+    let mut request = Request::new(url, method);
+    for (k, v) in headers {
+        request.insert_header(k, v);
+    }
+    // let's add content length to avoid "chunking" errors.
+    match request_body {
+        Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
+        None => request.insert_header(CONTENT_LENGTH, "0"),
+    };
+    request.insert_header(MS_DATE, time);
+    request.insert_header(VERSION, AZURE_VERSION);
+    if let Some(request_body) = request_body {
+        request.set_body(request_body);
+    } else {
+        request.set_body(azure_core::EMPTY_BODY);
+    };
+    Ok(request)
 }
 
 fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
@@ -581,39 +659,26 @@ fn get_endpoint_uri(
     })
 }
 
-/// Create a Pipeline from StorageOptions
-fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
+/// Create a Pipeline from ClientOptions
+pub fn new_pipeline_from_options(
+    options: ClientOptions,
+    credentials: StorageCredentials,
+) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 
     // The `AuthorizationPolicy` must be the **last** retry policy.
     // Policies can change the url and/or the headers, and the `AuthorizationPolicy`
     // must be able to inspect them or the resulting token will be invalid.
     let per_retry_policies = vec![
-        Arc::new(options.timeout_policy) as Arc<dyn azure_core::Policy>,
+        Arc::new(options.timeout.clone()) as Arc<dyn azure_core::Policy>,
         auth_policy,
     ];
 
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        options.options,
+        options,
         Vec::new(),
         per_retry_policies,
     )
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct StorageOptions {
-    options: ClientOptions,
-    timeout_policy: TimeoutPolicy,
-}
-
-impl StorageOptions {
-    fn new() -> StorageOptions {
-        Self::default()
-    }
-
-    pub fn set_timeout(&mut self, default_timeout: Timeout) {
-        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout))
-    }
 }

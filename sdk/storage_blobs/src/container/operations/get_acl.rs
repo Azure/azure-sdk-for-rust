@@ -3,7 +3,7 @@ use crate::{
     prelude::*,
 };
 use azure_core::{date, headers::*, prelude::*, Method, RequestId, Response};
-use azure_storage::core::StoredAccessPolicyList;
+use azure_storage::StoredAccessPolicyList;
 use time::OffsetDateTime;
 
 operation! {

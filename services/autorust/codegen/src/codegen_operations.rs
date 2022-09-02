@@ -721,6 +721,22 @@ impl ToTokens for ResponseCode {
                         #deserialize_body
                         Ok(body)
                     }
+                    pub fn into_raw_response(self) -> azure_core::Response {
+                        self.0
+                    }
+                    pub fn as_raw_response(&self) -> &azure_core::Response {
+                        &self.0
+                    }
+                }
+                impl From<Response> for azure_core::Response {
+                    fn from(rsp: Response) -> Self {
+                        rsp.into_raw_response()
+                    }
+                }
+                impl AsRef<azure_core::Response> for Response {
+                    fn as_ref(&self) -> &azure_core::Response {
+                        self.as_raw_response()
+                    }
                 }
             });
         }

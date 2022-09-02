@@ -34,11 +34,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         applications: None,
     };
 
-    let response = client.query_client().execute(app_id, body).into_future().await?;
+    let query_results = client.query_client().execute(app_id, body).into_body().await?;
 
     let unnamed = "unnamed".to_string();
 
-    for table in &response.tables {
+    for table in &query_results.tables {
         for row in table.rows.as_array().unwrap().iter() {
             for (j, value) in row.as_array().unwrap().iter().enumerate() {
                 print!("{}:{} ", table.columns[j].name.as_ref().unwrap_or_else(|| &unnamed), value);

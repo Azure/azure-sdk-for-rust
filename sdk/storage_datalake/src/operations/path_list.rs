@@ -4,7 +4,7 @@ use crate::{
     request_options::*,
 };
 use azure_core::{error::Error, prelude::*, AppendToUrlQuery, Pageable, Request, Response};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 /// A future of a delete file response

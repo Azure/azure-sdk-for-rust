@@ -9,7 +9,7 @@ use azure_core::{
     prelude::*,
     Body, Method, Request, Response, StatusCode,
 };
-use azure_storage::core::{
+use azure_storage::{
     clients::StorageCredentials,
     prelude::*,
     shared_access_signature::{
@@ -93,7 +93,7 @@ impl BlobClient {
     /// This operation is only allowed on Hierarchical Namespace enabled
     /// accounts.
     ///
-    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry>
     pub fn set_blob_expiry(&self, blob_expiry: BlobExpiry) -> SetBlobExpiryBuilder {
         SetBlobExpiryBuilder::new(self.clone(), blob_expiry)
     }
@@ -210,17 +210,18 @@ impl BlobClient {
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
+        match self.container_client.credentials() {
+            StorageCredentials::Key(account, ref key) => {
+
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
-            self.container_client.storage_client().account(),
+            account,
             self.container_client.container_name(),
             self.blob_name()
         );
-
-        match self.storage_client().storage_credentials() {
-            StorageCredentials::Key(ref _account, ref key) => Ok(
+                Ok(
                 BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
-            ),
+            )},
             _ => Err(Error::message(ErrorKind::Credential,
                 "Shared access signature generation - SAS can be generated only from key and account clients",
             )),
@@ -264,17 +265,18 @@ impl BlobClient {
         BlobLeaseClient::new(self.clone(), lease_id)
     }
 
-    pub fn storage_client(&self) -> &StorageClient {
-        self.container_client.storage_client()
-    }
-
     pub fn container_client(&self) -> &ContainerClient {
         &self.container_client
     }
 
     /// Full URL for the blob.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        StorageClient::url_with_segments(self.container_client.url()?, self.blob_name.split('/'))
+        let blob_name = self
+            .blob_name()
+            .strip_prefix('/')
+            .unwrap_or_else(|| self.blob_name());
+        let url = format!("{}/{}", self.container_client().url()?, blob_name);
+        Ok(url::Url::parse(&url)?)
     }
 
     pub(crate) fn finalize_request(
@@ -311,8 +313,8 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account
+        let service_client = BlobServiceClientBuilder::emulator().build();
+        service_client
             .container_client(container_name)
             .blob_client(blob_name)
             .generate_signed_blob_url(sas)
