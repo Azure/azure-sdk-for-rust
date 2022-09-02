@@ -81,7 +81,7 @@ impl DirectoryClient {
     where
         R: Into<Recursive>,
     {
-        DeletePathBuilder::new(self.clone(), Some(recursive.into()))
+        DeletePathBuilder::new(self.clone()).recursive(recursive.into())
     }
 
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
@@ -97,9 +97,7 @@ impl DirectoryClient {
     }
 
     pub fn set_properties(&self, properties: impl Into<Properties>) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone())
-            .properties(properties)
-            .action(PathUpdateAction::SetProperties)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetProperties).properties(properties)
     }
 
     pub fn set_access_control_list(
@@ -107,11 +105,12 @@ impl DirectoryClient {
         acl: impl Into<AccessControlList>,
         recursive: bool,
     ) -> PatchPathBuilder<Self> {
-        let builder = PatchPathBuilder::new(self.clone()).acl(acl);
-        if recursive {
-            builder.action(PathUpdateAction::SetAccessControlRecursive)
+        let action = if recursive {
+            PathUpdateAction::SetAccessControlRecursive
         } else {
-            builder.action(PathUpdateAction::SetAccessControl)
-        }
+            PathUpdateAction::SetAccessControl
+        };
+
+        PatchPathBuilder::new(self.clone(), action).acl(acl)
     }
 }

@@ -66,7 +66,7 @@ impl FileSystemClient {
     }
 
     pub fn set_properties(&self, properties: Properties) -> SetFileSystemPropertiesBuilder {
-        SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
+        SetFileSystemPropertiesBuilder::new(self.clone(), properties)
     }
 
     pub(crate) async fn send(

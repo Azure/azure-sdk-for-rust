@@ -10,69 +10,25 @@ use bytes::Bytes;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone)]
-pub struct PatchPathBuilder<C>
-where
-    C: PathClient,
-{
+operation! {
+    PatchPath<C: PathClient + 'static>,
     client: C,
-    acl: Option<AccessControlList>,
-    action: Option<PathUpdateAction>,
-    close: Option<Close>,
-    continuation: Option<NextMarker>,
-    position: Option<Position>,
-    retain_uncommitted_data: Option<RetainUncommittedData>,
-    timeout: Option<Timeout>,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSinceCondition>,
-    client_request_id: Option<ClientRequestId>,
-    properties: Option<Properties>,
-    bytes: Option<Bytes>,
-    context: Context,
+    action: PathUpdateAction,
+    ?acl: AccessControlList,
+    ?close: Close,
+    ?continuation: NextMarker,
+    ?position: Position,
+    ?retain_uncommitted_data: RetainUncommittedData,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?properties: Properties,
+    ?bytes: Bytes,
 }
 
 impl<C: PathClient + 'static> PatchPathBuilder<C> {
-    pub(crate) fn new(client: C) -> Self {
-        Self {
-            client,
-            acl: None,
-            action: None,
-            close: None,
-            continuation: None,
-            position: None,
-            retain_uncommitted_data: None,
-            timeout: None,
-            if_match_condition: None,
-            if_modified_since: None,
-            client_request_id: None,
-            properties: None,
-            bytes: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        acl: AccessControlList => Some(acl),
-        action: PathUpdateAction => Some(action),
-        close: Close => Some(close),
-        continuation: NextMarker => Some(continuation),
-        position: Position => Some(position),
-        retain_uncommitted_data: RetainUncommittedData => Some(retain_uncommitted_data),
-        timeout: Timeout => Some(timeout),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: IfModifiedSinceCondition => Some(if_modified_since),
-        client_request_id: ClientRequestId => Some(client_request_id),
-        properties: Properties => Some(properties),
-        bytes: Bytes => Some(bytes),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> PatchPath {
-        let this = self.clone();
-        let mut ctx = self.context.clone();
-
         Box::pin(async move {
-            let mut url = this.client.url()?;
+            let mut url = self.client.url()?;
 
             if let Some(continuation) = self.continuation {
                 continuation.append_to_url_query_as_continuation(&mut url);
@@ -81,17 +37,15 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             self.close.append_to_url_query(&mut url);
             self.position.append_to_url_query(&mut url);
             self.retain_uncommitted_data.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = Request::new(url, azure_core::Method::Patch);
 
-            request.insert_headers(&this.acl);
-            request.insert_headers(&this.client_request_id);
-            request.insert_headers(&this.properties);
-            request.insert_headers(&this.if_match_condition);
-            request.insert_headers(&this.if_modified_since);
+            request.insert_headers(&self.acl);
+            request.insert_headers(&self.properties);
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
 
-            if let Some(bytes) = this.bytes {
+            if let Some(bytes) = self.bytes {
                 request.insert_headers(&ContentLength::new(bytes.len() as i32));
                 request.insert_headers(&ContentType::new("application/octet-stream"));
                 request.set_body(bytes)
@@ -99,14 +53,15 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
                 request.insert_headers(&ContentLength::new(0));
             }
 
-            let response = self.client.send(&mut ctx, &mut request).await?;
+            let response = self
+                .client
+                .send(&mut self.context.clone(), &mut request)
+                .await?;
 
             PatchPathResponse::try_from(response).await
         })
     }
 }
-
-azure_core::future!(PatchPath);
 
 #[derive(Debug, Clone)]
 pub struct PatchPathResponse {

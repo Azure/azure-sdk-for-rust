@@ -1,55 +1,31 @@
-use crate::clients::FileSystemClient;
-use crate::Properties;
+use crate::{clients::FileSystemClient, Properties};
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
-    AppendToUrlQuery, Etag, Response as HttpResponse,
+    prelude::*,
+    Etag, Request, Response as HttpResponse,
 };
-use azure_core::{prelude::*, Request};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone)]
-pub struct SetFileSystemPropertiesBuilder {
+operation! {
+    SetFileSystemProperties,
     client: FileSystemClient,
-    properties: Option<Properties>,
-    if_modified_since_condition: Option<IfModifiedSinceCondition>,
-    client_request_id: Option<ClientRequestId>,
-    timeout: Option<Timeout>,
-    context: Context,
+    properties: Properties,
+    ?if_modified_since_condition: IfModifiedSinceCondition
 }
 
 impl SetFileSystemPropertiesBuilder {
-    pub(crate) fn new(client: FileSystemClient, properties: Option<Properties>) -> Self {
-        Self {
-            client,
-            if_modified_since_condition: None,
-            client_request_id: None,
-            timeout: None,
-            properties,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        properties: Properties => Some(properties),
-        if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
-        client_request_id: ClientRequestId => Some(client_request_id),
-        timeout: Timeout => Some(timeout),
-    }
-
     pub fn into_future(self) -> SetFileSystemProperties {
         let this = self.clone();
         let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
-            self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
             let mut request = Request::new(url, azure_core::Method::Patch);
 
-            request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.if_modified_since_condition);
             request.insert_headers(&this.properties);
             request.insert_headers(&ContentLength::new(0));
@@ -60,8 +36,6 @@ impl SetFileSystemPropertiesBuilder {
         })
     }
 }
-
-azure_core::future!(SetFileSystemProperties);
 
 #[derive(Debug, Clone)]
 pub struct SetFileSystemPropertiesResponse {

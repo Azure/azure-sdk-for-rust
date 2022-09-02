@@ -7,39 +7,16 @@ use std::convert::TryInto;
 
 type ListFileSystems = Pageable<ListFileSystemsResponse, Error>;
 
-#[derive(Debug, Clone)]
-pub struct ListFileSystemsBuilder {
+operation! {
+    #[stream]
+    ListFileSystems,
     client: DataLakeClient,
-    prefix: Option<Prefix>,
-    next_marker: Option<NextMarker>,
-    max_results: Option<MaxResults>,
-    client_request_id: Option<ClientRequestId>,
-    timeout: Option<Timeout>,
-    context: Context,
+    ?prefix: Prefix,
+    ?next_marker: NextMarker,
+    ?max_results: MaxResults
 }
 
 impl ListFileSystemsBuilder {
-    pub(crate) fn new(client: DataLakeClient) -> Self {
-        Self {
-            client,
-            prefix: None,
-            next_marker: None,
-            max_results: None,
-            client_request_id: None,
-            timeout: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        prefix: Prefix => Some(prefix),
-        next_marker: NextMarker => Some(next_marker),
-        max_results: MaxResults => Some(max_results),
-        client_request_id: ClientRequestId => Some(client_request_id),
-        timeout: Timeout => Some(timeout),
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListFileSystems {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
@@ -50,7 +27,6 @@ impl ListFileSystemsBuilder {
                 url.query_pairs_mut().append_pair("resource", "account");
                 this.prefix.append_to_url_query(&mut url);
                 this.max_results.append_to_url_query(&mut url);
-                this.timeout.append_to_url_query(&mut url);
 
                 if let Some(c) = continuation {
                     c.append_to_url_query_as_continuation(&mut url);
@@ -59,8 +35,6 @@ impl ListFileSystemsBuilder {
                 };
 
                 let mut request = Request::new(url, azure_core::Method::Get);
-
-                request.insert_headers(&this.client_request_id);
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 

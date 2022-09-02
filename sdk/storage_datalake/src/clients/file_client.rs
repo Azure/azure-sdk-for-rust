@@ -49,16 +49,13 @@ impl FileClient {
     where
         B: Into<Bytes>,
     {
-        PatchPathBuilder::new(self.clone())
-            .action(PathUpdateAction::Append)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::Append)
             .position(position)
             .bytes(bytes.into())
     }
 
     pub fn flush(&self, position: i64) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone())
-            .action(PathUpdateAction::Flush)
-            .position(position)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::Flush).position(position)
     }
 
     pub fn read(&self) -> GetFileBuilder {
@@ -87,7 +84,7 @@ impl FileClient {
     }
 
     pub fn delete(&self) -> DeletePathBuilder<Self> {
-        DeletePathBuilder::new(self.clone(), None)
+        DeletePathBuilder::new(self.clone())
     }
 
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
@@ -103,17 +100,13 @@ impl FileClient {
     }
 
     pub fn set_properties(&self, properties: impl Into<Properties>) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone())
-            .properties(properties)
-            .action(PathUpdateAction::SetProperties)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetProperties).properties(properties)
     }
 
     pub fn set_access_control_list(
         &self,
         acl: impl Into<AccessControlList>,
     ) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone())
-            .acl(acl)
-            .action(PathUpdateAction::SetAccessControl)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetAccessControl).acl(acl)
     }
 }
