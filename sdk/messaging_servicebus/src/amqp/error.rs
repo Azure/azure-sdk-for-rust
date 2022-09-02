@@ -5,6 +5,9 @@ pub enum Error {
 
     #[error("Cannot convert value to requested type")]
     InvalidValueType,
+
+    #[error("PartitionKey cannot be set to a different value than SessionId")]
+    PartitionKeyAndSessionIdAreDifferent,
 }
 
 #[inline]

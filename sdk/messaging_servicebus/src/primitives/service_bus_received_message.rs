@@ -1,4 +1,4 @@
-use std::time::Duration;
+use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     definitions::SequenceNo,
@@ -131,7 +131,7 @@ impl ServiceBusReceivedMessage {
     ///      setting and it is silently adjusted if it does.
     ///      See <a href="https://docs.microsoft.com/azure/service-bus-messaging/message-expiration">Expiration</a>
     /// </remarks>
-    pub fn time_to_live(&self) -> Option<Duration> {
+    pub fn time_to_live(&self) -> Option<TimeSpan> {
         todo!()
     }
 

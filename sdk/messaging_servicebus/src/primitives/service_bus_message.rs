@@ -1,4 +1,5 @@
-use std::{collections::BTreeMap, time::Duration};
+use std::collections::BTreeMap;
+use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     messaging::{Body, Data, Message, MessageId, Properties},
@@ -7,7 +8,7 @@ use fe2o3_amqp_types::{
 use time::OffsetDateTime;
 
 use crate::amqp::{
-    amqp_message_extensions::AmqpMessageExtensions,
+    amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
     error::{not_supported_error, Error},
 };
 
@@ -58,11 +59,11 @@ impl ServiceBusMessage {
 
     /// Gets the body of the message
     pub fn body(&self) -> Result<&[u8], Error> {
-        AmqpMessageExtensions::get_body(&self.amqp_message)
+        self.amqp_message.body()
     }
 
-    pub fn body_mut(&mut self) -> Result<&mut [u8], Error> {
-        AmqpMessageExtensions::get_body_mut(&mut self.amqp_message)
+    pub fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error> {
+        self.amqp_message.body_mut()
     }
 
     /// Sets the body of the message
@@ -115,7 +116,7 @@ impl ServiceBusMessage {
     /// directly. For session-aware entities, the <see cref="SessionId"/> property overrides this value.
     /// </remarks>
     pub fn partition_key(&self) -> Option<&str> {
-        AmqpMessageExtensions::get_partition_key(&self.amqp_message)
+        self.amqp_message.partition_key()
     }
 
     pub fn set_partition_key(&mut self, key: impl Into<String>) {
@@ -181,11 +182,11 @@ impl ServiceBusMessage {
     /// setting and it is silently adjusted if it does.
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/message-expiration">Expiration</see>.
     /// </remarks>
-    pub fn time_to_live(&self) -> Option<Duration> {
+    pub fn time_to_live(&self) -> Option<TimeSpan> {
         todo!()
     }
 
-    pub fn set_time_to_live(&mut self, ttl: Duration) {
+    pub fn set_time_to_live(&mut self, ttl: TimeSpan) {
         todo!()
     }
 
