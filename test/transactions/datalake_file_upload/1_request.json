@@ -1,5 +1,5 @@
 {
-  "uri": "/azurerustsdk-datalake-file-upload/some/path/e2etest-file.txt?resource=file",
+  "uri": "/azurerustsdk-datalake-file-read/some/path/e2etest-file.txt?resource=file",
   "method": "PUT",
   "headers": {
     "authorization": "<<STRIPPED>>",

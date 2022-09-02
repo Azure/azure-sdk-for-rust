@@ -3,10 +3,10 @@
   "headers": {
     "content-length": "0",
     "date": "Tue, 08 Feb 2022 19:19:35 GMT",
-    "etag": "\"0x8D9EB37F1C93D54\"",
+    "etag": "\"0x8D9EB37F1C4BD73\"",
     "last-modified": "Tue, 08 Feb 2022 19:19:36 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-request-id": "ee38383b-a01f-0029-1620-1d0556000000",
+    "x-ms-request-id": "0259eb54-501f-003e-1e20-1d647a000000",
     "x-ms-request-server-encrypted": "false",
     "x-ms-version": "2019-12-12"
   },

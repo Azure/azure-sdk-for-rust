@@ -116,8 +116,21 @@ impl DataLakeClient {
         ctx: &mut azure_core::Context,
         request: &mut azure_core::Request,
     ) -> azure_core::Result<azure_core::Response> {
-        self.pipeline
-            .send(ctx.insert(ServiceType::DataLake), request)
-            .await
+        // This is a bit of a hack:
+        // We deconstruct the passed in request in order to finalize it.
+        // We then set the new request to the old request so that callers observe any changes.
+        let mut r = azure_storage::clients::finalize_request(
+            request.url().clone(),
+            request.method().clone(),
+            request.headers().clone(),
+            Some(request.body().clone()),
+        )?;
+        let result = self
+            .pipeline
+            .send(ctx.insert(ServiceType::DataLake), &mut r)
+            .await;
+
+        *request = r;
+        result
     }
 }

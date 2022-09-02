@@ -1,5 +1,5 @@
 {
-  "uri": "/azurerustsdk-datalake-file-read/some/path/e2etest-file.txt?action=append&position=0",
+  "uri": "/azurerustsdk-datalake-file-upload/some/path/e2etest-file.txt?action=append&position=0",
   "method": "PATCH",
   "headers": {
     "authorization": "<<STRIPPED>>",

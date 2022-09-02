@@ -1,5 +1,5 @@
 {
-  "uri": "/azurerustsdk-datalake-file-read?resource=filesystem",
+  "uri": "/azurerustsdk-datalake-file-upload?resource=filesystem",
   "method": "PUT",
   "headers": {
     "authorization": "<<STRIPPED>>",

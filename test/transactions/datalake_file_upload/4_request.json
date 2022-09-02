@@ -1,11 +1,11 @@
 {
-  "uri": "/azurerustsdk-datalake-file-upload/some/path/e2etest-file.txt",
-  "method": "GET",
+  "uri": "/azurerustsdk-datalake-file-read?resource=filesystem",
+  "method": "DELETE",
   "headers": {
     "authorization": "<<STRIPPED>>",
+    "content-length": "0",
     "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.58.0; linux; x86_64)",
     "x-ms-date": "Tue, 08 Feb 2022 19:19:34 GMT",
-    "x-ms-range": "bytes=0-18446744073709551614",
     "x-ms-version": "2019-12-12"
   },
   "body": ""
