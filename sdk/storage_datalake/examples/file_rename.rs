@@ -10,9 +10,7 @@ async fn main() -> azure_core::Result<()> {
         "azurerustsdk-datalake-example01-{}",
         OffsetDateTime::now_utc().unix_timestamp()
     );
-    let file_system_client = data_lake_client
-        .clone()
-        .file_system_client(file_system_name.to_string());
+    let file_system_client = data_lake_client.file_system_client(file_system_name.to_string());
 
     println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client.create().into_future().await?;

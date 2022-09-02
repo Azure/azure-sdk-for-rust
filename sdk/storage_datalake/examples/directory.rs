@@ -10,9 +10,7 @@ async fn main() -> azure_core::Result<()> {
         "azurerustsdk-datalake-example00-{}",
         OffsetDateTime::now_utc().unix_timestamp()
     );
-    let file_system_client = data_lake_client
-        .clone()
-        .file_system_client(file_system_name.to_string());
+    let file_system_client = data_lake_client.file_system_client(file_system_name.to_string());
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");
@@ -53,7 +51,7 @@ async fn main() -> azure_core::Result<()> {
     );
     directory_client
         .rename(new_directory_name)
-        .properties(fs_properties.clone())
+        .properties(fs_properties)
         .into_future()
         .await?;
 
