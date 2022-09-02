@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
@@ -13,7 +15,7 @@ use crate::amqp::{
     amqp_message_constants::{
         self, DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
         DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
-        LOCKED_UNTIL_NAME, SEQUENCE_NUMBER_NAME,
+        LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
     },
     amqp_message_extensions::AmqpMessageExt,
     error::Error,
@@ -80,7 +82,7 @@ impl ServiceBusReceivedMessage {
     ///    feature identifies and removes second and further submissions of messages with the
     ///    same MessageId.
     /// </remarks>
-    pub fn message_id(&self) -> Option<Result<&str, Error>> {
+    pub fn message_id(&self) -> Option<Cow<'_, str>> {
         self.amqp_message.message_id()
     }
 
@@ -621,12 +623,24 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.MessageStateName] = value;
     //     }
     // }
-    pub fn state(&self) -> &ServiceBusMessageState {
-        todo!()
+    pub fn state(&self) -> ServiceBusMessageState {
+        self.amqp_message
+            .message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&MESSAGE_STATE_NAME as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => ServiceBusMessageState::from(*val),
+                _ => unreachable!("Expecting a Long"),
+            })
+            .unwrap_or_default()
     }
 
     pub(crate) fn set_state(&mut self, state: ServiceBusMessageState) {
-        todo!()
+        let value = state as i64;
+        self.amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(MESSAGE_STATE_NAME.into(), value.into());
     }
 }
 

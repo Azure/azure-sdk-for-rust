@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use time::Duration as TimeSpan; // To avoid confusion with std::time::Duration
 
 use fe2o3_amqp_types::{
@@ -5,7 +7,7 @@ use fe2o3_amqp_types::{
         annotations::AnnotationKey, Body, Data, Header, Message, MessageAnnotations, MessageId,
         Properties,
     },
-    primitives::{Binary, Symbol, Value},
+    primitives::{Binary, BinaryRef, Symbol, Value},
 };
 use time::OffsetDateTime;
 
@@ -19,7 +21,7 @@ use super::{
 pub(crate) trait AmqpMessageExt {
     fn body(&self) -> Result<&[u8], Error>;
 
-    fn message_id(&self) -> Option<Result<&str, Error>>;
+    fn message_id(&self) -> Option<Cow<'_, str>>;
 
     fn partition_key(&self) -> Option<&str>;
 
@@ -117,24 +119,15 @@ impl<T> AmqpMessageExt for Message<T> {
     }
 
     #[inline]
-    fn message_id(&self) -> Option<Result<&str, Error>> {
+    fn message_id(&self) -> Option<Cow<'_, str>> {
         match self.properties.as_ref()?.message_id.as_ref()? {
-            MessageId::String(val) => Some(Ok(val)),
-            MessageId::ULong(_) => Some(Err(not_supported_error(
-                "MessageId::ULong",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Uuid(_) => Some(Err(not_supported_error(
-                "MessageId::Uuid",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Binary(_) => Some(Err(not_supported_error(
-                "MessageId::Binary",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
+            MessageId::String(val) => Some(Cow::Borrowed(val)),
+            MessageId::ULong(val) => Some(Cow::Owned(val.to_string())),
+            MessageId::Uuid(uuid) => Some(Cow::Owned(format!("{:x}", uuid))),
+            MessageId::Binary(bytes) => {
+                let binary_ref = BinaryRef::from(bytes);
+                Some(Cow::Owned(format!("{:X}", binary_ref)))
+            }
         }
     }
 

@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
@@ -77,7 +79,7 @@ impl ServiceBusMessage {
     /// If enabled, the [duplicate
     /// detection](https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection) feature identifies and
     /// removes second and further submissions of messages with the same MessageId.
-    pub fn message_id(&self) -> Option<Result<&str, Error>> {
+    pub fn message_id(&self) -> Option<Cow<'_, str>> {
         self.amqp_message.message_id()
     }
 
