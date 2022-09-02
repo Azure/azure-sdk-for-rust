@@ -23,7 +23,7 @@ impl ListFileSystemsBuilder {
             let ctx = self.client.context.clone();
 
             async move {
-                let mut url = url::Url::parse(this.client.url()).unwrap();
+                let mut url = this.client.url()?;
                 url.query_pairs_mut().append_pair("resource", "account");
                 this.prefix.append_to_url_query(&mut url);
                 this.max_results.append_to_url_query(&mut url);

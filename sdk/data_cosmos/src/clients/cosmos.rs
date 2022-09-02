@@ -160,7 +160,7 @@ impl CosmosClient {
     }
 }
 
-/// Create a Pipeline from CosmosOptions
+/// Create a `Pipeline` from `ClientOptions`
 fn new_pipeline_from_options(
     options: ClientOptions,
     authorization_token: AuthorizationToken,

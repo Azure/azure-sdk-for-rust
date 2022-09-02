@@ -21,7 +21,7 @@ operation! {
 impl GetFileBuilder {
     pub fn into_future(self) -> GetFile {
         let this = self.clone();
-        let ctx = self.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let url = this.client.url()?;
@@ -35,11 +35,7 @@ impl GetFileBuilder {
             request.insert_headers(&this.if_modified_since);
             request.insert_headers(&this.lease_id);
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             GetFileResponse::try_from(response).await
         })

@@ -14,6 +14,7 @@ extern crate azure_core;
 mod authorization_policy;
 
 pub mod clients;
+mod cloud_location;
 mod connection_string;
 mod connection_string_builder;
 mod copy_id;
@@ -25,6 +26,7 @@ pub mod shared_access_signature;
 
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
+pub use cloud_location::*;
 pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;

@@ -22,7 +22,7 @@ impl ListPathsBuilder {
     pub fn into_stream(self) -> Pageable<ListPathsResponse, Error> {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
-            let ctx = self.context.clone();
+            let mut ctx = self.context.clone();
 
             async move {
                 let mut url = this.client.url().unwrap();
