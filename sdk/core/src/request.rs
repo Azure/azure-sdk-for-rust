@@ -99,10 +99,6 @@ impl Request {
         &self.body
     }
 
-    pub fn into_body(self) -> Body {
-        self.body
-    }
-
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }

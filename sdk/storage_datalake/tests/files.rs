@@ -40,8 +40,8 @@ async fn file_create_delete() -> azure_core::Result<()> {
 }
 
 #[tokio::test]
-async fn file_upload() -> azure_core::Result<()> {
-    let data_lake_client = setup::create_data_lake_client("datalake_file_upload")
+async fn file_read() -> azure_core::Result<()> {
+    let data_lake_client = setup::create_data_lake_client("datalake_file_read")
         .await
         .unwrap();
 
@@ -77,8 +77,8 @@ async fn file_upload() -> azure_core::Result<()> {
 }
 
 #[tokio::test]
-async fn file_read() -> azure_core::Result<()> {
-    let data_lake_client = setup::create_data_lake_client("datalake_file_read")
+async fn file_upload() -> azure_core::Result<()> {
+    let data_lake_client = setup::create_data_lake_client("datalake_file_upload")
         .await
         .unwrap();
 
