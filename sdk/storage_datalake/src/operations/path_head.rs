@@ -32,7 +32,6 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 
             let response = self
                 .client
-                .pipeline()
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 

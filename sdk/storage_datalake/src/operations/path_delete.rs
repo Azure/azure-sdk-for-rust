@@ -31,7 +31,6 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
 
             let response = self
                 .client
-                .pipeline()
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 

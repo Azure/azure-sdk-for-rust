@@ -55,7 +55,6 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
 
             let response = self
                 .client
-                .pipeline()
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 

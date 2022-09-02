@@ -22,7 +22,7 @@ impl ListPathsBuilder {
     pub fn into_stream(self) -> Pageable<ListPathsResponse, Error> {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
-            let mut ctx = self.context.clone();
+            let ctx = self.context.clone();
 
             async move {
                 let mut url = this.client.url().unwrap();
@@ -40,11 +40,7 @@ impl ListPathsBuilder {
 
                 let mut request = Request::new(url, azure_core::Method::Get);
 
-                let response = this
-                    .client
-                    .pipeline()
-                    .send(&mut ctx.clone(), &mut request)
-                    .await?;
+                let response = this.client.send(&mut ctx.clone(), &mut request).await?;
 
                 ListPathsResponse::try_from(response).await
             }

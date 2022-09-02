@@ -20,7 +20,7 @@ impl ListFileSystemsBuilder {
     pub fn into_stream(self) -> ListFileSystems {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
-            let ctx = self.client.context.clone();
+            let mut ctx = self.context.clone();
 
             async move {
                 let mut url = this.client.url()?;
@@ -36,11 +36,7 @@ impl ListFileSystemsBuilder {
 
                 let mut request = Request::new(url, azure_core::Method::Get);
 
-                let response = this
-                    .client
-                    .pipeline()
-                    .send(&mut ctx.clone(), &mut request)
-                    .await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 ListFileSystemsResponse::try_from(response).await
             }
