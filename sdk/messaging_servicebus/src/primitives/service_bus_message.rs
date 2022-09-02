@@ -1,15 +1,14 @@
-use std::collections::BTreeMap;
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
-    messaging::{Body, Data, Message, MessageId, Properties},
-    primitives::{Binary, OrderedMap, Value},
+    messaging::{ApplicationProperties, Message},
+    primitives::{Binary, Value},
 };
 use time::OffsetDateTime;
 
 use crate::amqp::{
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
-    error::{not_supported_error, Error},
+    error::Error,
 };
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
@@ -68,7 +67,7 @@ impl ServiceBusMessage {
 
     /// Sets the body of the message
     pub fn set_body(&mut self, body: impl Into<Vec<u8>>) {
-        self.amqp_message.body = Body::Data(Data(Binary::from(body)))
+        self.amqp_message.set_body(body)
     }
 
     /// Gets the MessageId to identify the message.
@@ -79,32 +78,12 @@ impl ServiceBusMessage {
     /// detection](https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection) feature identifies and
     /// removes second and further submissions of messages with the same MessageId.
     pub fn message_id(&self) -> Option<Result<&str, Error>> {
-        match self.amqp_message.properties.as_ref()?.message_id.as_ref()? {
-            MessageId::String(val) => Some(Ok(val)),
-            MessageId::ULong(_) => Some(Err(not_supported_error(
-                "MessageId::ULong",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Uuid(_) => Some(Err(not_supported_error(
-                "MessageId::Uuid",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Binary(_) => Some(Err(not_supported_error(
-                "MessageId::Binary",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-        }
+        self.amqp_message.message_id()
     }
 
     /// Sets the MessageId
     pub fn set_message_id(&mut self, message_id: impl Into<String>) {
-        self.amqp_message
-            .properties
-            .get_or_insert(Properties::default())
-            .message_id = Some(MessageId::String(message_id.into()))
+        self.amqp_message.set_message_id(message_id)
     }
 
     /// <summary>Gets or sets a partition key for sending a message to a partitioned entity.</summary>
@@ -119,8 +98,8 @@ impl ServiceBusMessage {
         self.amqp_message.partition_key()
     }
 
-    pub fn set_partition_key(&mut self, key: impl Into<String>) {
-        todo!()
+    pub fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), Error> {
+        self.amqp_message.set_partition_key(key)
     }
 
     /// <summary>Gets or sets a partition key for sending a message into an entity via a partitioned transfer queue.</summary>
@@ -132,11 +111,11 @@ impl ServiceBusMessage {
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-via">Transfers and Send Via</see>.
     /// </remarks>
     pub fn transaction_partition_key(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.via_partition_key()
     }
 
     pub fn set_transaction_partition_key(&mut self, key: impl Into<String>) {
-        todo!()
+        self.amqp_message.set_via_partition_key(key)
     }
 
     /// <summary>Gets or sets the session identifier for a session-aware entity.</summary>
@@ -149,11 +128,11 @@ impl ServiceBusMessage {
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/message-sessions">Message Sessions</see>.
     /// </remarks>
     pub fn session_id(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.session_id()
     }
 
     pub fn set_session_id(&mut self, session_id: impl Into<String>) {
-        todo!()
+        self.amqp_message.set_session_id(session_id)
     }
 
     /// <summary>Gets or sets a session identifier augmenting the <see cref="ReplyTo"/> address.</summary>
@@ -164,11 +143,11 @@ impl ServiceBusMessage {
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</see>
     /// </remarks>
     pub fn reply_to_session_id(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.reply_to_session_id()
     }
 
-    pub fn set_reply_to_session_id(&mut self, session_id: impl Into<String>) {
-        todo!()
+    pub fn set_reply_to_session_id(&mut self, session_id: Option<impl Into<String>>) {
+        self.amqp_message.set_reply_to_session_id(session_id)
     }
 
     /// <summary>
@@ -183,11 +162,11 @@ impl ServiceBusMessage {
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/message-expiration">Expiration</see>.
     /// </remarks>
     pub fn time_to_live(&self) -> Option<TimeSpan> {
-        todo!()
+        self.amqp_message.time_to_live()
     }
 
-    pub fn set_time_to_live(&mut self, ttl: TimeSpan) {
-        todo!()
+    pub fn set_time_to_live(&mut self, ttl: Option<TimeSpan>) {
+        self.amqp_message.set_time_to_live(ttl)
     }
 
     /// <summary>Gets or sets the a correlation identifier.</summary>
@@ -197,12 +176,12 @@ impl ServiceBusMessage {
     /// for example reflecting the MessageId of a message that is being replied to.
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</see>.
     /// </remarks>
-    pub fn correlation_id(&self) -> Option<&str> {
-        todo!()
+    pub fn correlation_id(&self) -> Option<Result<&str, Error>> {
+        self.amqp_message.correlation_id()
     }
 
-    pub fn set_correlation_id(&mut self, id: impl Into<String>) {
-        todo!()
+    pub fn set_correlation_id(&mut self, id: Option<impl Into<String>>) {
+        self.amqp_message.set_correlation_id(id)
     }
 
     /// <summary>Gets or sets an application specific subject.</summary>
@@ -212,11 +191,11 @@ impl ServiceBusMessage {
     /// fashion, similar to an email subject line. The mapped AMQP property is "subject".
     /// </remarks>
     pub fn subject(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.subject()
     }
 
-    pub fn set_subject(&mut self, subject: impl Into<String>) {
-        todo!()
+    pub fn set_subject(&mut self, subject: Option<impl Into<String>>) {
+        self.amqp_message.set_subject(subject)
     }
 
     /// <summary>Gets or sets the "to" address.</summary>
@@ -228,11 +207,11 @@ impl ServiceBusMessage {
     /// intended logical destination of the message.
     /// </remarks>
     pub fn to(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.to()
     }
 
-    pub fn set_to(&mut self, to: impl Into<String>) {
-        todo!()
+    pub fn set_to(&mut self, to: Option<impl Into<String>>) {
+        self.amqp_message.set_to(to)
     }
 
     /// <summary>Gets or sets the content type descriptor.</summary>
@@ -242,11 +221,11 @@ impl ServiceBusMessage {
     /// RFC2045, Section 5, for example "application/json".
     /// </remarks>
     pub fn content_type(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.content_type()
     }
 
-    pub fn set_content_type(&mut self, content_type: impl Into<String>) {
-        todo!()
+    pub fn set_content_type(&mut self, content_type: Option<impl Into<String>>) {
+        self.amqp_message.set_content_type(content_type)
     }
 
     /// <summary>Gets or sets the address of an entity to send replies to.</summary>
@@ -258,11 +237,11 @@ impl ServiceBusMessage {
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</see>.
     /// </remarks>
     pub fn reply_to(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.reply_to()
     }
 
-    pub fn set_reply_to(&mut self, reply_to: impl Into<String>) {
-        todo!()
+    pub fn set_reply_to(&mut self, reply_to: Option<impl Into<String>>) {
+        self.amqp_message.set_reply_to(reply_to)
     }
 
     /// <summary>
@@ -277,8 +256,8 @@ impl ServiceBusMessage {
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will get enqueued, but the actual sending time
     /// depends on the queue's workload and its state.
     /// </remarks>
-    pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
-        todo!()
+    pub fn scheduled_enqueue_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+        self.amqp_message.scheduled_enqueue_time()
     }
 
     /// <summary>
@@ -312,8 +291,8 @@ impl ServiceBusMessage {
     /// <exception cref="System.Runtime.Serialization.SerializationException">
     ///   Occurs when the <see cref="ServiceBusMessage" /> is serialized for transport when an unsupported type is used as a property.
     /// </exception>
-    pub fn application_properties(&self) -> Option<&OrderedMap<String, Value>> {
-        todo!()
+    pub fn application_properties(&self) -> Option<&ApplicationProperties> {
+        self.amqp_message.application_properties.as_ref()
     }
 }
 

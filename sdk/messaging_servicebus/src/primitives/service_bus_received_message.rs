@@ -2,12 +2,12 @@ use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     definitions::SequenceNo,
-    messaging::Message,
+    messaging::{ApplicationProperties, Message},
     primitives::{OrderedMap, Value},
 };
 use time::OffsetDateTime;
 
-use crate::amqp::error::Error;
+use crate::amqp::{amqp_message_extensions::AmqpMessageExt, error::Error};
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
@@ -37,7 +37,7 @@ impl ServiceBusReceivedMessage {
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
     /// </summary>
     pub(crate) fn amqp_message(&self) -> &Message<Value> {
-        todo!()
+        &self.amqp_message
     }
 
     /// <summary>
@@ -47,14 +47,14 @@ impl ServiceBusReceivedMessage {
     /// </summary>
     /// <returns>The raw Amqp message.</returns>
     pub fn raw_amqp_message(&self) -> &Message<Value> {
-        todo!()
+        &self.amqp_message
     }
 
     /// <summary>
     /// Gets the body of the message.
     /// </summary>
     pub fn body(&self) -> Result<&[u8], Error> {
-        todo!()
+        self.amqp_message.body()
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ impl ServiceBusReceivedMessage {
     ///    same MessageId.
     /// </remarks>
     pub fn message_id(&self) -> Option<Result<&str, Error>> {
-        todo!()
+        self.amqp_message.message_id()
     }
 
     /// <summary>Gets a partition key for sending a message to a partitioned entity.</summary>
@@ -81,7 +81,7 @@ impl ServiceBusReceivedMessage {
     ///    directly. For session-aware entities, the <see cref="SessionId"/> property overrides this value.
     /// </remarks>
     pub fn partition_key(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.partition_key()
     }
 
     /// <summary>Gets a partition key for sending a message into an entity via a partitioned transfer queue.</summary>
@@ -93,7 +93,7 @@ impl ServiceBusReceivedMessage {
     ///    See <a href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-via">Transfers and Send Via</a>.
     /// </remarks>
     pub fn transaction_partition_key(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.via_partition_key()
     }
 
     /// <summary>Gets the session identifier for a session-aware entity.</summary>
@@ -106,7 +106,7 @@ impl ServiceBusReceivedMessage {
     ///    See <a href="https://docs.microsoft.com/azure/service-bus-messaging/message-sessions">Message Sessions</a>.
     /// </remarks>
     pub fn session_id(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.session_id()
     }
 
     /// <summary>Gets a session identifier augmenting the <see cref="ReplyTo"/> address.</summary>
@@ -116,7 +116,7 @@ impl ServiceBusReceivedMessage {
     ///    for the reply when sent to the reply entity. See <a href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</a>
     /// </remarks>
     pub fn reply_to_session_id(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.reply_to_session_id()
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ impl ServiceBusReceivedMessage {
     ///      See <a href="https://docs.microsoft.com/azure/service-bus-messaging/message-expiration">Expiration</a>
     /// </remarks>
     pub fn time_to_live(&self) -> Option<TimeSpan> {
-        todo!()
+        self.amqp_message.time_to_live()
     }
 
     /// <summary>Gets the correlation identifier.</summary>
@@ -142,8 +142,8 @@ impl ServiceBusReceivedMessage {
     ///    for example reflecting the MessageId of a message that is being replied to.
     ///    See <a href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</a>.
     /// </remarks>
-    pub fn correlation_id(&self) -> Option<&str> {
-        todo!()
+    pub fn correlation_id(&self) -> Option<Result<&str, Error>> {
+        self.amqp_message.correlation_id()
     }
 
     /// <summary>Gets an application specific label.</summary>
@@ -153,7 +153,7 @@ impl ServiceBusReceivedMessage {
     ///   fashion, similar to an email subject line. The mapped AMQP property is "subject".
     /// </remarks>
     pub fn subject(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.subject()
     }
 
     /// <summary>Gets the "to" address.</summary>
@@ -165,7 +165,7 @@ impl ServiceBusReceivedMessage {
     ///     intended logical destination of the message.
     /// </remarks>
     pub fn to(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.to()
     }
 
     /// <summary>Gets the content type descriptor.</summary>
@@ -175,7 +175,7 @@ impl ServiceBusReceivedMessage {
     ///   RFC2045, Section 5, for example "application/json".
     /// </remarks>
     pub fn content_type(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.content_type()
     }
 
     /// <summary>Gets the address of an entity to send replies to.</summary>
@@ -187,7 +187,7 @@ impl ServiceBusReceivedMessage {
     ///    See <a href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</a>.
     /// </remarks>
     pub fn reply_to(&self) -> Option<&str> {
-        todo!()
+        self.amqp_message.reply_to()
     }
 
     /// <summary>Gets the date and time in UTC at which the message will be enqueued. This
@@ -196,8 +196,8 @@ impl ServiceBusReceivedMessage {
     /// It is utilized to delay messages sending to a specific time in the future.</value>
     /// <remarks> Message enqueuing time does not mean that the message will be sent at the same time. It will get enqueued, but the actual sending time
     /// depends on the queue's workload and its state.</remarks>
-    pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
-        todo!()
+    pub fn scheduled_enqueue_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+        self.amqp_message.scheduled_enqueue_time()
     }
 
     /// <summary>
@@ -208,8 +208,8 @@ impl ServiceBusReceivedMessage {
     /// byte, sbyte, char, short, ushort, int, uint, long, ulong, float, double, decimal,
     /// bool, Guid, string, Uri, DateTime, DateTimeOffset, TimeSpan
     /// </remarks>
-    pub fn application_properties(&self) -> Option<&OrderedMap<String, Value>> {
-        todo!()
+    pub fn application_properties(&self) -> Option<&ApplicationProperties> {
+        self.amqp_message.application_properties.as_ref()
     }
 
     /// <summary>
