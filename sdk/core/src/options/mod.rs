@@ -129,7 +129,7 @@ impl RetryOptions {
     }
 
     /// A custom retry using the supplied retry policy.
-    pub fn custom<T: RetryPolicy + Policy + 'static>(policy: Arc<T>) -> Self {
+    pub fn custom<T: RetryPolicy + 'static>(policy: Arc<T>) -> Self {
         Self {
             mode: RetryMode::Custom(policy),
         }
