@@ -23,7 +23,7 @@ where
 }
 
 impl<C: PathClient + 'static> HeadPathBuilder<C> {
-    pub(crate) fn new(client: C, context: Context) -> Self {
+    pub(crate) fn new(client: C) -> Self {
         Self {
             client,
             action: None,
@@ -33,7 +33,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             if_modified_since: None,
             client_request_id: None,
             lease_id: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -50,7 +50,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 
     pub fn into_future(self) -> HeadPath {
         let this = self.clone();
-        let ctx = self.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -66,11 +66,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             request.insert_headers(&this.if_modified_since);
             request.insert_headers(&this.lease_id);
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             HeadPathResponse::try_from(response).await
         })

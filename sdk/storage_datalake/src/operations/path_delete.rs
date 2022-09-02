@@ -21,7 +21,7 @@ where
 }
 
 impl<C: PathClient + 'static> DeletePathBuilder<C> {
-    pub(crate) fn new(client: C, recursive: Option<Recursive>, context: Context) -> Self {
+    pub(crate) fn new(client: C, recursive: Option<Recursive>) -> Self {
         Self {
             client,
             recursive,
@@ -30,7 +30,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
             if_modified_since: None,
             client_request_id: None,
             timeout: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -46,7 +46,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
 
     pub fn into_future(self) -> DeletePath {
         let this = self.clone();
-        let ctx = self.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -63,11 +63,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
             request.insert_headers(&this.if_match_condition);
             request.insert_headers(&this.if_modified_since);
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             DeletePathResponse::try_from(response).await
         })

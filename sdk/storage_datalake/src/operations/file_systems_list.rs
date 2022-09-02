@@ -15,11 +15,11 @@ pub struct ListFileSystemsBuilder {
     max_results: Option<MaxResults>,
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
-    context: Option<Context>,
+    context: Context,
 }
 
 impl ListFileSystemsBuilder {
-    pub(crate) fn new(client: DataLakeClient, context: Option<Context>) -> Self {
+    pub(crate) fn new(client: DataLakeClient) -> Self {
         Self {
             client,
             prefix: None,
@@ -27,7 +27,7 @@ impl ListFileSystemsBuilder {
             max_results: None,
             client_request_id: None,
             timeout: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -37,16 +37,16 @@ impl ListFileSystemsBuilder {
         max_results: MaxResults => Some(max_results),
         client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
-        context: Context => Some(context),
+        context: Context => context,
     }
 
     pub fn into_stream(self) -> ListFileSystems {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
-            let ctx = self.context.clone().unwrap_or_default();
+            let mut ctx = self.context.clone();
 
             async move {
-                let mut url = url::Url::parse(this.client.url()).unwrap();
+                let mut url = this.client.url()?;
                 url.query_pairs_mut().append_pair("resource", "account");
                 this.prefix.append_to_url_query(&mut url);
                 this.max_results.append_to_url_query(&mut url);
@@ -62,11 +62,7 @@ impl ListFileSystemsBuilder {
 
                 request.insert_headers(&this.client_request_id);
 
-                let response = this
-                    .client
-                    .pipeline()
-                    .send(&mut ctx.clone(), &mut request)
-                    .await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 ListFileSystemsResponse::try_from(response).await
             }

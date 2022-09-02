@@ -14,6 +14,7 @@ pub struct GetFileSystemPropertiesBuilder {
     client: FileSystemClient,
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl GetFileSystemPropertiesBuilder {
@@ -22,6 +23,7 @@ impl GetFileSystemPropertiesBuilder {
             client,
             client_request_id: None,
             timeout: None,
+            context: Context::new(),
         }
     }
 
@@ -32,7 +34,7 @@ impl GetFileSystemPropertiesBuilder {
 
     pub fn into_future(self) -> GetFileSystemProperties {
         let this = self.clone();
-        let ctx = self.client.context.clone();
+        let mut ctx = self.context.clone();
 
         Box::pin(async move {
             let mut url = this.client.url()?;
@@ -44,11 +46,7 @@ impl GetFileSystemPropertiesBuilder {
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&ContentLength::new(0));
 
-            let response = self
-                .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
-                .await?;
+            let response = self.client.send(&mut ctx, &mut request).await?;
 
             GetFileSystemPropertiesResponse::try_from(response).await
         })

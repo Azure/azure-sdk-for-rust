@@ -24,7 +24,7 @@ pub struct ListPathsBuilder {
 }
 
 impl ListPathsBuilder {
-    pub(crate) fn new(client: FileSystemClient, context: Context) -> Self {
+    pub(crate) fn new(client: FileSystemClient) -> Self {
         Self {
             client,
             recursive: None,
@@ -34,7 +34,7 @@ impl ListPathsBuilder {
             timeout: None,
             upn: None,
             client_request_id: None,
-            context,
+            context: Context::new(),
         }
     }
 
@@ -52,7 +52,7 @@ impl ListPathsBuilder {
     pub fn into_stream(self) -> ListPaths {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
-            let ctx = self.context.clone();
+            let mut ctx = self.context.clone();
 
             async move {
                 let mut url = this.client.url().unwrap();
@@ -73,11 +73,7 @@ impl ListPathsBuilder {
 
                 request.insert_headers(&this.client_request_id);
 
-                let response = this
-                    .client
-                    .pipeline()
-                    .send(&mut ctx.clone(), &mut request)
-                    .await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 ListPathsResponse::try_from(response).await
             }
