@@ -6,15 +6,14 @@ use fe2o3_amqp_types::{
 };
 use time::OffsetDateTime;
 
+use crate::amqp::{
+    amqp_message_extensions::AmqpMessageExtensions,
+    error::{not_supported_error, Error},
+};
+
 use super::service_bus_received_message::ServiceBusReceivedMessage;
 
 pub(crate) type AmqpMessage = Message<Value>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum ServiceBusMessageError {
-    #[error("Not supported {}", .0)]
-    NotSupported(String),
-}
 
 /// The [ServiceBusMessage] is used to send data to Service Bus Queues and Topics. When receiving messages, the <see
 /// cref="ServiceBusReceivedMessage"/> is used.
@@ -59,25 +58,8 @@ impl ServiceBusMessage {
     }
 
     /// Gets the body of the message
-    pub fn body(&self) -> Result<&[u8], ServiceBusMessageError> {
-        match &self.amqp_message.body {
-            Body::Data(Data(buf)) => Ok(buf),
-            Body::Sequence(_) => Err(not_supported_error(
-                "Body::Sequence",
-                "body()",
-                "raw_amqp_message()",
-            )),
-            Body::Value(_) => Err(not_supported_error(
-                "Body::Value",
-                "body()",
-                "raw_amqp_message()",
-            )),
-            Body::Empty => Err(not_supported_error(
-                "Body::Empty",
-                "body()",
-                "raw_amqp_message()",
-            )),
-        }
+    pub fn body(&self) -> Result<&[u8], Error> {
+        AmqpMessageExtensions::get_body(&self.amqp_message)
     }
 
     /// Sets the body of the message
@@ -92,7 +74,7 @@ impl ServiceBusMessage {
     /// If enabled, the [duplicate
     /// detection](https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection) feature identifies and
     /// removes second and further submissions of messages with the same MessageId.
-    pub fn message_id(&self) -> Option<Result<&str, ServiceBusMessageError>> {
+    pub fn message_id(&self) -> Option<Result<&str, Error>> {
         match self.amqp_message.properties.as_ref()?.message_id.as_ref()? {
             MessageId::String(val) => Some(Ok(val)),
             MessageId::ULong(_) => Some(Err(not_supported_error(
@@ -130,7 +112,7 @@ impl ServiceBusMessage {
     /// directly. For session-aware entities, the <see cref="SessionId"/> property overrides this value.
     /// </remarks>
     pub fn partition_key(&self) -> Option<&str> {
-        todo!()
+        AmqpMessageExtensions::get_partition_key(&self.amqp_message)
     }
 
     pub fn set_partition_key(&mut self, key: impl Into<String>) {
@@ -335,15 +317,4 @@ impl ToString for ServiceBusMessage {
     fn to_string(&self) -> String {
         todo!()
     }
-}
-
-#[inline]
-fn not_supported_error(
-    field_type: &str,
-    method: &str,
-    alternative: &str,
-) -> ServiceBusMessageError {
-    ServiceBusMessageError::NotSupported(
-        format!("{field_type} cannot be retrived using {method} method. Use {alternative} to access the underlying Amqp Message")
-    )
 }
