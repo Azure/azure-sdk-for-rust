@@ -79,6 +79,15 @@ impl BlobServiceClientBuilder {
         self.options = self.options.transport(transport);
         self
     }
+
+    /// Override all of the client options.
+    ///
+    /// *Warning!*: This overrides all client options that have been previously set on this builder.
+    #[must_use]
+    pub fn client_options(mut self, options: impl Into<azure_core::ClientOptions>) -> Self {
+        self.options = options.into();
+        self
+    }
 }
 
 #[derive(Debug, Clone)]
