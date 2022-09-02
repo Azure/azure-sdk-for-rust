@@ -178,7 +178,7 @@ impl ServiceBusMessage {
     /// for example reflecting the MessageId of a message that is being replied to.
     /// See <see href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</see>.
     /// </remarks>
-    pub fn correlation_id(&self) -> Option<Result<&str, Error>> {
+    pub fn correlation_id(&self) -> Option<Cow<'_, str>> {
         self.amqp_message.correlation_id()
     }
 
@@ -258,7 +258,7 @@ impl ServiceBusMessage {
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will get enqueued, but the actual sending time
     /// depends on the queue's workload and its state.
     /// </remarks>
-    pub fn scheduled_enqueue_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+    pub fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime> {
         self.amqp_message.scheduled_enqueue_time()
     }
 

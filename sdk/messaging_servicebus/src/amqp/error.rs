@@ -3,9 +3,6 @@ pub enum Error {
     #[error("Not supported {}", .0)]
     NotSupported(String),
 
-    #[error("Cannot convert value to requested type")]
-    InvalidValueType,
-
     #[error("PartitionKey cannot be set to a different value than SessionId")]
     PartitionKeyAndSessionIdAreDifferent,
 }

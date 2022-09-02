@@ -156,7 +156,7 @@ impl ServiceBusReceivedMessage {
     ///    for example reflecting the MessageId of a message that is being replied to.
     ///    See <a href="https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation">Message Routing and Correlation</a>.
     /// </remarks>
-    pub fn correlation_id(&self) -> Option<Result<&str, Error>> {
+    pub fn correlation_id(&self) -> Option<Cow<'_, str>> {
         self.amqp_message.correlation_id()
     }
 
@@ -210,7 +210,7 @@ impl ServiceBusReceivedMessage {
     /// It is utilized to delay messages sending to a specific time in the future.</value>
     /// <remarks> Message enqueuing time does not mean that the message will be sent at the same time. It will get enqueued, but the actual sending time
     /// depends on the queue's workload and its state.</remarks>
-    pub fn scheduled_enqueue_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+    pub fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime> {
         self.amqp_message.scheduled_enqueue_time()
     }
 
@@ -283,7 +283,7 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.LockedUntilName] = value.UtcDateTime;
     //     }
     // }
-    pub fn locked_until(&self) -> Option<Result<OffsetDateTime, Error>> {
+    pub fn locked_until(&self) -> Option<OffsetDateTime> {
         self.amqp_message
             .message_annotations
             .as_ref()?
@@ -292,9 +292,9 @@ impl ServiceBusReceivedMessage {
                 Value::Timestamp(timestamp) => {
                     let millis = timestamp.milliseconds();
                     let duration = TimeSpan::milliseconds(millis);
-                    Ok(OffsetDateTime::UNIX_EPOCH + duration)
+                    OffsetDateTime::UNIX_EPOCH + duration
                 }
-                _ => Err(Error::InvalidValueType),
+                _ => unreachable!("Expecting a Timestamp"),
             })
     }
 
@@ -477,7 +477,7 @@ impl ServiceBusReceivedMessage {
     //         AmqpMessage.MessageAnnotations[AmqpMessageConstants.EnqueuedTimeUtcName] = value.UtcDateTime;
     //     }
     // }
-    pub fn enqueued_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+    pub fn enqueued_time(&self) -> Option<OffsetDateTime> {
         self.amqp_message
             .message_annotations
             .as_ref()?
@@ -486,9 +486,9 @@ impl ServiceBusReceivedMessage {
                 Value::Timestamp(timestamp) => {
                     let millis = timestamp.milliseconds();
                     let duration = TimeSpan::milliseconds(millis);
-                    Ok(OffsetDateTime::UNIX_EPOCH + duration)
+                    OffsetDateTime::UNIX_EPOCH + duration
                 }
-                _ => Err(Error::InvalidValueType),
+                _ => unreachable!("Expecting a Timestamp"),
             })
     }
 

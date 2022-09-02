@@ -33,7 +33,7 @@ pub(crate) trait AmqpMessageExt {
 
     fn time_to_live(&self) -> Option<TimeSpan>;
 
-    fn correlation_id(&self) -> Option<Result<&str, Error>>;
+    fn correlation_id(&self) -> Option<Cow<'_, str>>;
 
     fn subject(&self) -> Option<&str>;
 
@@ -44,7 +44,7 @@ pub(crate) trait AmqpMessageExt {
     fn reply_to(&self) -> Option<&str>;
 
     // TODO: `time::OffsetDateTime` doesn't implement `Default`
-    fn scheduled_enqueue_time(&self) -> Option<Result<OffsetDateTime, Error>>;
+    fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime>;
 }
 
 pub(crate) trait AmqpMessageMutExt {
@@ -52,7 +52,7 @@ pub(crate) trait AmqpMessageMutExt {
 
     fn set_body(&mut self, body: impl Into<Vec<u8>>);
 
-    fn message_id_mut(&mut self) -> Option<Result<&mut String, Error>>;
+    fn message_id_mut(&mut self) -> Option<&mut MessageId>;
 
     fn set_message_id(&mut self, message_id: impl Into<String>);
 
@@ -74,7 +74,7 @@ pub(crate) trait AmqpMessageMutExt {
 
     fn set_time_to_live(&mut self, ttl: Option<TimeSpan>);
 
-    fn correlation_id_mut(&mut self) -> Option<Result<&mut String, Error>>;
+    fn correlation_id_mut(&mut self) -> Option<&mut MessageId>;
 
     fn set_correlation_id(&mut self, id: Option<impl Into<String>>);
 
@@ -180,24 +180,15 @@ impl<T> AmqpMessageExt for Message<T> {
     }
 
     #[inline]
-    fn correlation_id(&self) -> Option<Result<&str, Error>> {
+    fn correlation_id(&self) -> Option<Cow<'_, str>> {
         match self.properties.as_ref()?.correlation_id.as_ref()? {
-            MessageId::String(val) => Some(Ok(val)),
-            MessageId::ULong(_) => Some(Err(not_supported_error(
-                "MessageId::ULong",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Uuid(_) => Some(Err(not_supported_error(
-                "MessageId::Uuid",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Binary(_) => Some(Err(not_supported_error(
-                "MessageId::Binary",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
+            MessageId::String(val) => Some(Cow::Borrowed(val)),
+            MessageId::ULong(val) => Some(Cow::Owned(val.to_string())),
+            MessageId::Uuid(uuid) => Some(Cow::Owned(format!("{:x}", uuid))),
+            MessageId::Binary(bytes) => {
+                let binary_ref = BinaryRef::from(bytes);
+                Some(Cow::Owned(format!("{:X}", binary_ref)))
+            }
         }
     }
 
@@ -234,7 +225,7 @@ impl<T> AmqpMessageExt for Message<T> {
     }
 
     #[inline]
-    fn scheduled_enqueue_time(&self) -> Option<Result<OffsetDateTime, Error>> {
+    fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime> {
         self.message_annotations
             .as_ref()?
             .get(&amqp_message_constants::SCHEDULED_ENQUEUE_TIME_UTC_NAME as &dyn AnnotationKey)
@@ -242,9 +233,9 @@ impl<T> AmqpMessageExt for Message<T> {
                 Value::Timestamp(timestamp) => {
                     let millis = timestamp.milliseconds();
                     let duration = TimeSpan::milliseconds(millis);
-                    Ok(OffsetDateTime::UNIX_EPOCH + duration)
+                    OffsetDateTime::UNIX_EPOCH + duration
                 }
-                _ => Err(Error::InvalidValueType),
+                _ => unreachable!("Expecting a Timestamp"),
             })
     }
 }
@@ -278,25 +269,8 @@ impl<T> AmqpMessageMutExt for Message<T> {
     }
 
     #[inline]
-    fn message_id_mut(&mut self) -> Option<Result<&mut String, Error>> {
-        match self.properties.as_mut()?.message_id.as_mut()? {
-            MessageId::String(val) => Some(Ok(val)),
-            MessageId::ULong(_) => Some(Err(not_supported_error(
-                "MessageId::ULong",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Uuid(_) => Some(Err(not_supported_error(
-                "MessageId::Uuid",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Binary(_) => Some(Err(not_supported_error(
-                "MessageId::Binary",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-        }
+    fn message_id_mut(&mut self) -> Option<&mut MessageId> {
+        self.properties.as_mut()?.message_id.as_mut()
     }
 
     /// # Panic
@@ -369,25 +343,8 @@ impl<T> AmqpMessageMutExt for Message<T> {
     }
 
     #[inline]
-    fn correlation_id_mut(&mut self) -> Option<Result<&mut String, Error>> {
-        match self.properties.as_mut()?.correlation_id.as_mut()? {
-            MessageId::String(val) => Some(Ok(val)),
-            MessageId::ULong(_) => Some(Err(not_supported_error(
-                "MessageId::ULong",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Uuid(_) => Some(Err(not_supported_error(
-                "MessageId::Uuid",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-            MessageId::Binary(_) => Some(Err(not_supported_error(
-                "MessageId::Binary",
-                "message_id()",
-                "raw_amqp_message()",
-            ))),
-        }
+    fn correlation_id_mut(&mut self) -> Option<&mut MessageId> {
+        self.properties.as_mut()?.correlation_id.as_mut()
     }
 
     #[inline]
