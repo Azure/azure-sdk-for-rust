@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use fe2o3_amqp_types::{
     messaging::{annotations::AnnotationKey, Body, Data, Message},
-    primitives::{Timestamp, Value},
+    primitives::{Binary, Timestamp, Value},
 };
 use time::OffsetDateTime;
 
@@ -16,14 +16,17 @@ use super::{
 pub struct AmqpMessageExtensions {}
 
 impl AmqpMessageExtensions {
-    pub fn to_amqp_message(message: ServiceBusMessage) -> AmqpMessage {
-        todo!()
-    }
+    // /// TODO: is this really necessary?
+    // pub fn to_amqp_message(message: ServiceBusMessage) -> AmqpMessage {
+    //     message.amqp_message
+    // }
 
-    // TODO: returns `impl Iterator<Item = Data>`
-    pub fn as_amqp_data(binary_data: impl Iterator<Item = Vec<u8>>) -> Vec<Data> {
-        todo!()
-    }
+    // /// TODO: returns `impl Iterator<Item = Data>`
+    // ///
+    // /// TODO: Multiple Data section is not supported yet
+    // pub fn as_amqp_data(binary_data: impl Into<Vec<u8>>) -> Data {
+    //     Data(Binary::from(binary_data))
+    // }
 
     pub fn get_partition_key<T>(message: &Message<T>) -> Option<&str> {
         message
