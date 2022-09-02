@@ -162,6 +162,18 @@ impl RetryOptions {
 }
 
 /// Options for how an exponential retry strategy should behave.
+///
+/// # Example
+///
+/// Configuring retry to be exponential with 10 retries max and an initial delay of 1 second.
+/// ```
+/// # use core::time::Duration; use azure_core::RetryOptions; use azure_core::ExponentialRetryOptions;
+/// RetryOptions::exponential(
+///    ExponentialRetryOptions::default()
+///        .max_retries(10u32)
+///        .initial_delay(Duration::from_secs(1)),
+/// );
+/// ```
 #[derive(Clone, Debug)]
 pub struct ExponentialRetryOptions {
     /// The initial delay between retry attempts. The delay will increase with each retry.
@@ -206,6 +218,17 @@ impl Default for ExponentialRetryOptions {
 }
 
 /// Options for how a fixed retry strategy should behave.
+///
+/// # Example
+///
+/// Configuring retry to be fixed with 10 retries max.
+/// ```
+/// # use azure_core::RetryOptions; use azure_core::FixedRetryOptions;
+/// RetryOptions::fixed(
+///    FixedRetryOptions::default()
+///        .max_retries(10u32)
+/// );
+/// ```
 #[derive(Clone, Debug)]
 pub struct FixedRetryOptions {
     /// The delay between retry attempts.
