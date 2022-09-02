@@ -2,11 +2,9 @@ use std::time::Duration;
 
 use fe2o3_amqp_types::{
     messaging::{annotations::AnnotationKey, Body, Data, Message},
-    primitives::{Binary, Timestamp, Value},
+    primitives::Value,
 };
 use time::OffsetDateTime;
-
-use crate::{primitives::service_bus_message::AmqpMessage, ServiceBusMessage};
 
 use super::{
     amqp_message_constants,
