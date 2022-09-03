@@ -9,6 +9,7 @@ pub mod core;
 pub mod diagnostics;
 pub mod prelude;
 pub mod primitives;
+pub mod processor;
 pub mod receiver;
 pub mod sender;
 pub mod service_bus;
