@@ -1,9 +1,9 @@
 use std::hash::Hash;
-use time::Duration as TimeSpan;
+use std::time::Duration;
 
 use crate::diagnostics::ServiceBusEventSource;
 
-pub static SERVER_BUSY_BASE_SLEEP_TIME: TimeSpan = TimeSpan::seconds(10);
+pub static SERVER_BUSY_BASE_SLEEP_TIME: Duration = Duration::from_secs(10);
 
 /// An abstract representation of a policy to govern retrying of messaging operations.
 ///
@@ -29,7 +29,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     /// # Returns
     ///
     /// The amount of time to allow for an operation to complete.
-    fn calculate_try_timeout(&self, attempt_count: i32) -> TimeSpan;
+    fn calculate_try_timeout(&self, attempt_count: i32) -> Duration;
 
     /// Calculates the amount of time to wait before another attempt should be made.
     ///
@@ -47,21 +47,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
         &self,
         last_error: Self::Error,
         attempt_count: i32,
-    ) -> Option<TimeSpan>;
-
-    // /// Determines whether the specified <see cref="System.Object" /> is equal to this instance.
-    // ///
-    // /// # Arguments
-    // ///
-    // /// * `other` - The other instance to compare with this instance.
-    // ///
-    // /// # Returns
-    // ///
-    // /// `true` if the specified `other` is equal to this instance; otherwise, `false`
-    // ///
-    // fn equals(&self, other: &Self) -> bool {
-    //     self.eq(other)
-    // }
+    ) -> Option<Duration>;
 }
 
 pub trait ServiceBusRetryPolicyState {
