@@ -86,7 +86,6 @@ pub(crate) mod private {
         RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyState, SERVER_BUSY_BASE_SLEEP_TIME,
     };
 
-    /// TODO:
     #[async_trait]
     pub trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy {
         async fn run_operation<F, T1, Fut, S>(
