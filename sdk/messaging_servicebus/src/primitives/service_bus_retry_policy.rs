@@ -160,4 +160,6 @@ pub(crate) mod private {
             self.reset_server_busy()
         }
     }
+
+    impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy {}
 }
