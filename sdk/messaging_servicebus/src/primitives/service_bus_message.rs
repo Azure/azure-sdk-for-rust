@@ -3,12 +3,17 @@ use std::borrow::Cow;
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
-    messaging::{ApplicationProperties, Message},
+    messaging::{annotations::OwnedKey, ApplicationProperties, Message, MessageAnnotations},
     primitives::{Binary, Value},
 };
 use time::OffsetDateTime;
 
 use crate::amqp::{
+    amqp_message_constants::{
+        DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER, DEAD_LETTER_SOURCE_NAME,
+        ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME, LOCKED_UNTIL_NAME,
+        MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
+    },
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
     error::Error,
 };
@@ -48,7 +53,73 @@ where
 
 impl From<ServiceBusReceivedMessage> for ServiceBusMessage {
     fn from(received: ServiceBusReceivedMessage) -> Self {
-        todo!()
+        use fe2o3_amqp_types::messaging::Header;
+
+        let src = received.amqp_message;
+
+        // copy header except for delivery count which should be set to null
+        let header = src.header.map(|h| Header {
+            delivery_count: Default::default(), // null will give the default value
+            ..h
+        });
+
+        // copy delivery annotations
+        let delivery_annotations = src.delivery_annotations;
+
+        // copy message annotations except for broker set ones
+        let message_annotations = src.message_annotations.map(|MessageAnnotations(map)| {
+            let map = map
+                .into_iter()
+                .filter(|(k, _)| match k {
+                    OwnedKey::Symbol(kstr) => match kstr.as_str() {
+                        LOCKED_UNTIL_NAME
+                        | SEQUENCE_NUMBER_NAME
+                        | DEAD_LETTER_SOURCE_NAME
+                        | ENQUEUE_SEQUENCE_NUMBER_NAME
+                        | ENQUEUED_TIME_UTC_NAME
+                        | MESSAGE_STATE_NAME => false,
+                        _ => true,
+                    },
+                    OwnedKey::ULong(_) => true,
+                })
+                .collect();
+            MessageAnnotations(map)
+        });
+
+        // copy properties
+        let properties = src.properties;
+
+        // copy application properties except for broker set ones
+        let application_properties =
+            src.application_properties
+                .map(|ApplicationProperties(map)| {
+                    let map =
+                        map.into_iter()
+                            .filter(|(k, v)| match k.as_str() {
+                                DEAD_LETTER_REASON_HEADER
+                                | DEAD_LETTER_ERROR_DESCRIPTION_HEADER => false,
+                                _ => true,
+                            })
+                            .collect();
+                    ApplicationProperties(map)
+                });
+
+        let body = src.body;
+
+        // copy footer
+        let footer = src.footer;
+
+        let amqp_message = Message {
+            header,
+            delivery_annotations,
+            message_annotations,
+            properties,
+            application_properties,
+            body,
+            footer,
+        };
+
+        Self { amqp_message }
     }
 }
 
