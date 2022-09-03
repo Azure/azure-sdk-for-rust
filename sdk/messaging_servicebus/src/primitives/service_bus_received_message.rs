@@ -6,7 +6,7 @@ use fe2o3_amqp_types::{
     messaging::{
         annotations::AnnotationKey, ApplicationProperties, Header, Message, MessageAnnotations,
     },
-    primitives::{SimpleValue, Timestamp, Value},
+    primitives::{SimpleValue, Timestamp, Uuid, Value},
 };
 use time::OffsetDateTime;
 
@@ -40,7 +40,7 @@ pub struct ServiceBusReceivedMessage {
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
     pub(crate) amqp_message: Message<Value>, // TODO: Change to generics?
 
-    pub(crate) lock_token_uuid: uuid::Uuid,
+    pub(crate) lock_token_uuid: fe2o3_amqp_types::primitives::Uuid,
 
     pub(crate) partition_id: i16,
 }
@@ -278,8 +278,8 @@ impl ServiceBusReceivedMessage {
     /// The token can also be used to pin the lock permanently through the [Deferral
     /// API](https://docs.microsoft.com/azure/service-bus-messaging/message-deferral) and, with
     /// that, take the message out of the regular delivery state flow. This property is read-only.
-    pub fn lock_token(&self) -> &str {
-        todo!()
+    pub fn lock_token(&self) -> &Uuid {
+        &self.lock_token_uuid
     }
 
     /// Get the current delivery count.
