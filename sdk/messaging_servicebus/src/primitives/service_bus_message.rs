@@ -95,7 +95,7 @@ impl From<ServiceBusReceivedMessage> for ServiceBusMessage {
                 .map(|ApplicationProperties(map)| {
                     let map =
                         map.into_iter()
-                            .filter(|(k, v)| match k.as_str() {
+                            .filter(|(k, _)| match k.as_str() {
                                 DEAD_LETTER_REASON_HEADER
                                 | DEAD_LETTER_ERROR_DESCRIPTION_HEADER => false,
                                 _ => true,

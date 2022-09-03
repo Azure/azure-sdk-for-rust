@@ -3,18 +3,17 @@ use std::borrow::Cow;
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
-    definitions::SequenceNo,
     messaging::{
         annotations::AnnotationKey, ApplicationProperties, Header, Message, MessageAnnotations,
     },
-    primitives::{OrderedMap, SimpleValue, Timestamp, Value},
+    primitives::{SimpleValue, Timestamp, Value},
 };
 use time::OffsetDateTime;
 
 use crate::{
     amqp::{
         amqp_message_constants::{
-            self, DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
+            DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
             LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
