@@ -29,6 +29,7 @@ serde_amqp = "0.4.2"
 sha2 = "0.10"
 thiserror = "1.0"
 time = "0.3.10"
+tokio = {version = "1", features = ["time"]}
 tokio-util = "0.7.3"
 url = "2.2"
 uuid = "1"
