@@ -28,13 +28,15 @@ pub struct ServiceBusClient {
     options: ServiceBusClientOptions,
 
     /// Indicates whether or not this instance has been closed.
+    ///
+    /// TODO: use `ServiceBusConnection::is_closed`?
     closed: bool,
 
     /// The name used to identify this [`ServiceBusClient`]
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<InnerClient>,
+    connection: ServiceBusConnection,
 }
 
 impl ServiceBusClient {
@@ -62,7 +64,7 @@ impl ServiceBusClient {
 
     /// The transport type used for this [`ServiceBusClient`].
     pub fn transport_type(&self) -> &ServiceBusTransportType {
-        &self.connection.transport_type
+        &self.connection.transport_type()
     }
 
     /// <summary>

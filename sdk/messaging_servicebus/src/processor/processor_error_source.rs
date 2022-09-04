@@ -1,23 +1,24 @@
-/// <summary>The source of the error when <see cref="ProcessErrorEventArgs"/> is raised.</summary>
+/// The source of the error when [`ProcessErrorEventArgs`] is raised.
+#[derive(Debug, Clone)]
 pub enum ServiceBusErrorSource {
-    /// <summary>Message completion operation.</summary>
+    /// Message completion operation.
     Complete,
 
-    /// <summary>Message abandon operation.</summary>
+    /// Message abandon operation.
     Abandon,
 
-    /// <summary>Process message handler invocation.</summary>
+    /// Process message handler invocation.
     ProcessMessageCallback,
 
-    /// <summary>Message receive operation.</summary>
+    /// Message receive operation.
     Receive,
 
-    /// <summary>Lock renewal operation.</summary>
+    /// Lock renewal operation.
     RenewLock,
 
-    /// <summary>Session start operation.</summary>
+    /// Session start operation.
     AcceptSession,
 
-    /// <summary>Session close operation.</summary>
+    /// Session close operation.
     CloseSession,
 }
