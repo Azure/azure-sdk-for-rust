@@ -24,7 +24,7 @@ use super::{
 /// Calling <see cref="DisposeAsync" /> as the application is shutting down will ensure that network
 /// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
-pub struct ServiceBusClient<C: TransportClient> {
+pub struct ServiceBusClient {
     options: ServiceBusClientOptions,
 
     /// Indicates whether or not this instance has been closed.
@@ -34,10 +34,10 @@ pub struct ServiceBusClient<C: TransportClient> {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<C>,
+    connection: ServiceBusConnection<InnerClient>,
 }
 
-impl<C: TransportClient> ServiceBusClient<C> {
+impl ServiceBusClient {
     /// The fully qualified Service Bus namespace that the connection is associated with. This is
     /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
     ///

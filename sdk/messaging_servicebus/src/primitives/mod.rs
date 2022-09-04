@@ -11,3 +11,6 @@ pub mod service_bus_transport_type;
 pub mod sub_queue;
 
 pub(crate) mod inner_client;
+pub(crate) mod inner_receiver;
+pub(crate) mod inner_rule_manager;
+pub(crate) mod inner_sender;
