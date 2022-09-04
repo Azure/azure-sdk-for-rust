@@ -1,8 +1,6 @@
 use std::time::Duration;
 
-use crate::receiver::service_bus_receive_mode::ServiceBusReceiveMode;
-
-use super::service_bus_retry_policy::ServiceBusRetryPolicy;
+use super::service_bus_retry_mode::ServiceBusRetryMode;
 
 const DEFAULT_MAX_RETRIES: u8 = 3;
 const DEFAULT_DELAY: Duration = Duration::from_millis(800);
@@ -27,7 +25,7 @@ pub struct ServiceBusRetryOptions {
     /// # Value
     ///
     /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
-    mode: ServiceBusReceiveMode,
+    mode: ServiceBusRetryMode,
 
     /// The maximum number of retry attempts before considering the associated operation to have
     /// failed.
@@ -53,7 +51,13 @@ pub struct ServiceBusRetryOptions {
 
 impl Default for ServiceBusRetryOptions {
     fn default() -> Self {
-        todo!()
+        Self {
+            mode: ServiceBusRetryMode::default(),
+            max_retries: DEFAULT_MAX_RETRIES,
+            delay: DEFAULT_DELAY,
+            max_delay: DEFAULT_MAX_DELAY,
+            try_timeout: DEFAULT_TRY_TIMEOUT,
+        }
     }
 }
 
@@ -63,7 +67,7 @@ impl ServiceBusRetryOptions {
     /// # Value
     ///
     /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
-    pub fn mode(&self) -> &ServiceBusReceiveMode {
+    pub fn mode(&self) -> &ServiceBusRetryMode {
         &self.mode
     }
 
@@ -72,7 +76,7 @@ impl ServiceBusRetryOptions {
     /// # Value
     ///
     /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
-    pub fn set_mode(&mut self, mode: ServiceBusReceiveMode) {
+    pub fn set_mode(&mut self, mode: ServiceBusRetryMode) {
         self.mode = mode;
     }
 
