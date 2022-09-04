@@ -1,12 +1,11 @@
-/// <summary>
-///   The type of approach to apply when calculating the delay
-///   between retry attempts.
-/// </summary>
+/// The type of approach to apply when calculating the delay
+/// between retry attempts.
+#[derive(Debug)]
 pub enum ServiceBusRetryMode {
-    /// <summary>Retry attempts happen at fixed intervals; each delay is a consistent duration.</summary>
+    /// Retry attempts happen at fixed intervals; each delay is a consistent duration.
     Fixed,
 
-    /// <summary>Retry attempts will delay based on a backoff strategy, where each attempt will increase the duration that it waits before retrying.</summary>
+    /// Retry attempts will delay based on a backoff strategy, where each attempt will increase the duration that it waits before retrying.
     Exponential,
 }
 

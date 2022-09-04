@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use http::Uri;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -29,7 +28,7 @@ pub(crate) trait TransportClient {
     fn is_closed(&self) -> bool;
 
     /// The endpoint for the Service Bus service to which the client is associated.
-    fn service_endpoint(&self) -> &Uri;
+    fn service_endpoint(&self) -> &str;
 
     /// Creates a sender strongly aligned with the active protocol and transport,
     /// responsible for sending <see cref="ServiceBusMessage" /> to the entity.

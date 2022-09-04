@@ -87,7 +87,7 @@ pub(crate) mod private {
     };
 
     #[async_trait]
-    pub trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy {
+    pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy {
         async fn run_operation<F, T1, Fut, S>(
             &mut self,
             operation: F,
