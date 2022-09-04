@@ -21,10 +21,7 @@ pub enum OutOfRange<T> {
     GreaterThanAllowed { value: T, maximum_allowed: T },
 }
 
-pub struct ServiceBusRetryOptions<P>
-where
-    P: ServiceBusRetryPolicy,
-{
+pub struct ServiceBusRetryOptions {
     /// The approach to use for calculating retry delays.
     ///
     /// # Value
@@ -44,29 +41,23 @@ where
 
     /// The maximum duration to wait for an operation, per attempt.
     try_timeout: Duration,
-
-    /// A custom retry policy to be used in place of the individual option values.
-    ///
-    /// # Remarks
-    ///
-    /// When populated, this custom policy will take precedence over the individual retry options
-    /// provided.
-    policy: P,
+    //
+    // /// A custom retry policy to be used in place of the individual option values.
+    // ///
+    // /// # Remarks
+    // ///
+    // /// When populated, this custom policy will take precedence over the individual retry options
+    // /// provided.
+    // policy: P,
 }
 
-impl<P> Default for ServiceBusRetryOptions<P>
-where
-    P: ServiceBusRetryPolicy + Default,
-{
+impl Default for ServiceBusRetryOptions {
     fn default() -> Self {
         todo!()
     }
 }
 
-impl<P> ServiceBusRetryOptions<P>
-where
-    P: ServiceBusRetryPolicy,
-{
+impl ServiceBusRetryOptions {
     /// The approach to use for calculating retry delays.
     ///
     /// # Value
@@ -218,38 +209,38 @@ where
         }
     }
 
-    /// Get a reference to the current retry policy
-    pub fn policy(&self) -> &P {
-        &self.policy
-    }
+    // /// Get a reference to the current retry policy
+    // pub fn policy(&self) -> &P {
+    //     &self.policy
+    // }
 
-    /// Get a mutable reference to the current retri policy
-    pub fn policy_mut(&mut self) -> &mut P {
-        &mut self.policy
-    }
+    // /// Get a mutable reference to the current retri policy
+    // pub fn policy_mut(&mut self) -> &mut P {
+    //     &mut self.policy
+    // }
 
-    /// Set the retry policy
-    pub fn set_policy(&mut self, policy: P) {
-        self.policy = policy;
-    }
+    // /// Set the retry policy
+    // pub fn set_policy(&mut self, policy: P) {
+    //     self.policy = policy;
+    // }
 
-    /// A custom retry policy to be used in place of the individual option values.
-    ///
-    /// # Remarks
-    ///
-    /// When populated, this custom policy will take precedence over the individual retry
-    /// options provided.
-    pub fn custom_retry_policy<Q>(self, policy: Q) -> ServiceBusRetryOptions<Q>
-    where
-        Q: ServiceBusRetryPolicy,
-    {
-        ServiceBusRetryOptions {
-            mode: self.mode,
-            max_retries: self.max_retries,
-            delay: self.delay,
-            max_delay: self.max_delay,
-            try_timeout: self.try_timeout,
-            policy,
-        }
-    }
+    // /// A custom retry policy to be used in place of the individual option values.
+    // ///
+    // /// # Remarks
+    // ///
+    // /// When populated, this custom policy will take precedence over the individual retry
+    // /// options provided.
+    // pub fn custom_retry_policy<Q>(self, policy: Q) -> ServiceBusRetryOptions<Q>
+    // where
+    //     Q: ServiceBusRetryPolicy,
+    // {
+    //     ServiceBusRetryOptions {
+    //         mode: self.mode,
+    //         max_retries: self.max_retries,
+    //         delay: self.delay,
+    //         max_delay: self.max_delay,
+    //         try_timeout: self.try_timeout,
+    //         policy,
+    //     }
+    // }
 }
