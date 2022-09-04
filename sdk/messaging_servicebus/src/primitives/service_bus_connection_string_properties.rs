@@ -1,5 +1,3 @@
-use std::{borrow::Cow, io::Cursor};
-
 use azure_core::Url;
 
 #[derive(Debug, thiserror::Error)]
@@ -14,11 +12,11 @@ pub enum ParseError {
 /// The set of properties that comprise a Service Bus connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ServiceBusConnectionStringProperties<'a> {
-    endpoint: url::Url,
-    entity_path: &'a str,
-    shared_access_key_name: &'a str,
-    shared_access_key: &'a str,
-    shared_access_signature: &'a str,
+    pub(crate) endpoint: url::Url,
+    pub(crate) entity_path: &'a str,
+    pub(crate) shared_access_key_name: &'a str,
+    pub(crate) shared_access_key: &'a str,
+    pub(crate) shared_access_signature: &'a str,
 }
 
 impl<'a> ServiceBusConnectionStringProperties<'a> {
@@ -46,8 +44,49 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     /// The token that identifies the value of a shared access signature.
     const SHARED_ACCESS_SIGNATURE_TOKEN: &'static str = "SharedAccessSignature";
 
-    // /// The formatted protocol used by an Service Bus endpoint.
-    // const SERVICE_BUS_ENDPOINT_SCHEME: &'static str = "sb://";
+    /// The fully qualified Service Bus namespace that the consumer is associated with.  This is
+    /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
+    ///
+    /// # Value
+    ///
+    /// The namespace of the Service Bus, as derived from the endpoint address of the connection
+    /// string.
+    pub fn fully_qualified_namespace(&self) -> Option<&str> {
+        self.endpoint.host_str()
+    }
+
+    /// The endpoint to be used for connecting to the Service Bus namespace.
+    ///
+    /// # Value
+    ///
+    /// The endpoint address, including protocol, from the connection string.
+    pub fn endpoint(&self) -> &Url {
+        &self.endpoint
+    }
+
+    /// The name of the specific Service Bus entity instance under the associated Service Bus
+    /// namespace.
+    pub fn entity_path(&self) -> &str {
+        self.entity_path
+    }
+
+    /// The name of the shared access key, either for the Service Bus namespace or the Service Bus
+    /// entity.
+    pub fn shared_access_key_name(&self) -> &str {
+        self.shared_access_key_name
+    }
+
+    /// The value of the shared access key, either for the Service Bus namespace or the Service Bus
+    /// entity.
+    pub fn shared_access_key(&self) -> &str {
+        self.shared_access_key
+    }
+
+    /// The value of the fully-formed shared access signature, either for the Service Bus namespace
+    /// or the Service Bus entity.
+    pub fn shared_access_signature(&self) -> &str {
+        self.shared_access_signature
+    }
 
     /// <summary>
     ///   Creates an Service Bus connection string based on this set of <see cref="ServiceBusConnectionStringProperties" />.
