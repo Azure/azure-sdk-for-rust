@@ -4,23 +4,36 @@ use crate::receiver::service_bus_receive_mode::ServiceBusReceiveMode;
 
 use super::service_bus_retry_policy::ServiceBusRetryPolicy;
 
-const MAX_RETRIES: u8 = 100;
 const DEFAULT_MAX_RETRIES: u8 = 3;
 const DEFAULT_DELAY: Duration = Duration::from_millis(800);
 const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
 const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
 
+const RETRIES_MIN: u8 = 0;
+const RETRIES_MAX: u8 = 100;
+const DELAY_MIN: Duration = Duration::from_millis(1);
+const DELAY_MAX: Duration = Duration::from_secs(5 * 60);
+const TRY_TIMEOUT_MIN: Duration = Duration::ZERO;
+const TRY_TIMEOUT_MAX: Duration = Duration::from_secs(1 * 60 * 60); // 1 Hour
+
+pub enum OutOfRange<T> {
+    LessThanAllowed { value: T, minimum_allowed: T },
+    GreaterThanAllowed { value: T, maximum_allowed: T },
+}
+
 pub struct ServiceBusRetryOptions<P>
 where
     P: ServiceBusRetryPolicy,
 {
-    /// <summary>
-    ///   The approach to use for calculating retry delays.
-    /// </summary>
-    /// <value>The default retry mode is <see cref="ServiceBusRetryMode.Exponential"/>.</value>
+    /// The approach to use for calculating retry delays.
+    ///
+    /// # Value
+    ///
+    /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
     mode: ServiceBusReceiveMode,
 
-    /// The maximum number of retry attempts before considering the associated operation to have failed.
+    /// The maximum number of retry attempts before considering the associated operation to have
+    /// failed.
     max_retries: u8,
 
     /// The delay or backoff factor to apply between retry attempts.
@@ -32,74 +45,211 @@ where
     /// The maximum duration to wait for an operation, per attempt.
     try_timeout: Duration,
 
-    /// <summary>
-    ///   A custom retry policy to be used in place of the individual option values.
-    /// </summary>
+    /// A custom retry policy to be used in place of the individual option values.
     ///
-    /// <remarks>
-    ///   When populated, this custom policy will take precedence over the individual retry
-    ///   options provided.
-    /// </remarks>
+    /// # Remarks
+    ///
+    /// When populated, this custom policy will take precedence over the individual retry options
+    /// provided.
     policy: P,
+}
+
+impl<P> Default for ServiceBusRetryOptions<P>
+where
+    P: ServiceBusRetryPolicy + Default,
+{
+    fn default() -> Self {
+        todo!()
+    }
 }
 
 impl<P> ServiceBusRetryOptions<P>
 where
     P: ServiceBusRetryPolicy,
 {
+    /// The approach to use for calculating retry delays.
+    ///
+    /// # Value
+    ///
+    /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
     pub fn mode(&self) -> &ServiceBusReceiveMode {
-        todo!()
+        &self.mode
     }
 
+    /// The approach to use for calculating retry delays.
+    ///
+    /// # Value
+    ///
+    /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
     pub fn set_mode(&mut self, mode: ServiceBusReceiveMode) {
-        todo!()
+        self.mode = mode;
     }
 
+    /// The maximum number of retry attempts before considering the associated operation to have
+    /// failed.
+    ///
+    /// # Value
+    ///
+    /// The default retry limit is 3.
     pub fn max_retries(&self) -> u8 {
         self.max_retries
     }
 
-    pub fn set_max_retries(&mut self, value: u8) {
-        let value = u8::min(MAX_RETRIES, value);
-        self.max_retries = value;
+    /// The maximum number of retry attempts before considering the associated operation to have
+    /// failed.
+    ///
+    /// # Value
+    ///
+    /// The default retry limit is 3.
+    ///
+    /// # Error
+    ///
+    /// Returns `Err(OutOfRange)` when the requested number of retries is not between 0 and
+    /// 100 (inclusive).
+    pub fn set_max_retries(&mut self, value: u8) -> Result<(), OutOfRange<u8>> {
+        if value < RETRIES_MIN {
+            Err(OutOfRange::LessThanAllowed {
+                value,
+                minimum_allowed: RETRIES_MIN,
+            })
+        } else if value > RETRIES_MAX {
+            Err(OutOfRange::GreaterThanAllowed {
+                value,
+                maximum_allowed: RETRIES_MAX,
+            })
+        } else {
+            self.max_retries = value;
+            Ok(())
+        }
     }
 
+    /// The delay between retry attempts for a fixed approach or the delay on which to base
+    /// calculations for a backoff-based approach.
+    ///
+    /// # Value
+    ///
+    /// The default delay is 0.8 seconds.
     pub fn delay(&self) -> &Duration {
-        todo!()
+        &self.delay
     }
 
-    pub fn set_delay(&mut self, value: Duration) {
-        todo!()
+    /// The delay between retry attempts for a fixed approach or the delay on which to base
+    /// calculations for a backoff-based approach.
+    ///
+    /// # Value
+    ///
+    /// The default delay is 0.8 seconds.
+    ///
+    /// # Error
+    ///
+    /// Returns `Err(OutOfRange)` when the requested delay is not between 1 millisecond and 5
+    /// minutes (inclusive).
+    pub fn set_delay(&mut self, value: Duration) -> Result<(), OutOfRange<Duration>> {
+        if value < DELAY_MIN {
+            Err(OutOfRange::LessThanAllowed {
+                value,
+                minimum_allowed: DELAY_MIN,
+            })
+        } else if value > DELAY_MAX {
+            Err(OutOfRange::GreaterThanAllowed {
+                value,
+                maximum_allowed: DELAY_MAX,
+            })
+        } else {
+            self.delay = value;
+            Ok(())
+        }
     }
 
+    /// The maximum permissible delay between retry attempts.
+    ///
+    /// # Value
+    ///
+    /// The default maximum delay is 60 seconds.
     pub fn max_delay(&self) -> &Duration {
-        todo!()
+        &self.max_delay
     }
 
+    /// The maximum permissible delay between retry attempts.
+    ///
+    /// # Value
+    ///
+    /// The default maximum delay is 60 seconds.
     pub fn set_max_delay(&mut self, value: Duration) {
-        todo!()
+        // `std::time::Duration` is already non-negative
+        self.max_delay = value;
     }
 
+    /// The maximum duration to wait for completion of a single attempt, whether the initial attempt
+    /// or a retry.
+    ///
+    /// # Value
+    ///
+    /// The default timeout is 60 seconds.
     pub fn try_timeout(&self) -> &Duration {
-        todo!()
+        &self.try_timeout
     }
 
-    pub fn set_try_timeout(&mut self, value: Duration) {
-        todo!()
+    /// The maximum duration to wait for completion of a single attempt, whether the initial attempt
+    /// or a retry.
+    ///
+    /// # Value
+    ///
+    /// The default timeout is 60 seconds.
+    ///
+    /// # Error
+    ///
+    /// Returns `Err(OutOfRange)`  when the requested timeout is not between [`Duratino::ZERO`] and
+    /// 1 hour (inclusive)
+    pub fn set_try_timeout(&mut self, value: Duration) -> Result<(), OutOfRange<Duration>> {
+        if value < TRY_TIMEOUT_MIN {
+            Err(OutOfRange::LessThanAllowed {
+                value,
+                minimum_allowed: TRY_TIMEOUT_MIN,
+            })
+        } else if value > TRY_TIMEOUT_MAX {
+            Err(OutOfRange::GreaterThanAllowed {
+                value,
+                maximum_allowed: TRY_TIMEOUT_MAX,
+            })
+        } else {
+            self.try_timeout = value;
+            Ok(())
+        }
     }
 
+    /// Get a reference to the current retry policy
     pub fn policy(&self) -> &P {
-        todo!()
+        &self.policy
     }
 
+    /// Get a mutable reference to the current retri policy
+    pub fn policy_mut(&mut self) -> &mut P {
+        &mut self.policy
+    }
+
+    /// Set the retry policy
     pub fn set_policy(&mut self, policy: P) {
-        todo!()
+        self.policy = policy;
     }
 
-    pub fn set_custom_policy<Q>(self, policy: Q) -> ServiceBusRetryOptions<Q>
+    /// A custom retry policy to be used in place of the individual option values.
+    ///
+    /// # Remarks
+    ///
+    /// When populated, this custom policy will take precedence over the individual retry
+    /// options provided.
+    pub fn custom_retry_policy<Q>(self, policy: Q) -> ServiceBusRetryOptions<Q>
     where
         Q: ServiceBusRetryPolicy,
     {
-        todo!()
+        ServiceBusRetryOptions {
+            mode: self.mode,
+            max_retries: self.max_retries,
+            delay: self.delay,
+            max_delay: self.max_delay,
+            try_timeout: self.try_timeout,
+            policy,
+        }
     }
 }
