@@ -13,10 +13,10 @@ pub enum ParseError {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ServiceBusConnectionStringProperties<'a> {
     pub(crate) endpoint: url::Url,
-    pub(crate) entity_path: &'a str,
-    pub(crate) shared_access_key_name: &'a str,
-    pub(crate) shared_access_key: &'a str,
-    pub(crate) shared_access_signature: &'a str,
+    pub(crate) entity_path: Option<&'a str>,
+    pub(crate) shared_access_key_name: Option<&'a str>,
+    pub(crate) shared_access_key: Option<&'a str>,
+    pub(crate) shared_access_signature: Option<&'a str>,
 }
 
 impl<'a> ServiceBusConnectionStringProperties<'a> {
@@ -66,25 +66,25 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
     /// The name of the specific Service Bus entity instance under the associated Service Bus
     /// namespace.
-    pub fn entity_path(&self) -> &str {
+    pub fn entity_path(&self) -> Option<&str> {
         self.entity_path
     }
 
     /// The name of the shared access key, either for the Service Bus namespace or the Service Bus
     /// entity.
-    pub fn shared_access_key_name(&self) -> &str {
+    pub fn shared_access_key_name(&self) -> Option<&str> {
         self.shared_access_key_name
     }
 
     /// The value of the shared access key, either for the Service Bus namespace or the Service Bus
     /// entity.
-    pub fn shared_access_key(&self) -> &str {
+    pub fn shared_access_key(&self) -> Option<&str> {
         self.shared_access_key
     }
 
     /// The value of the fully-formed shared access signature, either for the Service Bus namespace
     /// or the Service Bus entity.
-    pub fn shared_access_signature(&self) -> &str {
+    pub fn shared_access_signature(&self) -> Option<&str> {
         self.shared_access_signature
     }
 
@@ -99,19 +99,68 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     ///
     ///
     pub fn to_connection_string(&self) -> String {
-        todo!()
+        let mut s = String::new();
+
+        s.push_str(Self::ENDPOINT_TOKEN);
+        s.push(Self::TOKEN_VALUE_SEPARATOR);
+        s.push_str(self.endpoint.as_str());
+        s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+
+        if let Some(entity_path) = self.entity_path.and_then(|s| match !s.is_empty() {
+            true => Some(s),
+            false => None,
+        }) {
+            s.push_str(Self::ENTITY_PATH_TOKEN);
+            s.push(Self::TOKEN_VALUE_SEPARATOR);
+            s.push_str(entity_path);
+            s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+        }
+
+        if let Some(shared_access_signature) =
+            self.shared_access_signature
+                .and_then(|s| match !s.is_empty() {
+                    true => Some(s),
+                    false => None,
+                })
+        {
+            s.push_str(Self::SHARED_ACCESS_SIGNATURE_TOKEN);
+            s.push(Self::TOKEN_VALUE_SEPARATOR);
+            s.push_str(shared_access_signature);
+            s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+        } else {
+            match (self.shared_access_key_name, self.shared_access_key) {
+                (Some(key_name), Some(key)) if !key_name.is_empty() && !key.is_empty() => {
+                    s.push_str(Self::SHARED_ACCESS_KEY_NAME_TOKEN);
+                    s.push(Self::TOKEN_VALUE_SEPARATOR);
+                    s.push_str(key_name);
+                    s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+                    s.push_str(Self::SHARED_ACCESS_KEY_VALUE_TOKEN);
+                    s.push(Self::TOKEN_VALUE_SEPARATOR);
+                    s.push_str(key);
+                    s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+                }
+                _ => {}
+            }
+        }
+
+        s
     }
 
-    /// <summary>
-    ///   Parses the specified Service Bus connection string into its component properties.
-    /// </summary>
+    /// Parses the specified Service Bus connection string into its component properties.
     ///
-    /// <param name="connectionString">The connection string to parse.</param>
+    /// # Arguments
     ///
-    /// <returns>The component properties parsed from the connection string.</returns>
+    /// * `connection_string` - The connection string to parse.
     ///
-    /// <exception cref="FormatException">The specified connection string was malformed and could not be parsed.</exception>
+    /// # Returns
     ///
+    /// ## `Ok`
+    ///
+    /// The component properties parsed from the connection string.
+    ///
+    /// ## `Err`
+    ///
+    /// Returns `Err(_)` if the specified connection string was malformed and could not be parsed.
     pub fn parse(connection_string: &'a str) -> Result<Self, ParseError> {
         if connection_string.is_empty() {
             return Err(ParseError::ConnectionStringIsEmpty);
@@ -163,12 +212,10 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
         Ok(Self {
             endpoint: endpoint.ok_or(ParseError::InvalidConnectionString)?,
-            entity_path: entity_path.ok_or(ParseError::InvalidConnectionString)?,
-            shared_access_key_name: shared_access_key_name
-                .ok_or(ParseError::InvalidConnectionString)?,
-            shared_access_key: shared_access_key.ok_or(ParseError::InvalidConnectionString)?,
-            shared_access_signature: shared_access_signature
-                .ok_or(ParseError::InvalidConnectionString)?,
+            entity_path,
+            shared_access_key_name,
+            shared_access_key,
+            shared_access_signature,
         })
     }
 }
