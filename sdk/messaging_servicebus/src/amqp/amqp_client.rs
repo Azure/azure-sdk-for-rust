@@ -2,7 +2,12 @@ use std::time::Duration;
 
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 
-use super::amqp_connection_scope::AmqpConnectionScope;
+use crate::core::TransportClient;
+
+use super::{
+    amqp_connection_scope::AmqpConnectionScope, amqp_receiver::AmqpReceiver,
+    amqp_rule_manager::AmqpRuleManager, amqp_sender::AmqpSender,
+};
 
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
 
@@ -55,4 +60,71 @@ where
 
     // public override ServiceBusTransportMetrics TransportMetrics { get; }
     transport_metrics: (),
+}
+
+impl<C: TokenCredential> TransportClient for AmqpClient<C> {
+    type Error = ();
+
+    type Sender = AmqpSender;
+
+    type Receiver = AmqpReceiver;
+
+    type RuleManager = AmqpRuleManager;
+
+    fn is_closed(&self) -> bool {
+        todo!()
+    }
+
+    fn service_endpoint(&self) -> &str {
+        todo!()
+    }
+
+    fn create_sender(
+        &mut self,
+        entity_path: impl Into<String>,
+        retry_policy: impl crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicy,
+        identifier: impl Into<String>,
+    ) -> Result<Self::Sender, Self::Error> {
+        todo!()
+    }
+
+    fn create_receiver(
+        &mut self,
+        entity_path: impl Into<String>,
+        retry_policy: impl crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicy,
+        receive_mode: crate::receiver::service_bus_receive_mode::ServiceBusReceiveMode,
+        prefetch_count: u32,
+        identifier: impl Into<String>,
+        session_id: impl Into<String>,
+        is_session_receiver: bool,
+        is_processor: bool,
+    ) -> Result<Self::Receiver, Self::Error> {
+        todo!()
+    }
+
+    fn create_rule_manager(
+        &mut self,
+        subscription_path: impl Into<String>,
+        retry_policy: impl crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicy,
+        identifier: impl Into<String>,
+    ) -> Result<Self::RuleManager, Self::Error> {
+        todo!()
+    }
+
+    fn close<'life0, 'async_trait>(
+        &'life0 mut self,
+        cancellation_token: impl 'async_trait + Into<Option<tokio_util::sync::CancellationToken>>,
+    ) -> core::pin::Pin<
+        Box<
+            dyn core::future::Future<Output = Result<(), Self::Error>>
+                + core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        Self: 'async_trait,
+    {
+        todo!()
+    }
 }

@@ -1,18 +1,22 @@
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
-use crate::administration::RuleProperties;
+use crate::{administration::RuleProperties, core::TransportRuleManager};
+
+pub struct AmqpRuleManager {}
 
 #[async_trait]
-pub(crate) trait TransportRuleManager {
-    type Error: Send;
+impl TransportRuleManager for AmqpRuleManager {
+    type Error = ();
 
     /// Indicates whether or not this rule manager has been closed.
     ///
     /// # Return
     ///
     /// `true` if the rule manager is closed; otherwise, `false`.
-    fn is_closed(&self) -> bool;
+    fn is_closed(&self) -> bool {
+        todo!()
+    }
 
     /// Adds a rule to the current subscription to filter the messages reaching from topic to the
     /// subscription.
@@ -30,7 +34,9 @@ pub(crate) trait TransportRuleManager {
         &mut self,
         properties: RuleProperties,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
     ///
@@ -47,7 +53,9 @@ pub(crate) trait TransportRuleManager {
         &mut self,
         rule_name: impl Into<String> + Send,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     /// Get all rules associated with the subscription.
     ///
@@ -66,7 +74,9 @@ pub(crate) trait TransportRuleManager {
         skip: i32,
         top: i32,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<Vec<RuleProperties>, Self::Error>;
+    ) -> Result<Vec<RuleProperties>, Self::Error> {
+        todo!()
+    }
 
     /// Closes the connection to the transport rule manager instance.
     ///
@@ -77,5 +87,7 @@ pub(crate) trait TransportRuleManager {
     async fn close(
         &mut self,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 }

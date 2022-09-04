@@ -1,15 +1,15 @@
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
-use crate::{CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch};
+use crate::{
+    core::TransportSender, CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
+};
 
-/// Provides an abstraction for generalizing an Service Bus entity Producer so that a dedicated instance may provide operations
-/// for a specific transport, such as AMQP or JMS.  It is intended that the public <see cref="ServiceBusSender" /> employ
-/// a transport producer via containment and delegate operations to it rather than understanding protocol-specific details
-/// for different transports.
+pub struct AmqpSender {}
+
 #[async_trait]
-pub trait TransportSender {
-    type Error: Send;
+impl TransportSender for AmqpSender {
+    type Error = ();
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -31,7 +31,9 @@ pub trait TransportSender {
         &mut self,
         options: CreateMessageBatchOptions,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
     /// the size of the messages exceed the maximum size of a single batch, an exception will be
@@ -47,7 +49,9 @@ pub trait TransportSender {
         &mut self,
         messages: impl Iterator<Item = &ServiceBusMessage> + Send,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     /// Sends a <see cref="ServiceBusMessageBatch"/> to the associated Queue/Topic.
     ///
@@ -64,19 +68,25 @@ pub trait TransportSender {
         &mut self,
         message_batch: ServiceBusMessageBatch,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = &ServiceBusMessage> + Send,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<Vec<i64>, Self::Error>;
+    ) -> Result<Vec<i64>, Self::Error> {
+        todo!()
+    }
 
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: &[i64],
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     /// Closes the connection to the transport producer instance.
     ///
@@ -87,5 +97,7 @@ pub trait TransportSender {
     async fn close(
         &mut self,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error> {
+        todo!()
+    }
 }
