@@ -9,6 +9,12 @@ use super::{
     service_bus_transport_type::ServiceBusTransportType,
 };
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Argument error: {}", .0)]
+    ArgumentError(String),
+}
+
 /// A connection to the Azure Service Bus service, enabling client communications with a specific
 /// Service Bus entity instance within a Service Bus namespace. There is a one-to-one correspondence
 /// between [`ServiceBusClient`] and [`ServiceBusConnection`] instances.
@@ -66,7 +72,7 @@ impl ServiceBusConnection {
     pub(crate) async fn open(
         connection_string: impl Into<String>,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, ServiceBusError> {
+    ) -> Result<Self, Error> {
         todo!()
     }
 }
