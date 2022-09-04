@@ -224,10 +224,96 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 mod tests {
     use azure_core::Url;
 
+    use super::ServiceBusConnectionStringProperties;
+
+    const ENDPOINT: &str = "test.endpoint.com";
+    const EVENT_HUB: &str = "some-path";
+    const SAS_KEY: &str = "sasKey";
+    const SAS_KEY_NAME: &str = "sasName";
+    const SAS: &str = "fullsas";
+
+    /// Provides the reordered token test cases for the <see
+    /// cref="ServiceBusConnectionStringProperties.Parse" /> tests.
+    fn random_ordering_connection_string_cases() -> Vec<String> {
+        vec![
+            format!(
+                "Endpoint=sb://{};SharedAccessKeyName={};SharedAccessKey={};EntityPath={}",
+                ENDPOINT, SAS_KEY_NAME, SAS_KEY, EVENT_HUB
+            ),
+            format!(
+                "Endpoint=sb://{};SharedAccessKey={};EntityPath={};SharedAccessKeyName={}",
+                ENDPOINT, SAS_KEY, EVENT_HUB, SAS_KEY_NAME,
+            ),
+            format!(
+                "Endpoint=sb://{};EntityPath={};SharedAccessKeyName={};SharedAccessKey={}",
+                EVENT_HUB, ENDPOINT, SAS_KEY_NAME, SAS_KEY
+            ),
+            format!(
+                "SharedAccessKeyName={};SharedAccessKey={};Endpoint=sb://{};EntityPath={}",
+                SAS_KEY_NAME, SAS_KEY, ENDPOINT, EVENT_HUB
+            ),
+            format!(
+                "EntityPath={};SharedAccessKey={};SharedAccessKeyName={};Endpoint=sb://{}",
+                EVENT_HUB, SAS_KEY, SAS_KEY_NAME, ENDPOINT
+            ),
+            format!(
+                "EntityPath={};SharedAccessSignature={};Endpoint=sb://{}",
+                EVENT_HUB, SAS, ENDPOINT,
+            ),
+            format!(
+                "SharedAccessKeyName={};SharedAccessKey={};Endpoint=sb://{};EntityPath={};SharedAccessSignature={}",
+                SAS_KEY_NAME, SAS_KEY, ENDPOINT, EVENT_HUB, SAS
+            ),
+        ]
+    }
+
+    /// <summary>
+    ///   Provides the reordered token test cases for the <see cref="ServiceBusConnectionStringProperties.Parse" /> tests.
+    /// </summary>
+    ///
+    fn partial_connection_string_cases() -> Vec<String> {
+        vec![
+            format!("Endpoint=sb://{}", ENDPOINT),
+            format!("SharedAccessKey={}", SAS_KEY),
+            format!(
+                "EntityPath={};SharedAccessKeyName={}",
+                EVENT_HUB, SAS_KEY_NAME
+            ),
+            format!(
+                "SharedAccessKeyName={};SharedAccessKey={}",
+                SAS_KEY_NAME, SAS_KEY
+            ),
+            format!(
+                "EntityPath={};SharedAccessKey={};SharedAccessKeyName={}",
+                EVENT_HUB, SAS_KEY, SAS_KEY_NAME
+            ),
+            format!("SharedAccessKeyName={};SharedAccessSignature={}", "", SAS),
+            format!("EntityPath={};SharedAccessSignature={}", EVENT_HUB, SAS),
+            format!(
+                "EntityPath={};SharedAccessKey={};SharedAccessKeyName={};SharedAccessSignature={}",
+                EVENT_HUB, SAS_KEY, SAS_KEY_NAME, SAS
+            ),
+        ]
+    }
+
+    /// Verifies functionality of the [`ServiceBusConnectionStringProperties::parse`]
+    /// method.
     #[test]
-    fn test_parsing_endpoint_as_url() {
-        let connection_endpoint = "sb://fe2o3-amqp-example.servicebus.windows.net/";
-        let url = Url::parse(&connection_endpoint).unwrap();
-        println!("{:?}", url.host_str());
+    fn parse_correctly_parses_a_namespace_connection_string() {
+        let endpoint = "test.endpoint.com";
+        let sas_key = "sasKey";
+        let sas_key_name = "sasName";
+        let shared_access_signature = "fakeSAS";
+        let connection_string = format!("Endpoint=sb://{endpoint};SharedAccessKeyName={sas_key_name};SharedAccessKey={sas_key};SharedAccessSignature={shared_access_signature}");
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+        assert_eq!(parsed.endpoint().host_str(), Some(endpoint));
+        assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
+        assert_eq!(parsed.shared_access_key(), Some(sas_key));
+        assert_eq!(
+            parsed.shared_access_signature(),
+            Some(shared_access_signature)
+        );
+        assert_eq!(parsed.entity_path(), None);
     }
 }
