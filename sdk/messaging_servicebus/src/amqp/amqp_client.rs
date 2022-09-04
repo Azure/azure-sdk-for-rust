@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 
+use super::amqp_connection_scope::AmqpConnectionScope;
+
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
 
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
@@ -49,7 +51,7 @@ where
     /// </summary>
     ///
     // private AmqpConnectionScope ConnectionScope { get; }
-    connection_scope: (),
+    connection_scope: AmqpConnectionScope,
 
     // public override ServiceBusTransportMetrics TransportMetrics { get; }
     transport_metrics: (),

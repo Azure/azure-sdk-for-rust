@@ -1,5 +1,8 @@
 use std::time::Duration;
 
+use async_trait::async_trait;
+
+#[async_trait]
 pub(crate) trait TransportConnectionScope {
     /// Indicates whether this <see cref="TransportConnectionScope"/> has been disposed.
     ///
@@ -16,5 +19,5 @@ pub(crate) trait TransportConnectionScope {
     }
 
     /// Disposes of the connection scope.
-    fn dispose(&mut self);
+    async fn dispose(&mut self);
 }
