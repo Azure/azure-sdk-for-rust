@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
+use azure_core::{
+    auth::{AccessToken, TokenCredential, TokenResponse},
+    Url,
+};
 
 use crate::core::TransportClient;
 
@@ -37,13 +40,13 @@ where
     ///   The endpoint for the Service Bus service to which the client is associated.
     /// </summary>
     ///
-    service_endpoint: String, // TODO: Uri?
+    service_endpoint: Url,
 
     /// <summary>
     ///   The endpoint for the Service Bus service to be used when establishing the connection.
     /// </summary>
     ///
-    connection_endpoint: String, // TODO: Uri?
+    connection_endpoint: Url,
 
     /// <summary>
     ///   Gets the credential to use for authorization with the Service Bus service.
@@ -75,7 +78,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
         todo!()
     }
 
-    fn service_endpoint(&self) -> &str {
+    fn service_endpoint(&self) -> &Url {
         todo!()
     }
 

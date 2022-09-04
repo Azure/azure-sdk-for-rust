@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
+use azure_core::Url;
 use fe2o3_amqp::{
     connection::ConnectionHandle,
     session::SessionHandle,
@@ -38,7 +39,7 @@ pub(crate) struct AmqpConnectionScope {
     id: String,
 
     /// The endpoint for the Service Bus service to which the scope is associated.
-    service_endpoint: String,
+    service_endpoint: Url,
 
     /// The provider to use for obtaining a token for authorization with the Service Bus service.
     cbs_token_provider: CbsTokenProvider,

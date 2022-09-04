@@ -1,3 +1,5 @@
+use azure_core::Url;
+
 use crate::primitives::{
     service_bus_retry_options::ServiceBusRetryOptions,
     service_bus_transport_type::ServiceBusTransportType,
@@ -25,7 +27,7 @@ pub struct ServiceBusClientOptions {
     /// Service Bus namespace when establishing the connection. The connection string or fully
     /// qualified namespace will still be needed in order to validate the connection with the
     /// service.
-    pub custom_endpoint_address: Option<String>,
+    pub custom_endpoint_address: Option<Url>,
 
     /// The set of options to use for determining whether a failed operation should be retried and,
     /// if so, the amount of time to wait between retry attempts.  These options also control the

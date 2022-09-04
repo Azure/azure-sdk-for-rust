@@ -1,3 +1,5 @@
+use azure_core::Url;
+
 use crate::{
     amqp::amqp_client::AmqpClient, client::service_bus_client_options::ServiceBusClientOptions,
     core::TransportClient,
@@ -55,7 +57,7 @@ impl ServiceBusConnection {
     /// The endpoint for the Service Bus service to which the connection is associated.
     /// This is essentially the <see cref="FullyQualifiedNamespace"/> but with
     /// the scheme included.
-    pub(crate) fn service_endpoint(&self) -> &str {
+    pub(crate) fn service_endpoint(&self) -> &Url {
         self.inner_client.service_endpoint()
     }
 

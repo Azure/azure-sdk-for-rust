@@ -1,3 +1,5 @@
+use azure_core::Url;
+
 use crate::core::TransportClient;
 
 use super::{
@@ -20,7 +22,7 @@ impl TransportClient for InnerClient {
         todo!()
     }
 
-    fn service_endpoint(&self) -> &str {
+    fn service_endpoint(&self) -> &Url {
         todo!()
     }
 

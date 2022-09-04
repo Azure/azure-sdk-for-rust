@@ -46,8 +46,8 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     /// The token that identifies the value of a shared access signature.
     const SHARED_ACCESS_SIGNATURE_TOKEN: &'static str = "SharedAccessSignature";
 
-    /// The formatted protocol used by an Service Bus endpoint.
-    const SERVICE_BUS_ENDPOINT_SCHEME: &'static str = "sb://";
+    // /// The formatted protocol used by an Service Bus endpoint.
+    // const SERVICE_BUS_ENDPOINT_SCHEME: &'static str = "sb://";
 
     /// <summary>
     ///   Creates an Service Bus connection string based on this set of <see cref="ServiceBusConnectionStringProperties" />.
@@ -106,7 +106,14 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
             // Compare the token against the known connection string properties and capture the
             // pair if they are a known attribute.
             match token {
-                Self::ENDPOINT_TOKEN => todo!(),
+                Self::ENDPOINT_TOKEN => {
+                    // TODO: What about the port?
+                    let url = Url::parse(value).map_err(|_| ParseError::InvalidConnectionString)?;
+                    if url.scheme() != Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME {
+                        return Err(ParseError::InvalidConnectionString);
+                    }
+                    endpoint = Some(url);
+                }
                 Self::ENTITY_PATH_TOKEN => entity_path = Some(value),
                 Self::SHARED_ACCESS_KEY_NAME_TOKEN => shared_access_key_name = Some(value),
                 Self::SHARED_ACCESS_KEY_VALUE_TOKEN => shared_access_key = Some(value),
@@ -114,7 +121,16 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
                 _ => {}
             }
         }
-        todo!()
+
+        Ok(Self {
+            endpoint: endpoint.ok_or(ParseError::InvalidConnectionString)?,
+            entity_path: entity_path.ok_or(ParseError::InvalidConnectionString)?,
+            shared_access_key_name: shared_access_key_name
+                .ok_or(ParseError::InvalidConnectionString)?,
+            shared_access_key: shared_access_key.ok_or(ParseError::InvalidConnectionString)?,
+            shared_access_signature: shared_access_signature
+                .ok_or(ParseError::InvalidConnectionString)?,
+        })
     }
 }
 
@@ -126,6 +142,6 @@ mod tests {
     fn test_parsing_endpoint_as_url() {
         let connection_endpoint = "sb://fe2o3-amqp-example.servicebus.windows.net/";
         let url = Url::parse(&connection_endpoint).unwrap();
-        println!("{:?}", url);
+        println!("{:?}", url.host_str());
     }
 }
