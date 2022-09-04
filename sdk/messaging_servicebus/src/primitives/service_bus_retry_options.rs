@@ -2,11 +2,6 @@ use std::time::Duration;
 
 use super::service_bus_retry_mode::ServiceBusRetryMode;
 
-const DEFAULT_MAX_RETRIES: u8 = 3;
-const DEFAULT_DELAY: Duration = Duration::from_millis(800);
-const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
-const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
-
 const RETRIES_MIN: u8 = 0;
 const RETRIES_MAX: u8 = 100;
 const DELAY_MIN: Duration = Duration::from_millis(1);
@@ -53,15 +48,20 @@ impl Default for ServiceBusRetryOptions {
     fn default() -> Self {
         Self {
             mode: ServiceBusRetryMode::default(),
-            max_retries: DEFAULT_MAX_RETRIES,
-            delay: DEFAULT_DELAY,
-            max_delay: DEFAULT_MAX_DELAY,
-            try_timeout: DEFAULT_TRY_TIMEOUT,
+            max_retries: Self::DEFAULT_MAX_RETRIES,
+            delay: Self::DEFAULT_DELAY,
+            max_delay: Self::DEFAULT_MAX_DELAY,
+            try_timeout: Self::DEFAULT_TRY_TIMEOUT,
         }
     }
 }
 
 impl ServiceBusRetryOptions {
+    const DEFAULT_MAX_RETRIES: u8 = 3;
+    const DEFAULT_DELAY: Duration = Duration::from_millis(800);
+    const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
+    const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
+
     /// The approach to use for calculating retry delays.
     ///
     /// # Value
