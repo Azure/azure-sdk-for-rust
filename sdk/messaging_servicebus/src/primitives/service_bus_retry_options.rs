@@ -14,6 +14,7 @@ pub enum OutOfRange<T> {
     GreaterThanAllowed { value: T, maximum_allowed: T },
 }
 
+#[derive(Debug, Clone)]
 pub struct ServiceBusRetryOptions {
     /// The approach to use for calculating retry delays.
     ///
