@@ -1,4 +1,4 @@
-use crate::{clients::QueueClient, prelude::*, PopReceipt};
+use crate::{prelude::*, PopReceipt};
 use azure_core::{headers::Headers, prelude::*, xml::read_xml, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Deserialize;
@@ -15,7 +15,7 @@ operation! {
 impl GetMessagesBuilder {
     pub fn into_future(mut self) -> GetMessages {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(Some("messages"))?;
+            let mut url = self.client.messages_url()?;
 
             self.visibility_timeout.append_to_url_query(&mut url);
             self.number_of_messages.append_to_url_query(&mut url);

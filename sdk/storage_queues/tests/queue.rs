@@ -81,7 +81,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let response = queue.get_acl().into_future().await?;
     println!("response == {:#?}", response);
 
-    let mut stream = queue_service_client.list_queues().into_stream();
+    let mut stream = queue_service.list_queues().into_stream();
     while let Some(entry) = stream.next().await {
         let entry = entry?;
         println!("entry == {:#?}", entry);

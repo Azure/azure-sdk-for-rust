@@ -18,9 +18,10 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let storage_account = StorageClient::new_access_key(&account, &access_key);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let queue_service = QueueServiceClient::new(account, storage_credentials);
 
-    let queue = storage_account.queue_client(queue_name);
+    let queue = queue_service.queue_client(queue_name);
 
     trace!("getting messages");
 

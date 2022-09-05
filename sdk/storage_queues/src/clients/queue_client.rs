@@ -102,6 +102,11 @@ impl QueueClient {
         Ok(url::Url::parse(&url)?)
     }
 
+    pub(crate) fn messages_url(&self) -> azure_core::Result<url::Url> {
+        let url = format!("{}/messages", self.url()?);
+        Ok(url::Url::parse(&url)?)
+    }
+
     pub(crate) fn finalize_request(
         &self,
         url: url::Url,
@@ -129,8 +134,8 @@ mod integration_tests {
     use crate::{core::prelude::*, queue::clients::AsQueueClient};
 
     fn get_emulator_client(queue_name: &str) -> QueueClient {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account.queue_client(queue_name)
+        let service_client = QueueServiceClientBuilder::emulator().build();
+        service_client.queue_client(queue_name)
     }
 
     #[tokio::test]

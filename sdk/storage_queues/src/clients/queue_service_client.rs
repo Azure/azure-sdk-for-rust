@@ -1,4 +1,4 @@
-use crate::{operations::*, QueueServiceProperties};
+use crate::{operations::*, QueueClient, QueueServiceProperties};
 use azure_core::{ClientOptions, Context, Pipeline, Request, Response};
 use azure_storage::{
     clients::{new_pipeline_from_options, ServiceType},
@@ -38,7 +38,7 @@ impl QueueServiceClientBuilder {
     pub fn emulator() -> Self {
         Self::with_location(CloudLocation::Emulator {
             address: "127.0.0.1".to_owned(),
-            port: 10000,
+            port: 10001,
         })
     }
 
@@ -117,6 +117,10 @@ impl QueueServiceClient {
 
     pub fn get_queue_service_stats(&self) -> GetQueueServiceStatsBuilder {
         GetQueueServiceStatsBuilder::new(self.clone())
+    }
+
+    pub fn queue_client<S: Into<String>>(&self, queue_name: S) -> QueueClient {
+        QueueClient::new(self.clone(), queue_name.into())
     }
 
     pub fn url(&self) -> azure_core::Result<url::Url> {
