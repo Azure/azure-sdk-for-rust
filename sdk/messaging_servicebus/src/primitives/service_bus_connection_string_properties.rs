@@ -230,6 +230,8 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::format;
+
     use azure_core::Url;
 
     use super::ServiceBusConnectionStringProperties;
@@ -264,19 +266,6 @@ mod tests {
         };
     }
 
-    // fn assert_parsed_and_expected(connection_string: &str, expected: Expected) {
-    //     let parsed = ServiceBusConnectionStringProperties::parse(connection_string).unwrap();
-
-    //     assert_eq!(
-    //         parsed.endpoint().and_then(|url| url.host_str()),
-    //         expected.endpoint
-    //     );
-    //     assert_eq!(parsed.shared_access_key_name(), expected.sas_key_name);
-    //     assert_eq!(parsed.shared_access_key(), expected.sas_key);
-    //     assert_eq!(parsed.shared_access_signature(), expected.sas);
-    //     assert_eq!(parsed.entity_path(), expected.event_hub);
-    // }
-
     /// Provides the reordered token test cases for the <see
     /// cref="ServiceBusConnectionStringProperties.Parse" /> tests.
     fn random_ordering_connection_string_cases() -> Vec<(String, Expected)> {
@@ -310,7 +299,7 @@ mod tests {
             (
                 format!(
                     "Endpoint=sb://{};EntityPath={};SharedAccessKeyName={};SharedAccessKey={}",
-                    EVENT_HUB, ENDPOINT, SAS_KEY_NAME, SAS_KEY
+                    ENDPOINT, EVENT_HUB, SAS_KEY_NAME, SAS_KEY
                 ),
                 Expected {
                     endpoint: Some(ENDPOINT),
@@ -534,6 +523,89 @@ mod tests {
     #[test]
     fn parse_correctly_parses_partial_connection_strings() {
         let cases = partial_connection_string_cases();
+
+        for (connection_string, expected) in cases {
+            assert_parsed_and_expected!(connection_string, expected);
+        }
+    }
+
+    /// <summary>
+    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
+    ///   method.
+    /// </summary>
+    ///
+    #[test]
+    fn parse_tolerates_leading_delimiters() {
+        let endpoint = "test.endpoint.com";
+        let event_hub = "some-path";
+        let sas_key = "sasKey";
+        let sas_key_name = "sasName";
+        let connection_string = format!(";Endpoint=sb://{endpoint};SharedAccessKeyName={sas_key_name};SharedAccessKey={sas_key};EntityPath={event_hub}");
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+        assert_eq!(
+            parsed.endpoint().and_then(|url| url.host_str()),
+            Some(endpoint)
+        );
+        assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
+        assert_eq!(parsed.shared_access_key(), Some(sas_key));
+        assert_eq!(parsed.entity_path(), Some(event_hub));
+    }
+
+    /// <summary>
+    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
+    ///   method.
+    /// </summary>
+    ///
+    #[test]
+    fn parse_tolerates_spaces_between_pairs() {
+        let endpoint = "test.endpoint.com";
+        let event_hub = "some-path";
+        let sas_key = "sasKey";
+        let sas_key_name = "sasName";
+        let connection_string = format!("Endpoint=sb://{endpoint}; SharedAccessKeyName={sas_key_name}; SharedAccessKey={sas_key}; EntityPath={event_hub}");
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+        assert_eq!(
+            parsed.endpoint().and_then(|url| url.host_str()),
+            Some(endpoint)
+        );
+        assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
+        assert_eq!(parsed.shared_access_key(), Some(sas_key));
+        assert_eq!(parsed.entity_path(), Some(event_hub));
+    }
+
+    /// <summary>
+    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
+    ///   method.
+    /// </summary>
+    ///
+    #[test]
+    fn parse_tolerates_spaces_between_values() {
+        let endpoint = "test.endpoint.com";
+        let event_hub = "some-path";
+        let sas_key = "sasKey";
+        let sas_key_name = "sasName";
+        let connection_string = format!("Endpoint = sb://{endpoint};SharedAccessKeyName ={sas_key_name};SharedAccessKey= {sas_key}; EntityPath  =  {event_hub}");
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+        assert_eq!(
+            parsed.endpoint().and_then(|url| url.host_str()),
+            Some(endpoint)
+        );
+        assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
+        assert_eq!(parsed.shared_access_key(), Some(sas_key));
+        assert_eq!(parsed.entity_path(), Some(event_hub));
+    }
+
+    /// <summary>
+    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
+    ///   method.
+    /// </summary>
+    ///
+    #[test]
+    fn parse_does_not_force_token_ordering() {
+        let cases = random_ordering_connection_string_cases();
 
         for (connection_string, expected) in cases {
             assert_parsed_and_expected!(connection_string, expected);
