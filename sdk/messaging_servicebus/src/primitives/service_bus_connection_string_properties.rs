@@ -249,6 +249,34 @@ mod tests {
         sas: Option<&'static str>,
     }
 
+    macro_rules! assert_parsed_and_expected {
+        ($connection_string:ident, $expected:ident) => {
+            let parsed = ServiceBusConnectionStringProperties::parse(&$connection_string).unwrap();
+
+            assert_eq!(
+                parsed.endpoint().and_then(|url| url.host_str()),
+                $expected.endpoint
+            );
+            assert_eq!(parsed.shared_access_key_name(), $expected.sas_key_name);
+            assert_eq!(parsed.shared_access_key(), $expected.sas_key);
+            assert_eq!(parsed.shared_access_signature(), $expected.sas);
+            assert_eq!(parsed.entity_path(), $expected.event_hub);
+        };
+    }
+
+    // fn assert_parsed_and_expected(connection_string: &str, expected: Expected) {
+    //     let parsed = ServiceBusConnectionStringProperties::parse(connection_string).unwrap();
+
+    //     assert_eq!(
+    //         parsed.endpoint().and_then(|url| url.host_str()),
+    //         expected.endpoint
+    //     );
+    //     assert_eq!(parsed.shared_access_key_name(), expected.sas_key_name);
+    //     assert_eq!(parsed.shared_access_key(), expected.sas_key);
+    //     assert_eq!(parsed.shared_access_signature(), expected.sas);
+    //     assert_eq!(parsed.entity_path(), expected.event_hub);
+    // }
+
     /// Provides the reordered token test cases for the <see
     /// cref="ServiceBusConnectionStringProperties.Parse" /> tests.
     fn random_ordering_connection_string_cases() -> Vec<(String, Expected)> {
@@ -413,11 +441,14 @@ mod tests {
                 },
             ),
             (
-                format!("SharedAccessKeyName={};SharedAccessSignature={}", "", SAS),
+                format!(
+                    "SharedAccessKeyName={};SharedAccessSignature={}",
+                    SAS_KEY_NAME, SAS
+                ),
                 Expected {
                     endpoint: None,
                     event_hub: None,
-                    sas_key_name: None,
+                    sas_key_name: Some(SAS_KEY_NAME),
                     sas_key: None,
                     sas: Some(SAS),
                 },
@@ -498,5 +529,14 @@ mod tests {
             Some(shared_access_signature)
         );
         assert_eq!(parsed.entity_path(), Some(event_hub));
+    }
+
+    #[test]
+    fn parse_correctly_parses_partial_connection_strings() {
+        let cases = partial_connection_string_cases();
+
+        for (connection_string, expected) in cases {
+            assert_parsed_and_expected!(connection_string, expected);
+        }
     }
 }
