@@ -1,28 +1,19 @@
-use crate::{operations::*, PopReceipt, PopReceiptClient, QueueStoredAccessPolicy};
+use crate::{
+    operations::*, PopReceipt, PopReceiptClient, QueueServiceClient, QueueStoredAccessPolicy,
+};
 use azure_core::{prelude::*, Context, Request, Response};
-use azure_storage::clients::{ServiceType, StorageClient};
 use std::fmt::Debug;
-
-pub trait AsQueueClient<QN: Into<String>> {
-    fn queue_client(&self, queue_name: QN) -> QueueClient;
-}
-
-impl<QN: Into<String>> AsQueueClient<QN> for StorageClient {
-    fn queue_client(&self, queue_name: QN) -> QueueClient {
-        QueueClient::new(self.clone(), queue_name.into())
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct QueueClient {
-    storage_client: StorageClient,
+    service_client: QueueServiceClient,
     queue_name: String,
 }
 
 impl QueueClient {
-    pub(crate) fn new(storage_client: StorageClient, queue_name: String) -> Self {
+    pub(crate) fn new(service_client: QueueServiceClient, queue_name: String) -> Self {
         Self {
-            storage_client,
+            service_client,
             queue_name,
         }
     }
@@ -106,26 +97,28 @@ impl QueueClient {
         &self.queue_name
     }
 
+    pub fn url(&self) -> azure_core::Result<url::Url> {
+        let url = format!("{}/{}", self.service_client.url()?, self.queue_name());
+        Ok(url::Url::parse(&url)?)
+    }
+
+    pub(crate) fn finalize_request(
+        &self,
+        url: url::Url,
+        method: azure_core::Method,
+        headers: azure_core::headers::Headers,
+        request_body: Option<azure_core::Body>,
+    ) -> azure_core::Result<Request> {
+        self.service_client
+            .finalize_request(url, method, headers, request_body)
+    }
+
     pub(crate) async fn send(
         &self,
         context: &mut Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Queue)
-            .await
-    }
-
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        &self.storage_client
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.storage_client
-            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
+        self.service_client.send(context, request).await
     }
 }
 

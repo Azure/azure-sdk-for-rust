@@ -18,12 +18,9 @@ impl PeekMessagesBuilder {
             url.query_pairs_mut().append_pair("peekonly", "true");
             self.number_of_messages.append_to_url_query(&mut url);
 
-            let mut request = self.client.storage_client().finalize_request(
-                url,
-                Method::Get,
-                Headers::new(),
-                None,
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

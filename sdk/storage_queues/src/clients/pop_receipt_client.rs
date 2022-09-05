@@ -1,6 +1,5 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
-use azure_storage::clients::StorageClient;
 
 #[derive(Debug, Clone)]
 pub struct PopReceiptClient {
@@ -44,11 +43,18 @@ impl PopReceiptClient {
         self.queue_client.send(context, request).await
     }
 
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.queue_client.storage_client()
+    pub(crate) fn finalize_request(
+        &self,
+        url: url::Url,
+        method: azure_core::Method,
+        headers: azure_core::headers::Headers,
+        request_body: Option<azure_core::Body>,
+    ) -> azure_core::Result<Request> {
+        self.queue_client
+            .finalize_request(url, method, headers, request_body)
     }
 
-    pub(crate) fn pop_receipt_url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
         let mut url = self.queue_client.url_with_segments(
             ["messages", self.pop_receipt.message_id()]
                 .iter()
