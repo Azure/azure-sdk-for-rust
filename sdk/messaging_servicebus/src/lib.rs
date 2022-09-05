@@ -20,3 +20,5 @@ pub use sender::{
     create_message_batch_options::CreateMessageBatchOptions,
     service_bus_message_batch::ServiceBusMessageBatch,
 };
+
+pub(crate) mod authorization;

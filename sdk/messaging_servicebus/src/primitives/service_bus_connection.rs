@@ -6,7 +6,9 @@ use crate::{
 };
 
 use super::{
-    inner_client::InnerClient, service_bus_error::ServiceBusError,
+    inner_client::InnerClient,
+    service_bus_connection_string_properties::{FormatError, ServiceBusConnectionStringProperties},
+    service_bus_error::ServiceBusError,
     service_bus_retry_options::ServiceBusRetryOptions,
     service_bus_transport_type::ServiceBusTransportType,
 };
@@ -15,6 +17,9 @@ use super::{
 pub enum Error {
     #[error("Argument error: {}", .0)]
     ArgumentError(String),
+
+    #[error(transparent)]
+    FormatError(#[from] FormatError),
 }
 
 /// A connection to the Azure Service Bus service, enabling client communications with a specific
@@ -71,10 +76,13 @@ impl ServiceBusConnection {
         &self.retry_options
     }
 
-    pub(crate) async fn open(
-        connection_string: impl Into<String>,
+    pub(crate) async fn open<'a>(
+        connection_string: impl AsRef<str> + 'a,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
+        let connection_string_properties =
+            ServiceBusConnectionStringProperties::parse(connection_string.as_ref())?;
+
         todo!()
     }
 }

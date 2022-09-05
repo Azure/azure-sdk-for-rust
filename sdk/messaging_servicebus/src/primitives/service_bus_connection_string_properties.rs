@@ -1,7 +1,7 @@
 use azure_core::Url;
 
 #[derive(Debug, thiserror::Error)]
-pub enum ParseError {
+pub enum FormatError {
     #[error("Connection string cannot be empty")]
     ConnectionStringIsEmpty,
 
@@ -169,9 +169,9 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     /// ## `Err`
     ///
     /// Returns `Err(_)` if the specified connection string was malformed and could not be parsed.
-    pub fn parse(connection_string: &'a str) -> Result<Self, ParseError> {
+    pub fn parse(connection_string: &'a str) -> Result<Self, FormatError> {
         if connection_string.is_empty() {
-            return Err(ParseError::ConnectionStringIsEmpty);
+            return Err(FormatError::ConnectionStringIsEmpty);
         }
 
         let mut endpoint: Option<Url> = None;
@@ -186,17 +186,17 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
             let mut split = token_value_pair.split(Self::TOKEN_VALUE_SEPARATOR);
             let token = split
                 .next()
-                .ok_or(ParseError::InvalidConnectionString)?
+                .ok_or(FormatError::InvalidConnectionString)?
                 .trim();
             let value = split
                 .next()
-                .ok_or(ParseError::InvalidConnectionString)?
+                .ok_or(FormatError::InvalidConnectionString)?
                 .trim();
 
             // If there was no value for a key, then consider the connection string to
             // be malformed.
             if token.is_empty() || value.is_empty() {
-                return Err(ParseError::InvalidConnectionString);
+                return Err(FormatError::InvalidConnectionString);
             }
 
             // Compare the token against the known connection string properties and capture the
@@ -204,9 +204,10 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
             match token {
                 Self::ENDPOINT_TOKEN => {
                     // TODO: What about the port?
-                    let url = Url::parse(value).map_err(|_| ParseError::InvalidConnectionString)?;
+                    let url =
+                        Url::parse(value).map_err(|_| FormatError::InvalidConnectionString)?;
                     if url.scheme() != Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME {
-                        return Err(ParseError::InvalidConnectionString);
+                        return Err(FormatError::InvalidConnectionString);
                     }
                     endpoint = Some(url);
                 }
