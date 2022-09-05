@@ -66,9 +66,6 @@ impl QueueClient {
     }
 
     /// Puts a message in the queue.
-    ///
-    /// The body will be passed to the `execute` function of the returned
-    /// struct.
     pub fn put_message<S: Into<String>>(&self, message: S) -> PutMessageBuilder {
         PutMessageBuilder::new(self.clone(), message.into())
     }
@@ -131,7 +128,7 @@ impl QueueClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{core::prelude::*, queue::clients::AsQueueClient};
+    use crate::clients::QueueServiceClientBuilder;
 
     fn get_emulator_client(queue_name: &str) -> QueueClient {
         let service_client = QueueServiceClientBuilder::emulator().build();
@@ -145,12 +142,12 @@ mod integration_tests {
 
         queue_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
         queue_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -162,19 +159,19 @@ mod integration_tests {
 
         queue_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
 
         queue_client
-            .put_message()
-            .execute("Hello")
+            .put_message("Hello")
+            .into_future()
             .await
             .expect("put message should succeed");
 
         let mut messages = queue_client
             .peek_messages()
-            .execute()
+            .into_future()
             .await
             .expect("peek messages should succeed");
         assert_eq!(
@@ -184,7 +181,7 @@ mod integration_tests {
 
         let mut messages = queue_client
             .get_messages()
-            .execute()
+            .into_future()
             .await
             .expect("get messages should succeed");
         assert_eq!(
@@ -194,7 +191,7 @@ mod integration_tests {
 
         queue_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }
