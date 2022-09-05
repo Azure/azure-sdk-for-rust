@@ -1,26 +1,99 @@
 use crate::{operations::*, QueueServiceProperties};
-use azure_core::{Context, Request, Response};
-use azure_storage::clients::{ServiceType, StorageClient};
+use azure_core::{ClientOptions, Context, Pipeline, Request, Response};
+use azure_storage::{
+    clients::{new_pipeline_from_options, ServiceType},
+    prelude::StorageCredentials,
+    CloudLocation,
+};
 use std::fmt::Debug;
 
-pub trait AsQueueServiceClient {
-    fn queue_service_client(&self) -> QueueServiceClient;
+/// A builder for the queue service client.
+#[derive(Debug, Clone)]
+pub struct QueueServiceClientBuilder {
+    cloud_location: CloudLocation,
+    options: ClientOptions,
 }
 
-impl AsQueueServiceClient for StorageClient {
-    fn queue_service_client(&self) -> QueueServiceClient {
-        QueueServiceClient::new(self.clone())
+impl QueueServiceClientBuilder {
+    /// Create a new instance of `QueueServiceClientBuilder`.
+    #[must_use]
+    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
+        Self::with_location(CloudLocation::Public {
+            account: account.into(),
+            credentials: credentials.into(),
+        })
+    }
+
+    /// Create a new instance of `QueueServiceClientBuilder` with a cloud location.
+    #[must_use]
+    pub fn with_location(cloud_location: CloudLocation) -> Self {
+        Self {
+            options: ClientOptions::default(),
+            cloud_location,
+        }
+    }
+
+    /// Use the emulator with default settings
+    #[must_use]
+    pub fn emulator() -> Self {
+        Self::with_location(CloudLocation::Emulator {
+            address: "127.0.0.1".to_owned(),
+            port: 10000,
+        })
+    }
+
+    /// Convert the builder into a `QueueServiceClient` instance.
+    #[must_use]
+    pub fn build(self) -> QueueServiceClient {
+        let credentials = self.cloud_location.credentials();
+        QueueServiceClient {
+            pipeline: new_pipeline_from_options(self.options, credentials.clone()),
+            cloud_location: self.cloud_location,
+        }
+    }
+
+    /// Set the cloud location.
+    #[must_use]
+    pub fn cloud_location(mut self, cloud_location: CloudLocation) -> Self {
+        self.cloud_location = cloud_location;
+        self
+    }
+
+    /// Set the retry options.
+    #[must_use]
+    pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
+        self.options = self.options.retry(retry);
+        self
+    }
+
+    /// Set the transport options.
+    #[must_use]
+    pub fn transport(mut self, transport: impl Into<azure_core::TransportOptions>) -> Self {
+        self.options = self.options.transport(transport);
+        self
+    }
+
+    /// Override all of the client options.
+    ///
+    /// *Warning!*: This overrides all client options that have been previously set on this builder.
+    #[must_use]
+    pub fn client_options(mut self, options: impl Into<azure_core::ClientOptions>) -> Self {
+        self.options = options.into();
+        self
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct QueueServiceClient {
-    pub(crate) storage_client: StorageClient,
+    pipeline: Pipeline,
+    cloud_location: CloudLocation,
 }
 
 impl QueueServiceClient {
-    pub(crate) fn new(storage_client: StorageClient) -> Self {
-        Self { storage_client }
+    /// Create a new `QueueServiceClient` which connects to the account's instance in the public Azure cloud.
+    #[must_use]
+    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
+        QueueServiceClientBuilder::new(account, credentials).build()
     }
 
     pub fn list_queues(&self) -> ListQueuesBuilder {
@@ -46,13 +119,27 @@ impl QueueServiceClient {
         GetQueueServiceStatsBuilder::new(self.clone())
     }
 
+    pub fn url(&self) -> azure_core::Result<url::Url> {
+        self.cloud_location.url(ServiceType::Queue)
+    }
+
+    pub(crate) fn finalize_request(
+        &self,
+        url: url::Url,
+        method: azure_core::Method,
+        headers: azure_core::headers::Headers,
+        request_body: Option<azure_core::Body>,
+    ) -> azure_core::Result<Request> {
+        azure_storage::clients::finalize_request(url, method, headers, request_body)
+    }
+
     pub(crate) async fn send(
         &self,
         context: &mut Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Blob)
+        self.pipeline
+            .send(context.insert(ServiceType::Queue), request)
             .await
     }
 }
