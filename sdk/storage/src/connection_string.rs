@@ -74,7 +74,8 @@ pub struct ConnectionString<'a> {
 }
 
 impl<'a> ConnectionString<'a> {
-    pub fn new(connection_string: &'a str) -> azure_core::Result<Self> {
+    /// Attempt to create a new instance of `ConnectionString` from a string slice.
+    pub fn from_str(connection_string: &'a str) -> azure_core::Result<Self> {
         let mut account_name = None;
         let mut account_key = None;
         let mut sas = None;
@@ -237,17 +238,17 @@ mod tests {
 
     #[test]
     fn it_returns_expected_errors() {
-        assert!(ConnectionString::new("AccountName=").is_err());
-        assert!(ConnectionString::new("AccountName    =").is_err());
-        assert!(ConnectionString::new("MissingEquals").is_err());
-        assert!(ConnectionString::new("=").is_err());
-        assert!(ConnectionString::new("x=123;").is_err());
+        assert!(ConnectionString::from_str("AccountName=").is_err());
+        assert!(ConnectionString::from_str("AccountName    =").is_err());
+        assert!(ConnectionString::from_str("MissingEquals").is_err());
+        assert!(ConnectionString::from_str("=").is_err());
+        assert!(ConnectionString::from_str("x=123;").is_err());
     }
 
     #[test]
     fn it_parses_empty_connection_string() {
         assert_eq!(
-            ConnectionString::new("").unwrap(),
+            ConnectionString::from_str("").unwrap(),
             ConnectionString::default()
         );
     }
@@ -255,21 +256,21 @@ mod tests {
     #[test]
     fn it_parses_basic_cases() {
         assert!(matches!(
-            ConnectionString::new("AccountName=guy"),
+            ConnectionString::from_str("AccountName=guy"),
             Ok(ConnectionString {
                 account_name: Some("guy"),
                 ..
             })
         ));
         assert!(matches!(
-            ConnectionString::new("AccountName=guy;"),
+            ConnectionString::from_str("AccountName=guy;"),
             Ok(ConnectionString {
                 account_name: Some("guy"),
                 ..
             })
         ));
         assert!(matches!(
-            ConnectionString::new("AccountName=guywald;AccountKey=1234"),
+            ConnectionString::from_str("AccountName=guywald;AccountKey=1234"),
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 account_key: Some("1234"),
@@ -277,7 +278,7 @@ mod tests {
             })
         ));
         assert!(matches!(
-            ConnectionString::new("AccountName=guywald;SharedAccessSignature=s"),
+            ConnectionString::from_str("AccountName=guywald;SharedAccessSignature=s"),
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 sas: Some("s"),
@@ -285,7 +286,7 @@ mod tests {
             })
         ));
         assert!(matches!(
-            ConnectionString::new("AccountName=guywald;SharedAccessSignature=se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+            ConnectionString::from_str("AccountName=guywald;SharedAccessSignature=se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
@@ -294,7 +295,7 @@ mod tests {
         ));
 
         assert!(matches!(
-            ConnectionString::new("AccountName = guywald;SharedAccessSignature = se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+            ConnectionString::from_str("AccountName = guywald;SharedAccessSignature = se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
@@ -306,7 +307,7 @@ mod tests {
     #[test]
     fn it_parses_all_properties() {
         assert!(matches!(
-                ConnectionString::new("AccountName=a;AccountKey=b;DefaultEndpointsProtocol=https;UseDevelopmentStorage=true;DevelopmentStorageProxyUri=c;BlobEndpoint=d;TableEndpoint=e;QueueEndpoint=f;SharedAccessSignature=g;"),
+                ConnectionString::from_str("AccountName=a;AccountKey=b;DefaultEndpointsProtocol=https;UseDevelopmentStorage=true;DevelopmentStorageProxyUri=c;BlobEndpoint=d;TableEndpoint=e;QueueEndpoint=f;SharedAccessSignature=g;"),
                 Ok(ConnectionString {
                     account_name: Some("a"),
                     account_key: Some("b"),
@@ -320,7 +321,7 @@ mod tests {
                 })
             ));
         assert!(matches!(
-                ConnectionString::new("BlobEndpoint=b1;BlobSecondaryEndpoint=b2;TableEndpoint=t1;TableSecondaryEndpoint=t2;QueueEndpoint=q1;QueueSecondaryEndpoint=q2;FileEndpoint=f1;FileSecondaryEndpoint=f2;"),
+                ConnectionString::from_str("BlobEndpoint=b1;BlobSecondaryEndpoint=b2;TableEndpoint=t1;TableSecondaryEndpoint=t2;QueueEndpoint=q1;QueueSecondaryEndpoint=q2;FileEndpoint=f1;FileSecondaryEndpoint=f2;"),
                 Ok(ConnectionString {
                     blob_endpoint: Some("b1"),
                     blob_secondary_endpoint: Some("b2"),
@@ -338,14 +339,14 @@ mod tests {
     #[test]
     fn it_parses_correct_endpoint_protocols() {
         assert!(matches!(
-            ConnectionString::new("DefaultEndpointsProtocol=https"),
+            ConnectionString::from_str("DefaultEndpointsProtocol=https"),
             Ok(ConnectionString {
                 default_endpoints_protocol: Some(EndpointProtocol::Https),
                 ..
             })
         ));
         assert!(matches!(
-            ConnectionString::new("DefaultEndpointsProtocol=http"),
+            ConnectionString::from_str("DefaultEndpointsProtocol=http"),
             Ok(ConnectionString {
                 default_endpoints_protocol: Some(EndpointProtocol::Http),
                 ..

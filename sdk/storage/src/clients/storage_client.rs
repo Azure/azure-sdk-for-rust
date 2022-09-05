@@ -359,7 +359,7 @@ impl StorageClient {
     }
 
     pub fn new_connection_string(connection_string: &str) -> azure_core::Result<Self> {
-        match ConnectionString::new(connection_string)? {
+        match ConnectionString::from_str(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(_),
