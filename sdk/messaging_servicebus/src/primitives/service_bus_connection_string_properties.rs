@@ -12,7 +12,7 @@ pub enum ParseError {
 /// The set of properties that comprise a Service Bus connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ServiceBusConnectionStringProperties<'a> {
-    pub(crate) endpoint: url::Url,
+    pub(crate) endpoint: Option<url::Url>,
     pub(crate) entity_path: Option<&'a str>,
     pub(crate) shared_access_key_name: Option<&'a str>,
     pub(crate) shared_access_key: Option<&'a str>,
@@ -52,7 +52,7 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     /// The namespace of the Service Bus, as derived from the endpoint address of the connection
     /// string.
     pub fn fully_qualified_namespace(&self) -> Option<&str> {
-        self.endpoint.host_str()
+        self.endpoint.as_ref().and_then(|url| url.host_str())
     }
 
     /// The endpoint to be used for connecting to the Service Bus namespace.
@@ -60,8 +60,8 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     /// # Value
     ///
     /// The endpoint address, including protocol, from the connection string.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    pub fn endpoint(&self) -> Option<&Url> {
+        self.endpoint.as_ref()
     }
 
     /// The name of the specific Service Bus entity instance under the associated Service Bus
@@ -88,23 +88,31 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
         self.shared_access_signature
     }
 
-    /// <summary>
-    ///   Creates an Service Bus connection string based on this set of <see cref="ServiceBusConnectionStringProperties" />.
-    /// </summary>
+    /// Creates an Service Bus connection string based on this set of
+    /// [`ServiceBusConnectionStringProperties`].
     ///
-    /// <returns>
-    ///   A valid Service Bus connection string; depending on the specified property information, this may
-    ///   represent the namespace-level or Event Hub-level.
-    /// </returns>
+    /// # Returns
     ///
+    /// ## `Some(String)`
     ///
-    pub fn to_connection_string(&self) -> String {
+    /// A valid Service Bus connection string; depending on the specified property information, this
+    /// may represent the namespace-level or Event Hub-level.
+    ///
+    /// ## `None`
+    ///
+    /// If field `endpoint` is `None`
+    ///
+    pub fn to_connection_string(&self) -> Option<String> {
         let mut s = String::new();
 
-        s.push_str(Self::ENDPOINT_TOKEN);
-        s.push(Self::TOKEN_VALUE_SEPARATOR);
-        s.push_str(self.endpoint.as_str());
-        s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+        if let Some(endpoint) = self.endpoint() {
+            s.push_str(Self::ENDPOINT_TOKEN);
+            s.push(Self::TOKEN_VALUE_SEPARATOR);
+            s.push_str(endpoint.as_str());
+            s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+        } else {
+            return None;
+        }
 
         if let Some(entity_path) = self.entity_path.and_then(|s| match !s.is_empty() {
             true => Some(s),
@@ -143,7 +151,7 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
             }
         }
 
-        s
+        Some(s)
     }
 
     /// Parses the specified Service Bus connection string into its component properties.
@@ -211,7 +219,7 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
         }
 
         Ok(Self {
-            endpoint: endpoint.ok_or(ParseError::InvalidConnectionString)?,
+            endpoint,
             entity_path,
             shared_access_key_name,
             shared_access_key,
@@ -228,41 +236,113 @@ mod tests {
 
     const ENDPOINT: &str = "test.endpoint.com";
     const EVENT_HUB: &str = "some-path";
-    const SAS_KEY: &str = "sasKey";
     const SAS_KEY_NAME: &str = "sasName";
+    const SAS_KEY: &str = "sasKey";
     const SAS: &str = "fullsas";
+
+    ///
+    struct Expected {
+        endpoint: Option<&'static str>,
+        event_hub: Option<&'static str>,
+        sas_key_name: Option<&'static str>,
+        sas_key: Option<&'static str>,
+        sas: Option<&'static str>,
+    }
 
     /// Provides the reordered token test cases for the <see
     /// cref="ServiceBusConnectionStringProperties.Parse" /> tests.
-    fn random_ordering_connection_string_cases() -> Vec<String> {
+    fn random_ordering_connection_string_cases() -> Vec<(String, Expected)> {
         vec![
-            format!(
-                "Endpoint=sb://{};SharedAccessKeyName={};SharedAccessKey={};EntityPath={}",
-                ENDPOINT, SAS_KEY_NAME, SAS_KEY, EVENT_HUB
+            (
+                format!(
+                    "Endpoint=sb://{};SharedAccessKeyName={};SharedAccessKey={};EntityPath={}",
+                    ENDPOINT, SAS_KEY_NAME, SAS_KEY, EVENT_HUB
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
             ),
-            format!(
-                "Endpoint=sb://{};SharedAccessKey={};EntityPath={};SharedAccessKeyName={}",
-                ENDPOINT, SAS_KEY, EVENT_HUB, SAS_KEY_NAME,
+            (
+                format!(
+                    "Endpoint=sb://{};SharedAccessKey={};EntityPath={};SharedAccessKeyName={}",
+                    ENDPOINT, SAS_KEY, EVENT_HUB, SAS_KEY_NAME,
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
             ),
-            format!(
-                "Endpoint=sb://{};EntityPath={};SharedAccessKeyName={};SharedAccessKey={}",
-                EVENT_HUB, ENDPOINT, SAS_KEY_NAME, SAS_KEY
+            (
+                format!(
+                    "Endpoint=sb://{};EntityPath={};SharedAccessKeyName={};SharedAccessKey={}",
+                    EVENT_HUB, ENDPOINT, SAS_KEY_NAME, SAS_KEY
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
             ),
-            format!(
-                "SharedAccessKeyName={};SharedAccessKey={};Endpoint=sb://{};EntityPath={}",
-                SAS_KEY_NAME, SAS_KEY, ENDPOINT, EVENT_HUB
+            (
+                format!(
+                    "SharedAccessKeyName={};SharedAccessKey={};Endpoint=sb://{};EntityPath={}",
+                    SAS_KEY_NAME, SAS_KEY, ENDPOINT, EVENT_HUB
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
             ),
-            format!(
-                "EntityPath={};SharedAccessKey={};SharedAccessKeyName={};Endpoint=sb://{}",
-                EVENT_HUB, SAS_KEY, SAS_KEY_NAME, ENDPOINT
+            (
+                format!(
+                    "EntityPath={};SharedAccessKey={};SharedAccessKeyName={};Endpoint=sb://{}",
+                    EVENT_HUB, SAS_KEY, SAS_KEY_NAME, ENDPOINT
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
             ),
-            format!(
-                "EntityPath={};SharedAccessSignature={};Endpoint=sb://{}",
-                EVENT_HUB, SAS, ENDPOINT,
+            (
+                format!(
+                    "EntityPath={};SharedAccessSignature={};Endpoint=sb://{}",
+                    EVENT_HUB, SAS, ENDPOINT,
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: None,
+                    sas_key: None,
+                    sas: Some(SAS),
+                },
             ),
-            format!(
-                "SharedAccessKeyName={};SharedAccessKey={};Endpoint=sb://{};EntityPath={};SharedAccessSignature={}",
-                SAS_KEY_NAME, SAS_KEY, ENDPOINT, EVENT_HUB, SAS
+            (
+                format!(
+                    "SharedAccessKeyName={};SharedAccessKey={};Endpoint=sb://{};EntityPath={};SharedAccessSignature={}",
+                    SAS_KEY_NAME, SAS_KEY, ENDPOINT, EVENT_HUB, SAS
+                ),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: Some(SAS),
+                },
             ),
         ]
     }
@@ -271,27 +351,99 @@ mod tests {
     ///   Provides the reordered token test cases for the <see cref="ServiceBusConnectionStringProperties.Parse" /> tests.
     /// </summary>
     ///
-    fn partial_connection_string_cases() -> Vec<String> {
+    fn partial_connection_string_cases() -> Vec<(String, Expected)> {
         vec![
-            format!("Endpoint=sb://{}", ENDPOINT),
-            format!("SharedAccessKey={}", SAS_KEY),
-            format!(
-                "EntityPath={};SharedAccessKeyName={}",
-                EVENT_HUB, SAS_KEY_NAME
+            (
+                format!("Endpoint=sb://{}", ENDPOINT),
+                Expected {
+                    endpoint: Some(ENDPOINT),
+                    event_hub: None,
+                    sas_key_name: None,
+                    sas_key: None,
+                    sas: None,
+                },
             ),
-            format!(
-                "SharedAccessKeyName={};SharedAccessKey={}",
-                SAS_KEY_NAME, SAS_KEY
+            (
+                format!("SharedAccessKey={}", SAS_KEY),
+                Expected {
+                    endpoint: None,
+                    event_hub: None,
+                    sas_key_name: None,
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
             ),
-            format!(
-                "EntityPath={};SharedAccessKey={};SharedAccessKeyName={}",
-                EVENT_HUB, SAS_KEY, SAS_KEY_NAME
+            (
+                format!(
+                    "EntityPath={};SharedAccessKeyName={}",
+                    EVENT_HUB, SAS_KEY_NAME
+                ),
+                Expected {
+                    endpoint: None,
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: None,
+                    sas: None,
+                },
             ),
-            format!("SharedAccessKeyName={};SharedAccessSignature={}", "", SAS),
-            format!("EntityPath={};SharedAccessSignature={}", EVENT_HUB, SAS),
-            format!(
+            (
+                format!(
+                    "SharedAccessKeyName={};SharedAccessKey={}",
+                    SAS_KEY_NAME, SAS_KEY
+                ),
+                Expected {
+                    endpoint: None,
+                    event_hub: None,
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
+            ),
+            (
+                format!(
+                    "EntityPath={};SharedAccessKey={};SharedAccessKeyName={}",
+                    EVENT_HUB, SAS_KEY, SAS_KEY_NAME
+                ),
+                Expected {
+                    endpoint: None,
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: None,
+                },
+            ),
+            (
+                format!("SharedAccessKeyName={};SharedAccessSignature={}", "", SAS),
+                Expected {
+                    endpoint: None,
+                    event_hub: None,
+                    sas_key_name: None,
+                    sas_key: None,
+                    sas: Some(SAS),
+                },
+            ),
+            (
+                format!("EntityPath={};SharedAccessSignature={}", EVENT_HUB, SAS),
+                Expected {
+                    endpoint: None,
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: None,
+                    sas_key: None,
+                    sas: Some(SAS),
+                },
+            ),
+            (
+                format!(
                 "EntityPath={};SharedAccessKey={};SharedAccessKeyName={};SharedAccessSignature={}",
                 EVENT_HUB, SAS_KEY, SAS_KEY_NAME, SAS
+            ),
+                Expected {
+                    endpoint: None,
+                    event_hub: Some(EVENT_HUB),
+                    sas_key_name: Some(SAS_KEY_NAME),
+                    sas_key: Some(SAS_KEY),
+                    sas: Some(SAS),
+                },
             ),
         ]
     }
@@ -307,7 +459,10 @@ mod tests {
         let connection_string = format!("Endpoint=sb://{endpoint};SharedAccessKeyName={sas_key_name};SharedAccessKey={sas_key};SharedAccessSignature={shared_access_signature}");
         let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
 
-        assert_eq!(parsed.endpoint().host_str(), Some(endpoint));
+        assert_eq!(
+            parsed.endpoint().and_then(|url| url.host_str()),
+            Some(endpoint)
+        );
         assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
         assert_eq!(parsed.shared_access_key(), Some(sas_key));
         assert_eq!(
@@ -315,5 +470,33 @@ mod tests {
             Some(shared_access_signature)
         );
         assert_eq!(parsed.entity_path(), None);
+    }
+
+    /// <summary>
+    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
+    ///   method.
+    /// </summary>
+    ///
+    #[test]
+    fn parse_correctly_parses_an_entity_connection_string() {
+        let endpoint = "test.endpoint.com";
+        let event_hub = "some-path";
+        let sas_key = "sasKey";
+        let sas_key_name = "sasName";
+        let shared_access_signature = "fakeSAS";
+        let connection_string = format!("Endpoint=sb://{endpoint};SharedAccessKeyName={sas_key_name};SharedAccessKey={sas_key};EntityPath={event_hub};SharedAccessSignature={shared_access_signature}");
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+        assert_eq!(
+            parsed.endpoint().and_then(|url| url.host_str()),
+            Some(endpoint)
+        );
+        assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
+        assert_eq!(parsed.shared_access_key(), Some(sas_key));
+        assert_eq!(
+            parsed.shared_access_signature(),
+            Some(shared_access_signature)
+        );
+        assert_eq!(parsed.entity_path(), Some(event_hub));
     }
 }
