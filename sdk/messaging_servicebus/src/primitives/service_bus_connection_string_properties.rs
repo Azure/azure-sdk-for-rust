@@ -611,4 +611,30 @@ mod tests {
             assert_parsed_and_expected!(connection_string, expected);
         }
     }
+
+    /// <summary>
+    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
+    ///   method.
+    /// </summary>
+    ///
+    #[test]
+    fn parse_ignores_unknown_tokens() {
+        let endpoint = "test.endpoint.com";
+        let event_hub = "some-path";
+        let sas_key = "sasKey";
+        let sas_key_name = "sasName";
+        let connection_string = format!("Endpoint=sb://{endpoint};SharedAccessKeyName={sas_key_name};Unknown=INVALID;SharedAccessKey={sas_key};EntityPath={event_hub};Trailing=WHOAREYOU");
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+        assert_eq!(
+            parsed.endpoint().and_then(|url| url.host_str()),
+            Some(endpoint)
+        );
+        assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
+        assert_eq!(parsed.shared_access_key(), Some(sas_key));
+        assert_eq!(parsed.entity_path(), Some(event_hub));
+    }
+
+    // Stopped at `ParseDoesAcceptsHostNamesAndUrisForTheEndpoint` because not all dotnet tests are
+    // applicable
 }
