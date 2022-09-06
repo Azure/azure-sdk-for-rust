@@ -33,8 +33,8 @@ pub(crate) struct SharedAccessSignature {
 }
 
 struct SignatureParts<'a> {
-    pub key_name: Option<Cow<'a, str>>,
-    pub resource: Option<Cow<'a, str>>,
+    pub key_name: Cow<'a, str>,
+    pub resource: Cow<'a, str>,
     pub expiration_time: OffsetDateTime,
 }
 
@@ -165,15 +165,6 @@ impl SharedAccessSignature {
         shared_access_signature: impl Into<String>,
         shared_access_key: impl Into<String>,
     ) -> Result<Self, Error> {
-        // Argument.AssertNotNullOrEmpty(sharedAccessSignature, nameof(sharedAccessSignature));
-        // Argument.AssertNotTooLong(sharedAccessKey, MaximumKeyLength, nameof(sharedAccessKey));
-
-        // (SharedAccessKeyName, Resource, SignatureExpiration) =
-        //     ParseSignature(sharedAccessSignature);
-
-        // SharedAccessKey = sharedAccessKey;
-        // Value = sharedAccessSignature;
-
         let shared_access_signature = shared_access_signature.into();
         let shared_access_key = shared_access_key.into();
 
@@ -181,7 +172,15 @@ impl SharedAccessSignature {
             return Err(Error::SasKeyTooLong);
         }
 
-        todo!()
+        let parts = Self::parse_signature(&shared_access_signature)?;
+
+        Ok(Self {
+            shared_access_key_name: parts.key_name.into_owned(),
+            shared_access_key,
+            signature_expiration: parts.expiration_time,
+            resource: parts.resource.into_owned(),
+            value: shared_access_signature,
+        })
     }
 
     /// <summary>
@@ -240,8 +239,8 @@ impl SharedAccessSignature {
         }
 
         Ok(SignatureParts {
-            key_name,
-            resource,
+            key_name: key_name.ok_or(Error::InvalidSharedAccessSignaure)?, // TODO: Optional or Error?
+            resource: resource.ok_or(Error::InvalidSharedAccessSignaure)?,
             expiration_time,
         })
     }
