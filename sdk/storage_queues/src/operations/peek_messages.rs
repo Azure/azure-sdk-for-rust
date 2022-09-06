@@ -1,4 +1,4 @@
-use crate::{clients::QueueClient, prelude::*};
+use crate::prelude::*;
 use azure_core::{headers::Headers, prelude::*, xml::read_xml, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -13,17 +13,14 @@ operation! {
 impl PeekMessagesBuilder {
     pub fn into_future(mut self) -> PeekMessages {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(Some("messages"))?;
+            let mut url = self.client.messages_url()?;
 
             url.query_pairs_mut().append_pair("peekonly", "true");
             self.number_of_messages.append_to_url_query(&mut url);
 
-            let mut request = self.client.storage_client().finalize_request(
-                url,
-                Method::Get,
-                Headers::new(),
-                None,
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

@@ -20,7 +20,7 @@ impl ListQueuesBuilder {
         let make_request = move |continuation: Option<NextMarker>| {
             let mut this = self.clone();
             async move {
-                let mut url = this.client.storage_client.queue_storage_url().to_owned();
+                let mut url = this.client.url()?.clone();
 
                 url.query_pairs_mut().append_pair("comp", "list");
 
@@ -36,12 +36,9 @@ impl ListQueuesBuilder {
                     url.query_pairs_mut().append_pair("include", "metadata");
                 }
 
-                let mut request = this.client.storage_client.finalize_request(
-                    url,
-                    Method::Get,
-                    Headers::new(),
-                    None,
-                )?;
+                let mut request =
+                    this.client
+                        .finalize_request(url, Method::Get, Headers::new(), None)?;
 
                 let response = this.client.send(&mut this.context, &mut request).await?;
 

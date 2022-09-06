@@ -12,7 +12,7 @@ operation! {
 impl SetQueueACLBuilder {
     pub fn into_future(mut self) -> SetQueueACL {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
+            let mut url = self.client.url()?;
 
             url.query_pairs_mut().append_pair("comp", "acl");
 
@@ -28,7 +28,7 @@ impl SetQueueACLBuilder {
                 StoredAccessPolicyList::new(stored_access).to_xml()
             };
 
-            let mut request = self.client.storage_client().finalize_request(
+            let mut request = self.client.finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),

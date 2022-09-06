@@ -16,7 +16,7 @@ operation! {
 impl SetQueueServicePropertiesBuilder {
     pub fn into_future(mut self) -> SetQueueServiceProperties {
         Box::pin(async move {
-            let mut url = self.client.storage_client.queue_storage_url().to_owned();
+            let mut url = self.client.url()?.clone();
 
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "properties");
@@ -24,7 +24,7 @@ impl SetQueueServicePropertiesBuilder {
             let xml_body =
                 serde_xml_rs::to_string(&self.properties).map_kind(ErrorKind::DataConversion)?;
 
-            let mut request = self.client.storage_client.finalize_request(
+            let mut request = self.client.finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),

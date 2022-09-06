@@ -20,7 +20,7 @@ operation! {
 impl UpdateMessageBuilder {
     pub fn into_future(mut self) -> UpdateMessage {
         Box::pin(async move {
-            let mut url = self.client.pop_receipt_url()?;
+            let mut url = self.client.url()?;
 
             self.visibility_timeout.append_to_url_query(&mut url);
 
@@ -32,7 +32,7 @@ impl UpdateMessageBuilder {
                 self.body
             );
 
-            let mut request = self.client.storage_client().finalize_request(
+            let mut request = self.client.finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),
