@@ -380,6 +380,18 @@ impl SharedAccessSignature {
 }
 
 /// <summary>
+///   Converts the instance to string representation.
+/// </summary>
+///
+/// <returns>A <see cref="System.String" /> that represents this instance.</returns>
+///
+impl ToString for SharedAccessSignature {
+    fn to_string(&self) -> String {
+        self.value.clone()
+    }
+}
+
+/// <summary>
 ///   Converts a <see cref="DateTimeOffset" /> value to the corresponding Unix-style timestamp.
 /// </summary>
 ///
