@@ -1,10 +1,28 @@
-use std::time::Duration;
+use std::{borrow::Cow, num::ParseIntError, string::FromUtf8Error, time::Duration};
 
+use azure_core::error::ResultExt;
 use const_format::formatcp;
 use digest::{Digest, InvalidLength, KeyInit, Mac};
 use hmac::Hmac;
 use sha2::Sha256;
 use time::OffsetDateTime;
+
+use crate::constants::DEFAULT_OFFSET_DATE_TIME;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    HmacSha256(#[from] InvalidLength),
+
+    #[error("shared_access_key_name exceeds MAXIMUM_KEY_NAME_LENGTH")]
+    SasKeyNameTooLong,
+
+    #[error("shared_access_key exceeds MAXIMUM_KEY_LENGTH")]
+    SasKeyTooLong,
+
+    #[error("Malformed shared_access_signature")]
+    InvalidSharedAccessSignaure,
+}
 
 pub(crate) struct SharedAccessSignature {
     shared_access_key_name: String,
@@ -12,6 +30,12 @@ pub(crate) struct SharedAccessSignature {
     signature_expiration: OffsetDateTime,
     resource: String,
     value: String,
+}
+
+struct SignatureParts<'a> {
+    pub key_name: Option<Cow<'a, str>>,
+    pub resource: Option<Cow<'a, str>>,
+    pub expiration_time: OffsetDateTime,
 }
 
 impl SharedAccessSignature {
@@ -84,6 +108,145 @@ impl SharedAccessSignature {
     }
 
     /// <summary>
+    ///   Initializes a new instance of the <see cref="SharedAccessSignature"/> class.
+    /// </summary>
+    ///
+    /// <param name="serviceBusResource">The Service Bus resource to which the token is intended to serve as authorization.</param>
+    /// <param name="sharedAccessKeyName">The name of the shared access key that the signature should be based on.</param>
+    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
+    /// <param name="signatureValidityDuration">The duration that the signature should be considered valid; if not specified, a default will be assumed.</param>
+    ///
+    pub fn try_from_parts(
+        service_bus_resource: impl Into<String>,
+        shared_access_key_name: impl Into<String>,
+        shared_access_key: impl Into<String>,
+        signature_validity_duration: Option<Duration>,
+    ) -> Result<Self, Error> {
+        let service_bus_resource = service_bus_resource.into();
+        let shared_access_key_name = shared_access_key_name.into();
+        let shared_access_key = shared_access_key.into();
+
+        let signature_validity_duration =
+            signature_validity_duration.unwrap_or(Self::DEFAULT_SIGNATURE_VALIDITY_DURATION);
+        if shared_access_key_name.len() > Self::MAXIMUM_KEY_NAME_LENGTH {
+            return Err(Error::SasKeyNameTooLong);
+        }
+        if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
+            return Err(Error::SasKeyTooLong);
+        }
+
+        let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
+
+        let resource = service_bus_resource;
+        let value = Self::build_signature(
+            &resource,
+            &shared_access_key_name,
+            &shared_access_key,
+            signature_expiration,
+        )?;
+
+        Ok(Self {
+            shared_access_key_name,
+            shared_access_key,
+            signature_expiration,
+            resource,
+            value,
+        })
+    }
+
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="SharedAccessSignature"/> class.
+    /// </summary>
+    ///
+    /// <param name="sharedAccessSignature">The shared access signature that will be parsed as the basis of this instance.</param>
+    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
+    ///
+    pub fn try_from_signature_and_key(
+        shared_access_signature: impl Into<String>,
+        shared_access_key: impl Into<String>,
+    ) -> Result<Self, Error> {
+        // Argument.AssertNotNullOrEmpty(sharedAccessSignature, nameof(sharedAccessSignature));
+        // Argument.AssertNotTooLong(sharedAccessKey, MaximumKeyLength, nameof(sharedAccessKey));
+
+        // (SharedAccessKeyName, Resource, SignatureExpiration) =
+        //     ParseSignature(sharedAccessSignature);
+
+        // SharedAccessKey = sharedAccessKey;
+        // Value = sharedAccessSignature;
+
+        let shared_access_signature = shared_access_signature.into();
+        let shared_access_key = shared_access_key.into();
+
+        if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
+            return Err(Error::SasKeyTooLong);
+        }
+
+        todo!()
+    }
+
+    /// <summary>
+    ///   Parses a shared access signature into its component parts.
+    /// </summary>
+    ///
+    /// <param name="sharedAccessSignature">The shared access signature to parse.</param>
+    ///
+    /// <returns>The set of composite properties parsed from the signature.</returns>
+    ///
+    fn parse_signature(shared_access_signature: &str) -> Result<SignatureParts, Error> {
+        let mut key_name = None;
+        let mut resource = None;
+        let mut expiration_time = DEFAULT_OFFSET_DATE_TIME;
+
+        let token_value_pairs = shared_access_signature.split(Self::TOKEN_VALUE_PAIR_DELIMITER);
+        for token_value_pair in token_value_pairs {
+            let mut split = token_value_pair.split(Self::TOKEN_VALUE_SEPARATOR);
+            let token = split
+                .next()
+                .ok_or(Error::InvalidSharedAccessSignaure)?
+                .trim();
+            let value = split
+                .next()
+                .ok_or(Error::InvalidSharedAccessSignaure)?
+                .trim();
+
+            if value.is_empty() {
+                return Err(Error::InvalidSharedAccessSignaure);
+            }
+
+            match token {
+                Self::SIGNED_RESOURCE_FULL_IDENTIFIER_TOKEN => {
+                    resource = Some(
+                        urlencoding::decode(value)
+                            .map_err(|_| Error::InvalidSharedAccessSignaure)?,
+                    );
+                }
+                Self::SIGNED_KEY_NAME_TOKEN => {
+                    key_name = Some(
+                        urlencoding::decode(value)
+                            .map_err(|_| Error::InvalidSharedAccessSignaure)?,
+                    );
+                }
+                Self::SIGNED_EXPIRY_TOKEN => {
+                    let value = urlencoding::decode(value)
+                        .map_err(|_| Error::InvalidSharedAccessSignaure)?;
+                    let unix_time: i64 = value
+                        .parse()
+                        .map_err(|_| Error::InvalidSharedAccessSignaure)?;
+                    expiration_time = OffsetDateTime::from_unix_timestamp(unix_time)
+                        .map_err(|_| Error::InvalidSharedAccessSignaure)?;
+                }
+                _ => {}
+            }
+        }
+
+        Ok(SignatureParts {
+            key_name,
+            resource,
+            expiration_time,
+        })
+    }
+
+    /// <summary>
     ///   Builds the shared access signature value, which can be used as a token for
     ///   access to the Service Bus service.
     /// </summary>
@@ -108,12 +271,9 @@ impl SharedAccessSignature {
         let mac = mac::<Hmac<Sha256>>(shared_access_key.as_bytes(), message.as_bytes())?;
         let signature = base64::encode(mac.as_ref());
 
-        let encoded_signature: String =
-            url::form_urlencoded::byte_serialize(signature.as_bytes()).collect();
-        let encoded_expiration: String =
-            url::form_urlencoded::byte_serialize(expiration.as_bytes()).collect();
-        let encoded_shared_access_key_name: String =
-            url::form_urlencoded::byte_serialize(shared_access_key_name.as_bytes()).collect();
+        let encoded_signature = urlencoding::encode(&signature);
+        let encoded_expiration = urlencoding::encode(&expiration);
+        let encoded_shared_access_key_name = urlencoding::encode(&shared_access_key_name);
 
         let s = format!(
             "{} {}={}&{}={}&{}={}&{}={}",
