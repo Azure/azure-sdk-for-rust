@@ -95,13 +95,11 @@ impl QueueClient {
     }
 
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        let url = format!("{}/{}", self.service_client.url()?, self.queue_name());
-        Ok(url::Url::parse(&url)?)
+        Ok(self.service_client.url()?.join(self.queue_name())?)
     }
 
     pub(crate) fn messages_url(&self) -> azure_core::Result<url::Url> {
-        let url = format!("{}/messages", self.url()?);
-        Ok(url::Url::parse(&url)?)
+        Ok(self.url()?.join("messages")?)
     }
 
     pub(crate) fn finalize_request(

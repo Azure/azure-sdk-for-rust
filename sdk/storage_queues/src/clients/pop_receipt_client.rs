@@ -55,12 +55,10 @@ impl PopReceiptClient {
     }
 
     pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
-        let url = format!(
-            "{}/{}",
-            self.client.messages_url()?,
-            self.pop_receipt.message_id()
-        );
-        let mut url = url::Url::parse(&url)?;
+        let mut url = self
+            .client
+            .messages_url()?
+            .join(self.pop_receipt.message_id())?;
 
         url.query_pairs_mut()
             .append_pair("popreceipt", self.pop_receipt.pop_receipt());
