@@ -95,11 +95,19 @@ impl QueueClient {
     }
 
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        Ok(self.service_client.url()?.join(self.queue_name())?)
+        let mut url = self.service_client.url()?;
+        url.path_segments_mut()
+            .expect("invalid base url")
+            .push(self.queue_name());
+        Ok(url)
     }
 
     pub(crate) fn messages_url(&self) -> azure_core::Result<url::Url> {
-        Ok(self.url()?.join("messages")?)
+        let mut url = self.url()?;
+        url.path_segments_mut()
+            .expect("invalid base url")
+            .push("messages");
+        Ok(url)
     }
 
     pub(crate) fn finalize_request(
