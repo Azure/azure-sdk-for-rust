@@ -22,6 +22,12 @@ pub enum Error {
 
     #[error("Malformed shared_access_signature")]
     InvalidSharedAccessSignaure,
+
+    #[error("Argument is empty")]
+    ArgumentIsEmpty,
+
+    #[error("Shared Access Key is required")]
+    SharedAccessKeyIsRequired,
 }
 
 pub(crate) struct SharedAccessSignature {
@@ -159,6 +165,17 @@ impl SharedAccessSignature {
     /// </summary>
     ///
     /// <param name="sharedAccessSignature">The shared access signature that will be parsed as the basis of this instance.</param>
+    ///
+    pub fn try_from_signature(shared_access_signature: impl Into<String>) -> Result<Self, Error> {
+        // TODO: Optional or just empty string?
+        Self::try_from_signature_and_key(shared_access_signature, "")
+    }
+
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="SharedAccessSignature"/> class.
+    /// </summary>
+    ///
+    /// <param name="sharedAccessSignature">The shared access signature that will be parsed as the basis of this instance.</param>
     /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
     ///
     pub fn try_from_signature_and_key(
@@ -181,6 +198,78 @@ impl SharedAccessSignature {
             resource: parts.resource.into_owned(),
             value: shared_access_signature,
         })
+    }
+
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="SharedAccessSignature" /> class.
+    /// </summary>
+    ///
+    /// <param name="eventHubResource">The Service Bus resource to which the token is intended to serve as authorization.</param>
+    /// <param name="sharedAccessKeyName">The name of the shared access key that the signature should be based on.</param>
+    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
+    /// <param name="value">The shared access signature to be used for authorization.</param>
+    /// <param name="signatureExpiration">The date and time that the shared access signature expires, in UTC.</param>
+    ///
+    pub fn try_new(
+        event_hub_resource: impl Into<String>,
+        shared_access_key_name: impl Into<String>,
+        shared_access_key: impl Into<String>,
+        value: impl Into<String>,
+        signature_expiration: OffsetDateTime,
+    ) -> Result<Self, Error> {
+        let event_hub_resource = event_hub_resource.into();
+        let shared_access_key_name = shared_access_key_name.into();
+        let shared_access_key = shared_access_key.into();
+        let value = value.into();
+
+        if event_hub_resource.is_empty() {
+            return Err(Error::ArgumentIsEmpty);
+        }
+        if shared_access_key_name.is_empty() {
+            return Err(Error::ArgumentIsEmpty);
+        }
+        if shared_access_key.is_empty() {
+            return Err(Error::ArgumentIsEmpty);
+        }
+
+        if shared_access_key_name.len() > Self::MAXIMUM_KEY_NAME_LENGTH {
+            return Err(Error::SasKeyNameTooLong);
+        }
+        if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
+            return Err(Error::SasKeyTooLong);
+        }
+
+        Ok(Self {
+            shared_access_key_name,
+            shared_access_key,
+            signature_expiration,
+            resource: event_hub_resource,
+            value,
+        })
+    }
+
+    /// <summary>
+    ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
+    /// </summary>
+    ///
+    /// <param name="signatureValidityDuration">The duration that the signature should be considered valid.</param>
+    ///
+    /// <returns>A new <see cref="SharedAccessSignature" /> based on the same key, but with a new expiration time.</returns>
+    ///
+    pub fn clone_with_new_expiration(
+        &self,
+        signature_validity_duration: Duration,
+    ) -> Result<Self, Error> {
+        if (self.shared_access_key.is_empty()) {
+            return Err(Error::SharedAccessKeyIsRequired);
+        }
+
+        Self::try_from_parts(
+            &self.resource,
+            &self.shared_access_key_name,
+            &self.shared_access_key,
+            Some(signature_validity_duration),
+        )
     }
 
     /// <summary>
