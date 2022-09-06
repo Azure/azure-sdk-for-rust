@@ -137,7 +137,9 @@ mod integration_tests {
     use crate::clients::QueueServiceClientBuilder;
 
     fn get_emulator_client(queue_name: &str) -> QueueClient {
-        let service_client = QueueServiceClientBuilder::emulator().build();
+        let service_client = QueueServiceClientBuilder::emulator()
+            .retry(azure_core::RetryOptions::none())
+            .build();
         service_client.queue_client(queue_name)
     }
 
