@@ -11,7 +11,7 @@ operation! {
 impl CreateTableBuilder {
     pub fn into_future(mut self) -> CreateTable {
         Box::pin(async move {
-            let url = self.client.url().clone();
+            let url = self.client.url()?;
 
             #[derive(Debug, Clone, Serialize)]
             struct RequestBody<'a> {

@@ -27,9 +27,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify the table name as first command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-
-    let table_service = storage_client.table_service_client()?;
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let table_service = TableServiceClient::new(account, storage_credentials);
 
     let table_client = table_service.table_client(table_name);
     table_client.create().into_future().await?;

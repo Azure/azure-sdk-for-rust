@@ -29,7 +29,7 @@ impl QueryEntityBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.client.url().to_owned();
+                let mut url = this.client.url()?;
                 url.path_segments_mut()
                     .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                     .pop()

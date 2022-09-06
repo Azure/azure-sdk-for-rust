@@ -10,9 +10,9 @@ use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct CommonStorageResponseHeaders {
-    pub request_id: RequestId,
+    pub request_id: Option<RequestId>,
     pub client_request_id: Option<String>,
-    pub version: String,
+    pub version: Option<String>,
     pub date: OffsetDateTime,
     pub server: String,
 }
@@ -22,9 +22,9 @@ impl TryFrom<&Headers> for CommonStorageResponseHeaders {
 
     fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
-            request_id: request_id_from_headers(headers)?,
+            request_id: request_id_from_headers(headers).ok(),
             client_request_id: client_request_id_from_headers_optional(headers),
-            version: version_from_headers(headers)?,
+            version: version_from_headers(headers).ok(),
             date: date_from_headers(headers)?,
             server: server_from_headers(headers)?,
         })

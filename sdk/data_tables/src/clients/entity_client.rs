@@ -1,9 +1,5 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{
-    error::{Error, ErrorKind},
-    headers::Headers,
-    Body, Context, Method, Request, Response,
-};
+use azure_core::{headers::Headers, Body, Context, Method, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
 use url::Url;
 
@@ -11,7 +7,6 @@ use url::Url;
 pub struct EntityClient {
     partition_key_client: PartitionKeyClient,
     row_key: String,
-    url: Url,
 }
 
 impl EntityClient {
@@ -20,28 +15,10 @@ impl EntityClient {
         row_key: RK,
     ) -> azure_core::Result<Self> {
         let row_key = row_key.into();
-        let mut url = partition_key_client
-            .storage_client()
-            .table_storage_url()
-            .to_owned();
-        url.path_segments_mut()
-            .map_err(|_e| {
-                Error::message(
-                    ErrorKind::DataConversion,
-                    "failed to get path segments from EntityClient url",
-                )
-            })?
-            .push(&format!(
-                "{}(PartitionKey='{}',RowKey='{}')",
-                partition_key_client.table_client().table_name(),
-                partition_key_client.partition_key(),
-                &row_key
-            ));
 
         Ok(Self {
             partition_key_client,
             row_key,
-            url,
         })
     }
 
@@ -109,8 +86,18 @@ impl EntityClient {
         DeleteEntityBuilder::new(self.clone())
     }
 
-    pub(crate) fn url(&self) -> &Url {
-        &self.url
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
+        let mut url = self.partition_key_client.url()?;
+        url.path_segments_mut()
+            // This cannot fail since the url is guranteed to not be a relative url
+            .unwrap()
+            .push(&format!(
+                "{}(PartitionKey='{}',RowKey='{}')",
+                self.partition_key_client.table_client().table_name(),
+                self.partition_key_client.partition_key(),
+                &self.row_key
+            ));
+        Ok(url)
     }
 
     pub(crate) fn finalize_request(
@@ -137,10 +124,6 @@ impl EntityClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{
-        core::prelude::*,
-        table::clients::{AsTableClient, AsTableServiceClient},
-    };
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct TestEntity {
@@ -161,10 +144,9 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> TableServiceClient {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account
-            .table_service_client()
-            .expect("a table service client")
+        crate::clients::TableServiceClientBuilder::emulator()
+            .retry(azure_core::RetryOptions::none())
+            .build()
     }
 
     #[tokio::test]
@@ -174,14 +156,14 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientUpdate");
 
         println!("Delete the table (if it exists)");
-        match table.delete().execute().await {
+        match table.delete().into_future().await {
             _ => {}
         }
 
         println!("Create the table");
         table
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("the table should be created");
 
@@ -197,22 +179,25 @@ mod integration_tests {
             .expect("an entity client");
 
         entity_client
-            .update()
-            .execute(&entity, &crate::table::IfMatchCondition::Any)
+            .update(&entity, IfMatchCondition::Any)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect_err("the update should fail if the entity doesn't exist");
 
         table
-            .insert()
-            .execute(&entity)
+            .insert::<&TestEntity, TestEntity>(&entity)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the entity should be inserted");
 
         // TODO: Confirm that the entity was inserted
 
         entity_client
-            .update()
-            .execute(&entity, &crate::table::IfMatchCondition::Any)
+            .update(&entity, IfMatchCondition::Any)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the update operation should complete");
 
@@ -226,14 +211,14 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientMerge");
 
         println!("Delete the table (if it exists)");
-        match table.delete().execute().await {
+        match table.delete().into_future().await {
             _ => {}
         }
 
         println!("Create the table");
         table
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("the table should be created");
 
@@ -255,22 +240,25 @@ mod integration_tests {
             .expect("an entity client");
 
         entity_client
-            .merge()
-            .execute(&entity2, &crate::table::IfMatchCondition::Any)
+            .merge(&entity2, IfMatchCondition::Any)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect_err("the merge should fail if the entity doesn't exist");
 
         table
-            .insert()
-            .execute(&entity)
+            .insert::<&TestEntity, TestEntity>(&entity)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the entity should be inserted");
 
         // TODO: Confirm that the entity was inserted
 
         entity_client
-            .merge()
-            .execute(&entity2, &crate::table::IfMatchCondition::Any)
+            .merge(&entity2, IfMatchCondition::Any)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the merge operation should complete");
 
@@ -284,14 +272,14 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientInsertOrReplace");
 
         println!("Delete the table (if it exists)");
-        match table.delete().execute().await {
+        match table.delete().into_future().await {
             _ => {}
         }
 
         println!("Create the table");
         table
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("the table should be created");
 
@@ -306,8 +294,9 @@ mod integration_tests {
             .entity_client(&entity.surname)
             .expect("an entity client");
         entity_client
-            .insert_or_replace()
-            .execute(&entity)
+            .insert_or_replace(&entity)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -315,8 +304,9 @@ mod integration_tests {
 
         entity.name = "Doe".to_owned();
         entity_client
-            .insert_or_replace()
-            .execute(&entity)
+            .insert_or_replace(&entity)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -330,14 +320,14 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientInsertOrMerge");
 
         println!("Delete the table (if it exists)");
-        match table.delete().execute().await {
+        match table.delete().into_future().await {
             _ => {}
         }
 
         println!("Create the table");
         table
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("the table should be created");
 
@@ -352,8 +342,9 @@ mod integration_tests {
             .entity_client(&entity.surname)
             .expect("an entity client");
         entity_client
-            .insert_or_merge()
-            .execute(&entity)
+            .insert_or_merge(&entity)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -361,8 +352,9 @@ mod integration_tests {
 
         entity.name = "Doe".to_owned();
         entity_client
-            .insert_or_merge()
-            .execute(&entity)
+            .insert_or_merge(&entity)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -375,8 +367,9 @@ mod integration_tests {
         };
 
         entity_client
-            .insert_or_merge()
-            .execute(&entity2)
+            .insert_or_merge(&entity2)
+            .expect("entity could not be serialized")
+            .into_future()
             .await
             .expect("the insert or merge operation should complete");
 
