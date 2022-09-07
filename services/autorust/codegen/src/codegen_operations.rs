@@ -16,9 +16,8 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use std::collections::BTreeSet;
 
-pub mod query_param {
-    pub const API_VERSION: &str = "api-version";
-}
+pub const API_VERSION: &str = "api-version";
+pub const X_MS_VERSION: &str = "x-ms-version";
 
 fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
@@ -579,6 +578,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 /// Set all body and parameters for the request.
 struct SetRequestCode {
     has_param_api_version: bool,
+    has_param_x_ms_version: bool,
     api_version: String,
     consumes: String,
     parameters: FunctionParams,
@@ -591,6 +591,7 @@ impl SetRequestCode {
         let is_post = operation.0.verb == WebVerb::Post;
         Self {
             has_param_api_version: parameters.has_api_version,
+            has_param_x_ms_version: parameters.has_x_ms_version,
             api_version: operation.api_version().to_string(),
             consumes,
             parameters: parameters.clone(),
@@ -607,6 +608,12 @@ impl ToTokens for SetRequestCode {
             let api_version = &self.api_version;
             tokens.extend(quote! {
                 req.url_mut().query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
+            });
+        }
+        if self.has_param_x_ms_version {
+            let api_version = &self.api_version;
+            tokens.extend(quote! {
+                req.insert_header(azure_core::headers::VERSION, #api_version);
             });
         }
 
@@ -991,13 +998,16 @@ impl FunctionParam {
 struct FunctionParams {
     params: Vec<FunctionParam>,
     has_api_version: bool,
+    has_x_ms_version: bool,
 }
 impl FunctionParams {
     fn new(operation: &WebOperationGen) -> Result<Self> {
         let parameters = operation.0.parameters();
-        let has_api_version = parameters.iter().any(|p| p.name() == query_param::API_VERSION);
+        let has_api_version = parameters.iter().any(|p| p.name() == API_VERSION);
+        let has_x_ms_version = parameters.iter().any(|p| p.name() == X_MS_VERSION);
         let mut skip = parse_query_params(&operation.0.path)?;
-        skip.insert(query_param::API_VERSION.to_string());
+        skip.insert(API_VERSION.to_string());
+        skip.insert(X_MS_VERSION.to_string());
         let parameters: Vec<&WebParameter> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
 
         let mut params = Vec::new();
@@ -1019,7 +1029,11 @@ impl FunctionParams {
                 collection_format,
             });
         }
-        Ok(Self { params, has_api_version })
+        Ok(Self {
+            params,
+            has_api_version,
+            has_x_ms_version,
+        })
     }
 
     fn params(&self) -> Vec<&FunctionParam> {
