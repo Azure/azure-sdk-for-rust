@@ -103,7 +103,7 @@ impl DequeuedMessageItem {
         }
     }
 }
-pub type QueueMessagesList = Vec<DequeuedMessageItem>;
+pub type DequeuedMessagesList = Vec<DequeuedMessageItem>;
 #[doc = "The object returned in the QueueMessageList array when calling Put Message on a Queue"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnqueuedMessage {
@@ -140,7 +140,7 @@ impl EnqueuedMessage {
         }
     }
 }
-pub type QueueMessagesList = Vec<EnqueuedMessage>;
+pub type EnqueuedMessageList = Vec<EnqueuedMessage>;
 #[doc = "Error codes returned by the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ErrorCode")]
@@ -499,7 +499,7 @@ impl PeekedMessageItem {
         }
     }
 }
-pub type QueueMessagesList = Vec<PeekedMessageItem>;
+pub type PeekedMessagesList = Vec<PeekedMessageItem>;
 #[doc = "An Azure Storage Queue."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueItem {
