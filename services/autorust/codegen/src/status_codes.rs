@@ -1,14 +1,12 @@
 #![allow(unused_doc_comments)]
 
-use std::convert::TryFrom;
-
 use crate::identifier::parse_ident;
 use crate::{Error, ErrorKind, Result};
-use autorust_openapi::{Response, StatusCode};
+use autorust_openapi::StatusCode;
 use heck::ToPascalCase;
 use http_types::StatusCode as HttpStatusCode;
-use indexmap::IndexMap;
 use proc_macro2::Ident;
+use std::convert::TryFrom;
 
 fn try_from_u16(status_code: u16) -> Result<HttpStatusCode> {
     HttpStatusCode::try_from(status_code)
@@ -31,7 +29,7 @@ pub fn get_status_code_ident(status_code: &StatusCode) -> Result<Ident> {
     parse_ident(&get_status_code_name(status_code)?.to_pascal_case())
 }
 
-fn is_success(status_code: &StatusCode) -> bool {
+pub fn is_success(status_code: &StatusCode) -> bool {
     match status_code {
         StatusCode::Code(status_code) => match try_from_u16(*status_code) {
             Ok(status_code) => status_code.is_success(),
@@ -39,16 +37,6 @@ fn is_success(status_code: &StatusCode) -> bool {
         },
         StatusCode::Default => false,
     }
-}
-
-pub fn get_success_responses(responses: &IndexMap<StatusCode, Response>) -> IndexMap<StatusCode, Response> {
-    let mut map = IndexMap::new();
-    for (status_code, rsp) in responses {
-        if is_success(status_code) {
-            map.insert(status_code.to_owned(), rsp.to_owned());
-        }
-    }
-    map
 }
 
 #[cfg(test)]

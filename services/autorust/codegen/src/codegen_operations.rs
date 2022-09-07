@@ -4,11 +4,10 @@ use crate::{
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
     status_codes::get_status_code_ident,
-    status_codes::get_success_responses,
     CodeGen,
 };
 use crate::{content_type, Result};
-use autorust_openapi::{CollectionFormat, Header, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, Header, ParameterType, Response, StatusCode};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
 use indexmap::IndexMap;
@@ -328,6 +327,16 @@ impl WebOperationGen {
         self.0.pageable.as_ref().map(|p| Pageable {
             next_link_name: p.next_link_name.clone(),
         })
+    }
+
+    pub fn success_responses(&self) -> IndexMap<StatusCode, Response> {
+        let mut map = IndexMap::new();
+        for (status_code, rsp) in &self.0.responses {
+            if crate::status_codes::is_success(status_code) {
+                map.insert(status_code.to_owned(), rsp.to_owned());
+            }
+        }
+        map
     }
 }
 
@@ -725,8 +734,8 @@ struct StatusResponseCode {
 impl ResponseCode {
     fn new(operation: &WebOperationGen, produces: String) -> Result<Self> {
         let mut status_responses = Vec::new();
-        let responses = &operation.0.responses;
-        for (status_code, rsp) in &get_success_responses(responses) {
+        let success_responses = operation.success_responses();
+        for (status_code, rsp) in &success_responses {
             status_responses.push(StatusResponseCode {
                 status_code_name: get_status_code_ident(status_code)?,
                 response_type: create_response_type(rsp)?,
@@ -734,10 +743,10 @@ impl ResponseCode {
         }
         let headers = {
             let mut headers = IndexMap::new();
-            for rsp in &operation.0.responses {
+            for rsp in success_responses {
                 for (hdr_name, hdr) in &rsp.1.headers {
                     if let autorust_openapi::ReferenceOr::Item(hdr) = hdr {
-                        headers.insert(hdr_name, HeaderCode::new(hdr_name.clone(), hdr));
+                        headers.insert(hdr_name.clone(), HeaderCode::new(hdr_name.clone(), hdr));
                     }
                 }
             }
@@ -816,8 +825,8 @@ impl ToTokens for ResponseCode {
                     pub fn as_raw_response(&self) -> &azure_core::Response {
                         &self.0
                     }
+                    #headers_fn
                 }
-                #headers_fn
                 impl From<Response> for azure_core::Response {
                     fn from(rsp: Response) -> Self {
                         rsp.into_raw_response()
@@ -829,6 +838,7 @@ impl ToTokens for ResponseCode {
                     }
                 }
             });
+            tokens.extend(self.headers.to_token_stream());
         }
     }
 }
