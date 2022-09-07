@@ -27,7 +27,7 @@ impl TransactionBuilder {
     pub fn insert<E: Serialize>(mut self, entity: E) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
 
-        let mut url = self.client.table_client().url().to_owned();
+        let mut url = self.client.table_client().url()?;
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
             .pop()
@@ -101,7 +101,7 @@ impl TransactionBuilder {
     /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1>
     pub fn delete<RK: Into<String>>(mut self, row_key: RK) -> azure_core::Result<Self> {
         let entity_client = self.client.entity_client(row_key)?;
-        let url = entity_client.url().clone();
+        let url = entity_client.url()?;
 
         let mut request = Request::new(url, Method::Delete);
         request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
@@ -114,7 +114,7 @@ impl TransactionBuilder {
 
     pub fn into_future(mut self) -> Transaction {
         Box::pin(async move {
-            let mut url = self.client.table_client().url().clone();
+            let mut url = self.client.table_client().url()?;
             url.path_segments_mut()
                 .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                 .pop()
@@ -153,7 +153,7 @@ impl TransactionBuilder {
     ) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
         let entity_client = self.client.entity_client(row_key)?;
-        let url = entity_client.url().clone();
+        let url = entity_client.url()?;
 
         let mut request = Request::new(url, method);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");

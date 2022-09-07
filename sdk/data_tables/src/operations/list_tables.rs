@@ -20,7 +20,7 @@ impl ListTablesBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.client.url().to_owned();
+                let mut url = this.client.url()?;
 
                 this.filter.append_to_url_query(&mut url);
                 this.select.append_to_url_query(&mut url);

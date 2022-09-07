@@ -1,3 +1,4 @@
+use crate::error::{Error, ErrorKind, HttpError};
 use crate::policies::{Policy, PolicyResult, Request};
 use crate::Context;
 use std::sync::Arc;
@@ -20,6 +21,24 @@ impl Policy for NoRetryPolicy {
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
         // just call the following policies and bubble up the error
-        next[0].send(ctx, request, &next[1..]).await
+        let response = next[0].send(ctx, request, &next[1..]).await?;
+
+        if response.status().is_success() {
+            Ok(response)
+        } else {
+            let status = response.status();
+            let http_error = HttpError::new(response).await;
+
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            let error = Error::full(
+                error_kind,
+                http_error,
+                format!("server returned error status which will not be retried: {status}"),
+            );
+            return Err(error);
+        }
     }
 }

@@ -15,7 +15,7 @@ operation! {
 impl DeleteTableBuilder {
     pub fn into_future(mut self) -> DeleteTable {
         Box::pin(async move {
-            let mut url = self.client.url().to_owned();
+            let mut url = self.client.url()?;
             url.path_segments_mut()
                 .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                 .pop()

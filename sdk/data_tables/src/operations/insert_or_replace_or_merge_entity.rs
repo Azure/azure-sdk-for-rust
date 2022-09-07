@@ -12,7 +12,7 @@ operation! {
 impl InsertOrReplaceOrMergeEntityBuilder {
     pub fn into_future(mut self) -> InsertOrReplaceOrMergeEntity {
         Box::pin(async move {
-            let url = self.client.url().clone();
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             headers.add(ContentType::APPLICATION_JSON);
