@@ -22,13 +22,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .scopes(scopes)
         .build();
 
-    let x_ms_version = "2021-08-06";
     let mut count = 0;
-    let mut pages = client.service_client().list_containers_segment(x_ms_version).into_stream();
+    let mut pages = client.service_client().list_containers_segment().into_stream();
     while let Some(Ok(page)) = pages.next().await {
-        count += page.containers.container_items.len();
-        for container in page.containers.container_items {
-            println!("{}", container.name);
+        if let Some(containers) = page.containers {
+            count += containers.items.len();
+            for container in containers.items {
+                println!("{}", container.name);
+            }
         }
     }
     println!("# of containers {}", count);
