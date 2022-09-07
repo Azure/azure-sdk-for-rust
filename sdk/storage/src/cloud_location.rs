@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 
-use crate::clients::{ServiceType, StorageCredentials};
+use crate::clients::ServiceType;
+use crate::StorageCredentials;
 
 /// The cloud with which you want to interact.
 // TODO: Other govt clouds?

@@ -1,4 +1,4 @@
-use azure_storage::clients::StorageCredentials;
+use azure_storage::StorageCredentials;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 

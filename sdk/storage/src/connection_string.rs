@@ -1,6 +1,6 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
 
-use crate::clients::StorageCredentials;
+use crate::StorageCredentials;
 
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";

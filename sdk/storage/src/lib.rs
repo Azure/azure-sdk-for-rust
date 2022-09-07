@@ -11,8 +11,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-mod authorization_policy;
-
+mod authorization;
 pub mod clients;
 mod cloud_location;
 mod connection_string;
@@ -26,12 +25,12 @@ pub mod shared_access_signature;
 
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
+pub use authorization::StorageCredentials;
 pub use cloud_location::*;
 pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
 pub mod parsing_xml;
-pub mod storage_shared_key_credential;
 mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
 
