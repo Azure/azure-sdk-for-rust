@@ -221,8 +221,8 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub max_results: Option<i64>,
     #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
     pub delimiter: Option<String>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobHierarchyListSegment,
+    #[serde(rename = "Blobs", default, skip_serializing_if = "Option::is_none")]
+    pub blobs: Option<BlobHierarchyListSegment>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
@@ -233,7 +233,7 @@ impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
     }
 }
 impl ListBlobsHierarchySegmentResponse {
-    pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
+    pub fn new(service_endpoint: String, container_name: String) -> Self {
         Self {
             service_endpoint,
             container_name,
@@ -241,7 +241,7 @@ impl ListBlobsHierarchySegmentResponse {
             marker: None,
             max_results: None,
             delimiter: None,
-            segment,
+            blobs: None,
             next_marker: None,
         }
     }

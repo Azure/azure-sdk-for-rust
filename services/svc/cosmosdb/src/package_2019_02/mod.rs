@@ -119,18 +119,11 @@ pub mod service {
         #[doc = "Arguments:"]
         #[doc = "* `restype`: Required query string to set the service properties."]
         #[doc = "* `comp`: Required query string to set the service properties."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(
-            &self,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, restype: impl Into<String>, comp: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -141,20 +134,17 @@ pub mod service {
         #[doc = "* `restype`: Required query string to set the service properties."]
         #[doc = "* `comp`: Required query string to set the service properties."]
         #[doc = "* `table_service_properties`: The Table Service properties."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             restype: impl Into<String>,
             comp: impl Into<String>,
             table_service_properties: impl Into<models::TableServiceProperties>,
-            x_ms_version: impl Into<String>,
         ) -> set_properties::RequestBuilder {
             set_properties::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 table_service_properties: table_service_properties.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -164,18 +154,11 @@ pub mod service {
         #[doc = "Arguments:"]
         #[doc = "* `restype`: Required query string to get service stats."]
         #[doc = "* `comp`: Required query string to get service stats."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(
-            &self,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_statistics::RequestBuilder {
+        pub fn get_statistics(&self, restype: impl Into<String>, comp: impl Into<String>) -> get_statistics::RequestBuilder {
             get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -187,7 +170,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TableServiceProperties> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::TableServiceProperties = serde_json::from_slice(&bytes)?;
+                let body: models::TableServiceProperties = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -212,7 +195,6 @@ pub mod service {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -240,6 +222,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let restype = &this.restype;
                         req.url_mut().query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
@@ -247,7 +230,6 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -272,7 +254,6 @@ pub mod service {
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) table_service_properties: models::TableServiceProperties,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -300,6 +281,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let restype = &this.restype;
                         req.url_mut().query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
@@ -309,7 +291,6 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -326,7 +307,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TableServiceStats> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::TableServiceStats = serde_json::from_slice(&bytes)?;
+                let body: models::TableServiceStats = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -351,7 +332,6 @@ pub mod service {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -379,6 +359,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let restype = &this.restype;
                         req.url_mut().query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
@@ -386,7 +367,6 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -410,12 +390,10 @@ pub mod table {
         #[doc = "Queries tables under the given account."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
-        pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::RequestBuilder {
+        pub fn query(&self, data_service_version: impl Into<String>) -> query::RequestBuilder {
             query::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 x_ms_client_request_id: None,
                 format: None,
@@ -428,18 +406,15 @@ pub mod table {
         #[doc = "Creates a new table under the given account."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table_properties`: The Table properties."]
         pub fn create(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table_properties: impl Into<models::TableProperties>,
         ) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table_properties: table_properties.into(),
                 x_ms_client_request_id: None,
@@ -450,12 +425,10 @@ pub mod table {
         #[doc = "Operation permanently deletes the specified table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
-        pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::RequestBuilder {
+        pub fn delete(&self, table: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 table: table.into(),
                 x_ms_client_request_id: None,
             }
@@ -463,18 +436,11 @@ pub mod table {
         #[doc = "Queries entities in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
-        pub fn query_entities(
-            &self,
-            x_ms_version: impl Into<String>,
-            data_service_version: impl Into<String>,
-            table: impl Into<String>,
-        ) -> query_entities::RequestBuilder {
+        pub fn query_entities(&self, data_service_version: impl Into<String>, table: impl Into<String>) -> query_entities::RequestBuilder {
             query_entities::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 timeout: None,
@@ -490,14 +456,12 @@ pub mod table {
         #[doc = "Queries a single entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
         #[doc = "* `row_key`: The row key of the entity."]
         pub fn query_entity_with_partition_and_row_key(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -505,7 +469,6 @@ pub mod table {
         ) -> query_entity_with_partition_and_row_key::RequestBuilder {
             query_entity_with_partition_and_row_key::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -520,14 +483,12 @@ pub mod table {
         #[doc = "Update entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
         #[doc = "* `row_key`: The row key of the entity."]
         pub fn update_entity(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -535,7 +496,6 @@ pub mod table {
         ) -> update_entity::RequestBuilder {
             update_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -550,14 +510,12 @@ pub mod table {
         #[doc = "Merge entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
         #[doc = "* `row_key`: The row key of the entity."]
         pub fn merge_entity(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -565,7 +523,6 @@ pub mod table {
         ) -> merge_entity::RequestBuilder {
             merge_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -580,7 +537,6 @@ pub mod table {
         #[doc = "Deletes the specified entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
@@ -588,7 +544,6 @@ pub mod table {
         #[doc = "* `if_match`: Match condition for an entity to be deleted. If specified and a matching entity is not found, an error will be raised. To force an unconditional delete, set to the wildcard character (*)."]
         pub fn delete_entity(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -597,7 +552,6 @@ pub mod table {
         ) -> delete_entity::RequestBuilder {
             delete_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -611,18 +565,11 @@ pub mod table {
         #[doc = "Retrieves details about any stored access policies specified on the table that may be used with Shared Access Signatures."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
-        pub fn get_access_policy(
-            &self,
-            x_ms_version: impl Into<String>,
-            table: impl Into<String>,
-            comp: impl Into<String>,
-        ) -> get_access_policy::RequestBuilder {
+        pub fn get_access_policy(&self, table: impl Into<String>, comp: impl Into<String>) -> get_access_policy::RequestBuilder {
             get_access_policy::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 table: table.into(),
                 comp: comp.into(),
                 timeout: None,
@@ -632,18 +579,11 @@ pub mod table {
         #[doc = "Insert entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
-        pub fn insert_entity(
-            &self,
-            x_ms_version: impl Into<String>,
-            data_service_version: impl Into<String>,
-            table: impl Into<String>,
-        ) -> insert_entity::RequestBuilder {
+        pub fn insert_entity(&self, data_service_version: impl Into<String>, table: impl Into<String>) -> insert_entity::RequestBuilder {
             insert_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 timeout: None,
@@ -656,18 +596,11 @@ pub mod table {
         #[doc = "Sets stored access policies for the table that may be used with Shared Access Signatures."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
-        pub fn set_access_policy(
-            &self,
-            x_ms_version: impl Into<String>,
-            table: impl Into<String>,
-            comp: impl Into<String>,
-        ) -> set_access_policy::RequestBuilder {
+        pub fn set_access_policy(&self, table: impl Into<String>, comp: impl Into<String>) -> set_access_policy::RequestBuilder {
             set_access_policy::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 table: table.into(),
                 comp: comp.into(),
                 table_acl: None,
@@ -705,7 +638,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) format: Option<String>,
@@ -758,7 +690,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -819,7 +751,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table_properties: models::TableProperties,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -855,7 +786,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -885,7 +816,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -908,7 +838,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -949,7 +879,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) timeout: Option<i64>,
@@ -1015,10 +944,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1082,7 +1011,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1138,10 +1066,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1173,7 +1101,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1229,10 +1156,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1262,7 +1189,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1318,10 +1244,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1351,7 +1277,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1396,10 +1321,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1422,7 +1347,7 @@ pub mod table {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SignedIdentifiers> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SignedIdentifiers = serde_json::from_slice(&bytes)?;
+                let body: models::SignedIdentifiers = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1445,7 +1370,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) comp: String,
             pub(crate) timeout: Option<i64>,
@@ -1475,10 +1399,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1525,7 +1449,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) timeout: Option<i64>,
@@ -1573,10 +1496,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1610,7 +1533,6 @@ pub mod table {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) comp: String,
             pub(crate) table_acl: Option<models::SignedIdentifiers>,
@@ -1646,6 +1568,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let req_body = if let Some(table_acl) = &this.table_acl {
                             req.insert_header("content-type", "application/xml");
                             azure_core::to_json(table_acl)?
@@ -1655,7 +1578,6 @@ pub mod table {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }

@@ -103,7 +103,7 @@ impl DequeuedMessageItem {
         }
     }
 }
-pub type DequeuedMessagesList = Vec<DequeuedMessageItem>;
+pub type QueueMessagesList = Vec<DequeuedMessageItem>;
 #[doc = "The object returned in the QueueMessageList array when calling Put Message on a Queue"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnqueuedMessage {
@@ -140,7 +140,7 @@ impl EnqueuedMessage {
         }
     }
 }
-pub type EnqueuedMessageList = Vec<EnqueuedMessage>;
+pub type QueueMessagesList = Vec<EnqueuedMessage>;
 #[doc = "Error codes returned by the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ErrorCode")]
@@ -365,8 +365,8 @@ pub struct ListQueuesSegmentResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults")]
     pub max_results: i64,
-    #[serde(rename = "QueueItems", default, skip_serializing_if = "Vec::is_empty")]
-    pub queue_items: Vec<QueueItem>,
+    #[serde(rename = "Queues", default, skip_serializing_if = "Option::is_none")]
+    pub queues: Option<list_queues_segment_response::Queues>,
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
 }
@@ -387,9 +387,17 @@ impl ListQueuesSegmentResponse {
             prefix,
             marker: None,
             max_results,
-            queue_items: Vec::new(),
+            queues: None,
             next_marker,
         }
+    }
+}
+pub mod list_queues_segment_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Queues {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<QueueItem>,
     }
 }
 #[doc = "Azure Analytics Logging settings."]
@@ -491,7 +499,7 @@ impl PeekedMessageItem {
         }
     }
 }
-pub type PeekedMessagesList = Vec<PeekedMessageItem>;
+pub type QueueMessagesList = Vec<PeekedMessageItem>;
 #[doc = "An Azure Storage Queue."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueItem {
@@ -578,12 +586,20 @@ pub struct StorageServiceProperties {
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
     #[doc = "The set of CORS rules."]
-    #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
-    pub cors: Vec<CorsRule>,
+    #[serde(rename = "Cors", default, skip_serializing_if = "Option::is_none")]
+    pub cors: Option<storage_service_properties::Cors>,
 }
 impl StorageServiceProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod storage_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Cors {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<CorsRule>,
     }
 }
 #[doc = "Stats for the storage service."]

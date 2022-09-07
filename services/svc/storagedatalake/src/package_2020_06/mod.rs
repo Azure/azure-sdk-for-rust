@@ -122,12 +122,10 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource`: The value must be \"account\" for all account operations."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_file_systems(&self, resource: impl Into<String>, x_ms_version: impl Into<String>) -> list_file_systems::RequestBuilder {
+        pub fn list_file_systems(&self, resource: impl Into<String>) -> list_file_systems::RequestBuilder {
             list_file_systems::RequestBuilder {
                 client: self.0.clone(),
                 resource: resource.into(),
-                x_ms_version: x_ms_version.into(),
                 prefix: None,
                 continuation: None,
                 max_results: None,
@@ -166,7 +164,6 @@ pub mod service {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource: String,
-            pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) continuation: Option<String>,
             pub(crate) max_results: Option<i32>,
@@ -213,6 +210,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         let resource = &this.resource;
                         req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         if let Some(prefix) = &this.prefix {
@@ -230,7 +228,6 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -254,18 +251,11 @@ pub mod file_system {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(
-            &self,
-            filesystem: impl Into<String>,
-            resource: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> create::RequestBuilder {
+        pub fn create(&self, filesystem: impl Into<String>, resource: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 x_ms_properties: None,
@@ -277,18 +267,11 @@ pub mod file_system {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_properties(
-            &self,
-            filesystem: impl Into<String>,
-            resource: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_properties::RequestBuilder {
+        pub fn set_properties(&self, filesystem: impl Into<String>, resource: impl Into<String>) -> set_properties::RequestBuilder {
             set_properties::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 x_ms_properties: None,
@@ -302,18 +285,11 @@ pub mod file_system {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(
-            &self,
-            filesystem: impl Into<String>,
-            resource: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> delete::RequestBuilder {
+        pub fn delete(&self, filesystem: impl Into<String>, resource: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 if_modified_since: None,
@@ -326,18 +302,11 @@ pub mod file_system {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(
-            &self,
-            filesystem: impl Into<String>,
-            resource: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, filesystem: impl Into<String>, resource: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
             }
@@ -347,18 +316,11 @@ pub mod file_system {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `recursive`: Required"]
-        pub fn list_paths(
-            &self,
-            filesystem: impl Into<String>,
-            x_ms_version: impl Into<String>,
-            recursive: bool,
-        ) -> list_paths::RequestBuilder {
+        pub fn list_paths(&self, filesystem: impl Into<String>, recursive: bool) -> list_paths::RequestBuilder {
             list_paths::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
-                x_ms_version: x_ms_version.into(),
                 recursive,
                 x_ms_client_request_id: None,
                 timeout: None,
@@ -372,16 +334,10 @@ pub mod file_system {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_blob_hierarchy_segment(
-            &self,
-            filesystem: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> list_blob_hierarchy_segment::RequestBuilder {
+        pub fn list_blob_hierarchy_segment(&self, filesystem: impl Into<String>) -> list_blob_hierarchy_segment::RequestBuilder {
             list_blob_hierarchy_segment::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
-                x_ms_version: x_ms_version.into(),
                 prefix: None,
                 delimiter: None,
                 marker: None,
@@ -401,7 +357,6 @@ pub mod file_system {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_properties: Option<String>,
@@ -435,6 +390,7 @@ pub mod file_system {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         let resource = &this.resource;
                         req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -443,7 +399,6 @@ pub mod file_system {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_properties) = &this.x_ms_properties {
                             req.insert_header("x-ms-properties", x_ms_properties);
                         }
@@ -463,7 +418,6 @@ pub mod file_system {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_properties: Option<String>,
@@ -509,6 +463,7 @@ pub mod file_system {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         let resource = &this.resource;
                         req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -517,7 +472,6 @@ pub mod file_system {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_properties) = &this.x_ms_properties {
                             req.insert_header("x-ms-properties", x_ms_properties);
                         }
@@ -543,7 +497,6 @@ pub mod file_system {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
@@ -583,6 +536,7 @@ pub mod file_system {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         let resource = &this.resource;
                         req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -591,7 +545,6 @@ pub mod file_system {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(if_modified_since) = &this.if_modified_since {
                             req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
@@ -614,7 +567,6 @@ pub mod file_system {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
         }
@@ -642,6 +594,7 @@ pub mod file_system {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         let resource = &this.resource;
                         req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -650,7 +603,6 @@ pub mod file_system {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -689,7 +641,6 @@ pub mod file_system {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
-            pub(crate) x_ms_version: String,
             pub(crate) recursive: bool,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -743,13 +694,13 @@ pub mod file_system {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(continuation) = &this.continuation {
                             req.url_mut().query_pairs_mut().append_pair("continuation", continuation);
                         }
@@ -782,7 +733,7 @@ pub mod file_system {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListBlobsHierarchySegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ListBlobsHierarchySegmentResponse = serde_json::from_slice(&bytes)?;
+                let body: models::ListBlobsHierarchySegmentResponse = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -806,7 +757,6 @@ pub mod file_system {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
-            pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) delimiter: Option<String>,
             pub(crate) marker: Option<String>,
@@ -889,6 +839,7 @@ pub mod file_system {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                                 if let Some(prefix) = &this.prefix {
                                     req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -907,7 +858,6 @@ pub mod file_system {
                                 if let Some(timeout) = &this.timeout {
                                     req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -941,18 +891,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn read(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> read::RequestBuilder {
+        pub fn read(&self, filesystem: impl Into<String>, path: impl Into<String>) -> read::RequestBuilder {
             read::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 range: None,
@@ -970,20 +913,17 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `x_ms_lease_action`: There are five lease actions: \"acquire\", \"break\", \"change\", \"renew\", and \"release\". Use \"acquire\" and specify the \"x-ms-proposed-lease-id\" and \"x-ms-lease-duration\" to acquire a new lease. Use \"break\" to break an existing lease. When a lease is broken, the lease break period is allowed to elapse, during which time no lease operation except break and release can be performed on the file. When a lease is successfully broken, the response indicates the interval in seconds until a new lease can be acquired. Use \"change\" and specify the current lease ID in \"x-ms-lease-id\" and the new lease ID in \"x-ms-proposed-lease-id\" to change the lease ID of an active lease. Use \"renew\" and specify the \"x-ms-lease-id\" to renew an existing lease. Use \"release\" and specify the \"x-ms-lease-id\" to release a lease."]
         pub fn lease(
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            x_ms_version: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
         ) -> lease::RequestBuilder {
             lease::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
@@ -1003,18 +943,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> create::RequestBuilder {
+        pub fn create(&self, filesystem: impl Into<String>, path: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 resource: None,
@@ -1047,7 +980,6 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `action`: The action must be \"append\" to upload data to be appended to a file, \"flush\" to flush previously uploaded data to a file, \"setProperties\" to set the properties of a file or directory, \"setAccessControl\" to set the owner, group, permissions, or access control list for a file or directory, or  \"setAccessControlRecursive\" to set the access control list for a directory recursively. Note that Hierarchical Namespace must be enabled for the account in order to use access control.  Also note that the Access Control List (ACL) includes permissions for the owner, owning group, and others, so the x-ms-permissions and x-ms-acl request headers are mutually exclusive."]
         #[doc = "* `mode`: Mode \"set\" sets POSIX access control rights on files and directories, \"modify\" modifies one or more POSIX access control rights  that pre-exist on files and directories, \"remove\" removes one or more POSIX access control rights  that were present earlier on files and directories"]
         #[doc = "* `body`: Initial data"]
@@ -1055,7 +987,6 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            x_ms_version: impl Into<String>,
             action: impl Into<String>,
             mode: impl Into<String>,
             body: impl Into<serde_json::Value>,
@@ -1064,7 +995,6 @@ pub mod path {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 action: action.into(),
                 mode: mode.into(),
                 body: body.into(),
@@ -1101,18 +1031,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> delete::RequestBuilder {
+        pub fn delete(&self, filesystem: impl Into<String>, path: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 recursive: None,
@@ -1130,18 +1053,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, filesystem: impl Into<String>, path: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_client_request_id: None,
                 timeout: None,
                 action: None,
@@ -1158,18 +1074,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_access_control(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_access_control::RequestBuilder {
+        pub fn set_access_control(&self, filesystem: impl Into<String>, path: impl Into<String>) -> set_access_control::RequestBuilder {
             set_access_control::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 x_ms_owner: None,
@@ -1189,20 +1098,17 @@ pub mod path {
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
         #[doc = "* `mode`: Mode \"set\" sets POSIX access control rights on files and directories, \"modify\" modifies one or more POSIX access control rights  that pre-exist on files and directories, \"remove\" removes one or more POSIX access control rights  that were present earlier on files and directories"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_control_recursive(
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
             mode: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> set_access_control_recursive::RequestBuilder {
             set_access_control_recursive::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 mode: mode.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 continuation: None,
                 force_flag: None,
@@ -1216,18 +1122,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn flush_data(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> flush_data::RequestBuilder {
+        pub fn flush_data(&self, filesystem: impl Into<String>, path: impl Into<String>) -> flush_data::RequestBuilder {
             flush_data::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 position: None,
                 retain_uncommitted_data: None,
@@ -1253,20 +1152,17 @@ pub mod path {
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
         #[doc = "* `body`: Initial data"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn append_data(
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
             body: impl Into<serde_json::Value>,
-            x_ms_version: impl Into<String>,
         ) -> append_data::RequestBuilder {
             append_data::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 body: body.into(),
-                x_ms_version: x_ms_version.into(),
                 position: None,
                 timeout: None,
                 content_length: None,
@@ -1281,20 +1177,17 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `x_ms_expiry_option`: Required. Indicates mode of the expiry time"]
         pub fn set_expiry(
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            x_ms_version: impl Into<String>,
             x_ms_expiry_option: impl Into<String>,
         ) -> set_expiry::RequestBuilder {
             set_expiry::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_expiry_option: x_ms_expiry_option.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -1306,18 +1199,11 @@ pub mod path {
         #[doc = "Arguments:"]
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn undelete(
-            &self,
-            filesystem: impl Into<String>,
-            path: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> undelete::RequestBuilder {
+        pub fn undelete(&self, filesystem: impl Into<String>, path: impl Into<String>) -> undelete::RequestBuilder {
             undelete::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_undelete_source: None,
                 x_ms_client_request_id: None,
@@ -1355,7 +1241,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) range: Option<String>,
@@ -1425,13 +1310,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(range) = &this.range {
                             req.insert_header("range", range);
                         }
@@ -1473,7 +1358,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -1550,13 +1434,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
                             req.insert_header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
@@ -1599,7 +1483,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) resource: Option<String>,
@@ -1759,13 +1642,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(resource) = &this.resource {
                             req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         }
@@ -1871,7 +1754,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) action: String,
             pub(crate) mode: String,
             pub(crate) body: serde_json::Value,
@@ -2040,13 +1922,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         let action = &this.action;
                         req.url_mut().query_pairs_mut().append_pair("action", action);
                         if let Some(max_records) = &this.max_records {
@@ -2143,7 +2025,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) recursive: Option<bool>,
@@ -2213,13 +2094,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(recursive) = &this.recursive {
                             req.url_mut().query_pairs_mut().append_pair("recursive", &recursive.to_string());
                         }
@@ -2257,7 +2138,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) action: Option<String>,
@@ -2327,13 +2207,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(action) = &this.action {
                             req.url_mut().query_pairs_mut().append_pair("action", action);
                         }
@@ -2371,7 +2251,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_owner: Option<String>,
@@ -2458,6 +2337,7 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2491,7 +2371,6 @@ pub mod path {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2532,7 +2411,6 @@ pub mod path {
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) mode: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) continuation: Option<String>,
             pub(crate) force_flag: Option<bool>,
@@ -2589,6 +2467,7 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2609,7 +2488,6 @@ pub mod path {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2630,7 +2508,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) position: Option<i64>,
             pub(crate) retain_uncommitted_data: Option<bool>,
@@ -2753,6 +2630,7 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2806,7 +2684,6 @@ pub mod path {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2824,7 +2701,6 @@ pub mod path {
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) body: serde_json::Value,
-            pub(crate) x_ms_version: String,
             pub(crate) position: Option<i64>,
             pub(crate) timeout: Option<i64>,
             pub(crate) content_length: Option<i64>,
@@ -2887,6 +2763,7 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(position) = &this.position {
                             req.url_mut().query_pairs_mut().append_pair("position", &position.to_string());
                         }
@@ -2910,7 +2787,6 @@ pub mod path {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
@@ -2926,7 +2802,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_expiry_option: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -2966,10 +2841,10 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -2993,7 +2868,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_undelete_source: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -3032,13 +2906,13 @@ pub mod path {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2020-06-12");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_undelete_source) = &this.x_ms_undelete_source {
                             req.insert_header("x-ms-undelete-source", x_ms_undelete_source);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
