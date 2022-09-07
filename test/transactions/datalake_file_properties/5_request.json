@@ -3,6 +3,7 @@
   "method": "HEAD",
   "headers": {
     "authorization": "<<STRIPPED>>",
+    "content-length": "0",
     "user-agent": "azsdk-rust-storage_datalake/0.1.1 (1.59.0; linux; x86_64)",
     "x-ms-date": "Mon, 02 May 2022 22:54:56 GMT",
     "x-ms-version": "2019-12-12"

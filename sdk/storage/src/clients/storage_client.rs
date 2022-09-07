@@ -148,12 +148,30 @@ impl std::fmt::Debug for StorageCredentials {
     }
 }
 
+impl From<Arc<dyn TokenCredential>> for StorageCredentials {
+    fn from(cred: Arc<dyn TokenCredential>) -> Self {
+        Self::TokenCredential(cred)
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
     Blob,
     Queue,
     // File,
     Table,
+    DataLake,
+}
+
+impl ServiceType {
+    pub fn subdomain(&self) -> &str {
+        match self {
+            ServiceType::Blob => "blob",
+            ServiceType::Queue => "queue",
+            ServiceType::Table => "table",
+            ServiceType::DataLake => "dfs",
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -11,7 +11,6 @@ use azure_core::{
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Serialize;
 use std::convert::{TryFrom, TryInto};
-use std::sync::Arc;
 use url::Url;
 
 operation! {
@@ -101,11 +100,10 @@ impl TransactionBuilder {
     ///
     /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1>
     pub fn delete<RK: Into<String>>(mut self, row_key: RK) -> azure_core::Result<Self> {
-        let client = Arc::new(self.client.clone());
-        let entity_client = client.entity_client(row_key)?;
-        let url = entity_client.url();
+        let entity_client = self.client.entity_client(row_key)?;
+        let url = entity_client.url().clone();
 
-        let mut request = Request::new(url.clone(), Method::Delete);
+        let mut request = Request::new(url, Method::Delete);
         request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
         request.insert_header(IF_MATCH, "*");
         request.set_body("");
@@ -116,7 +114,7 @@ impl TransactionBuilder {
 
     pub fn into_future(mut self) -> Transaction {
         Box::pin(async move {
-            let mut url = self.client.table_client().url().to_owned();
+            let mut url = self.client.table_client().url().clone();
             url.path_segments_mut()
                 .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                 .pop()
@@ -154,11 +152,10 @@ impl TransactionBuilder {
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
-        let client = Arc::new(self.client.clone());
-        let entity_client = client.entity_client(row_key)?;
-        let url = entity_client.url();
+        let entity_client = self.client.entity_client(row_key)?;
+        let url = entity_client.url().clone();
 
-        let mut request = Request::new(url.clone(), method);
+        let mut request = Request::new(url, method);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
         request.insert_headers(&ContentType::APPLICATION_JSON);
         request.set_body(body);

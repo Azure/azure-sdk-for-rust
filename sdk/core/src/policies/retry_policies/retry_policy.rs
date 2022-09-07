@@ -18,7 +18,7 @@ use std::time::Duration;
 /// `wait` can be implemented in more complex cases where a simple test of time
 /// is not enough.
 #[async_trait]
-pub trait RetryPolicy {
+pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// Determine if no more retries should be performed.
     ///
     /// Must return true if no more retries should be attempted.
@@ -48,7 +48,7 @@ const RETRY_STATUSES: &[StatusCode] = &[
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<T> Policy for T
 where
-    T: RetryPolicy + std::fmt::Debug + Send + Sync,
+    T: RetryPolicy,
 {
     async fn send(
         &self,

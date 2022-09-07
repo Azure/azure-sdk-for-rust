@@ -155,12 +155,12 @@ impl ContainerClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{blob::clients::AsBlobClient, core::prelude::*};
+    use crate::clients::BlobServiceClientBuilder;
+    use futures::StreamExt;
 
     fn get_emulator_client(container_name: &str) -> ContainerClient {
-        let storage_account = StorageClient::new_emulator_default();
-
-        storage_account.container_client(container_name)
+        let service_client = BlobServiceClientBuilder::emulator().build();
+        service_client.container_client(container_name)
     }
 
     #[tokio::test]
@@ -200,8 +200,10 @@ mod integration_tests {
             .expect("put block blob should succeed");
         let list = container_client
             .list_blobs()
-            .execute()
+            .into_stream()
+            .next()
             .await
+            .expect("list blobs next() should return value")
             .expect("list blobs should succeed");
         assert_eq!(list.blobs.blobs.len(), 1);
         assert_eq!(list.blobs.blobs[0].name, "hello.txt");

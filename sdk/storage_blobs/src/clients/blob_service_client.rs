@@ -8,8 +8,8 @@ use azure_storage::{
     },
     prelude::{AccountSasPermissions, AccountSasResource, AccountSasResourceType},
     shared_access_signature::account_sas::AccountSharedAccessSignature,
+    CloudLocation,
 };
-use once_cell::sync::Lazy;
 use time::OffsetDateTime;
 
 use super::ContainerClient;
@@ -24,10 +24,10 @@ pub struct BlobServiceClientBuilder {
 impl BlobServiceClientBuilder {
     /// Create a new instance of `BlobServiceClientBuilder`.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
+    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
         Self::with_location(CloudLocation::Public {
             account: account.into(),
-            credentials,
+            credentials: credentials.into(),
         })
     }
 
@@ -79,6 +79,15 @@ impl BlobServiceClientBuilder {
         self.options = self.options.transport(transport);
         self
     }
+
+    /// Override all of the client options.
+    ///
+    /// *Warning!*: This overrides all client options that have been previously set on this builder.
+    #[must_use]
+    pub fn client_options(mut self, options: impl Into<azure_core::ClientOptions>) -> Self {
+        self.options = options.into();
+        self
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -90,7 +99,7 @@ pub struct BlobServiceClient {
 impl BlobServiceClient {
     /// Create a new `BlobServiceClient` which connects to the account's instance in the public Azure cloud.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
+    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
         BlobServiceClientBuilder::new(account, credentials).build()
     }
 
@@ -98,7 +107,7 @@ impl BlobServiceClient {
     #[must_use]
     pub fn builder(
         account: impl Into<String>,
-        credentials: StorageCredentials,
+        credentials: impl Into<StorageCredentials>,
     ) -> BlobServiceClientBuilder {
         BlobServiceClientBuilder::new(account, credentials)
     }
@@ -116,7 +125,7 @@ impl BlobServiceClient {
     }
 
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        self.cloud_location.url()
+        self.cloud_location.url(ServiceType::Blob)
     }
 
     pub fn container_client<S: Into<String>>(&self, container_name: S) -> ContainerClient {
@@ -162,67 +171,3 @@ impl BlobServiceClient {
             .await
     }
 }
-
-/// The cloud with which you want to interact.
-// TODO: Other govt clouds?
-#[derive(Debug, Clone)]
-pub enum CloudLocation {
-    /// Azure public cloud
-    Public {
-        account: String,
-        credentials: StorageCredentials,
-    },
-    /// Azure China cloud
-    China {
-        account: String,
-        credentials: StorageCredentials,
-    },
-    /// Use the well-known emulator
-    Emulator { address: String, port: u16 },
-    /// A custom base URL
-    Custom {
-        uri: String,
-        credentials: StorageCredentials,
-    },
-}
-
-impl CloudLocation {
-    /// the base URL for a given cloud location
-    fn url(&self) -> azure_core::Result<url::Url> {
-        let url = match self {
-            CloudLocation::Public { account, .. } => {
-                format!("https://{}.blob.core.windows.net", account)
-            }
-            CloudLocation::China { account, .. } => {
-                format!("https://{}.blob.core.chinacloudapi.cn", account)
-            }
-            CloudLocation::Custom { uri, .. } => uri.clone(),
-            CloudLocation::Emulator { address, port } => {
-                format!("http://{address}:{port}/{EMULATOR_ACCOUNT}")
-            }
-        };
-        Ok(url::Url::parse(&url)?)
-    }
-
-    fn credentials(&self) -> &StorageCredentials {
-        match self {
-            CloudLocation::Public { credentials, .. } => credentials,
-            CloudLocation::China { credentials, .. } => credentials,
-            CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
-            CloudLocation::Custom { credentials, .. } => credentials,
-        }
-    }
-}
-
-pub static EMULATOR_CREDENTIALS: Lazy<StorageCredentials> = Lazy::new(|| {
-    StorageCredentials::Key(EMULATOR_ACCOUNT.to_owned(), EMULATOR_ACCOUNT_KEY.to_owned())
-});
-
-/// The well-known account used by Azurite and the legacy Azure Storage Emulator.
-/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
-pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
-
-/// The well-known account key used by Azurite and the legacy Azure Storage Emulator.
-/// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
-pub const EMULATOR_ACCOUNT_KEY: &str =
-    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";

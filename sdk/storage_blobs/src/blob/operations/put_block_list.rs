@@ -32,7 +32,7 @@ impl PutBlockListBuilder {
             // calculate the xml MD5. This can be made optional
             // if needed, but i think it's best to calculate it.
             let md5 = {
-                let hash = md5::compute(body_bytes.clone());
+                let hash = md5::compute(&body_bytes);
                 base64::encode(hash.0)
             };
 

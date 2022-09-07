@@ -5,76 +5,39 @@ use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct DeletePathBuilder<C>
-where
-    C: PathClient,
-{
+operation! {
+    DeletePath<C: PathClient + 'static>,
     client: C,
-    recursive: Option<Recursive>,
-    continuation: Option<NextMarker>,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSinceCondition>,
-    client_request_id: Option<ClientRequestId>,
-    timeout: Option<Timeout>,
-    context: Context,
+    ?recursive: Recursive,
+    ?continuation: NextMarker,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
 }
 
 impl<C: PathClient + 'static> DeletePathBuilder<C> {
-    pub(crate) fn new(client: C, recursive: Option<Recursive>, context: Context) -> Self {
-        Self {
-            client,
-            recursive,
-            continuation: None,
-            if_match_condition: None,
-            if_modified_since: None,
-            client_request_id: None,
-            timeout: None,
-            context,
-        }
-    }
-
-    setters! {
-        recursive: Recursive => Some(recursive),
-        continuation: NextMarker => Some(continuation),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: IfModifiedSinceCondition => Some(if_modified_since),
-        client_request_id: ClientRequestId => Some(client_request_id),
-        timeout: Timeout => Some(timeout),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeletePath {
-        let this = self.clone();
-        let ctx = self.context.clone();
-
         Box::pin(async move {
-            let mut url = this.client.url()?;
+            let mut url = self.client.url()?;
 
             if let Some(continuation) = self.continuation {
                 continuation.append_to_url_query_as_continuation(&mut url);
             };
             self.recursive.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = Request::new(url, azure_core::Method::Delete);
 
-            request.insert_headers(&this.client_request_id);
-            request.insert_headers(&this.if_match_condition);
-            request.insert_headers(&this.if_modified_since);
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
 
             let response = self
                 .client
-                .pipeline()
-                .send(&mut ctx.clone(), &mut request)
+                .send(&mut self.context.clone(), &mut request)
                 .await?;
 
             DeletePathResponse::try_from(response).await
         })
     }
 }
-
-azure_core::future!(DeletePath);
 
 #[derive(Debug, Clone)]
 pub struct DeletePathResponse {

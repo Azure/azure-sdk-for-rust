@@ -17,7 +17,7 @@ operation! {
 impl PutMessageBuilder {
     pub fn into_future(mut self) -> PutMessage {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(Some("messages"))?;
+            let mut url = self.client.messages_url()?;
 
             self.visibility_timeout.append_to_url_query(&mut url);
             self.ttl.append_to_url_query(&mut url);
@@ -30,7 +30,7 @@ impl PutMessageBuilder {
                 self.body
             );
 
-            let mut request = self.client.storage_client().finalize_request(
+            let mut request = self.client.finalize_request(
                 url,
                 Method::Post,
                 Headers::new(),
