@@ -1,6 +1,6 @@
 use crate::{prelude::*, IfMatchCondition};
 use azure_core::{error::Error, headers::Headers, Method, Response};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 
 operation! {
@@ -12,7 +12,7 @@ operation! {
 impl DeleteEntityBuilder {
     pub fn into_future(mut self) -> DeleteEntity {
         Box::pin(async move {
-            let url = self.client.url().clone();
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             headers.add(self.if_match.unwrap_or(IfMatchCondition::Any));

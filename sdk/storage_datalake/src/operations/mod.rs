@@ -13,6 +13,7 @@ mod path_head;
 mod path_list;
 mod path_patch;
 mod path_put;
+mod path_rename;
 
 pub use file_system_create::*;
 pub use file_system_delete::*;
@@ -25,3 +26,4 @@ pub use path_head::*;
 pub use path_list::*;
 pub use path_patch::*;
 pub use path_put::*;
+pub use path_rename::*;

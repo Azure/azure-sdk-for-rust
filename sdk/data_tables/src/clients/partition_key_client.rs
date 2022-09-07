@@ -1,6 +1,5 @@
 use crate::{operations::*, prelude::*, transaction::TransactionOperations};
 use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
-use azure_storage::core::clients::StorageClient;
 
 #[derive(Debug, Clone)]
 pub struct PartitionKeyClient {
@@ -32,10 +31,6 @@ impl PartitionKeyClient {
         &self.table_client
     }
 
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.table_client.storage_client()
-    }
-
     pub(crate) fn finalize_request(
         &self,
         url: Url,
@@ -54,17 +49,16 @@ impl PartitionKeyClient {
     ) -> azure_core::Result<Response> {
         self.table_client.send(context, request).await
     }
+
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        self.table_client.url()
+    }
 }
 
 #[cfg(test)]
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{
-        core::prelude::*,
-        table::clients::{AsTableClient, AsTableServiceClient},
-    };
-    use http::StatusCode;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct TestEntity {
@@ -76,10 +70,9 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> TableServiceClient {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account
-            .table_service_client()
-            .expect("a table service client")
+        crate::clients::TableServiceClientBuilder::emulator()
+            .retry(azure_core::RetryOptions::none())
+            .build()
     }
 
     #[ignore = "enable test once transactions are working in Azurite #297"]
@@ -89,14 +82,12 @@ mod integration_tests {
         let table = table_service.table_client("PartitionKeyClientTransaction");
 
         println!("Delete the table (if it exists)");
-        match table.delete().execute().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("the table should be created");
 
@@ -115,19 +106,20 @@ mod integration_tests {
             name: "Francesco".to_owned(),
             surname: "Potter".to_owned(),
         };
-        let mut transaction = partition_client.transaction();
+        let transaction = partition_client.transaction();
 
         let response = transaction
             .insert(&entity1)
+            .unwrap()
             .insert(&entity2)
+            .unwrap()
             .into_future()
             .await
             .expect("transaction compete");
 
         for response in response.operation_responses {
-            assert_eq!(
-                response.status_code,
-                StatusCode::CREATED,
+            assert!(
+                response.status_code.is_success(),
                 "each of the entities should be inserted"
             );
         }

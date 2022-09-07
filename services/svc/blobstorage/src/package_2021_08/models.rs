@@ -125,11 +125,19 @@ impl Serialize for ArchiveStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArrowConfiguration {
     #[serde(rename = "Schema")]
-    pub schema: Vec<ArrowField>,
+    pub schema: arrow_configuration::Schema,
 }
 impl ArrowConfiguration {
-    pub fn new(schema: Vec<ArrowField>) -> Self {
+    pub fn new(schema: arrow_configuration::Schema) -> Self {
         Self { schema }
+    }
+}
+pub mod arrow_configuration {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Schema {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<ArrowField>,
     }
 }
 #[doc = "Groups settings regarding specific field of an arrow schema"]
@@ -198,10 +206,10 @@ pub struct BlobItemInternal {
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<BlobMetadata>,
     #[doc = "Blob tags"]
-    #[serde(rename = "BlobTags", default, skip_serializing_if = "Option::is_none")]
-    pub blob_tags: Option<BlobTags>,
-    #[serde(rename = "ObjectReplicationMetadata", default, skip_serializing_if = "Option::is_none")]
-    pub object_replication_metadata: Option<ObjectReplicationMetadata>,
+    #[serde(rename = "Tags", default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<BlobTags>,
+    #[serde(rename = "OrMetadata", default, skip_serializing_if = "Option::is_none")]
+    pub or_metadata: Option<ObjectReplicationMetadata>,
     #[serde(rename = "HasVersionsOnly", default, skip_serializing_if = "Option::is_none")]
     pub has_versions_only: Option<bool>,
 }
@@ -215,8 +223,8 @@ impl BlobItemInternal {
             is_current_version: None,
             properties,
             metadata: None,
-            blob_tags: None,
-            object_replication_metadata: None,
+            tags: None,
+            or_metadata: None,
             has_versions_only: None,
         }
     }
@@ -418,12 +426,20 @@ impl BlobTag {
 #[doc = "Blob tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobTags {
-    #[serde(rename = "BlobTagSet")]
-    pub blob_tag_set: Vec<BlobTag>,
+    #[serde(rename = "TagSet", default, skip_serializing_if = "Option::is_none")]
+    pub tag_set: Option<blob_tags::TagSet>,
 }
 impl BlobTags {
-    pub fn new(blob_tag_set: Vec<BlobTag>) -> Self {
-        Self { blob_tag_set }
+    pub fn new() -> Self {
+        Self { tag_set: None }
+    }
+}
+pub mod blob_tags {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct TagSet {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<BlobTag>,
     }
 }
 #[doc = "Represents a single block in a block blob.  It describes the block's ID and size."]
@@ -443,14 +459,27 @@ impl Block {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockList {
-    #[serde(rename = "CommittedBlocks", default, skip_serializing_if = "Vec::is_empty")]
-    pub committed_blocks: Vec<Block>,
-    #[serde(rename = "UncommittedBlocks", default, skip_serializing_if = "Vec::is_empty")]
-    pub uncommitted_blocks: Vec<Block>,
+    #[serde(rename = "CommittedBlocks", default, skip_serializing_if = "Option::is_none")]
+    pub committed_blocks: Option<block_list::CommittedBlocks>,
+    #[serde(rename = "UncommittedBlocks", default, skip_serializing_if = "Option::is_none")]
+    pub uncommitted_blocks: Option<block_list::UncommittedBlocks>,
 }
 impl BlockList {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod block_list {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct CommittedBlocks {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<Block>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct UncommittedBlocks {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<Block>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -625,8 +654,8 @@ pub struct DelimitedTextConfiguration {
     #[serde(rename = "EscapeChar", default, skip_serializing_if = "Option::is_none")]
     pub escape_char: Option<String>,
     #[doc = "Represents whether the data has headers."]
-    #[serde(rename = "HeadersPresent", default, skip_serializing_if = "Option::is_none")]
-    pub headers_present: Option<bool>,
+    #[serde(rename = "HasHeaders", default, skip_serializing_if = "Option::is_none")]
+    pub has_headers: Option<bool>,
 }
 impl DelimitedTextConfiguration {
     pub fn new() -> Self {
@@ -969,18 +998,26 @@ pub struct FilterBlobSegment {
     #[serde(rename = "Where")]
     pub where_: String,
     #[serde(rename = "Blobs")]
-    pub blobs: Vec<FilterBlobItem>,
+    pub blobs: filter_blob_segment::Blobs,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
 impl FilterBlobSegment {
-    pub fn new(service_endpoint: String, where_: String, blobs: Vec<FilterBlobItem>) -> Self {
+    pub fn new(service_endpoint: String, where_: String, blobs: filter_blob_segment::Blobs) -> Self {
         Self {
             service_endpoint,
             where_,
             blobs,
             next_marker: None,
         }
+    }
+}
+pub mod filter_blob_segment {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Blobs {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<FilterBlobItem>,
     }
 }
 #[doc = "Geo-Replication information for the Secondary Storage Service"]
@@ -1110,8 +1147,8 @@ pub struct ListBlobsFlatSegmentResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobFlatListSegment,
+    #[serde(rename = "Blobs", default, skip_serializing_if = "Option::is_none")]
+    pub blobs: Option<BlobFlatListSegment>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
@@ -1122,14 +1159,14 @@ impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
     }
 }
 impl ListBlobsFlatSegmentResponse {
-    pub fn new(service_endpoint: String, container_name: String, segment: BlobFlatListSegment) -> Self {
+    pub fn new(service_endpoint: String, container_name: String) -> Self {
         Self {
             service_endpoint,
             container_name,
             prefix: None,
             marker: None,
             max_results: None,
-            segment,
+            blobs: None,
             next_marker: None,
         }
     }
@@ -1149,8 +1186,8 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub max_results: Option<i64>,
     #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
     pub delimiter: Option<String>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobHierarchyListSegment,
+    #[serde(rename = "Blobs", default, skip_serializing_if = "Option::is_none")]
+    pub blobs: Option<BlobHierarchyListSegment>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
@@ -1161,7 +1198,7 @@ impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
     }
 }
 impl ListBlobsHierarchySegmentResponse {
-    pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
+    pub fn new(service_endpoint: String, container_name: String) -> Self {
         Self {
             service_endpoint,
             container_name,
@@ -1169,7 +1206,7 @@ impl ListBlobsHierarchySegmentResponse {
             marker: None,
             max_results: None,
             delimiter: None,
-            segment,
+            blobs: None,
             next_marker: None,
         }
     }
@@ -1185,8 +1222,8 @@ pub struct ListContainersSegmentResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
-    #[serde(rename = "ContainerItems")]
-    pub container_items: Vec<ContainerItem>,
+    #[serde(rename = "Containers", default, skip_serializing_if = "Option::is_none")]
+    pub containers: Option<list_containers_segment_response::Containers>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
@@ -1197,15 +1234,23 @@ impl azure_core::Continuable for ListContainersSegmentResponse {
     }
 }
 impl ListContainersSegmentResponse {
-    pub fn new(service_endpoint: String, container_items: Vec<ContainerItem>) -> Self {
+    pub fn new(service_endpoint: String) -> Self {
         Self {
             service_endpoint,
             prefix: None,
             marker: None,
             max_results: None,
-            container_items,
+            containers: None,
             next_marker: None,
         }
+    }
+}
+pub mod list_containers_segment_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Containers {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<ContainerItem>,
     }
 }
 #[doc = "Azure Analytics Logging settings."]
@@ -1564,8 +1609,8 @@ pub struct StorageServiceProperties {
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
     #[doc = "The set of CORS rules."]
-    #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
-    pub cors: Vec<CorsRule>,
+    #[serde(rename = "Cors", default, skip_serializing_if = "Option::is_none")]
+    pub cors: Option<storage_service_properties::Cors>,
     #[doc = "The default version to use for requests to the Blob service if an incoming request's version is not specified. Possible values include version 2008-10-27 and all more recent versions"]
     #[serde(rename = "DefaultServiceVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_service_version: Option<String>,
@@ -1579,6 +1624,14 @@ pub struct StorageServiceProperties {
 impl StorageServiceProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod storage_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Cors {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<CorsRule>,
     }
 }
 #[doc = "Stats for the storage service."]

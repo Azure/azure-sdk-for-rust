@@ -1,28 +1,19 @@
-use crate::{operations::*, PopReceipt, PopReceiptClient, QueueStoredAccessPolicy};
+use crate::{
+    operations::*, PopReceipt, PopReceiptClient, QueueServiceClient, QueueStoredAccessPolicy,
+};
 use azure_core::{prelude::*, Context, Request, Response};
-use azure_storage::core::clients::{ServiceType, StorageClient};
 use std::fmt::Debug;
-
-pub trait AsQueueClient<QN: Into<String>> {
-    fn queue_client(&self, queue_name: QN) -> QueueClient;
-}
-
-impl<QN: Into<String>> AsQueueClient<QN> for StorageClient {
-    fn queue_client(&self, queue_name: QN) -> QueueClient {
-        QueueClient::new(self.clone(), queue_name.into())
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct QueueClient {
-    storage_client: StorageClient,
+    service_client: QueueServiceClient,
     queue_name: String,
 }
 
 impl QueueClient {
-    pub(crate) fn new(storage_client: StorageClient, queue_name: String) -> Self {
+    pub(crate) fn new(service_client: QueueServiceClient, queue_name: String) -> Self {
         Self {
-            storage_client,
+            service_client,
             queue_name,
         }
     }
@@ -75,9 +66,6 @@ impl QueueClient {
     }
 
     /// Puts a message in the queue.
-    ///
-    /// The body will be passed to the `execute` function of the returned
-    /// struct.
     pub fn put_message<S: Into<String>>(&self, message: S) -> PutMessageBuilder {
         PutMessageBuilder::new(self.clone(), message.into())
     }
@@ -106,26 +94,39 @@ impl QueueClient {
         &self.queue_name
     }
 
+    pub fn url(&self) -> azure_core::Result<url::Url> {
+        let mut url = self.service_client.url()?;
+        url.path_segments_mut()
+            .expect("invalid base url")
+            .push(self.queue_name());
+        Ok(url)
+    }
+
+    pub(crate) fn messages_url(&self) -> azure_core::Result<url::Url> {
+        let mut url = self.url()?;
+        url.path_segments_mut()
+            .expect("invalid base url")
+            .push("messages");
+        Ok(url)
+    }
+
+    pub(crate) fn finalize_request(
+        &self,
+        url: url::Url,
+        method: azure_core::Method,
+        headers: azure_core::headers::Headers,
+        request_body: Option<azure_core::Body>,
+    ) -> azure_core::Result<Request> {
+        self.service_client
+            .finalize_request(url, method, headers, request_body)
+    }
+
     pub(crate) async fn send(
         &self,
         context: &mut Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Queue)
-            .await
-    }
-
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        &self.storage_client
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.storage_client
-            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
+        self.service_client.send(context, request).await
     }
 }
 
@@ -133,11 +134,13 @@ impl QueueClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{core::prelude::*, queue::clients::AsQueueClient};
+    use crate::clients::QueueServiceClientBuilder;
 
     fn get_emulator_client(queue_name: &str) -> QueueClient {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account.queue_client(queue_name)
+        let service_client = QueueServiceClientBuilder::emulator()
+            .retry(azure_core::RetryOptions::none())
+            .build();
+        service_client.queue_client(queue_name)
     }
 
     #[tokio::test]
@@ -147,12 +150,12 @@ mod integration_tests {
 
         queue_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
         queue_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -164,19 +167,19 @@ mod integration_tests {
 
         queue_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
 
         queue_client
-            .put_message()
-            .execute("Hello")
+            .put_message("Hello")
+            .into_future()
             .await
             .expect("put message should succeed");
 
         let mut messages = queue_client
             .peek_messages()
-            .execute()
+            .into_future()
             .await
             .expect("peek messages should succeed");
         assert_eq!(
@@ -186,7 +189,7 @@ mod integration_tests {
 
         let mut messages = queue_client
             .get_messages()
-            .execute()
+            .into_future()
             .await
             .expect("get messages should succeed");
         assert_eq!(
@@ -196,7 +199,7 @@ mod integration_tests {
 
         queue_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }

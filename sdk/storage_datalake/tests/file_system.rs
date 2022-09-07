@@ -13,7 +13,7 @@ async fn file_system_create_delete() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-system";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");
@@ -88,7 +88,7 @@ async fn file_system_list_paths() -> azure_core::Result<()> {
     let file_system_name = "azurerustsdk-datalake-file-system-list-paths";
     let file_system_client = data_lake_client
         .clone()
-        .into_file_system_client(file_system_name.to_string());
+        .file_system_client(file_system_name.to_string());
 
     file_system_client.create().into_future().await?;
 

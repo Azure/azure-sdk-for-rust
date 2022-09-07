@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Method, Response};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 operation! {
@@ -11,7 +11,7 @@ operation! {
 impl CreateTableBuilder {
     pub fn into_future(mut self) -> CreateTable {
         Box::pin(async move {
-            let url = self.client.url().clone();
+            let url = self.client.url()?;
 
             #[derive(Debug, Clone, Serialize)]
             struct RequestBody<'a> {

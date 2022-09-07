@@ -38,7 +38,7 @@ where
 
     pub fn into_future(mut self) -> InsertEntity<T> {
         Box::pin(async move {
-            let mut url = self.table_client.url().to_owned();
+            let mut url = self.table_client.url()?;
             url.path_segments_mut()
                 .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                 .pop()

@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::{date, prelude::*};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 use futures::StreamExt;
 use std::time::Duration;
@@ -16,13 +16,12 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     let queue_name = format!("sdk-{}", Uuid::new_v4());
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-
-    let queue_service_client = storage_client.queue_service_client();
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let queue_service = QueueServiceClient::new(account, storage_credentials);
 
     println!("creating queue {}", queue_name);
 
-    let queue = storage_client.queue_client(queue_name);
+    let queue = queue_service.queue_client(queue_name);
 
     // this step is optional but here we show
     // how to add metadata to a new queue.
@@ -82,7 +81,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let response = queue.get_acl().into_future().await?;
     println!("response == {:#?}", response);
 
-    let mut stream = queue_service_client.list_queues().into_stream();
+    let mut stream = queue_service.list_queues().into_stream();
     while let Some(entry) = stream.next().await {
         let entry = entry?;
         println!("entry == {:#?}", entry);

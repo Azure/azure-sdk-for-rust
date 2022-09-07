@@ -1,6 +1,5 @@
 use crate::{clients::*, operations::*};
 use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
-use azure_storage::clients::StorageClient;
 use serde::{de::DeserializeOwned, Serialize};
 
 #[derive(Debug, Clone)]
@@ -41,12 +40,8 @@ impl TableClient {
         Ok(InsertEntityBuilder::new(self.clone(), body))
     }
 
-    pub(crate) fn url(&self) -> &url::Url {
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
         self.table_service_client.url()
-    }
-
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.table_service_client.storage_client()
     }
 
     pub fn partition_key_client<PK: Into<String>>(&self, partition_key: PK) -> PartitionKeyClient {
@@ -77,10 +72,6 @@ impl TableClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{
-        core::prelude::*,
-        table::clients::{AsTableClient, AsTableServiceClient},
-    };
     use futures::StreamExt;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,10 +84,9 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> TableServiceClient {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account
-            .table_service_client()
-            .expect("a table service client")
+        TableServiceClientBuilder::emulator()
+            .retry(azure_core::RetryOptions::none())
+            .build()
     }
 
     #[tokio::test]
@@ -111,12 +101,10 @@ mod integration_tests {
         );
 
         println!("Create the table");
-        match table.create().execute().await {
-            _ => {}
-        }
+        let _ = table.create().into_future().await.unwrap();
 
         println!("Validate that the table was created");
-        let mut stream = Box::pin(table_client.list().stream());
+        let mut stream = table_client.list().into_stream();
         while let Some(result) = stream.next().await {
             let result = result.expect("the request should succeed");
 
@@ -130,12 +118,12 @@ mod integration_tests {
         println!("Delete the table");
         table
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("we should be able to delete the table");
 
         println!("Validate that the table was deleted");
-        let mut stream = Box::pin(table_client.list().stream());
+        let mut stream = table_client.list().into_stream();
         while let Some(result) = stream.next().await {
             let result = result.expect("the request should succeed");
             let has_table = result
@@ -161,14 +149,12 @@ mod integration_tests {
         );
 
         println!("Delete the table (if it exists)");
-        match table.delete().execute().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("the table should be created");
 
@@ -179,10 +165,11 @@ mod integration_tests {
         };
 
         println!("Insert an entity into the table");
-        table
-            .insert()
+        let _: InsertEntityResponse<TestEntity> = table
+            .insert(&entity)
+            .unwrap()
             .return_entity(true)
-            .execute(&entity)
+            .into_future()
             .await
             .expect("the insert operation should succeed");
 

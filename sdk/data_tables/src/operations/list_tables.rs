@@ -2,7 +2,7 @@ use crate::prelude::*;
 use azure_core::{
     error::Error, headers::*, prelude::*, AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 
 operation! {
@@ -20,7 +20,7 @@ impl ListTablesBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.client.url().to_owned();
+                let mut url = this.client.url()?;
 
                 this.filter.append_to_url_query(&mut url);
                 this.select.append_to_url_query(&mut url);
@@ -81,7 +81,7 @@ impl TryFrom<CollectedResponse> for ListTablesResponse {
 
         let continuation_next_table_name = response
             .headers()
-            .get_optional_string(&HeaderName::from_static("x-ms-continuation-NextTableName"));
+            .get_optional_string(&HeaderName::from_static("x-ms-continuation-nexttablename"));
 
         Ok(ListTablesResponse {
             common_storage_response_headers: response.headers().try_into()?,

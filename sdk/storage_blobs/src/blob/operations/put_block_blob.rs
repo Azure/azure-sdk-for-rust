@@ -43,7 +43,7 @@ impl PutBlockBlobBuilder {
                 url,
                 azure_core::Method::Put,
                 headers,
-                Some(self.body.clone()),
+                Some(self.body),
             )?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;

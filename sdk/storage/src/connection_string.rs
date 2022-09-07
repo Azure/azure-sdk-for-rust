@@ -1,4 +1,6 @@
-use azure_core::error::{Error, ErrorKind};
+use azure_core::error::{Error, ErrorKind, ResultExt};
+
+use crate::StorageCredentials;
 
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";
@@ -176,6 +178,56 @@ impl<'a> ConnectionString<'a> {
             file_secondary_endpoint,
         })
     }
+
+    pub fn storage_credentials(&self) -> azure_core::Result<StorageCredentials> {
+        match self {
+            ConnectionString {
+                sas: Some(sas_token),
+                ..
+            } => {
+                if self.account_key.is_some() {
+                    log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+                }
+                Ok(StorageCredentials::SASToken(get_sas_token_parms(
+                    sas_token,
+                )?))
+            }
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(key),
+                ..
+            } =>  Ok(StorageCredentials::Key(account.to_string(), key.to_string())),
+           _ => {
+                Err(Error::message(ErrorKind::Credential,
+                    "Could not create a `StorageCredentail` from the provided connection string. Please validate that you have specified a means of authentication (key, SAS, etc.)."
+                ))
+            }
+        }
+    }
+}
+
+fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
+    // Any base url will do: we just need to parse the SAS token
+    // to get its query pairs.
+    let base_url = url::Url::parse("https://blob.core.windows.net").unwrap();
+
+    let url = url::Url::options().base_url(Some(&base_url));
+
+    // this code handles the leading ?
+    // we support both with or without
+    let url = if sas_token.starts_with('?') {
+        url.parse(sas_token)
+    } else {
+        url.parse(&format!("?{}", sas_token))
+    }
+    .with_context(ErrorKind::DataConversion, || {
+        format!("failed to parse SAS token: {sas_token}")
+    })?;
+
+    Ok(url
+        .query_pairs()
+        .map(|p| (String::from(p.0), String::from(p.1)))
+        .collect())
 }
 
 #[cfg(test)]

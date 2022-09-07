@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use azure_core::{headers::*, AppendToUrlQuery, Context, Etag, Method, Response};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::{convert::TryInto, marker::PhantomData};
 
@@ -29,7 +29,7 @@ impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
 
     pub fn into_future(mut self) -> GetEntity<T> {
         Box::pin(async move {
-            let mut url = self.entity_client.url().to_owned();
+            let mut url = self.entity_client.url()?;
 
             self.select.append_to_url_query(&mut url);
 

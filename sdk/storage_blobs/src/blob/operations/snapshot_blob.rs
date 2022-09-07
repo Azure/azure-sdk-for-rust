@@ -52,7 +52,7 @@ pub struct SnapshotBlobResponse {
 }
 
 impl TryFrom<&Headers> for SnapshotBlobResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         Ok(SnapshotBlobResponse {

@@ -457,8 +457,8 @@ pub struct ListFilesAndDirectoriesSegmentResponse {
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
     #[doc = "Abstract for entries that can be listed from Directory."]
-    #[serde(rename = "Segment")]
-    pub segment: FilesAndDirectoriesListSegment,
+    #[serde(rename = "Entries", default, skip_serializing_if = "Option::is_none")]
+    pub entries: Option<FilesAndDirectoriesListSegment>,
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
     #[serde(rename = "DirectoryId", default, skip_serializing_if = "Option::is_none")]
@@ -475,14 +475,7 @@ impl azure_core::Continuable for ListFilesAndDirectoriesSegmentResponse {
     }
 }
 impl ListFilesAndDirectoriesSegmentResponse {
-    pub fn new(
-        service_endpoint: String,
-        share_name: String,
-        directory_path: String,
-        prefix: String,
-        segment: FilesAndDirectoriesListSegment,
-        next_marker: String,
-    ) -> Self {
+    pub fn new(service_endpoint: String, share_name: String, directory_path: String, prefix: String, next_marker: String) -> Self {
         Self {
             service_endpoint,
             share_name,
@@ -491,7 +484,7 @@ impl ListFilesAndDirectoriesSegmentResponse {
             prefix,
             marker: None,
             max_results: None,
-            segment,
+            entries: None,
             next_marker,
             directory_id: None,
         }
@@ -500,17 +493,25 @@ impl ListFilesAndDirectoriesSegmentResponse {
 #[doc = "An enumeration of handles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListHandlesResponse {
-    #[serde(rename = "HandleList", default, skip_serializing_if = "Vec::is_empty")]
-    pub handle_list: Vec<HandleItem>,
+    #[serde(rename = "Entries", default, skip_serializing_if = "Option::is_none")]
+    pub entries: Option<list_handles_response::Entries>,
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
 }
 impl ListHandlesResponse {
     pub fn new(next_marker: String) -> Self {
         Self {
-            handle_list: Vec::new(),
+            entries: None,
             next_marker,
         }
+    }
+}
+pub mod list_handles_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Entries {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<HandleItem>,
     }
 }
 #[doc = "An enumeration of shares."]
@@ -524,8 +525,8 @@ pub struct ListSharesResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
-    #[serde(rename = "ShareItems", default, skip_serializing_if = "Vec::is_empty")]
-    pub share_items: Vec<ShareItemInternal>,
+    #[serde(rename = "Shares", default, skip_serializing_if = "Option::is_none")]
+    pub shares: Option<list_shares_response::Shares>,
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
 }
@@ -546,9 +547,17 @@ impl ListSharesResponse {
             prefix: None,
             marker: None,
             max_results: None,
-            share_items: Vec::new(),
+            shares: None,
             next_marker,
         }
+    }
+}
+pub mod list_shares_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Shares {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<ShareItemInternal>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -721,7 +730,7 @@ impl SharePropertiesInternal {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareProtocolSettings {
     #[doc = "Settings for SMB protocol."]
-    #[serde(rename = "Smb", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "SMB", default, skip_serializing_if = "Option::is_none")]
     pub smb: Option<ShareSmbSettings>,
 }
 impl ShareProtocolSettings {
@@ -813,14 +822,22 @@ pub struct StorageServiceProperties {
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
     #[doc = "The set of CORS rules."]
-    #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
-    pub cors: Vec<CorsRule>,
+    #[serde(rename = "Cors", default, skip_serializing_if = "Option::is_none")]
+    pub cors: Option<storage_service_properties::Cors>,
     #[doc = "Protocol settings"]
-    #[serde(rename = "Protocol", default, skip_serializing_if = "Option::is_none")]
-    pub protocol: Option<ShareProtocolSettings>,
+    #[serde(rename = "ProtocolSettings", default, skip_serializing_if = "Option::is_none")]
+    pub protocol_settings: Option<ShareProtocolSettings>,
 }
 impl StorageServiceProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod storage_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Cors {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<CorsRule>,
     }
 }

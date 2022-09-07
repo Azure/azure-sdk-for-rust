@@ -3,8 +3,8 @@ pub use crate::options::*;
 pub use crate::{
     blob::{Blob, BlobBlockType, BlockList, BlockListType},
     clients::{
-        AsBlobServiceClient, AsContainerClient, BlobClient, BlobLeaseClient, BlobServiceClient,
-        ContainerClient, ContainerLeaseClient,
+        BlobClient, BlobLeaseClient, BlobServiceClient, BlobServiceClientBuilder, ContainerClient,
+        ContainerLeaseClient,
     },
 };
-pub use azure_storage::core::{StoredAccessPolicy, StoredAccessPolicyList};
+pub use azure_storage::{StoredAccessPolicy, StoredAccessPolicyList};

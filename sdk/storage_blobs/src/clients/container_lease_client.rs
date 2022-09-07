@@ -1,6 +1,5 @@
 use crate::{container::operations::*, prelude::*};
 use azure_core::{headers::Headers, prelude::*, Body, Context, Method, Request, Response, Url};
-use azure_storage::core::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct ContainerLeaseClient {
@@ -24,6 +23,18 @@ impl ContainerLeaseClient {
         RenewLeaseBuilder::new(self.clone())
     }
 
+    pub fn lease_id(&self) -> LeaseId {
+        self.lease_id
+    }
+
+    pub fn container_client(&self) -> &ContainerClient {
+        &self.container_client
+    }
+
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        self.container_client.url()
+    }
+
     pub(crate) fn finalize_request(
         &self,
         url: Url,
@@ -33,22 +44,6 @@ impl ContainerLeaseClient {
     ) -> azure_core::Result<Request> {
         self.container_client
             .finalize_request(url, method, headers, request_body)
-    }
-
-    pub fn lease_id(&self) -> LeaseId {
-        self.lease_id
-    }
-
-    pub fn storage_client(&self) -> &StorageClient {
-        self.container_client.storage_client()
-    }
-
-    pub fn container_client(&self) -> &ContainerClient {
-        &self.container_client
-    }
-
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
-        self.container_client.url()
     }
 
     pub(crate) async fn send(

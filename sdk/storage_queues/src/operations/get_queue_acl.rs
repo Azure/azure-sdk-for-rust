@@ -1,6 +1,6 @@
 use crate::{clients::QueueClient, QueueStoredAccessPolicy};
 use azure_core::{headers::Headers, Method, Response as AzureResponse};
-use azure_storage::{core::headers::CommonStorageResponseHeaders, StoredAccessPolicyList};
+use azure_storage::{headers::CommonStorageResponseHeaders, StoredAccessPolicyList};
 use std::convert::TryInto;
 
 operation! {
@@ -11,16 +11,13 @@ operation! {
 impl GetQueueACLBuilder {
     pub fn into_future(mut self) -> GetQueueACL {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
+            let mut url = self.client.url()?;
 
             url.query_pairs_mut().append_pair("comp", "acl");
 
-            let mut request = self.client.storage_client().finalize_request(
-                url,
-                Method::Get,
-                Headers::new(),
-                None,
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

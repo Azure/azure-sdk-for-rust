@@ -1,5 +1,5 @@
 use azure_core::error::{ErrorKind, ResultExt};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 
@@ -23,7 +23,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container_name)
         .blob_client(file_name);
 

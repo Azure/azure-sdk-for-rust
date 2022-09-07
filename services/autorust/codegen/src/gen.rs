@@ -1,7 +1,7 @@
 use crate::{
     autorust_toml, cargo_toml, io, lib_rs,
     readme_md::{self, ReadmeMd},
-    CrateConfig, Error, Result, RunConfig, SpecReadme,
+    CrateConfig, Error, Result, RunConfig, SpecReadme, WebOperation,
 };
 use std::{collections::HashMap, fs};
 
@@ -40,6 +40,7 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
     let mut operation_totals = HashMap::new();
     let mut api_version_totals = HashMap::new();
     let mut api_versions = HashMap::new();
+    let mut has_xml = false;
     for tag in tags {
         println!("  {}", tag.name());
         let output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
@@ -55,7 +56,8 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
             input_files,
         };
         let cg = crate::run(crate_config, &package_config)?;
-        operation_totals.insert(tag.name(), cg.spec.operations()?.len());
+        let operations = cg.spec.operations()?;
+        operation_totals.insert(tag.name(), operations.len());
         let mut versions = cg.spec.api_versions();
         versions.sort_unstable();
         api_version_totals.insert(tag.name(), versions.len());
@@ -63,6 +65,12 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
             tag.name(),
             versions.iter().map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(", "),
         );
+        if !has_xml {
+            has_xml = cg.spec.has_xml()
+        }
+        if !has_xml {
+            has_xml = operations.iter().any(WebOperation::has_xml);
+        }
     }
 
     let default_tag_name = if let Some(name) = package_config.default_tag() {
@@ -71,7 +79,8 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
         spec_config.tag()
     };
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
-    cargo_toml::create(package_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
+
+    cargo_toml::create(package_name, tags, default_tag, has_xml, &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
         package_name,

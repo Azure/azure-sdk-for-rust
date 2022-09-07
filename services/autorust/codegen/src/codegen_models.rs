@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{type_name_gen, TypeNameCode},
+    codegen::TypeNameCode,
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
@@ -18,6 +18,15 @@ use std::collections::{HashMap, HashSet};
 struct PropertyGen {
     name: String,
     schema: SchemaGen,
+}
+
+impl PropertyGen {
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
+    fn xml_name(&self) -> Option<&str> {
+        self.schema.xml_name()
+    }
 }
 
 #[derive(Clone)]
@@ -48,6 +57,34 @@ impl SchemaGen {
             properties: Vec::new(),
             all_of: Vec::new(),
         }
+    }
+
+    /// Replaces the name of the element/attribute used for the described schema property.
+    /// When defined within the Items Object (items), it will affect the name of the individual
+    /// XML elements within the list. When defined alongside type being array (outside the items),
+    /// it will affect the wrapping element and only if wrapped is true. If wrapped is false, it will be ignored.
+    ///
+    /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    fn xml_name(&self) -> Option<&str> {
+        self.schema.common.xml.as_ref().and_then(|xml| xml.name.as_deref())
+    }
+
+    /// Declares whether the property definition translates to an attribute instead of an element.
+    /// Default value is false.
+    ///
+    /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    #[allow(dead_code)]
+    fn xml_attribute(&self) -> bool {
+        self.schema.common.xml.as_ref().and_then(|xml| xml.attribute).unwrap_or_default()
+    }
+
+    /// MAY be used only for an array definition. Signifies whether the array is wrapped (for example,
+    /// <books><book/><book/></books>) or unwrapped (<book/><book/>). Default value is false.
+    /// The definition takes effect only when defined alongside type being array (outside the items).
+    ///
+    /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    fn xml_wrapped(&self) -> bool {
+        self.schema.common.xml.as_ref().and_then(|xml| xml.wrapped).unwrap_or_default()
     }
 
     fn name(&self) -> Result<&str> {
@@ -318,7 +355,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
         if let Some(pageable) = operation.pageable.as_ref() {
             for response in operation.responses.values() {
                 if let Some(schema) = &response.schema {
-                    let pageable_name = type_name_gen(&get_type_name_for_schema_ref(schema)?)?.to_string();
+                    let pageable_name = TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.to_string();
                     // in some cases, the same struct is used multiple times for
                     // responses (such as a get and list for a given object
                     // type).  In these cases, what we see is a next_link_name
@@ -380,7 +417,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 
 fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode)> {
     let id = property_name.to_camel_case_ident()?;
-    let value = type_name_gen(&property.type_name()?)?;
+    let value = TypeNameCode::new(&property.type_name()?)?;
     Ok((id, value))
 }
 
@@ -562,7 +599,7 @@ fn create_enum(
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
     let items = schema.array_items()?;
     let typ = schema.name()?.to_camel_case_ident()?;
-    let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?)?;
+    let items_typ = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -597,7 +634,11 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let mut field_names = HashMap::new();
 
     for property in schema.properties() {
-        let property_name = property.name.as_str();
+        let property_name = if let Some(xml_name) = property.xml_name() {
+            xml_name
+        } else {
+            property.name()
+        };
         let field_name = property_name.to_snake_case_ident()?;
         let prop_nm = &PropertyName {
             file_path: schema.doc_file.clone(),
@@ -827,6 +868,7 @@ impl ToTokens for StructFieldCode {
 enum TypeCode {
     Struct(TokenStream),
     Enum(TokenStream),
+    XmlWrapped(XmlWrappedCode),
 }
 
 impl ToTokens for TypeCode {
@@ -834,7 +876,26 @@ impl ToTokens for TypeCode {
         match self {
             TypeCode::Struct(code) => tokens.extend(code.clone()),
             TypeCode::Enum(code) => tokens.extend(code.clone()),
+            TypeCode::XmlWrapped(code) => code.to_tokens(tokens),
         }
+    }
+}
+
+struct XmlWrappedCode {
+    struct_name: Ident,
+    type_name: TypeNameCode,
+}
+
+impl ToTokens for XmlWrappedCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self { struct_name, type_name } = self;
+        tokens.extend(quote! {
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+            pub struct #struct_name {
+                #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+                pub items: #type_name,
+            }
+        });
     }
 }
 
@@ -866,9 +927,24 @@ fn create_struct_field_code(
                     type_name,
                     code: Some(TypeCode::Struct(code)),
                 })
+            } else if property.xml_wrapped() {
+                let id = property_name.to_camel_case_ident()?;
+                let struct_name = property
+                    .xml_name()
+                    .map(|name| name.to_camel_case_ident())
+                    .transpose()?
+                    .unwrap_or_else(|| id.clone());
+                let code = XmlWrappedCode {
+                    struct_name: struct_name.clone(),
+                    type_name: TypeNameCode::new(&property.type_name()?)?,
+                };
+                Ok(StructFieldCode {
+                    type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
+                    code: Some(TypeCode::XmlWrapped(code)),
+                })
             } else {
                 Ok(StructFieldCode {
-                    type_name: type_name_gen(&property.type_name()?)?,
+                    type_name: TypeNameCode::new(&property.type_name()?)?,
                     code: None,
                 })
             }

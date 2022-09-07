@@ -1,4 +1,4 @@
-use crate::core::connection_string::*;
+use crate::connection_string::*;
 
 #[derive(Debug, Default)]
 pub struct ConnectionStringBuilder<'a>(ConnectionString<'a>);

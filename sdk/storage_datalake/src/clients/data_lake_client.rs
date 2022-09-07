@@ -1,134 +1,132 @@
-use crate::authorization_policies::{
-    SharedKeyAuthorizationPolicy, TokenCredentialAuthorizationPolicy,
-};
 use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystemsBuilder;
-use azure_core::auth::TokenCredential;
-use azure_core::{ClientOptions, Context, Pipeline};
-use azure_storage::core::clients::ServiceType;
-use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
-use std::sync::Arc;
+use azure_core::{ClientOptions, Pipeline};
+use azure_storage::clients::{new_pipeline_from_options, ServiceType};
+use azure_storage::prelude::StorageCredentials;
+use azure_storage::CloudLocation;
 
-const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
-const DEFAULT_RESOURCE: &str = "https://storage.azure.com/";
+/// A builder for the blob service client.
+#[derive(Debug, Clone)]
+pub struct DataLakeClientBuilder {
+    cloud_location: CloudLocation,
+    options: ClientOptions,
+}
+
+impl DataLakeClientBuilder {
+    /// Create a new instance of `DataLakeClientBuilder`.
+    #[must_use]
+    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
+        Self::with_location(CloudLocation::Public {
+            account: account.into(),
+            credentials,
+        })
+    }
+
+    /// Create a new instance of `DataLakeClientBuilder` with a cloud location.
+    #[must_use]
+    pub fn with_location(cloud_location: CloudLocation) -> Self {
+        Self {
+            options: ClientOptions::default(),
+            cloud_location,
+        }
+    }
+
+    /// Convert the builder into a `DataLakeClient` instance.
+    #[must_use]
+    pub fn build(self) -> DataLakeClient {
+        let credentials = self.cloud_location.credentials();
+        DataLakeClient {
+            pipeline: new_pipeline_from_options(self.options, credentials.clone()),
+            cloud_location: self.cloud_location,
+        }
+    }
+
+    /// Set the cloud location.
+    #[must_use]
+    pub fn cloud_location(mut self, cloud_location: CloudLocation) -> Self {
+        self.cloud_location = cloud_location;
+        self
+    }
+
+    /// Set the retry options.
+    #[must_use]
+    pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
+        self.options = self.options.retry(retry);
+        self
+    }
+
+    /// Set the transport options.
+    #[must_use]
+    pub fn transport(mut self, transport: impl Into<azure_core::TransportOptions>) -> Self {
+        self.options = self.options.transport(transport);
+        self
+    }
+
+    /// Override all of the client options.
+    ///
+    /// *Warning!*: This overrides all client options that have been previously set on this builder.
+    #[must_use]
+    pub fn client_options(mut self, options: impl Into<azure_core::ClientOptions>) -> Self {
+        self.options = options.into();
+        self
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     pipeline: Pipeline,
-    custom_dns_suffix: Option<String>,
-    url: String, // TODO: Use CloudLocation similar to CosmosClient
-    pub(crate) context: Context,
+    cloud_location: CloudLocation,
 }
 
 impl DataLakeClient {
-    pub fn new_with_shared_key(
-        credential: StorageSharedKeyCredential,
-        custom_dns_suffix: Option<String>,
-        options: ClientOptions,
-    ) -> Self {
-        let account_name = credential.account_name.clone();
-        let auth_policy: Arc<dyn azure_core::Policy> =
-            Arc::new(SharedKeyAuthorizationPolicy::new(credential));
-        Self::new_with_auth_policy(auth_policy, account_name, custom_dns_suffix, options)
+    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
+        DataLakeClientBuilder::new(account, credentials).build()
     }
 
-    pub fn new_with_token_credential<A: Into<String>>(
-        credential: Arc<dyn TokenCredential>,
-        account_name: A,
-        custom_dns_suffix: Option<String>,
-        options: ClientOptions,
-    ) -> Self {
-        let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(
-            TokenCredentialAuthorizationPolicy::new(credential, DEFAULT_RESOURCE),
-        );
-        Self::new_with_auth_policy(auth_policy, account_name, custom_dns_suffix, options)
+    /// Create a new `DataLakeClientBuilder`.
+    #[must_use]
+    pub fn builder(
+        account: impl Into<String>,
+        credentials: StorageCredentials,
+    ) -> DataLakeClientBuilder {
+        DataLakeClientBuilder::new(account, credentials)
     }
 
-    pub fn new_with_auth_policy<A: Into<String>>(
-        auth_policy: Arc<dyn azure_core::Policy>,
-        account_name: A,
-        custom_dns_suffix: Option<String>,
-        options: ClientOptions,
-    ) -> Self {
-        // we precalculate the url once in the constructor
-        // so we do not have to do it at every request.
-        let url = format!(
-            "https://{}.{}",
-            account_name.into(),
-            match custom_dns_suffix.as_ref() {
-                Some(custom_dns_suffix) => custom_dns_suffix,
-                None => DEFAULT_DNS_SUFFIX,
-            }
-        );
-
-        let per_call_policies = Vec::new();
-
-        // take care of adding the AuthorizationPolicy as **last** retry policy.
-        // Policies can change the url and/or the headers and the AuthorizationPolicy
-        // must be able to inspect them or the resulting token will be invalid.
-        let per_retry_policies = vec![auth_policy];
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options,
-            per_call_policies,
-            per_retry_policies,
-        );
-
-        let mut context = Context::new();
-        context.insert(ServiceType::Blob);
-
-        Self {
-            pipeline,
-            custom_dns_suffix,
-            url,
-            context,
-        }
-    }
-
-    pub fn new(credential: StorageSharedKeyCredential, custom_dns_suffix: Option<String>) -> Self {
-        Self::new_with_shared_key(credential, custom_dns_suffix, ClientOptions::default())
-    }
-
-    pub fn custom_dns_suffix(&self) -> Option<&str> {
-        self.custom_dns_suffix.as_deref()
-    }
-
-    pub(crate) fn url(&self) -> &str {
-        &self.url
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        self.cloud_location.url(ServiceType::DataLake)
     }
 
     pub fn list_file_systems(&self) -> ListFileSystemsBuilder {
-        ListFileSystemsBuilder::new(self.clone(), Some(self.context.clone()))
+        ListFileSystemsBuilder::new(self.clone())
     }
 
-    pub fn into_file_system_client<FS>(self, file_system_name: FS) -> FileSystemClient
+    pub fn file_system_client<FS>(&self, file_system_name: FS) -> FileSystemClient
     where
         FS: Into<String>,
     {
-        FileSystemClient::new(self, file_system_name.into())
+        FileSystemClient::new(self.clone(), file_system_name.into())
     }
 
-    // pub(crate) fn finalize_request(
-    //     &self,
-    //     url: Url,
-    //     http_method: azure_core::Method,
-    // ) -> azure_core::Request {
-    //     Request::new()
-    //     Builder::new()
-    //         .method(http_method)
-    //         .uri(uri)
-    //         .body(bytes::Bytes::new())
-    //         .unwrap()
-    //         .into()
-    // }
+    pub(crate) async fn send(
+        &self,
+        ctx: &mut azure_core::Context,
+        request: &mut azure_core::Request,
+    ) -> azure_core::Result<azure_core::Response> {
+        // This is a bit of a hack:
+        // We deconstruct the passed in request in order to finalize it.
+        // We then set the new request to the old request so that callers observe any changes.
+        let mut r = azure_storage::clients::finalize_request(
+            request.url().clone(),
+            *request.method(),
+            request.headers().clone(),
+            Some(request.body().clone()),
+        )?;
+        let result = self
+            .pipeline
+            .send(ctx.insert(ServiceType::DataLake), &mut r)
+            .await;
 
-    pub fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
+        *request = r;
+        result
     }
-
-    // pub fn http_client(&self) -> &dyn HttpClient {
-    //     self.pipeline.http_client()
-    // }
 }

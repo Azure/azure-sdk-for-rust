@@ -1,5 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
+use azure_storage_blobs::prelude::*;
 
 #[tokio::test]
 async fn get_account_information() {
@@ -8,9 +9,10 @@ async fn get_account_information() {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
 
-    storage_client
+    blob_service
         .get_account_information()
         .into_future()
         .await

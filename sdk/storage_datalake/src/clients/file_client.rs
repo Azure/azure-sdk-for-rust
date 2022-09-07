@@ -1,8 +1,6 @@
-use super::{DataLakeClient, FileSystemClient, PathClient};
+use super::{FileSystemClient, PathClient};
 use crate::{operations::*, request_options::*, Properties};
 use azure_core::prelude::IfMatchCondition;
-use azure_core::{ClientOptions, Context, Pipeline};
-use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use bytes::Bytes;
 use url::Url;
 
@@ -12,6 +10,8 @@ pub struct FileClient {
     file_path: String,
 }
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl PathClient for FileClient {
     fn url(&self) -> azure_core::Result<Url> {
         let fs_url = self.file_system_client.url()?;
@@ -19,12 +19,12 @@ impl PathClient for FileClient {
         Ok(self.file_system_client.url()?.join(&file_path)?)
     }
 
-    fn pipeline(&self) -> &Pipeline {
-        self.file_system_client.pipeline()
-    }
-
-    fn context(&self) -> &Context {
-        &self.file_system_client.context
+    async fn send(
+        &self,
+        ctx: &mut azure_core::Context,
+        request: &mut azure_core::Request,
+    ) -> crate::Result<azure_core::Response> {
+        self.file_system_client.send(ctx, request).await
     }
 }
 
@@ -36,25 +36,8 @@ impl FileClient {
         }
     }
 
-    pub fn new_with_options<FS, D>(
-        credential: StorageSharedKeyCredential,
-        custom_dns_suffix: Option<String>,
-        options: ClientOptions,
-        file_system_name: FS,
-        path: D,
-    ) -> Self
-    where
-        FS: Into<String>,
-        D: Into<String>,
-    {
-        DataLakeClient::new_with_shared_key(credential, custom_dns_suffix, options)
-            .into_file_system_client(file_system_name.into())
-            .into_file_client(path)
-    }
-
     pub fn create(&self) -> PutPathBuilder<Self> {
-        PutPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .resource(ResourceType::File)
+        PutPathBuilder::new(self.clone()).resource(ResourceType::File)
     }
 
     pub fn create_if_not_exists(&self) -> PutPathBuilder<Self> {
@@ -66,20 +49,17 @@ impl FileClient {
     where
         B: Into<Bytes>,
     {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathUpdateAction::Append)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::Append)
             .position(position)
             .bytes(bytes.into())
     }
 
     pub fn flush(&self, position: i64) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathUpdateAction::Flush)
-            .position(position)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::Flush).position(position)
     }
 
     pub fn read(&self) -> GetFileBuilder {
-        GetFileBuilder::new(self.clone(), self.file_system_client.context.clone())
+        GetFileBuilder::new(self.clone())
     }
 
     pub fn rename<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
@@ -90,7 +70,7 @@ impl FileClient {
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
         let file_path = vec![fs_url.path(), &self.file_path].join("/");
-        RenamePathBuilder::new(destination_client, self.file_system_client.context.clone())
+        RenamePathBuilder::new(destination_client)
             .mode(PathRenameMode::Legacy)
             .rename_source(file_path)
     }
@@ -104,35 +84,29 @@ impl FileClient {
     }
 
     pub fn delete(&self) -> DeletePathBuilder<Self> {
-        DeletePathBuilder::new(self.clone(), None, self.file_system_client.context.clone())
+        DeletePathBuilder::new(self.clone())
     }
 
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+        HeadPathBuilder::new(self.clone())
     }
 
     pub fn get_status(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathGetPropertiesAction::GetStatus)
+        HeadPathBuilder::new(self.clone()).action(PathGetPropertiesAction::GetStatus)
     }
 
     pub fn get_access_control_list(&self) -> HeadPathBuilder<Self> {
-        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .action(PathGetPropertiesAction::GetAccessControl)
+        HeadPathBuilder::new(self.clone()).action(PathGetPropertiesAction::GetAccessControl)
     }
 
     pub fn set_properties(&self, properties: impl Into<Properties>) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .properties(properties)
-            .action(PathUpdateAction::SetProperties)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetProperties).properties(properties)
     }
 
     pub fn set_access_control_list(
         &self,
         acl: impl Into<AccessControlList>,
     ) -> PatchPathBuilder<Self> {
-        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .acl(acl)
-            .action(PathUpdateAction::SetAccessControl)
+        PatchPathBuilder::new(self.clone(), PathUpdateAction::SetAccessControl).acl(acl)
     }
 }

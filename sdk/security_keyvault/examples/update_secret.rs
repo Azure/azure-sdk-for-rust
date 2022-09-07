@@ -1,6 +1,6 @@
 use azure_core::date;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_security_keyvault::SecretClient;
+use azure_security_keyvault::prelude::*;
 use std::{env, sync::Arc};
 use time::OffsetDateTime;
 

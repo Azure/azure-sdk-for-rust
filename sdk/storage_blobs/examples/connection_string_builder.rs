@@ -1,4 +1,4 @@
-use azure_storage::core::{ConnectionStringBuilder, EndpointProtocol};
+use azure_storage::{ConnectionStringBuilder, EndpointProtocol};
 
 pub fn main() {
     let account_name =
