@@ -467,6 +467,24 @@ impl Default for WebOperation {
     }
 }
 
+impl WebOperation {
+    pub fn consumes_xml(&self) -> bool {
+        self.consumes
+            .iter()
+            .any(|consumes| consumes == crate::content_type::APPLICATION_XML)
+    }
+
+    pub fn produces_xml(&self) -> bool {
+        self.produces
+            .iter()
+            .any(|produces| produces == crate::content_type::APPLICATION_XML)
+    }
+
+    pub fn has_xml(&self) -> bool {
+        self.consumes_xml() || self.produces_xml()
+    }
+}
+
 pub struct WebParameter(Parameter);
 
 impl WebParameter {

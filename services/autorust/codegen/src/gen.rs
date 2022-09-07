@@ -1,7 +1,7 @@
 use crate::{
     autorust_toml, cargo_toml, io, lib_rs,
     readme_md::{self, ReadmeMd},
-    CrateConfig, Error, Result, RunConfig, SpecReadme,
+    CrateConfig, Error, Result, RunConfig, SpecReadme, WebOperation,
 };
 use std::{collections::HashMap, fs};
 
@@ -56,7 +56,8 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
             input_files,
         };
         let cg = crate::run(crate_config, &package_config)?;
-        operation_totals.insert(tag.name(), cg.spec.operations()?.len());
+        let operations = cg.spec.operations()?;
+        operation_totals.insert(tag.name(), operations.len());
         let mut versions = cg.spec.api_versions();
         versions.sort_unstable();
         api_version_totals.insert(tag.name(), versions.len());
@@ -66,6 +67,9 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
         );
         if !has_xml {
             has_xml = cg.spec.has_xml()
+        }
+        if !has_xml {
+            has_xml = operations.iter().any(WebOperation::has_xml);
         }
     }
 
