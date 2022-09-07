@@ -22,10 +22,10 @@ struct PropertyGen {
 
 impl PropertyGen {
     fn name(&self) -> &str {
-        if let Some(xml_name) = self.schema.xml_name() {
-            return xml_name;
-        }
         self.name.as_str()
+    }
+    fn xml_name(&self) -> Option<&str> {
+        self.schema.xml_name()
     }
 }
 
@@ -88,9 +88,6 @@ impl SchemaGen {
     }
 
     fn name(&self) -> Result<&str> {
-        if let Some(xml_name) = self.xml_name() {
-            return Ok(xml_name);
-        }
         Ok(&self
             .ref_key
             .as_ref()
@@ -637,7 +634,11 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let mut field_names = HashMap::new();
 
     for property in schema.properties() {
-        let property_name = property.name();
+        let property_name = if let Some(xml_name) = property.xml_name() {
+            xml_name
+        } else {
+            property.name()
+        };
         let field_name = property_name.to_snake_case_ident()?;
         let prop_nm = &PropertyName {
             file_path: schema.doc_file.clone(),
