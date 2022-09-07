@@ -8,6 +8,16 @@ use std::sync::Arc;
 
 pub(crate) use authorization_policy::AuthorizationPolicy;
 
+/// Credentials for accessing a storage account.
+///
+/// # Example
+///
+/// The best way to create `StorageCredentials` is through use of one of the helper functions.
+///
+/// For example, to use an account name and access key:
+/// ```rust
+/// azure_storage::StorageCredentials::access_key("my_account", "SOMEACCESSKEY");
+/// ```
 #[derive(Clone)]
 pub enum StorageCredentials {
     Key(String, String),
@@ -36,7 +46,7 @@ impl StorageCredentials {
 
     /// Create a Shared Access Signature (SAS) token based credential
     ///
-    /// SAS token are HTTP query strings that provide delegated access to
+    /// SAS tokens are HTTP query strings that provide delegated access to
     /// resources in a storage account with granular control over how the client
     /// can access data in the account.
     ///
