@@ -33,9 +33,7 @@ pub mod content_type {
     pub const TEXT_PLAIN: HeaderValue = HeaderValue::from_static("text/plain");
 }
 
-/// Constants related to the Content-Type header
-///
-/// <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>
+/// Constants related to query parameters
 pub mod query_param {
     pub const API_VERSION: &str = "api-version";
 }

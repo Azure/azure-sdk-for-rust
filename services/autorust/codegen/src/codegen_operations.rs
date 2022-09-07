@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{parse_path_params, type_name_gen, PARAM_RE},
+    codegen::{parse_path_params, PARAM_RE},
     codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
@@ -16,9 +16,8 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use std::collections::BTreeSet;
 
-pub mod query_param {
-    pub const API_VERSION: &str = "api-version";
-}
+pub const API_VERSION: &str = "api-version";
+pub const X_MS_VERSION: &str = "x-ms-version";
 
 fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
@@ -317,17 +316,12 @@ impl WebOperationGen {
         self.0.api_version.as_str()
     }
 
-    fn consumes(&self) -> Vec<&str> {
-        self.0.consumes.iter().map(String::as_str).collect()
-    }
-
     fn pick_consumes(&self) -> Option<&str> {
-        crate::content_type::pick_consumes(self.consumes())
+        crate::content_type::pick(self.0.consumes.iter().map(String::as_str))
     }
 
-    #[allow(dead_code)]
-    fn produces(&self) -> Vec<&str> {
-        self.0.produces.iter().map(String::as_str).collect()
+    fn pick_produces(&self) -> Option<&str> {
+        crate::content_type::pick(self.0.produces.iter().map(String::as_str))
     }
 
     fn pageable(&self) -> Option<Pageable> {
@@ -537,10 +531,9 @@ impl ToTokens for SetRequestParamsCode {
 
 // Create code for the web operation
 fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode> {
-    let parameters = FunctionParams::new(operation)?;
+    let parameters = &FunctionParams::new(operation)?;
 
     let verb = operation.0.verb.clone();
-    let is_post = verb == WebVerb::Post;
     let auth = AuthCode {};
     let new_request_code = NewRequestCode {
         verb,
@@ -548,24 +541,22 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         path: operation.0.path.clone(),
     };
 
-    // get the consumes content-type from the operation, else the spec, else default to json
+    // get the content-types from the operation, else the spec, else default to json
     let consumes = operation
         .pick_consumes()
         .unwrap_or_else(|| cg.spec.pick_consumes().unwrap_or(content_type::APPLICATION_JSON))
         .to_string();
-    let request_builder = SetRequestCode {
-        has_param_api_version: parameters.has_api_version,
-        api_version: operation.api_version().to_string(),
-        consumes,
-        parameters: parameters.clone(),
-        has_body_parameter: operation.0.has_body_parameter(),
-        is_post,
-    };
+    let produces = operation
+        .pick_produces()
+        .unwrap_or_else(|| cg.spec.pick_produces().unwrap_or(content_type::APPLICATION_JSON))
+        .to_string();
+
+    let request_builder = SetRequestCode::new(operation, parameters, consumes);
     let in_operation_group = operation.0.in_group();
-    let client_function_code = ClientFunctionCode::new(operation, &parameters, in_operation_group)?;
-    let request_builder_struct_code = RequestBuilderStructCode::new(&parameters, in_operation_group);
-    let request_builder_setters_code = RequestBuilderSettersCode::new(&parameters);
-    let response_code = ResponseCode::new(operation)?;
+    let client_function_code = ClientFunctionCode::new(operation, parameters, in_operation_group)?;
+    let request_builder_struct_code = RequestBuilderStructCode::new(parameters, in_operation_group);
+    let request_builder_setters_code = RequestBuilderSettersCode::new(parameters);
+    let response_code = ResponseCode::new(operation, produces)?;
     let long_running_operation = operation.0.long_running_operation;
     let request_builder_future_code =
         RequestBuilderIntoFutureCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
@@ -587,11 +578,27 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 /// Set all body and parameters for the request.
 struct SetRequestCode {
     has_param_api_version: bool,
+    has_param_x_ms_version: bool,
     api_version: String,
     consumes: String,
     parameters: FunctionParams,
     has_body_parameter: bool,
     is_post: bool,
+}
+
+impl SetRequestCode {
+    fn new(operation: &WebOperationGen, parameters: &FunctionParams, consumes: String) -> Self {
+        let is_post = operation.0.verb == WebVerb::Post;
+        Self {
+            has_param_api_version: parameters.has_api_version,
+            has_param_x_ms_version: parameters.has_x_ms_version,
+            api_version: operation.api_version().to_string(),
+            consumes,
+            parameters: parameters.clone(),
+            has_body_parameter: operation.0.has_body_parameter(),
+            is_post,
+        }
+    }
 }
 
 impl ToTokens for SetRequestCode {
@@ -601,6 +608,12 @@ impl ToTokens for SetRequestCode {
             let api_version = &self.api_version;
             tokens.extend(quote! {
                 req.url_mut().query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
+            });
+        }
+        if self.has_param_x_ms_version {
+            let api_version = &self.api_version;
+            tokens.extend(quote! {
+                req.insert_header(azure_core::headers::VERSION, #api_version);
             });
         }
 
@@ -632,6 +645,7 @@ impl ToTokens for SetRequestCode {
 struct ResponseCode {
     status_responses: Vec<StatusResponseCode>,
     pageable: Option<Pageable>,
+    produces: String,
 }
 
 #[derive(Clone)]
@@ -647,7 +661,7 @@ struct StatusResponseCode {
 }
 
 impl ResponseCode {
-    fn new(operation: &WebOperationGen) -> Result<Self> {
+    fn new(operation: &WebOperationGen, produces: String) -> Result<Self> {
         let mut status_responses = Vec::new();
         let responses = &operation.0.responses;
         for (status_code, rsp) in &get_success_responses(responses) {
@@ -659,16 +673,32 @@ impl ResponseCode {
         Ok(Self {
             status_responses,
             pageable: operation.pageable(),
+            produces,
         })
     }
 
     /// Get the response type for the HTTP response body
-    fn response_type(&self) -> Option<&TypeNameCode> {
+    fn response_type(&self) -> Option<TypeNameCode> {
         let responses = &self.status_responses;
         if responses.is_empty() {
             return None;
         }
-        responses[0].response_type.as_ref()
+        self.fix_response_type(responses[0].response_type.as_ref())
+    }
+
+    fn fix_response_type(&self, response_type: Option<&TypeNameCode>) -> Option<TypeNameCode> {
+        if let Some(tp) = response_type {
+            let mut tp = tp.clone();
+            if tp.is_value() && self.produces_xml() {
+                tp.set_as_bytes();
+            }
+            return Some(tp);
+        }
+        None
+    }
+
+    fn produces_xml(&self) -> bool {
+        self.produces == content_type::APPLICATION_XML
     }
 }
 
@@ -677,11 +707,14 @@ impl ToTokens for ResponseCode {
         tokens.extend(quote! {
             pub struct Response(azure_core::Response);
         });
-        let response_type = &self.response_type();
-        if let Some(response_type) = response_type {
-            let deserialize_body = if TypeNameCode::is_bytes(response_type) {
+        if let Some(response_type) = self.response_type() {
+            let deserialize_body = if response_type.is_bytes() {
                 quote! {
                     let body = bytes;
+                }
+            } else if self.produces_xml() {
+                quote! {
+                    let body: #response_type = azure_core::xml::read_xml(&bytes)?;
                 }
             } else {
                 quote! {
@@ -965,13 +998,16 @@ impl FunctionParam {
 struct FunctionParams {
     params: Vec<FunctionParam>,
     has_api_version: bool,
+    has_x_ms_version: bool,
 }
 impl FunctionParams {
     fn new(operation: &WebOperationGen) -> Result<Self> {
         let parameters = operation.0.parameters();
-        let has_api_version = parameters.iter().any(|p| p.name() == query_param::API_VERSION);
+        let has_api_version = parameters.iter().any(|p| p.name() == API_VERSION);
+        let has_x_ms_version = parameters.iter().any(|p| p.name() == X_MS_VERSION);
         let mut skip = parse_query_params(&operation.0.path)?;
-        skip.insert(query_param::API_VERSION.to_string());
+        skip.insert(API_VERSION.to_string());
+        skip.insert(X_MS_VERSION.to_string());
         let parameters: Vec<&WebParameter> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
 
         let mut params = Vec::new();
@@ -979,7 +1015,9 @@ impl FunctionParams {
             let name = param.name().to_owned();
             let description = param.description().clone();
             let variable_name = name.to_snake_case_ident()?;
-            let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
+            let type_name = TypeNameCode::new(&param.type_name()?)?
+                .qualify_models(true)
+                .optional(!param.required());
             let kind = ParamKind::from(param.type_());
             let collection_format = param.collection_format().clone();
             params.push(FunctionParam {
@@ -991,7 +1029,11 @@ impl FunctionParams {
                 collection_format,
             });
         }
-        Ok(Self { params, has_api_version })
+        Ok(Self {
+            params,
+            has_api_version,
+            has_x_ms_version,
+        })
     }
 
     fn params(&self) -> Vec<&FunctionParam> {
@@ -1237,7 +1279,9 @@ impl ToTokens for RequestBuilderSettersCode {
 
 pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true)))
+        Ok(Some(
+            TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true),
+        ))
     } else {
         Ok(None)
     }

@@ -121,13 +121,9 @@ pub mod service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "gets the properties of a storage account's Queue service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -136,40 +132,29 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `storage_service_properties`: The StorageService properties."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
-            x_ms_version: impl Into<String>,
         ) -> set_properties::RequestBuilder {
             set_properties::RequestBuilder {
                 client: self.0.clone(),
                 storage_service_properties: storage_service_properties.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
         }
         #[doc = "Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the storage account."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::RequestBuilder {
+        pub fn get_statistics(&self) -> get_statistics::RequestBuilder {
             get_statistics::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
         }
         #[doc = "The List Queues Segment operation returns a list of the queues under the specified account"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_queues_segment(&self, x_ms_version: impl Into<String>) -> list_queues_segment::RequestBuilder {
+        pub fn list_queues_segment(&self) -> list_queues_segment::RequestBuilder {
             list_queues_segment::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 prefix: None,
                 marker: None,
                 maxresults: None,
@@ -185,7 +170,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::StorageServiceProperties> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::StorageServiceProperties = serde_json::from_slice(&bytes)?;
+                let body: models::StorageServiceProperties = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -208,7 +193,6 @@ pub mod service {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -236,10 +220,10 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -262,7 +246,6 @@ pub mod service {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -290,12 +273,12 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         req.insert_header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -312,7 +295,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::StorageServiceStats> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::StorageServiceStats = serde_json::from_slice(&bytes)?;
+                let body: models::StorageServiceStats = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -335,7 +318,6 @@ pub mod service {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -363,10 +345,10 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -388,7 +370,7 @@ pub mod service {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ListQueuesSegmentResponse> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ListQueuesSegmentResponse = serde_json::from_slice(&bytes)?;
+                let body: models::ListQueuesSegmentResponse = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -411,7 +393,6 @@ pub mod service {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
@@ -478,6 +459,7 @@ pub mod service {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                                 if let Some(prefix) = &this.prefix {
                                     req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -490,7 +472,6 @@ pub mod service {
                                 if let Some(timeout) = &this.timeout {
                                     req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -522,12 +503,10 @@ pub mod queue {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::RequestBuilder {
+        pub fn create(&self, queue_name: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_client_request_id: None,
@@ -537,12 +516,10 @@ pub mod queue {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::RequestBuilder {
+        pub fn delete(&self, queue_name: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -551,12 +528,10 @@ pub mod queue {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, queue_name: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -565,12 +540,10 @@ pub mod queue {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_metadata(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::RequestBuilder {
+        pub fn set_metadata(&self, queue_name: impl Into<String>) -> set_metadata::RequestBuilder {
             set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_client_request_id: None,
@@ -580,16 +553,10 @@ pub mod queue {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_access_policy(
-            &self,
-            queue_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_access_policy::RequestBuilder {
+        pub fn get_access_policy(&self, queue_name: impl Into<String>) -> get_access_policy::RequestBuilder {
             get_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -598,16 +565,10 @@ pub mod queue {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_access_policy(
-            &self,
-            queue_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_access_policy::RequestBuilder {
+        pub fn set_access_policy(&self, queue_name: impl Into<String>) -> set_access_policy::RequestBuilder {
             set_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 queue_acl: None,
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -621,7 +582,6 @@ pub mod queue {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -655,13 +615,13 @@ pub mod queue {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_meta) = &this.x_ms_meta {
                             req.insert_header("x-ms-meta", x_ms_meta);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -680,7 +640,6 @@ pub mod queue {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -708,10 +667,10 @@ pub mod queue {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -730,7 +689,6 @@ pub mod queue {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -758,10 +716,10 @@ pub mod queue {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -780,7 +738,6 @@ pub mod queue {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -814,13 +771,13 @@ pub mod queue {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_meta) = &this.x_ms_meta {
                             req.insert_header("x-ms-meta", x_ms_meta);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -838,7 +795,7 @@ pub mod queue {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SignedIdentifiers> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SignedIdentifiers = serde_json::from_slice(&bytes)?;
+                let body: models::SignedIdentifiers = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -862,7 +819,6 @@ pub mod queue {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -890,10 +846,10 @@ pub mod queue {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -916,7 +872,6 @@ pub mod queue {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) queue_acl: Option<models::SignedIdentifiers>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -950,6 +905,7 @@ pub mod queue {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         let req_body = if let Some(queue_acl) = &this.queue_acl {
                             req.insert_header("content-type", "application/xml");
                             azure_core::to_json(queue_acl)?
@@ -959,7 +915,6 @@ pub mod queue {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -979,12 +934,10 @@ pub mod messages {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn dequeue(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> dequeue::RequestBuilder {
+        pub fn dequeue(&self, queue_name: impl Into<String>) -> dequeue::RequestBuilder {
             dequeue::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 numofmessages: None,
                 visibilitytimeout: None,
                 timeout: None,
@@ -996,18 +949,11 @@ pub mod messages {
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `queue_message`: A Message object which can be stored in a Queue"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn enqueue(
-            &self,
-            queue_name: impl Into<String>,
-            queue_message: impl Into<models::QueueMessage>,
-            x_ms_version: impl Into<String>,
-        ) -> enqueue::RequestBuilder {
+        pub fn enqueue(&self, queue_name: impl Into<String>, queue_message: impl Into<models::QueueMessage>) -> enqueue::RequestBuilder {
             enqueue::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 queue_message: queue_message.into(),
-                x_ms_version: x_ms_version.into(),
                 visibilitytimeout: None,
                 messagettl: None,
                 timeout: None,
@@ -1018,12 +964,10 @@ pub mod messages {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn clear(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> clear::RequestBuilder {
+        pub fn clear(&self, queue_name: impl Into<String>) -> clear::RequestBuilder {
             clear::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -1032,12 +976,10 @@ pub mod messages {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `queue_name`: The queue name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn peek(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> peek::RequestBuilder {
+        pub fn peek(&self, queue_name: impl Into<String>) -> peek::RequestBuilder {
             peek::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
-                x_ms_version: x_ms_version.into(),
                 numofmessages: None,
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -1050,7 +992,7 @@ pub mod messages {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::DequeuedMessagesList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DequeuedMessagesList = serde_json::from_slice(&bytes)?;
+                let body: models::DequeuedMessagesList = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1074,7 +1016,6 @@ pub mod messages {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) numofmessages: Option<i64>,
             pub(crate) visibilitytimeout: Option<i64>,
             pub(crate) timeout: Option<i64>,
@@ -1114,6 +1055,7 @@ pub mod messages {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(numofmessages) = &this.numofmessages {
                             req.url_mut()
                                 .query_pairs_mut()
@@ -1127,7 +1069,6 @@ pub mod messages {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1149,7 +1090,7 @@ pub mod messages {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EnqueuedMessageList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EnqueuedMessageList = serde_json::from_slice(&bytes)?;
+                let body: models::EnqueuedMessageList = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1174,7 +1115,6 @@ pub mod messages {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) queue_message: models::QueueMessage,
-            pub(crate) x_ms_version: String,
             pub(crate) visibilitytimeout: Option<i64>,
             pub(crate) messagettl: Option<i64>,
             pub(crate) timeout: Option<i64>,
@@ -1214,6 +1154,7 @@ pub mod messages {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         req.insert_header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.queue_message)?;
                         if let Some(visibilitytimeout) = &this.visibilitytimeout {
@@ -1227,7 +1168,6 @@ pub mod messages {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1249,7 +1189,6 @@ pub mod messages {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -1277,10 +1216,10 @@ pub mod messages {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1298,7 +1237,7 @@ pub mod messages {
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::PeekedMessagesList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::PeekedMessagesList = serde_json::from_slice(&bytes)?;
+                let body: models::PeekedMessagesList = azure_core::xml::read_xml(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1322,7 +1261,6 @@ pub mod messages {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) numofmessages: Option<i64>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -1357,6 +1295,7 @@ pub mod messages {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         if let Some(numofmessages) = &this.numofmessages {
                             req.url_mut()
                                 .query_pairs_mut()
@@ -1365,7 +1304,6 @@ pub mod messages {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1393,14 +1331,12 @@ pub mod message_id {
         #[doc = "* `messageid`: The container name."]
         #[doc = "* `popreceipt`: Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or Update Message operation."]
         #[doc = "* `visibilitytimeout`: Optional. Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry time."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn update(
             &self,
             queue_name: impl Into<String>,
             messageid: impl Into<String>,
             popreceipt: impl Into<String>,
             visibilitytimeout: i64,
-            x_ms_version: impl Into<String>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
                 client: self.0.clone(),
@@ -1408,7 +1344,6 @@ pub mod message_id {
                 messageid: messageid.into(),
                 popreceipt: popreceipt.into(),
                 visibilitytimeout,
-                x_ms_version: x_ms_version.into(),
                 queue_message: None,
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -1420,20 +1355,17 @@ pub mod message_id {
         #[doc = "* `queue_name`: The queue name."]
         #[doc = "* `messageid`: The container name."]
         #[doc = "* `popreceipt`: Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or Update Message operation."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             queue_name: impl Into<String>,
             messageid: impl Into<String>,
             popreceipt: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
                 queue_name: queue_name.into(),
                 messageid: messageid.into(),
                 popreceipt: popreceipt.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -1449,7 +1381,6 @@ pub mod message_id {
             pub(crate) messageid: String,
             pub(crate) popreceipt: String,
             pub(crate) visibilitytimeout: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) queue_message: Option<models::QueueMessage>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -1488,6 +1419,7 @@ pub mod message_id {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         let req_body = if let Some(queue_message) = &this.queue_message {
                             req.insert_header("content-type", "application/xml");
                             azure_core::to_json(queue_message)?
@@ -1503,7 +1435,6 @@ pub mod message_id {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1523,7 +1454,6 @@ pub mod message_id {
             pub(crate) queue_name: String,
             pub(crate) messageid: String,
             pub(crate) popreceipt: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -1556,12 +1486,12 @@ pub mod message_id {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         let popreceipt = &this.popreceipt;
                         req.url_mut().query_pairs_mut().append_pair("popreceipt", popreceipt);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }

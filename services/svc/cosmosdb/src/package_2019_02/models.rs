@@ -313,12 +313,20 @@ pub struct TableServiceProperties {
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
     #[doc = "The set of CORS rules."]
-    #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
-    pub cors: Vec<CorsRule>,
+    #[serde(rename = "Cors", default, skip_serializing_if = "Option::is_none")]
+    pub cors: Option<table_service_properties::Cors>,
 }
 impl TableServiceProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod table_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Cors {
+        #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+        pub items: Vec<CorsRule>,
     }
 }
 #[doc = "Stats for the service."]
