@@ -91,6 +91,7 @@ impl EntityClient {
         url.path_segments_mut()
             // This cannot fail since the url is guranteed to not be a relative url
             .unwrap()
+            .pop()
             .push(&format!(
                 "{}(PartitionKey='{}',RowKey='{}')",
                 self.partition_key_client.table_client().table_name(),
@@ -156,9 +157,7 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientUpdate");
 
         println!("Delete the table (if it exists)");
-        match table.delete().into_future().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table
@@ -211,9 +210,7 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientMerge");
 
         println!("Delete the table (if it exists)");
-        match table.delete().into_future().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table
@@ -272,9 +269,7 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientInsertOrReplace");
 
         println!("Delete the table (if it exists)");
-        match table.delete().into_future().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table
@@ -320,9 +315,7 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientInsertOrMerge");
 
         println!("Delete the table (if it exists)");
-        match table.delete().into_future().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table

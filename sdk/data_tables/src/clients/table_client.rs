@@ -101,7 +101,7 @@ mod integration_tests {
         );
 
         println!("Create the table");
-        let _ = table.create().into_future().await;
+        let _ = table.create().into_future().await.unwrap();
 
         println!("Validate that the table was created");
         let mut stream = table_client.list().into_stream();
@@ -149,9 +149,7 @@ mod integration_tests {
         );
 
         println!("Delete the table (if it exists)");
-        match table.delete().into_future().await {
-            _ => {}
-        }
+        let _ = table.delete().into_future().await;
 
         println!("Create the table");
         table

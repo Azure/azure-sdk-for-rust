@@ -102,10 +102,9 @@ impl TableServiceClient {
     }
 
     pub(crate) fn url(&self) -> azure_core::Result<Url> {
-        // url.path_segments_mut()
-        //     .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
-        //     .push("Tables");
-        self.cloud_location.url(ServiceType::Table)
+        let mut url = self.cloud_location.url(ServiceType::Table)?;
+        url.path_segments_mut().unwrap().push("Tables");
+        Ok(url)
     }
 
     pub fn table_client<S: Into<String>>(&self, table_name: S) -> TableClient {
