@@ -66,21 +66,16 @@ impl SchemaGen {
     ///
     /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
     fn xml_name(&self) -> Option<&str> {
-        self.schema.common.xml.as_ref().map(|xml| xml.name.as_deref()).flatten()
+        self.schema.common.xml.as_ref().and_then(|xml| xml.name.as_deref())
     }
 
     /// Declares whether the property definition translates to an attribute instead of an element.
     /// Default value is false.
     ///
     /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
+    #[allow(dead_code)]
     fn xml_attribute(&self) -> bool {
-        self.schema
-            .common
-            .xml
-            .as_ref()
-            .map(|xml| xml.attribute)
-            .flatten()
-            .unwrap_or_default()
+        self.schema.common.xml.as_ref().and_then(|xml| xml.attribute).unwrap_or_default()
     }
 
     /// MAY be used only for an array definition. Signifies whether the array is wrapped (for example,
@@ -89,15 +84,13 @@ impl SchemaGen {
     ///
     /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
     fn xml_wrapped(&self) -> bool {
-        self.schema.common.xml.as_ref().map(|xml| xml.wrapped).flatten().unwrap_or_default()
+        self.schema.common.xml.as_ref().and_then(|xml| xml.wrapped).unwrap_or_default()
     }
 
     fn name(&self) -> Result<&str> {
-        // if self.xml_wrapped() {
         if let Some(xml_name) = self.xml_name() {
             return Ok(xml_name);
         }
-        // }
         Ok(&self
             .ref_key
             .as_ref()
@@ -874,6 +867,7 @@ impl ToTokens for StructFieldCode {
 enum TypeCode {
     Struct(TokenStream),
     Enum(TokenStream),
+    XmlWrapped(XmlWrappedCode),
 }
 
 impl ToTokens for TypeCode {
@@ -881,7 +875,26 @@ impl ToTokens for TypeCode {
         match self {
             TypeCode::Struct(code) => tokens.extend(code.clone()),
             TypeCode::Enum(code) => tokens.extend(code.clone()),
+            TypeCode::XmlWrapped(code) => code.to_tokens(tokens),
         }
+    }
+}
+
+struct XmlWrappedCode {
+    struct_name: Ident,
+    type_name: TypeNameCode,
+}
+
+impl ToTokens for XmlWrappedCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self { struct_name, type_name } = self;
+        tokens.extend(quote! {
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+            pub struct #struct_name {
+                #[serde(rename = "$value", default, skip_serializing_if = "Vec::is_empty")]
+                pub items: #type_name,
+            }
+        });
     }
 }
 
@@ -912,6 +925,21 @@ fn create_struct_field_code(
                 Ok(StructFieldCode {
                     type_name,
                     code: Some(TypeCode::Struct(code)),
+                })
+            } else if property.xml_wrapped() {
+                let id = property_name.to_camel_case_ident()?;
+                let struct_name = property
+                    .xml_name()
+                    .map(|name| name.to_camel_case_ident())
+                    .transpose()?
+                    .unwrap_or_else(|| id.clone());
+                let code = XmlWrappedCode {
+                    struct_name: struct_name.clone(),
+                    type_name: TypeNameCode::new(&property.type_name()?)?,
+                };
+                Ok(StructFieldCode {
+                    type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
+                    code: Some(TypeCode::XmlWrapped(code)),
                 })
             } else {
                 Ok(StructFieldCode {
