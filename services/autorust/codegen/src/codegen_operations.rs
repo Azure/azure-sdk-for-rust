@@ -8,7 +8,7 @@ use crate::{
     CodeGen,
 };
 use crate::{content_type, Result};
-use autorust_openapi::{CollectionFormat, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, Header, ParameterType, Response};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
 use indexmap::IndexMap;
@@ -646,6 +646,68 @@ struct ResponseCode {
     status_responses: Vec<StatusResponseCode>,
     pageable: Option<Pageable>,
     produces: String,
+    headers: HeadersCode,
+}
+
+#[derive(Clone)]
+struct HeadersCode {
+    headers: Vec<HeaderCode>,
+}
+
+impl HeadersCode {
+    fn new(headers: Vec<HeaderCode>) -> Result<Self> {
+        Ok(Self { headers })
+    }
+
+    fn has_headers(&self) -> bool {
+        !self.headers.is_empty()
+    }
+}
+
+impl ToTokens for HeadersCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if self.has_headers() {
+            let headers = &self.headers;
+            tokens.extend(quote! {
+                pub struct Headers<'a>(&'a azure_core::headers::Headers);
+                impl<'a> Headers<'a> {
+                    #(#headers)*
+                }
+            })
+        }
+    }
+}
+
+#[derive(Clone)]
+struct HeaderCode {
+    header_name: String,
+    function_name: Ident,
+}
+
+impl HeaderCode {
+    fn new(header_name: String, header: &Header) -> Result<Self> {
+        let function_name = header_name.to_snake_case_ident()?;
+        Ok(Self {
+            header_name,
+            function_name,
+        })
+    }
+}
+
+impl ToTokens for HeaderCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            header_name,
+            function_name,
+        } = &self;
+        // self.header.header.type_
+        // self.header.header.format
+        tokens.extend(quote! {
+            pub fn #function_name(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))
+            }
+        })
+    }
 }
 
 #[derive(Clone)]
@@ -670,10 +732,23 @@ impl ResponseCode {
                 response_type: create_response_type(rsp)?,
             });
         }
+        let headers = {
+            let mut headers = IndexMap::new();
+            for rsp in &operation.0.responses {
+                for (hdr_name, hdr) in &rsp.1.headers {
+                    if let autorust_openapi::ReferenceOr::Item(hdr) = hdr {
+                        headers.insert(hdr_name, HeaderCode::new(hdr_name.clone(), hdr));
+                    }
+                }
+            }
+            headers
+        };
+        let headers = headers.into_values().collect::<Result<Vec<_>>>()?;
         Ok(Self {
             status_responses,
             pageable: operation.pageable(),
             produces,
+            headers: HeadersCode::new(headers)?,
         })
     }
 
@@ -721,6 +796,13 @@ impl ToTokens for ResponseCode {
                     let body: #response_type = serde_json::from_slice(&bytes)?;
                 }
             };
+
+            let headers_fn = if self.headers.has_headers() {
+                quote! { pub fn headers(&self) -> Headers { Headers(self.0.headers()) } }
+            } else {
+                quote! {}
+            };
+
             tokens.extend(quote! {
                 impl Response {
                     pub async fn into_body(self) -> azure_core::Result<#response_type> {
@@ -735,6 +817,7 @@ impl ToTokens for ResponseCode {
                         &self.0
                     }
                 }
+                #headers_fn
                 impl From<Response> for azure_core::Response {
                     fn from(rsp: Response) -> Self {
                         rsp.into_raw_response()
