@@ -42,7 +42,7 @@ pub mod xml;
 pub use bytes_stream::*;
 pub use constants::*;
 pub use context::Context;
-pub use error::Result;
+pub use error::{Error, Result};
 #[doc(inline)]
 pub use headers::Header;
 pub use http_client::{new_http_client, to_json, HttpClient};

@@ -48,7 +48,7 @@ pub struct GetMetadataResponse {
 }
 
 impl TryFrom<&Headers> for GetMetadataResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         Ok(GetMetadataResponse {
