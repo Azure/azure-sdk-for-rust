@@ -23,17 +23,6 @@ impl ContainerLeaseClient {
         RenewLeaseBuilder::new(self.clone())
     }
 
-    pub(crate) fn finalize_request(
-        &self,
-        url: Url,
-        method: Method,
-        headers: Headers,
-        request_body: Option<Body>,
-    ) -> azure_core::Result<Request> {
-        self.container_client
-            .finalize_request(url, method, headers, request_body)
-    }
-
     pub fn lease_id(&self) -> LeaseId {
         self.lease_id
     }
@@ -44,6 +33,17 @@ impl ContainerLeaseClient {
 
     pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
         self.container_client.url()
+    }
+
+    pub(crate) fn finalize_request(
+        &self,
+        url: Url,
+        method: Method,
+        headers: Headers,
+        request_body: Option<Body>,
+    ) -> azure_core::Result<Request> {
+        self.container_client
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

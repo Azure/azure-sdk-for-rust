@@ -74,7 +74,7 @@ pub struct CopyBlobResponse {
 }
 
 impl TryFrom<&Headers> for CopyBlobResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {

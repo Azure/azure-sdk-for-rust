@@ -22,6 +22,7 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Create a new `ContainerClient` from a `BlobServiceClient` and a container name
     pub(crate) fn new(service_client: BlobServiceClient, container_name: String) -> Self {
         Self {
             service_client,
@@ -29,30 +30,37 @@ impl ContainerClient {
         }
     }
 
+    /// Create a container
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self.clone())
     }
 
+    /// Delete a container
     pub fn delete(&self) -> DeleteBuilder {
         DeleteBuilder::new(self.clone())
     }
 
+    /// Get a container acl
     pub fn get_acl(&self) -> GetACLBuilder {
         GetACLBuilder::new(self.clone())
     }
 
+    /// Set a container acl
     pub fn set_acl(&self, public_access: PublicAccess) -> SetACLBuilder {
         SetACLBuilder::new(self.clone(), public_access)
     }
 
+    /// Get a container's properties
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self.clone())
     }
 
+    /// List the blobs in a container
     pub fn list_blobs(&self) -> ListBlobsBuilder {
         ListBlobsBuilder::new(self.clone())
     }
 
+    /// Acquite a lease on a container
     pub fn acquire_lease<LD: Into<LeaseDuration>>(
         &self,
         lease_duration: LD,
@@ -60,6 +68,7 @@ impl ContainerClient {
         AcquireLeaseBuilder::new(self.clone(), lease_duration.into())
     }
 
+    /// Break the lease on a container
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self.clone())
     }
@@ -74,10 +83,6 @@ impl ContainerClient {
 
     pub fn container_name(&self) -> &str {
         &self.container_name
-    }
-
-    pub(crate) fn credentials(&self) -> &StorageCredentials {
-        self.service_client.credentials()
     }
 
     /// Create a shared access signature.
@@ -129,6 +134,10 @@ impl ContainerClient {
 
         let url = format!("{}{}{}", self.service_client.url()?, sep, container_name);
         Ok(url::Url::parse(&url)?)
+    }
+
+    pub(crate) fn credentials(&self) -> &StorageCredentials {
+        self.service_client.credentials()
     }
 
     pub(crate) async fn send(

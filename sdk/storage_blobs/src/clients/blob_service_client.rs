@@ -88,6 +88,7 @@ impl BlobServiceClientBuilder {
     }
 }
 
+/// A client for interacting with the blob storage service.
 #[derive(Debug, Clone)]
 pub struct BlobServiceClient {
     pipeline: Pipeline,
@@ -110,14 +111,17 @@ impl BlobServiceClient {
         BlobServiceClientBuilder::new(account, credentials)
     }
 
+    /// Get information about the blob storage account
     pub fn get_account_information(&self) -> GetAccountInformationBuilder {
         GetAccountInformationBuilder::new(self.clone())
     }
 
+    /// Get all the blobs with the given tags in the where expression
     pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {
         FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
 
+    /// List all the containers in the blob account
     pub fn list_containers(&self) -> ListContainersBuilder {
         ListContainersBuilder::new(self.clone())
     }
