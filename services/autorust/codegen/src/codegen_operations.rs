@@ -696,6 +696,7 @@ struct HeaderCode {
 impl HeaderCode {
     fn new(header_name: String, header: &Header) -> Result<Self> {
         let function_name = header_name.to_snake_case_ident()?;
+        let header_name = header_name.to_lowercase();
         Ok(Self {
             header_name,
             function_name,
