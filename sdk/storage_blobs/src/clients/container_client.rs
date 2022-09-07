@@ -6,12 +6,12 @@ use azure_core::{
     Body, Method, Request, Response, Url,
 };
 use azure_storage::{
-    clients::StorageCredentials,
     prelude::BlobSasPermissions,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
+    StorageCredentials,
 };
 use time::OffsetDateTime;
 

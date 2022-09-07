@@ -1,4 +1,5 @@
-use crate::clients::{ServiceType, StorageCredentials};
+use crate::clients::ServiceType;
+use crate::StorageCredentials;
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::Method;
 use azure_core::{headers::*, Context, Policy, PolicyResult, Request};

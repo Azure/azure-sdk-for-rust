@@ -1,6 +1,6 @@
 use azure_core::TransportOptions;
 use azure_identity::DefaultAzureCredential;
-use azure_storage::clients::StorageCredentials;
+use azure_storage::StorageCredentials;
 use azure_storage_blobs::prelude::BlobServiceClient;
 use std::sync::Arc;
 

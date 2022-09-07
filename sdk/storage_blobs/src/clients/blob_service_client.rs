@@ -3,12 +3,10 @@ use azure_core::{
     headers::Headers, Body, ClientOptions, Context, Method, Pipeline, Request, Response, Url,
 };
 use azure_storage::{
-    clients::{
-        new_pipeline_from_options, shared_access_signature, ServiceType, StorageCredentials,
-    },
+    clients::{new_pipeline_from_options, shared_access_signature, ServiceType},
     prelude::{AccountSasPermissions, AccountSasResource, AccountSasResourceType},
     shared_access_signature::account_sas::AccountSharedAccessSignature,
-    CloudLocation,
+    CloudLocation, StorageCredentials,
 };
 use time::OffsetDateTime;
 

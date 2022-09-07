@@ -10,12 +10,12 @@ use azure_core::{
     Body, Method, Request, Response, StatusCode,
 };
 use azure_storage::{
-    clients::StorageCredentials,
     prelude::*,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
+    StorageCredentials,
 };
 use futures::StreamExt;
 use time::OffsetDateTime;
