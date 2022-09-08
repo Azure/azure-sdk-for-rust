@@ -313,7 +313,7 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let service_client = BlobServiceClientBuilder::emulator().build();
+        let service_client = ClientBuilder::emulator().blob_service_client();
         service_client
             .container_client(container_name)
             .blob_client(blob_name)

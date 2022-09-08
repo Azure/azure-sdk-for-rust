@@ -164,11 +164,11 @@ impl ContainerClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::clients::BlobServiceClientBuilder;
+    use crate::clients::ClientBuilder;
     use futures::StreamExt;
 
     fn get_emulator_client(container_name: &str) -> ContainerClient {
-        let service_client = BlobServiceClientBuilder::emulator().build();
+        let service_client = ClientBuilder::emulator().build();
         service_client.container_client(container_name)
     }
 
