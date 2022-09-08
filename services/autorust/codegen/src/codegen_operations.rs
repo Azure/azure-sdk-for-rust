@@ -2,9 +2,9 @@ use crate::{
     codegen::{parse_path_params, PARAM_RE},
     codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
-    spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
+    spec::{get_type_name_for_schema_ref, TypeName, WebOperation, WebParameter, WebVerb},
     status_codes::get_status_code_ident,
-    CodeGen,
+    CodeGen, Error, ErrorKind,
 };
 use crate::{content_type, Result};
 use autorust_openapi::{CollectionFormat, Header, ParameterType, Response, StatusCode};
@@ -691,15 +691,30 @@ impl ToTokens for HeadersCode {
 struct HeaderCode {
     header_name: String,
     function_name: Ident,
+    type_name_code: TypeNameCode,
 }
 
 impl HeaderCode {
     fn new(header_name: String, header: &Header) -> Result<Self> {
-        let function_name = header_name.to_snake_case_ident()?;
-        let header_name = header_name.to_lowercase();
+        let function_name = header_name.to_snake_case_ident()?; // ETag as e_tag
+        let header_name = header_name.to_lowercase(); // ETag as etag
+        let type_name = match (header.type_.as_str(), header.format.as_ref().map(String::as_str)) {
+            ("string", None) => Ok(TypeName::String),
+            ("string", Some("byte")) => Ok(TypeName::String), // base64-encoded
+            ("string", Some("date-time-rfc1123")) => Ok(TypeName::DateTimeRfc1123),
+            ("integer", None) => Ok(TypeName::Int32),
+            ("integer", Some("int32")) => Ok(TypeName::Int32),
+            ("integer", Some("int64")) => Ok(TypeName::Int64),
+            ("boolean", None) => Ok(TypeName::Boolean),
+            (header_type, header_format) => Err(Error::with_message(ErrorKind::CodeGen, || {
+                format!("header type '{}' format '{:?}' not matched", header_type, header_format)
+            })),
+        }?;
+        let type_name_code = TypeNameCode::new(&type_name)?;
         Ok(Self {
             header_name,
             function_name,
+            type_name_code,
         })
     }
 }
@@ -709,14 +724,33 @@ impl ToTokens for HeaderCode {
         let Self {
             header_name,
             function_name,
+            type_name_code,
         } = &self;
-        // self.header.header.type_
-        // self.header.header.format
-        tokens.extend(quote! {
-            pub fn #function_name(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))
-            }
-        })
+        if type_name_code.is_string() {
+            tokens.extend(quote! {
+                pub fn #function_name(&self) -> azure_core::Result<&str> {
+                    self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))
+                }
+            });
+        } else if type_name_code.is_date_time() {
+            tokens.extend(quote! {
+                pub fn #function_name(&self) -> azure_core::Result<time::OffsetDateTime> {
+                    azure_core::date::parse_rfc3339(self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))?)
+                }
+            });
+        } else if type_name_code.is_date_time_rfc1123() {
+            tokens.extend(quote! {
+                pub fn #function_name(&self) -> azure_core::Result<time::OffsetDateTime> {
+                    azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))?)
+                }
+            });
+        } else {
+            tokens.extend(quote! {
+                pub fn #function_name(&self) -> azure_core::Result<#type_name_code> {
+                    self.0.get_as(&azure_core::headers::HeaderName::from_static(#header_name))
+                }
+            });
+        }
     }
 }
 
