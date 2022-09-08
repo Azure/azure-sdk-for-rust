@@ -65,11 +65,6 @@ pub trait ServiceBusRetryPolicyState {
     fn server_busy_error_message(&self) -> &String;
 
     fn server_busy_error_message_mut(&mut self) -> &mut String;
-
-    /// The instance of <see cref="ServiceBusEventSource" /> which can be mocked for testing.
-    fn logger(&self) -> &ServiceBusEventSource;
-
-    fn logger_mut(&mut self) -> &mut ServiceBusEventSource;
 }
 
 pub(crate) mod private {
