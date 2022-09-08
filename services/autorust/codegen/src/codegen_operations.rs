@@ -1284,7 +1284,7 @@ impl ToTokens for ClientFunctionCode {
             .any(|param| param.description.is_some())
         {
             // Add a blank link before the arguments if there is a summary or description.
-            if !summary.is_some() || !description.is_some() {
+            if !summary.is_empty() || !description.is_empty() {
                 param_descriptions.push(quote! { #[doc = ""] });
             }
             param_descriptions.push(quote! { #[doc = "Arguments:"] });
@@ -1322,8 +1322,12 @@ impl DocCommentCode {
     pub fn new(comment: Option<String>) -> Self {
         Self { comment }
     }
-    pub fn is_some(&self) -> bool {
-        self.comment.is_some()
+    pub fn is_empty(&self) -> bool {
+        if let Some(comment) = &self.comment {
+            comment.is_empty()
+        } else {
+            true
+        }
     }
 }
 
