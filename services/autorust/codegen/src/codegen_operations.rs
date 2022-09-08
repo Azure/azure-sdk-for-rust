@@ -687,6 +687,7 @@ impl ToTokens for HeadersCode {
     }
 }
 
+/// Code for a function to get a header value from the http response.
 #[derive(Clone)]
 struct HeaderCode {
     header_name: String,
@@ -735,32 +736,33 @@ impl ToTokens for HeaderCode {
             type_name_code,
             description,
         } = &self;
-        description.to_tokens(tokens);
-        if type_name_code.is_string() {
-            tokens.extend(quote! {
+        let hdr_fn = if type_name_code.is_string() {
+            quote! {
                 pub fn #function_name(&self) -> azure_core::Result<&str> {
                     self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))
                 }
-            });
+            }
         } else if type_name_code.is_date_time() {
-            tokens.extend(quote! {
+            quote! {
                 pub fn #function_name(&self) -> azure_core::Result<time::OffsetDateTime> {
                     azure_core::date::parse_rfc3339(self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))?)
                 }
-            });
+            }
         } else if type_name_code.is_date_time_rfc1123() {
-            tokens.extend(quote! {
+            quote! {
                 pub fn #function_name(&self) -> azure_core::Result<time::OffsetDateTime> {
                     azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))?)
                 }
-            });
+            }
         } else {
-            tokens.extend(quote! {
+            quote! {
                 pub fn #function_name(&self) -> azure_core::Result<#type_name_code> {
                     self.0.get_as(&azure_core::headers::HeaderName::from_static(#header_name))
                 }
-            });
-        }
+            }
+        };
+        description.to_tokens(tokens);
+        hdr_fn.to_tokens(tokens)
     }
 }
 
@@ -786,17 +788,14 @@ impl ResponseCode {
                 response_type: create_response_type(rsp)?,
             });
         }
-        let headers = {
-            let mut headers = IndexMap::new();
-            for rsp in success_responses {
-                for (hdr_name, hdr) in &rsp.1.headers {
-                    if let autorust_openapi::ReferenceOr::Item(hdr) = hdr {
-                        headers.insert(hdr_name.clone(), HeaderCode::new(hdr_name.clone(), hdr));
-                    }
-                }
-            }
-            headers
-        };
+        let headers = success_responses
+            .into_iter()
+            .flat_map(|(_, rsp)| rsp.headers)
+            .filter_map(|(name, header)| match header {
+                autorust_openapi::ReferenceOr::Item(header) => Some((name.clone(), HeaderCode::new(name, &header))),
+                _ => None,
+            })
+            .collect::<IndexMap<_, _>>();
         let headers = headers.into_values().collect::<Result<Vec<_>>>()?;
         Ok(Self {
             status_responses,
