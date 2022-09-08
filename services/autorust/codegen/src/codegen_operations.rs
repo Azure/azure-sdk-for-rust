@@ -698,7 +698,7 @@ impl HeaderCode {
     fn new(header_name: String, header: &Header) -> Result<Self> {
         let function_name = header_name.to_snake_case_ident()?; // ETag as e_tag
         let header_name = header_name.to_lowercase(); // ETag as etag
-        let type_name = match (header.type_.as_str(), header.format.as_ref().map(String::as_str)) {
+        let type_name = match (header.type_.as_str(), header.format.as_deref()) {
             ("string", None) => Ok(TypeName::String),
             ("string", Some("byte")) => Ok(TypeName::String), // base64-encoded
             ("string", Some("duration")) => Ok(TypeName::String),
