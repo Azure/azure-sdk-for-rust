@@ -1011,6 +1011,7 @@ pub mod subscription_governance_rules_execute_status {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URL for the execution status"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
@@ -1120,6 +1121,7 @@ pub mod security_connector_governance_rules_execute_status {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URL for the execution status"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }

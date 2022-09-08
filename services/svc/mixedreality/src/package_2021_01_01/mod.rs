@@ -256,9 +256,11 @@ pub mod remote_rendering {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Microsoft Correlation Vector. Include this value when reporting issues."]
             pub fn ms_cv(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("ms-cv"))
             }
+            #[doc = "Time in seconds when the status of this conversion should be polled again"]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -334,6 +336,7 @@ pub mod remote_rendering {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Microsoft Correlation Vector. Include this value when reporting issues."]
             pub fn ms_cv(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("ms-cv"))
             }
@@ -411,6 +414,7 @@ pub mod remote_rendering {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Microsoft Correlation Vector. Include this value when reporting issues."]
             pub fn ms_cv(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("ms-cv"))
             }
@@ -576,6 +580,7 @@ pub mod remote_rendering {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Microsoft Correlation Vector. Include this value when reporting issues."]
             pub fn ms_cv(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("ms-cv"))
             }

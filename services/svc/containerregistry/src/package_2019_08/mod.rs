@@ -334,9 +334,11 @@ pub mod blob {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The length of the requested blob content."]
             pub fn content_length(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
             }
+            #[doc = "Content range of blob chunk."]
             pub fn content_range(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("content-range"))
             }
@@ -449,9 +451,11 @@ pub mod blob {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The length of the requested blob content."]
             pub fn content_length(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
             }
+            #[doc = "Digest of the targeted content for the request."]
             pub fn docker_content_digest(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("docker-content-digest"))
@@ -520,6 +524,7 @@ pub mod blob {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Digest of the targeted content for the request."]
             pub fn docker_content_digest(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("docker-content-digest"))
@@ -991,13 +996,16 @@ pub mod manifests {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Identifies the docker upload uuid for the current request."]
             pub fn docker_content_digest(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("docker-content-digest"))
             }
+            #[doc = "The canonical location url of the uploaded manifest."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "The length of the requested blob content."]
             pub fn content_length(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
             }
@@ -1347,6 +1355,7 @@ pub mod repository {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "next paginated result"]
             pub fn link(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("link"))
             }

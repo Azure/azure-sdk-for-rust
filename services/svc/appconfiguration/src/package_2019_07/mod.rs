@@ -315,6 +315,7 @@ pub mod get_keys {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
@@ -516,6 +517,7 @@ pub mod get_key_values {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
@@ -747,12 +749,15 @@ pub mod get_key_value {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
+        #[doc = "An identifier representing the returned state of the resource."]
         pub fn e_tag(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
+        #[doc = "A UTC datetime that specifies the last time the resource was modified."]
         pub fn last_modified(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))
         }
@@ -873,9 +878,11 @@ pub mod put_key_value {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
+        #[doc = "An identifier representing the returned state of the resource."]
         pub fn e_tag(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
@@ -992,9 +999,11 @@ pub mod delete_key_value {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
+        #[doc = "An identifier representing the returned state of the resource."]
         pub fn e_tag(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
@@ -1175,6 +1184,7 @@ pub mod get_labels {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
@@ -1388,9 +1398,11 @@ pub mod put_lock {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
+        #[doc = "An identifier representing the returned state of the resource."]
         pub fn e_tag(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
@@ -1496,9 +1508,11 @@ pub mod delete_lock {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
+        #[doc = "An identifier representing the returned state of the resource."]
         pub fn e_tag(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
@@ -1604,6 +1618,7 @@ pub mod get_revisions {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
         pub fn sync_token(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }

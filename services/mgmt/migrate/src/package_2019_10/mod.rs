@@ -325,6 +325,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -427,6 +428,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -531,6 +533,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -608,6 +611,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -696,6 +700,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -825,6 +830,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -904,6 +910,7 @@ pub mod projects {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1031,6 +1038,7 @@ pub mod machines {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1137,6 +1145,7 @@ pub mod machines {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1336,6 +1345,7 @@ pub mod groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1414,6 +1424,7 @@ pub mod groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1493,6 +1504,7 @@ pub mod groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1626,6 +1638,7 @@ pub mod groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1863,6 +1876,7 @@ pub mod assessments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -1943,6 +1957,7 @@ pub mod assessments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2021,6 +2036,7 @@ pub mod assessments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2094,6 +2110,7 @@ pub mod assessments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2215,6 +2232,7 @@ pub mod assessments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2350,6 +2368,7 @@ pub mod assessed_machines {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2452,6 +2471,7 @@ pub mod assessed_machines {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2622,6 +2642,7 @@ pub mod hyper_v_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2700,6 +2721,7 @@ pub mod hyper_v_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2779,6 +2801,7 @@ pub mod hyper_v_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3008,6 +3031,7 @@ pub mod server_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3086,6 +3110,7 @@ pub mod server_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3165,6 +3190,7 @@ pub mod server_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3394,6 +3420,7 @@ pub mod v_mware_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3472,6 +3499,7 @@ pub mod v_mware_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3551,6 +3579,7 @@ pub mod v_mware_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3780,6 +3809,7 @@ pub mod import_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3858,6 +3888,7 @@ pub mod import_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -3937,6 +3968,7 @@ pub mod import_collectors {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -4166,6 +4198,7 @@ pub mod private_endpoint_connection {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -4237,6 +4270,7 @@ pub mod private_endpoint_connection {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -4309,6 +4343,7 @@ pub mod private_endpoint_connection {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -4480,6 +4515,7 @@ pub mod private_link_resource {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -4552,6 +4588,7 @@ pub mod private_link_resource {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }

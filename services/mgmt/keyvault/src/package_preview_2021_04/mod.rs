@@ -1440,9 +1440,11 @@ pub mod private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "(specified only if operation does not finish synchronously) The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "(specified only if operation does not finish synchronously) The URI to poll for completion status. The response of this URI may be synchronous or asynchronous."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -1525,9 +1527,11 @@ pub mod private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in the location header."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
@@ -2101,6 +2105,7 @@ pub mod managed_hsms {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The URI to poll for completion status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
@@ -2887,9 +2892,11 @@ pub mod mhsm_private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "(specified only if operation does not finish synchronously) The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "(specified only if operation does not finish synchronously) The URI to poll for completion status. The response of this URI may be synchronous or asynchronous."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -2965,9 +2972,11 @@ pub mod mhsm_private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in the location header."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }

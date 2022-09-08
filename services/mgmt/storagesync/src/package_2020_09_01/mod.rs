@@ -174,9 +174,11 @@ pub mod operations {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -475,9 +477,11 @@ pub mod storage_sync_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -556,19 +560,24 @@ pub mod storage_sync_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Retry After"]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "Request id"]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id"]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -650,20 +659,25 @@ pub mod storage_sync_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Request id"]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id"]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Retry After"]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -795,9 +809,11 @@ pub mod storage_sync_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -875,9 +891,11 @@ pub mod storage_sync_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -1197,19 +1215,24 @@ pub mod private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Retry After"]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "Request id"]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id"]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -1323,9 +1346,11 @@ pub mod private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -1493,9 +1518,11 @@ pub mod sync_groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -1575,9 +1602,11 @@ pub mod sync_groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -1658,9 +1687,11 @@ pub mod sync_groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -2057,9 +2088,11 @@ pub mod cloud_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -2134,20 +2167,25 @@ pub mod cloud_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Request id"]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id"]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Retry After"]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -2262,9 +2300,11 @@ pub mod cloud_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -2379,12 +2419,15 @@ pub mod cloud_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -2780,9 +2823,11 @@ pub mod server_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -2857,17 +2902,21 @@ pub mod server_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
@@ -2944,17 +2993,21 @@ pub mod server_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
@@ -3078,12 +3131,15 @@ pub mod server_endpoints {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -3317,9 +3373,11 @@ pub mod registered_servers {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -3393,9 +3451,11 @@ pub mod registered_servers {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -3469,17 +3529,21 @@ pub mod registered_servers {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "Operation Status Location URI"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
@@ -3700,9 +3764,11 @@ pub mod workflows {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -3782,9 +3848,11 @@ pub mod workflows {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -3933,9 +4001,11 @@ pub mod operation_status {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "request id."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
+            #[doc = "correlation request id."]
             pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))
@@ -4040,9 +4110,11 @@ pub mod location_operation_status {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "request id."]
         pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
         }
+        #[doc = "correlation request id."]
         pub fn x_ms_correlation_request_id(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("x-ms-correlation-request-id"))

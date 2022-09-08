@@ -643,6 +643,7 @@ pub mod query {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The query charge."]
             pub fn query_charge(&self) -> azure_core::Result<f32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("query-charge"))
             }
@@ -990,6 +991,7 @@ pub mod digital_twins {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -1077,6 +1079,7 @@ pub mod digital_twins {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -1297,6 +1300,7 @@ pub mod digital_twins {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -1390,6 +1394,7 @@ pub mod digital_twins {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -1990,6 +1995,7 @@ pub mod digital_twins {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }

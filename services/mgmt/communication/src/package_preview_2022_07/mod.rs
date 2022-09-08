@@ -845,6 +845,7 @@ pub mod communication_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL to query for status of the operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -926,6 +927,7 @@ pub mod communication_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL to query for status of the operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -1429,6 +1431,7 @@ pub mod domains {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL to query for status of the operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -1512,6 +1515,7 @@ pub mod domains {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL to query for status of the operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -2016,6 +2020,7 @@ pub mod email_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL to query for status of the operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -2097,6 +2102,7 @@ pub mod email_services {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL to query for status of the operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))

@@ -2876,12 +2876,15 @@ pub mod video_analyzers {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -2963,12 +2966,15 @@ pub mod video_analyzers {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -3571,12 +3577,15 @@ pub mod private_endpoint_connections {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))

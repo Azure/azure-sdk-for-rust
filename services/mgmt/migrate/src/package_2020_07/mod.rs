@@ -2181,6 +2181,7 @@ pub mod hyper_v_sites {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -2283,6 +2284,7 @@ pub mod hyper_v_sites {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -4671,6 +4673,7 @@ pub mod master_sites {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Tracking URL for long running operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -5398,6 +5401,7 @@ pub mod v_mware_sites {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
@@ -5500,6 +5504,7 @@ pub mod v_mware_sites {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
             pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }

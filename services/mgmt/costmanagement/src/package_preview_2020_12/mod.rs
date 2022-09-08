@@ -636,17 +636,21 @@ pub mod generate_detailed_cost_report {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The URL to check the result of the asynchronous operation."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "The URL to check the status of the asynchronous operation."]
             pub fn azure_consumption_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-consumption-asyncoperation"))
             }
+            #[doc = "The URL to check the status of the asynchronous operation."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
+            #[doc = "The amount of delay to use while the status of the operation is checked. The value is expressed in seconds."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }

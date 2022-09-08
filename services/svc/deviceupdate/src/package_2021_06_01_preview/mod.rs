@@ -2394,6 +2394,7 @@ pub mod device_management {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Number of seconds to wait before checking the operation status again."]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -3187,6 +3188,7 @@ pub mod device_update {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Url to retrieve the import operation status."]
             pub fn operation_location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("operation-location"))
             }
@@ -3971,6 +3973,7 @@ pub mod device_update {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Number of seconds to wait before checking the operation status again."]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }

@@ -538,9 +538,11 @@ pub mod b2c_tenants {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Contains the URL/location which can return the tenant provisioning status."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Contains the number of seconds to wait before checking the tenant provisioning status."]
             pub fn retry_after(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }

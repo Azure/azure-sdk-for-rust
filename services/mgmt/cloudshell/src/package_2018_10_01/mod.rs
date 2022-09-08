@@ -385,10 +385,12 @@ pub mod get_user_settings_with_location {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "normalized required location code"]
         pub fn x_ms_console_required_location_code(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("x-ms-console-required-location-code"))
         }
+        #[doc = "indicates whether user is a previous usr."]
         pub fn x_ms_console_preview_user(&self) -> azure_core::Result<bool> {
             self.0
                 .get_as(&azure_core::headers::HeaderName::from_static("x-ms-console-preview-user"))
@@ -848,10 +850,12 @@ pub mod get_user_settings {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "normalized required location code"]
         pub fn x_ms_console_required_location_code(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("x-ms-console-required-location-code"))
         }
+        #[doc = "indicates whether user is a previous usr."]
         pub fn x_ms_console_preview_user(&self) -> azure_core::Result<bool> {
             self.0
                 .get_as(&azure_core::headers::HeaderName::from_static("x-ms-console-preview-user"))

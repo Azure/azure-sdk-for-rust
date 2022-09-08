@@ -429,6 +429,7 @@ pub mod get_tag_list {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "next paginated result"]
         pub fn link(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("link"))
         }
@@ -567,13 +568,16 @@ pub mod create_manifest {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "Identifies the docker upload uuid for the current request."]
         pub fn docker_content_digest(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("docker-content-digest"))
         }
+        #[doc = "The canonical location url of the uploaded manifest."]
         pub fn location(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
         }
+        #[doc = "The canonical location url of the uploaded manifest."]
         pub fn content_length(&self) -> azure_core::Result<i32> {
             self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
         }
@@ -684,6 +688,7 @@ pub mod get_repositories {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "next paginated result"]
         pub fn link(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("link"))
         }

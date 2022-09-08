@@ -4856,6 +4856,7 @@ pub mod workspace_purge {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The location from which to request the operation status."]
             pub fn x_ms_status_location(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("x-ms-status-location"))

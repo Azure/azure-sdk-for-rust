@@ -444,9 +444,11 @@ pub mod billing_subscriptions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URI to poll for result"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Recommended time to wait before making another request to check the status of the operation. The time is specified in seconds."]
             pub fn retry_after(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -565,9 +567,11 @@ pub mod billing_subscriptions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URI to poll for result."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Recommended time to wait before making another request to check the status of the operation. The time is specified in seconds."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -714,9 +718,11 @@ pub mod billing_subscriptions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URI to poll for result."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Recommended time to wait before making another request to check the status of the operation. The time is specified in seconds."]
             pub fn retry_after(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -795,9 +801,11 @@ pub mod billing_subscriptions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URI to poll for result."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Recommended time to wait before making another request to check the status of the operation. The time is specified in seconds."]
             pub fn retry_after(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
@@ -1082,9 +1090,11 @@ pub mod billing_subscriptions_aliases {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "Location URI to poll for result"]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "Recommended time to wait before making another request to check the status of the operation. The time is specified in seconds."]
             pub fn retry_after(&self) -> azure_core::Result<i64> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }

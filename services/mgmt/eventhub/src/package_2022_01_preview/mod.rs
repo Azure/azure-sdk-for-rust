@@ -5420,6 +5420,7 @@ pub mod schema_registry {
                 top: None,
             }
         }
+        #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
         #[doc = "* `namespace_name`: The Namespace name"]
@@ -5440,6 +5441,7 @@ pub mod schema_registry {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
         #[doc = "* `namespace_name`: The Namespace name"]
@@ -5463,6 +5465,7 @@ pub mod schema_registry {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
         #[doc = "* `namespace_name`: The Namespace name"]

@@ -280,24 +280,31 @@ pub mod schema {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "URL location of schema, identified by schema group, schema name, and version."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
+            #[doc = "The content type for given schema. Each schema type has an associated content-type."]
             pub fn content_type(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
             }
+            #[doc = "References specific schema in registry namespace."]
             pub fn schema_id(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("schema-id"))
             }
+            #[doc = "URL location of schema, identified by schema ID."]
             pub fn schema_id_location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("schema-id-location"))
             }
+            #[doc = "References schema group."]
             pub fn schema_group_name(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("schema-group-name"))
             }
+            #[doc = "References schema name."]
             pub fn schema_name(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("schema-name"))
             }
+            #[doc = "Version of the returned schema."]
             pub fn schema_version(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("schema-version"))
             }

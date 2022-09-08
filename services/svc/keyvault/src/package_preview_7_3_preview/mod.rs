@@ -1293,9 +1293,11 @@ pub mod full_backup {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
         pub fn retry_after(&self) -> azure_core::Result<i32> {
             self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
         }
+        #[doc = "The URI to poll for completion status."]
         pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -1437,9 +1439,11 @@ pub mod full_restore_operation {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
         pub fn retry_after(&self) -> azure_core::Result<i32> {
             self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
         }
+        #[doc = "The URI to poll for completion status."]
         pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -1581,9 +1585,11 @@ pub mod selective_key_restore_operation {
     }
     pub struct Headers<'a>(&'a azure_core::headers::Headers);
     impl<'a> Headers<'a> {
+        #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
         pub fn retry_after(&self) -> azure_core::Result<i32> {
             self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
         }
+        #[doc = "The URI to poll for completion status."]
         pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
             self.0
                 .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -8135,9 +8141,11 @@ pub mod hsm_security_domain {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
@@ -8269,9 +8277,11 @@ pub mod hsm_security_domain {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
+            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
             pub fn retry_after(&self) -> azure_core::Result<i32> {
                 self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
+            #[doc = "The URI to poll for completion status."]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
