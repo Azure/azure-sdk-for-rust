@@ -17,8 +17,8 @@ async fn main() -> azure_core::Result<()> {
         .expect("please specify container name as command line parameter");
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
-    let service_client = BlobServiceClient::new(account, storage_credentials);
-    let container_client = service_client.container_client(container_name);
+    let container_client =
+        ClientBuilder::new(account, storage_credentials).container_client(container_name);
 
     let mut metadata = Metadata::new();
     metadata.insert("prova".to_owned(), "pollo".to_owned());
