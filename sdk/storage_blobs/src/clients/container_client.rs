@@ -168,8 +168,7 @@ mod integration_tests {
     use futures::StreamExt;
 
     fn get_emulator_client(container_name: &str) -> ContainerClient {
-        let service_client = ClientBuilder::emulator().build();
-        service_client.container_client(container_name)
+        ClientBuilder::emulator().container_client(container_name)
     }
 
     #[tokio::test]
