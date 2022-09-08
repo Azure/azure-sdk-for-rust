@@ -1,6 +1,7 @@
 use crate::service::operations::*;
 use azure_core::{
-    headers::Headers, Body, ClientOptions, Context, Method, Pipeline, Request, Response, Url,
+    headers::Headers, request_options::LeaseId, Body, ClientOptions, Context, Method, Pipeline,
+    Request, Response, Url,
 };
 use azure_storage::{
     clients::{new_pipeline_from_options, shared_access_signature, ServiceType},
@@ -10,17 +11,17 @@ use azure_storage::{
 };
 use time::OffsetDateTime;
 
-use super::ContainerClient;
+use super::{BlobClient, BlobLeaseClient, ContainerClient, ContainerLeaseClient};
 
 /// A builder for the blob service client.
 #[derive(Debug, Clone)]
-pub struct BlobServiceClientBuilder {
+pub struct ClientBuilder {
     cloud_location: CloudLocation,
     options: ClientOptions,
 }
 
-impl BlobServiceClientBuilder {
-    /// Create a new instance of `BlobServiceClientBuilder`.
+impl ClientBuilder {
+    /// Create a new instance of `ClientBuilder`.
     #[must_use]
     pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
         Self::with_location(CloudLocation::Public {
@@ -29,7 +30,7 @@ impl BlobServiceClientBuilder {
         })
     }
 
-    /// Create a new instance of `BlobServiceClientBuilder` with a cloud location.
+    /// Create a new instance of `ClientBuilder` with a cloud location.
     #[must_use]
     pub fn with_location(cloud_location: CloudLocation) -> Self {
         Self {
@@ -49,12 +50,56 @@ impl BlobServiceClientBuilder {
 
     /// Convert the builder into a `BlobServiceClient` instance.
     #[must_use]
-    pub fn build(self) -> BlobServiceClient {
+    pub fn blob_service_client(self) -> BlobServiceClient {
         let credentials = self.cloud_location.credentials();
         BlobServiceClient {
             pipeline: new_pipeline_from_options(self.options, credentials.clone()),
             cloud_location: self.cloud_location,
         }
+    }
+
+    /// Convert the builder into a `ContainerClient` instance.
+    #[must_use]
+    pub fn container_client(self, container_name: impl Into<String>) -> ContainerClient {
+        self.blob_service_client().container_client(container_name)
+    }
+
+    /// Convert the builder into a `BlobClient` instance.
+    #[must_use]
+    pub fn blob_client(
+        self,
+        container_name: impl Into<String>,
+        blob_name: impl Into<String>,
+    ) -> BlobClient {
+        self.blob_service_client()
+            .container_client(container_name)
+            .blob_client(blob_name)
+    }
+
+    /// Convert the builder into a `ContainerLeaseClient` instance.
+    #[must_use]
+    pub fn container_lease_client(
+        self,
+        container_name: impl Into<String>,
+        lease_id: LeaseId,
+    ) -> ContainerLeaseClient {
+        self.blob_service_client()
+            .container_client(container_name)
+            .container_lease_client(lease_id)
+    }
+
+    /// Convert the builder into a `BlobLeaseClient` instance.
+    #[must_use]
+    pub fn blob_lease_client(
+        self,
+        container_name: impl Into<String>,
+        blob_name: impl Into<String>,
+        lease_id: LeaseId,
+    ) -> BlobLeaseClient {
+        self.blob_service_client()
+            .container_client(container_name)
+            .blob_client(blob_name)
+            .blob_lease_client(lease_id)
     }
 
     /// Set the cloud location.
@@ -99,16 +144,16 @@ impl BlobServiceClient {
     /// Create a new `BlobServiceClient` which connects to the account's instance in the public Azure cloud.
     #[must_use]
     pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
-        BlobServiceClientBuilder::new(account, credentials).build()
+        ClientBuilder::new(account, credentials).blob_service_client()
     }
 
-    /// Create a new `BlobServiceClientBuilder`.
+    /// Create a new `ClientBuilder`.
     #[must_use]
     pub fn builder(
         account: impl Into<String>,
         credentials: impl Into<StorageCredentials>,
-    ) -> BlobServiceClientBuilder {
-        BlobServiceClientBuilder::new(account, credentials)
+    ) -> ClientBuilder {
+        ClientBuilder::new(account, credentials)
     }
 
     /// Get information about the blob storage account

@@ -18,7 +18,7 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Blo
     );
     let client = BlobServiceClient::builder(account_name, storage_credentials)
         .transport(transport_options)
-        .build();
+        .blob_service_client();
     Ok(client)
 }
 
