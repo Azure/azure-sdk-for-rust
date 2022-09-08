@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut publishers = client
         .list_publishers(&location, &subscription_id)
-        .into_body()
+        .into_future()
         .await?
         .into_iter()
         .map(|x| x.name)
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for publisher in publishers {
         let mut offers = client
             .list_offers(&location, &publisher, &subscription_id)
-            .into_body()
+            .into_future()
             .await?
             .into_iter()
             .map(|x| x.name)
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         'offer: for offer in offers {
             let mut skus = client
                 .list_skus(&location, &publisher, &offer, &subscription_id)
-                .into_body()
+                .into_future()
                 .await?
                 .into_iter()
                 .map(|x| x.name)
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for sku in skus {
                 let mut versions = client
                     .list(&location, &publisher, &offer, &sku, &subscription_id)
-                    .into_body()
+                    .into_future()
                     .await?
                     .into_iter()
                     .map(|x| x.name)
@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                     let vm = client
                         .get(&location, &publisher, &offer, &sku, &version, &subscription_id)
-                        .into_body()
+                        .into_future()
                         .await?;
 
                     if let Some(props) = vm.properties {

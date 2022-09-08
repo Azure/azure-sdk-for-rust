@@ -303,8 +303,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -369,8 +369,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -440,8 +440,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -511,8 +511,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -581,8 +581,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -645,8 +645,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::AgreementTerms>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::AgreementTerms>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

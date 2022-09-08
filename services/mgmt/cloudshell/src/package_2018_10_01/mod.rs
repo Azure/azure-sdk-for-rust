@@ -431,8 +431,8 @@ pub mod get_user_settings_with_location {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserSettingsResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -499,8 +499,8 @@ pub mod put_user_settings_with_location {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserSettingsResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -567,8 +567,8 @@ pub mod patch_user_settings_with_location {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserSettingsResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -672,8 +672,8 @@ pub mod get_console_with_location {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudShellConsole>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -738,8 +738,8 @@ pub mod put_console_with_location {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudShellConsole>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -894,8 +894,8 @@ pub mod get_user_settings {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserSettingsResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -960,8 +960,8 @@ pub mod put_user_settings {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserSettingsResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1026,8 +1026,8 @@ pub mod patch_user_settings {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::UserSettingsResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserSettingsResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1127,8 +1127,8 @@ pub mod get_console {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudShellConsole>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1193,8 +1193,8 @@ pub mod put_console {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::CloudShellConsole> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudShellConsole>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }

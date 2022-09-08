@@ -244,8 +244,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::JobStatistics> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::JobStatistics>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -306,8 +306,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::JobDataPath> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::JobDataPath>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -367,8 +367,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::JobInformation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::JobInformation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -461,8 +461,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::JobInformation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::JobInformation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -523,8 +523,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::JobInformation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::JobInformation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

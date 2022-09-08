@@ -1402,8 +1402,8 @@ pub mod get_address_by_name {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::AddressResource> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AddressResource>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1473,8 +1473,8 @@ pub mod create_address {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::AddressResource> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AddressResource>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1742,8 +1742,8 @@ pub mod get_order_by_name {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::OrderResource> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OrderResource>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1941,8 +1941,8 @@ pub mod get_order_item_by_name {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::OrderItemResource> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OrderItemResource>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -2012,8 +2012,8 @@ pub mod create_order_item {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::OrderItemResource> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OrderItemResource>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }

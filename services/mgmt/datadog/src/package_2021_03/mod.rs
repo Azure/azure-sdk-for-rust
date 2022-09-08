@@ -307,8 +307,8 @@ pub mod marketplace_agreements {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogAgreementResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogAgreementResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -718,8 +718,8 @@ pub mod monitors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogApiKey> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogApiKey>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1319,8 +1319,8 @@ pub mod monitors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogMonitorResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogMonitorResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1398,8 +1398,8 @@ pub mod monitors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogMonitorResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogMonitorResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1477,8 +1477,8 @@ pub mod monitors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogMonitorResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogMonitorResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1588,8 +1588,8 @@ pub mod monitors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogSetPasswordLink> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogSetPasswordLink>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1924,8 +1924,8 @@ pub mod tag_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::MonitoringTagRules> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MonitoringTagRules>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2004,8 +2004,8 @@ pub mod tag_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::MonitoringTagRules> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MonitoringTagRules>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2241,8 +2241,8 @@ pub mod single_sign_on_configurations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogSingleSignOnResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogSingleSignOnResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2322,8 +2322,8 @@ pub mod single_sign_on_configurations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatadogSingleSignOnResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatadogSingleSignOnResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

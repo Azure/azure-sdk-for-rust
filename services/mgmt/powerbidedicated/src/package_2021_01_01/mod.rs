@@ -375,8 +375,8 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCapacity> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCapacity>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -446,8 +446,8 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCapacity> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCapacity>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -517,8 +517,8 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCapacity> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCapacity>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -712,8 +712,8 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCapacities> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCapacities>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -777,8 +777,8 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCapacities> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCapacities>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -841,8 +841,10 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SkuEnumerationForNewResourceResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::SkuEnumerationForNewResourceResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -909,8 +911,10 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SkuEnumerationForExistingResourceResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::SkuEnumerationForExistingResourceResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -977,8 +981,10 @@ pub mod capacities {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CheckCapacityNameAvailabilityResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckCapacityNameAvailabilityResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1260,8 +1266,8 @@ pub mod auto_scale_v_cores {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AutoScaleVCore> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AutoScaleVCore>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1330,8 +1336,8 @@ pub mod auto_scale_v_cores {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AutoScaleVCore> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AutoScaleVCore>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1400,8 +1406,8 @@ pub mod auto_scale_v_cores {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AutoScaleVCore> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AutoScaleVCore>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1508,8 +1514,8 @@ pub mod auto_scale_v_cores {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AutoScaleVCoreListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AutoScaleVCoreListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1573,8 +1579,8 @@ pub mod auto_scale_v_cores {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AutoScaleVCoreListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AutoScaleVCoreListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

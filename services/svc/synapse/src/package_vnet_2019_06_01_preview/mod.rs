@@ -234,8 +234,8 @@ pub mod managed_private_endpoints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ManagedPrivateEndpoint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedPrivateEndpoint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -302,8 +302,8 @@ pub mod managed_private_endpoints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ManagedPrivateEndpoint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedPrivateEndpoint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

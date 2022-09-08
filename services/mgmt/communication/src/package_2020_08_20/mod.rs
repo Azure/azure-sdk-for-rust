@@ -474,8 +474,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NameAvailability> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NameAvailability>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -550,8 +550,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedNotificationHub> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedNotificationHub>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -806,8 +806,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommunicationServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommunicationServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -897,8 +897,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommunicationServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommunicationServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -976,8 +976,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommunicationServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommunicationServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1087,8 +1087,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommunicationServiceKeys> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommunicationServiceKeys>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1151,8 +1151,8 @@ pub mod communication_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommunicationServiceKeys> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommunicationServiceKeys>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

@@ -622,8 +622,8 @@ pub mod open_shift_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenShiftCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenShiftCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -693,8 +693,8 @@ pub mod open_shift_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenShiftCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenShiftCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -764,8 +764,8 @@ pub mod open_shift_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenShiftCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenShiftCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -869,8 +869,8 @@ pub mod open_shift_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenShiftClusterAdminKubeconfig> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenShiftClusterAdminKubeconfig>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -932,8 +932,8 @@ pub mod open_shift_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenShiftClusterCredentials> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenShiftClusterCredentials>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

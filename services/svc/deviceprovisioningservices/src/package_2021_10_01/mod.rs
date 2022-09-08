@@ -243,8 +243,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IndividualEnrollment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IndividualEnrollment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -314,8 +314,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IndividualEnrollment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IndividualEnrollment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -453,8 +453,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::IndividualEnrollment>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::IndividualEnrollment>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -515,8 +515,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AttestationMechanism> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AttestationMechanism>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -576,8 +576,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BulkEnrollmentOperationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BulkEnrollmentOperationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -715,8 +715,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -786,8 +786,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -925,8 +925,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::EnrollmentGroup>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::EnrollmentGroup>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -990,8 +990,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AttestationMechanism> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AttestationMechanism>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1051,8 +1051,10 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BulkEnrollmentGroupOperationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::BulkEnrollmentGroupOperationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1150,8 +1152,8 @@ pub mod device_registration_state {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceRegistrationState> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceRegistrationState>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1289,8 +1291,8 @@ pub mod device_registration_state {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::DeviceRegistrationState>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::DeviceRegistrationState>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

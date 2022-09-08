@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         applications: None,
     };
 
-    let query_results = client.query_client().execute(app_id, body).into_body().await?;
+    let query_results = client.query_client().execute(app_id, body).into_future().await?;
 
     let unnamed = "unnamed".to_string();
 

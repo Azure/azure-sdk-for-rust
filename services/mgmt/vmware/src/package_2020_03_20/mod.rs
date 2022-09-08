@@ -319,8 +319,8 @@ pub mod locations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Trial> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Trial>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -386,8 +386,8 @@ pub mod locations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Quota> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Quota>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -771,8 +771,8 @@ pub mod private_clouds {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateCloud> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateCloud>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -842,8 +842,8 @@ pub mod private_clouds {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateCloud> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateCloud>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -913,8 +913,8 @@ pub mod private_clouds {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateCloud> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateCloud>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1024,8 +1024,8 @@ pub mod private_clouds {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AdminCredentials> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AdminCredentials>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1310,8 +1310,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1383,8 +1383,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1456,8 +1456,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1761,8 +1761,8 @@ pub mod hcx_enterprise_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HcxEnterpriseSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HcxEnterpriseSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1833,8 +1833,8 @@ pub mod hcx_enterprise_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HcxEnterpriseSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HcxEnterpriseSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2137,8 +2137,8 @@ pub mod authorizations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ExpressRouteAuthorization> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ExpressRouteAuthorization>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2210,8 +2210,8 @@ pub mod authorizations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ExpressRouteAuthorization> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ExpressRouteAuthorization>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

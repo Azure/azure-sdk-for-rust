@@ -302,8 +302,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NameAvailabilityResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NameAvailabilityResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -369,8 +369,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResourceList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResourceList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -434,8 +434,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResourceList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResourceList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -502,8 +502,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -595,8 +595,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -673,8 +673,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -804,8 +804,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -870,8 +870,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AsyncOperationStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AsyncOperationStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

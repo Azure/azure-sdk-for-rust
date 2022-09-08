@@ -228,8 +228,8 @@ pub mod public_offers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CatalogItem> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CatalogItem>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -306,8 +306,8 @@ pub mod public_offers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PageResultOfCatalogItem> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PageResultOfCatalogItem>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

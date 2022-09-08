@@ -241,8 +241,8 @@ pub mod blueprints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Blueprint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Blueprint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -309,8 +309,8 @@ pub mod blueprints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Blueprint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Blueprint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -375,8 +375,8 @@ pub mod blueprints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Blueprint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Blueprint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -614,8 +614,8 @@ pub mod artifacts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Artifact>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -684,8 +684,8 @@ pub mod artifacts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Artifact>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -752,8 +752,8 @@ pub mod artifacts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Artifact>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -991,8 +991,8 @@ pub mod published_blueprints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PublishedBlueprint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PublishedBlueprint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1070,8 +1070,8 @@ pub mod published_blueprints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PublishedBlueprint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PublishedBlueprint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1138,8 +1138,8 @@ pub mod published_blueprints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PublishedBlueprint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PublishedBlueprint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1350,8 +1350,8 @@ pub mod published_artifacts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Artifact>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1589,8 +1589,8 @@ pub mod assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Assignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Assignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1657,8 +1657,8 @@ pub mod assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Assignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Assignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1732,8 +1732,8 @@ pub mod assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Assignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Assignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1799,8 +1799,8 @@ pub mod assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WhoIsBlueprintContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WhoIsBlueprintContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2092,8 +2092,8 @@ pub mod assignment_operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssignmentOperation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssignmentOperation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

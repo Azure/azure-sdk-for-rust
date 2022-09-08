@@ -269,8 +269,8 @@ pub mod controller {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DelegatedController> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DelegatedController>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -340,8 +340,8 @@ pub mod controller {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DelegatedController> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DelegatedController>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -410,8 +410,8 @@ pub mod controller {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DelegatedController> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DelegatedController>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -855,8 +855,8 @@ pub mod orchestrator_instance_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Orchestrator> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Orchestrator>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -926,8 +926,8 @@ pub mod orchestrator_instance_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Orchestrator> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Orchestrator>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -996,8 +996,8 @@ pub mod orchestrator_instance_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Orchestrator> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Orchestrator>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1420,8 +1420,8 @@ pub mod delegated_subnet_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DelegatedSubnet> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DelegatedSubnet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1491,8 +1491,8 @@ pub mod delegated_subnet_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DelegatedSubnet> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DelegatedSubnet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1562,8 +1562,8 @@ pub mod delegated_subnet_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DelegatedSubnet> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DelegatedSubnet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

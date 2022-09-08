@@ -237,8 +237,8 @@ pub mod spark_batch {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJobCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkBatchJobCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -304,8 +304,8 @@ pub mod spark_batch {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkBatchJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -370,8 +370,8 @@ pub mod spark_batch {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkBatchJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -593,8 +593,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkSessionCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkSessionCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -660,8 +660,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkSession> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkSession>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -726,8 +726,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkSession> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkSession>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -844,8 +844,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkStatementCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatementCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -903,8 +903,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkStatement> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatement>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -966,8 +966,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkStatement> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatement>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1030,8 +1030,8 @@ pub mod spark_session {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SparkStatementCancellationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatementCancellationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
