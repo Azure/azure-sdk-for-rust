@@ -299,6 +299,9 @@ pub mod get_keys {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -308,6 +311,12 @@ pub mod get_keys {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
     }
     #[derive(Clone)]
@@ -491,6 +500,9 @@ pub mod get_key_values {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -500,6 +512,12 @@ pub mod get_key_values {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
     }
     #[derive(Clone)]
@@ -713,6 +731,9 @@ pub mod get_key_value {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -722,6 +743,18 @@ pub mod get_key_value {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
+        pub fn last_modified(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))
         }
     }
     #[derive(Clone)]
@@ -824,6 +857,9 @@ pub mod put_key_value {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -833,6 +869,15 @@ pub mod put_key_value {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
     }
     #[derive(Clone)]
@@ -931,6 +976,9 @@ pub mod delete_key_value {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -940,6 +988,15 @@ pub mod delete_key_value {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
     }
     #[derive(Clone)]
@@ -1102,6 +1159,9 @@ pub mod get_labels {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -1111,6 +1171,12 @@ pub mod get_labels {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
     }
     #[derive(Clone)]
@@ -1306,6 +1372,9 @@ pub mod put_lock {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -1315,6 +1384,15 @@ pub mod put_lock {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
     }
     #[derive(Clone)]
@@ -1402,6 +1480,9 @@ pub mod delete_lock {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -1411,6 +1492,15 @@ pub mod delete_lock {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
         }
     }
     #[derive(Clone)]
@@ -1498,6 +1588,9 @@ pub mod get_revisions {
         pub fn as_raw_response(&self) -> &azure_core::Response {
             &self.0
         }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
     }
     impl From<Response> for azure_core::Response {
         fn from(rsp: Response) -> Self {
@@ -1507,6 +1600,12 @@ pub mod get_revisions {
     impl AsRef<azure_core::Response> for Response {
         fn as_ref(&self) -> &azure_core::Response {
             self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
         }
     }
     #[derive(Clone)]
