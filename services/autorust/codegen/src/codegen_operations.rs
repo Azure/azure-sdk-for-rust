@@ -330,13 +330,12 @@ impl WebOperationGen {
     }
 
     pub fn success_responses(&self) -> IndexMap<StatusCode, Response> {
-        let mut map = IndexMap::new();
-        for (status_code, rsp) in &self.0.responses {
-            if crate::status_codes::is_success(status_code) {
-                map.insert(status_code.to_owned(), rsp.to_owned());
-            }
-        }
-        map
+        self.0
+            .responses
+            .iter()
+            .filter(|(status_code, _)| crate::status_codes::is_success(status_code))
+            .map(|(s, r)| (s.clone(), r.clone()))
+            .collect()
     }
 }
 
