@@ -72,60 +72,6 @@ impl AbsoluteClipTime {
         Self { clip_time, time }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AccessControl {
-    #[doc = "The behavior for IP access control in Key Delivery."]
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
-    pub default_action: Option<access_control::DefaultAction>,
-    #[doc = "The IP allow list for access control in Key Delivery. If the default action is set to 'Allow', the IP allow list must be empty."]
-    #[serde(rename = "ipAllowList", default, skip_serializing_if = "Vec::is_empty")]
-    pub ip_allow_list: Vec<String>,
-}
-impl AccessControl {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod access_control {
-    use super::*;
-    #[doc = "The behavior for IP access control in Key Delivery."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DefaultAction")]
-    pub enum DefaultAction {
-        Allow,
-        Deny,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DefaultAction {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DefaultAction {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DefaultAction {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Allow => serializer.serialize_unit_variant("DefaultAction", 0u32, "Allow"),
-                Self::Deny => serializer.serialize_unit_variant("DefaultAction", 1u32, "Deny"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEncryption {
     #[doc = "The type of key used to encrypt the Account Key."]
@@ -133,19 +79,12 @@ pub struct AccountEncryption {
     pub type_: account_encryption::Type,
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentity>,
-    #[doc = "The current status of the Key Vault mapping."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
 }
 impl AccountEncryption {
     pub fn new(type_: account_encryption::Type) -> Self {
         Self {
             type_,
             key_vault_properties: None,
-            identity: None,
-            status: None,
         }
     }
 }
@@ -261,65 +200,20 @@ impl AkamaiSignatureHeaderAuthenticationKey {
         Self::default()
     }
 }
-#[doc = "The streaming endpoint sku capacity."]
+#[doc = "The API error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ArmStreamingEndpointCapacity {
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
-    pub scale_type: Option<String>,
-    #[doc = "The streaming endpoint default capacity."]
+pub struct ApiError {
+    #[doc = "Information about an error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i32>,
-    #[doc = "The streaming endpoint minimum capacity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<i32>,
-    #[doc = "The streaming endpoint maximum capacity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<i32>,
+    pub error: Option<ODataError>,
 }
-impl ArmStreamingEndpointCapacity {
-    pub fn new() -> Self {
-        Self::default()
+impl azure_core::Continuable for ApiError {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
     }
 }
-#[doc = "The streaming endpoint current sku."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ArmStreamingEndpointCurrentSku {
-    #[doc = "The streaming endpoint sku name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "The streaming endpoint sku capacity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
-}
-impl ArmStreamingEndpointCurrentSku {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The streaming endpoint sku."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ArmStreamingEndpointSku {
-    #[doc = "The streaming endpoint sku name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-impl ArmStreamingEndpointSku {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ArmStreamingEndpointSkuInfo {
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<String>,
-    #[doc = "The streaming endpoint sku capacity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<ArmStreamingEndpointCapacity>,
-    #[doc = "The streaming endpoint sku."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<ArmStreamingEndpointSku>,
-}
-impl ArmStreamingEndpointSkuInfo {
+impl ApiError {
     pub fn new() -> Self {
         Self::default()
     }
@@ -542,187 +436,6 @@ impl AssetStreamingLocator {
         Self::default()
     }
 }
-#[doc = "An Asset Track resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetTrack {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[doc = "Properties of a video, audio or text track in the asset."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AssetTrackProperties>,
-}
-impl AssetTrack {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A collection of AssetTrack items."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetTrackCollection {
-    #[doc = "A collection of AssetTrack items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<AssetTrack>,
-}
-impl azure_core::Continuable for AssetTrackCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl AssetTrackCollection {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Status of asset track operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssetTrackOperationStatus {
-    #[doc = "Operation identifier."]
-    pub name: String,
-    #[doc = "Operation resource ID."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Operation start time."]
-    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
-    #[doc = "Operation end time."]
-    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
-    #[doc = "Operation status."]
-    pub status: String,
-    #[doc = "The error detail."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-impl AssetTrackOperationStatus {
-    pub fn new(name: String, status: String) -> Self {
-        Self {
-            name,
-            id: None,
-            start_time: None,
-            end_time: None,
-            status,
-            error: None,
-        }
-    }
-}
-#[doc = "Properties of a video, audio or text track in the asset."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetTrackProperties {
-    #[doc = "Base type for concrete track types. A derived type must be used to represent the Track."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub track: Option<TrackBase>,
-    #[doc = "Provisioning state of the asset track."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<asset_track_properties::ProvisioningState>,
-}
-impl AssetTrackProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod asset_track_properties {
-    use super::*;
-    #[doc = "Provisioning state of the asset track."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Failed,
-        InProgress,
-        Succeeded,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ProvisioningState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ProvisioningState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ProvisioningState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Failed"),
-                Self::InProgress => serializer.serialize_unit_variant("ProvisioningState", 1u32, "InProgress"),
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The status of an async operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AsyncOperationResult {
-    #[doc = "The error detail."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-    #[doc = "Operation Id of the async operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Operation status of the async operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<async_operation_result::Status>,
-}
-impl AsyncOperationResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod async_operation_result {
-    use super::*;
-    #[doc = "Operation status of the async operation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Status")]
-    pub enum Status {
-        Succeeded,
-        Failed,
-        InProgress,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Status {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Status {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Status {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Succeeded => serializer.serialize_unit_variant("Status", 0u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("Status", 1u32, "Failed"),
-                Self::InProgress => serializer.serialize_unit_variant("Status", 2u32, "InProgress"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "Defines the common properties for all audio codecs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Audio {
@@ -824,47 +537,6 @@ impl AudioOverlay {
         Self { overlay }
     }
 }
-#[doc = "Represents an audio track in the asset."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AudioTrack {
-    #[serde(flatten)]
-    pub track_base: TrackBase,
-    #[doc = "The file name to the source file. This file is located in the storage container of the asset."]
-    #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
-    pub file_name: Option<String>,
-    #[doc = "The display name of the audio track on a video player. In HLS, this maps to the NAME attribute of EXT-X-MEDIA."]
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[doc = "The RFC5646 language code for the audio track."]
-    #[serde(rename = "languageCode", default, skip_serializing_if = "Option::is_none")]
-    pub language_code: Option<String>,
-    #[doc = "The HLS setting for a track."]
-    #[serde(rename = "hlsSettings", default, skip_serializing_if = "Option::is_none")]
-    pub hls_settings: Option<HlsSettings>,
-    #[doc = "The DASH setting for a track."]
-    #[serde(rename = "dashSettings", default, skip_serializing_if = "Option::is_none")]
-    pub dash_settings: Option<DashSettings>,
-    #[doc = "The MPEG-4 audio track ID for the audio track."]
-    #[serde(rename = "mpeg4TrackId", default, skip_serializing_if = "Option::is_none")]
-    pub mpeg4_track_id: Option<i32>,
-    #[doc = "The stream bit rate for the audio track."]
-    #[serde(rename = "bitRate", default, skip_serializing_if = "Option::is_none")]
-    pub bit_rate: Option<i32>,
-}
-impl AudioTrack {
-    pub fn new(track_base: TrackBase) -> Self {
-        Self {
-            track_base,
-            file_name: None,
-            display_name: None,
-            language_code: None,
-            hls_settings: None,
-            dash_settings: None,
-            mpeg4_track_id: None,
-            bit_rate: None,
-        }
-    }
-}
 #[doc = "A TrackSelection to select audio tracks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioTrackDescriptor {
@@ -939,20 +611,13 @@ pub mod audio_track_descriptor {
 pub struct BuiltInStandardEncoderPreset {
     #[serde(flatten)]
     pub preset: Preset,
-    #[doc = "An object of optional configuration settings for encoder."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub configurations: Option<PresetConfigurations>,
     #[doc = "The built-in preset to be used for encoding videos."]
     #[serde(rename = "presetName")]
     pub preset_name: built_in_standard_encoder_preset::PresetName,
 }
 impl BuiltInStandardEncoderPreset {
     pub fn new(preset: Preset, preset_name: built_in_standard_encoder_preset::PresetName) -> Self {
-        Self {
-            preset,
-            configurations: None,
-            preset_name,
-        }
+        Self { preset, preset_name }
     }
 }
 pub mod built_in_standard_encoder_preset {
@@ -1076,18 +741,6 @@ impl CheckNameAvailabilityInput {
         Self::default()
     }
 }
-#[doc = "Class to specify ClearKey configuration of common encryption schemes in Streaming Policy"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ClearKeyEncryptionConfiguration {
-    #[doc = "Template for the URL of the custom service delivering content keys to end user players. Not required when using Azure Media Services for issuing licenses. The template supports replaceable tokens that the service will update at runtime with the value specific to the request.  The currently supported token value is {AlternativeMediaId}, which is replaced with the value of StreamingLocatorId.AlternativeMediaId."]
-    #[serde(rename = "customKeysAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
-    pub custom_keys_acquisition_url_template: Option<String>,
-}
-impl ClearKeyEncryptionConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClipTime {
@@ -1130,9 +783,6 @@ pub struct CommonEncryptionCbcs {
     #[doc = "Class to specify DRM configurations of CommonEncryptionCbcs scheme in Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CbcsDrmConfiguration>,
-    #[doc = "Class to specify ClearKey configuration of common encryption schemes in Streaming Policy"]
-    #[serde(rename = "clearKeyEncryptionConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub clear_key_encryption_configuration: Option<ClearKeyEncryptionConfiguration>,
 }
 impl CommonEncryptionCbcs {
     pub fn new() -> Self {
@@ -1154,9 +804,6 @@ pub struct CommonEncryptionCenc {
     #[doc = "Class to specify DRM configurations of CommonEncryptionCenc scheme in Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CencDrmConfiguration>,
-    #[doc = "Class to specify ClearKey configuration of common encryption schemes in Streaming Policy"]
-    #[serde(rename = "clearKeyEncryptionConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub clear_key_encryption_configuration: Option<ClearKeyEncryptionConfiguration>,
 }
 impl CommonEncryptionCenc {
     pub fn new() -> Self {
@@ -1454,9 +1101,6 @@ pub struct ContentKeyPolicyPlayReadyLicense {
     #[doc = "A flag indicating whether test devices can use the license."]
     #[serde(rename = "allowTestDevices")]
     pub allow_test_devices: bool,
-    #[doc = "The security level."]
-    #[serde(rename = "securityLevel", default, skip_serializing_if = "Option::is_none")]
-    pub security_level: Option<content_key_policy_play_ready_license::SecurityLevel>,
     #[doc = "The begin date of license"]
     #[serde(rename = "beginDate", default, with = "azure_core::date::rfc3339::option")]
     pub begin_date: Option<time::OffsetDateTime>,
@@ -1494,7 +1138,6 @@ impl ContentKeyPolicyPlayReadyLicense {
     ) -> Self {
         Self {
             allow_test_devices,
-            security_level: None,
             begin_date: None,
             expiration_date: None,
             relative_begin_date: None,
@@ -1509,50 +1152,6 @@ impl ContentKeyPolicyPlayReadyLicense {
 }
 pub mod content_key_policy_play_ready_license {
     use super::*;
-    #[doc = "The security level."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "SecurityLevel")]
-    pub enum SecurityLevel {
-        Unknown,
-        #[serde(rename = "SL150")]
-        Sl150,
-        #[serde(rename = "SL2000")]
-        Sl2000,
-        #[serde(rename = "SL3000")]
-        Sl3000,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for SecurityLevel {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for SecurityLevel {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for SecurityLevel {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Unknown => serializer.serialize_unit_variant("SecurityLevel", 0u32, "Unknown"),
-                Self::Sl150 => serializer.serialize_unit_variant("SecurityLevel", 1u32, "SL150"),
-                Self::Sl2000 => serializer.serialize_unit_variant("SecurityLevel", 2u32, "SL2000"),
-                Self::Sl3000 => serializer.serialize_unit_variant("SecurityLevel", 3u32, "SL3000"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The license type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "LicenseType")]
@@ -2039,18 +1638,6 @@ impl CrossSiteAccessPolicies {
         Self::default()
     }
 }
-#[doc = "The DASH setting for a track."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DashSettings {
-    #[doc = "The role for the DASH setting."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
-}
-impl DashSettings {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Class to specify properties of default content key for each encryption scheme"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultKey {
@@ -2268,63 +1855,6 @@ pub struct EnvelopeEncryption {
     pub custom_key_acquisition_url_template: Option<String>,
 }
 impl EnvelopeEncryption {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The resource management error additional info."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorAdditionalInfo {
-    #[doc = "The additional info type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "The additional info."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
-}
-impl ErrorAdditionalInfo {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The error detail."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorDetail {
-    #[doc = "The error code."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[doc = "The error message."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[doc = "The error target."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
-    #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-impl ErrorDetail {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorResponse {
-    #[doc = "The error detail."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-impl azure_core::Continuable for ErrorResponse {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2735,9 +2265,6 @@ pub struct H264Layer {
     #[doc = "The VBV buffer window length. The value should be in ISO 8601 format. The value should be in the range [0.1-100] seconds. The default is 5 seconds (for example, PT5S)."]
     #[serde(rename = "bufferWindow", default, skip_serializing_if = "Option::is_none")]
     pub buffer_window: Option<String>,
-    #[doc = "The value of CRF to be used when encoding this layer. This setting takes effect when RateControlMode of video codec is set at CRF mode. The range of CRF value is between 0 and 51, where lower values would result in better quality, at the expense of higher file sizes. Higher values mean more compression, but at some point quality degradation will be noticed. Default value is 23."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub crf: Option<f32>,
     #[doc = "The number of reference frames to be used when encoding this layer. If not specified, the encoder determines an appropriate number based on the encoder complexity setting."]
     #[serde(rename = "referenceFrames", default, skip_serializing_if = "Option::is_none")]
     pub reference_frames: Option<i32>,
@@ -2752,7 +2279,6 @@ impl H264Layer {
             profile: None,
             level: None,
             buffer_window: None,
-            crf: None,
             reference_frames: None,
             entropy_mode: None,
         }
@@ -2848,27 +2374,23 @@ pub mod h264_layer {
 pub struct H264Video {
     #[serde(flatten)]
     pub video: Video,
+    #[doc = "Whether or not the encoder should insert key frames at scene changes. If not specified, the default is false. This flag should be set to true only when the encoder is being configured to produce a single output video."]
+    #[serde(rename = "sceneChangeDetection", default, skip_serializing_if = "Option::is_none")]
+    pub scene_change_detection: Option<bool>,
     #[doc = "Tells the encoder how to choose its encoding settings. The default value is Balanced."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub complexity: Option<h264_video::Complexity>,
     #[doc = "The collection of output H.264 layers to be produced by the encoder."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<H264Layer>,
-    #[doc = "The video rate control mode"]
-    #[serde(rename = "rateControlMode", default, skip_serializing_if = "Option::is_none")]
-    pub rate_control_mode: Option<h264_video::RateControlMode>,
-    #[doc = "Whether or not the encoder should insert key frames at scene changes. If not specified, the default is false. This flag should be set to true only when the encoder is being configured to produce a single output video."]
-    #[serde(rename = "sceneChangeDetection", default, skip_serializing_if = "Option::is_none")]
-    pub scene_change_detection: Option<bool>,
 }
 impl H264Video {
     pub fn new(video: Video) -> Self {
         Self {
             video,
+            scene_change_detection: None,
             complexity: None,
             layers: Vec::new(),
-            rate_control_mode: None,
-            scene_change_detection: None,
         }
     }
 }
@@ -2913,48 +2435,6 @@ pub mod h264_video {
             }
         }
     }
-    #[doc = "The video rate control mode"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "RateControlMode")]
-    pub enum RateControlMode {
-        #[serde(rename = "ABR")]
-        Abr,
-        #[serde(rename = "CBR")]
-        Cbr,
-        #[serde(rename = "CRF")]
-        Crf,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for RateControlMode {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for RateControlMode {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for RateControlMode {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Abr => serializer.serialize_unit_variant("RateControlMode", 0u32, "ABR"),
-                Self::Cbr => serializer.serialize_unit_variant("RateControlMode", 1u32, "CBR"),
-                Self::Crf => serializer.serialize_unit_variant("RateControlMode", 2u32, "CRF"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
 }
 #[doc = "Describes the settings to be used when encoding the input video into a desired output bitrate layer with the H.265 video codec."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2970,9 +2450,6 @@ pub struct H265Layer {
     #[doc = "The VBV buffer window length. The value should be in ISO 8601 format. The value should be in the range [0.1-100] seconds. The default is 5 seconds (for example, PT5S)."]
     #[serde(rename = "bufferWindow", default, skip_serializing_if = "Option::is_none")]
     pub buffer_window: Option<String>,
-    #[doc = "The value of CRF to be used when encoding this layer. This setting takes effect when RateControlMode of video codec is set at CRF mode. The range of CRF value is between 0 and 51, where lower values would result in better quality, at the expense of higher file sizes. Higher values mean more compression, but at some point quality degradation will be noticed. Default value is 28."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub crf: Option<f32>,
     #[doc = "The number of reference frames to be used when encoding this layer. If not specified, the encoder determines an appropriate number based on the encoder complexity setting."]
     #[serde(rename = "referenceFrames", default, skip_serializing_if = "Option::is_none")]
     pub reference_frames: Option<i32>,
@@ -2984,7 +2461,6 @@ impl H265Layer {
             profile: None,
             level: None,
             buffer_window: None,
-            crf: None,
             reference_frames: None,
         }
     }
@@ -2997,7 +2473,6 @@ pub mod h265_layer {
     pub enum Profile {
         Auto,
         Main,
-        Main10,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3025,7 +2500,6 @@ pub mod h265_layer {
             match self {
                 Self::Auto => serializer.serialize_unit_variant("Profile", 0u32, "Auto"),
                 Self::Main => serializer.serialize_unit_variant("Profile", 1u32, "Main"),
-                Self::Main10 => serializer.serialize_unit_variant("Profile", 2u32, "Main10"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3122,9 +2596,9 @@ pub struct H265VideoLayer {
     pub adaptive_b_frame: Option<bool>,
 }
 impl H265VideoLayer {
-    pub fn new(bitrate: i32) -> Self {
+    pub fn new(layer: Layer, bitrate: i32) -> Self {
         Self {
-            layer: Layer::default(),
+            layer,
             bitrate,
             max_bitrate: None,
             b_frames: None,
@@ -3142,24 +2616,6 @@ pub struct Hls {
     pub fragments_per_ts_segment: Option<i32>,
 }
 impl Hls {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The HLS setting for a track."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HlsSettings {
-    #[doc = "The default for the HLS setting."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<bool>,
-    #[doc = "The forced for the HLS setting."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub forced: Option<bool>,
-    #[doc = "The characteristics for the HLS setting."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub characteristics: Option<String>,
-}
-impl HlsSettings {
     pub fn new() -> Self {
         Self::default()
     }
@@ -3509,7 +2965,7 @@ impl JobInputAsset {
 pub struct JobInputClip {
     #[serde(flatten)]
     pub job_input: JobInput,
-    #[doc = "List of files. Required for JobInputHttp. Maximum of 4000 characters each. Query strings will not be returned in service responses to prevent sensitive data exposure."]
+    #[doc = "List of files. Required for JobInputHttp. Maximum of 4000 characters each."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<String>,
     #[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
@@ -3542,7 +2998,7 @@ impl JobInputClip {
 pub struct JobInputHttp {
     #[serde(flatten)]
     pub job_input_clip: JobInputClip,
-    #[doc = "Base URI for HTTPS job input. It will be concatenated with provided file names. If no base uri is given, then the provided file list is assumed to be fully qualified uris. Maximum length of 4000 characters. The query strings will not be returned in service responses to prevent sensitive data exposure."]
+    #[doc = "Base URI for HTTPS job input. It will be concatenated with provided file names. If no base uri is given, then the provided file list is assumed to be fully qualified uris. Maximum length of 4000 characters."]
     #[serde(rename = "baseUri", default, skip_serializing_if = "Option::is_none")]
     pub base_uri: Option<String>,
 }
@@ -3597,9 +3053,6 @@ pub struct JobOutput {
     #[doc = "Details of JobOutput errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<JobError>,
-    #[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
-    #[serde(rename = "presetOverride", default, skip_serializing_if = "Option::is_none")]
-    pub preset_override: Option<Preset>,
     #[doc = "Describes the state of the JobOutput."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_output::State>,
@@ -3621,7 +3074,6 @@ impl JobOutput {
         Self {
             odata_type,
             error: None,
-            preset_override: None,
             state: None,
             progress: None,
             label: None,
@@ -3864,7 +3316,7 @@ impl JpgImage {
     }
 }
 #[doc = "Describes the settings to produce a JPEG image from the input video."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JpgLayer {
     #[serde(flatten)]
     pub layer: Layer,
@@ -3873,18 +3325,8 @@ pub struct JpgLayer {
     pub quality: Option<i32>,
 }
 impl JpgLayer {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct KeyDelivery {
-    #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
-    pub access_control: Option<AccessControl>,
-}
-impl KeyDelivery {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(layer: Layer) -> Self {
+        Self { layer, quality: None }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3902,8 +3344,11 @@ impl KeyVaultProperties {
     }
 }
 #[doc = "The encoder can be configured to produce video and/or images (thumbnails) at different resolutions, by specifying a layer for each desired resolution. A layer represents the properties for the video or image at a resolution."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Layer {
+    #[doc = "The discriminator for derived types."]
+    #[serde(rename = "@odata.type")]
+    pub odata_type: String,
     #[doc = "The width of the output video for this layer. The value can be absolute (in pixels) or relative (in percentage). For example 50% means the output video has half as many pixels in width as the input."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<String>,
@@ -3915,8 +3360,13 @@ pub struct Layer {
     pub label: Option<String>,
 }
 impl Layer {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(odata_type: String) -> Self {
+        Self {
+            odata_type,
+            width: None,
+            height: None,
+            label: None,
+        }
     }
 }
 #[doc = "The parameters to the list SAS request."]
@@ -4062,7 +3512,7 @@ impl LiveEventActionInput {
 #[doc = "Specifies the live event type and optional encoding settings for encoding live events."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEncoding {
-    #[doc = "Live event type. When encodingType is set to PassthroughBasic or PassthroughStandard, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
+    #[doc = "Live event type. When encodingType is set to None, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
     #[serde(rename = "encodingType", default, skip_serializing_if = "Option::is_none")]
     pub encoding_type: Option<live_event_encoding::EncodingType>,
     #[doc = "The optional encoding preset name, used when encodingType is not None. This value is specified at creation time and cannot be updated. If the encodingType is set to Standard, then the default preset name is ‘Default720p’. Else if the encodingType is set to Premium1080p, the default preset is ‘Default1080p’."]
@@ -4082,15 +3532,13 @@ impl LiveEventEncoding {
 }
 pub mod live_event_encoding {
     use super::*;
-    #[doc = "Live event type. When encodingType is set to PassthroughBasic or PassthroughStandard, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
+    #[doc = "Live event type. When encodingType is set to None, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "EncodingType")]
     pub enum EncodingType {
         None,
         Standard,
         Premium1080p,
-        PassthroughBasic,
-        PassthroughStandard,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -4119,8 +3567,6 @@ pub mod live_event_encoding {
                 Self::None => serializer.serialize_unit_variant("EncodingType", 0u32, "None"),
                 Self::Standard => serializer.serialize_unit_variant("EncodingType", 1u32, "Standard"),
                 Self::Premium1080p => serializer.serialize_unit_variant("EncodingType", 2u32, "Premium1080p"),
-                Self::PassthroughBasic => serializer.serialize_unit_variant("EncodingType", 3u32, "PassthroughBasic"),
-                Self::PassthroughStandard => serializer.serialize_unit_variant("EncodingType", 4u32, "PassthroughStandard"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -4491,9 +3937,6 @@ pub struct LiveOutput {
     #[doc = "The JSON object that contains the properties required to create a live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveOutputProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl LiveOutput {
     pub fn new() -> Self {
@@ -4536,9 +3979,6 @@ pub struct LiveOutputProperties {
     #[doc = "ISO 8601 time between 1 minute to 25 hours to indicate the maximum content length that can be archived in the asset for this live output. This also sets the maximum content length for the rewind window. For example, use PT1H30M to indicate 1 hour and 30 minutes of archive window."]
     #[serde(rename = "archiveWindowLength")]
     pub archive_window_length: String,
-    #[doc = "ISO 8601 time between 1 minute to the duration of archiveWindowLength to control seek-able window length during Live. The service won't use this property once LiveOutput stops. The archived VOD will have full content with original ArchiveWindowLength. For example, use PT1H30M to indicate 1 hour and 30 minutes of rewind window length. Service will use implicit default value 30m only if Live Event enables LL."]
-    #[serde(rename = "rewindWindowLength", default, skip_serializing_if = "Option::is_none")]
-    pub rewind_window_length: Option<String>,
     #[doc = "The manifest file name. If not provided, the service will generate one automatically."]
     #[serde(rename = "manifestName", default, skip_serializing_if = "Option::is_none")]
     pub manifest_name: Option<String>,
@@ -4567,7 +4007,6 @@ impl LiveOutputProperties {
             description: None,
             asset_name,
             archive_window_length,
-            rewind_window_length: None,
             manifest_name: None,
             hls: None,
             output_snap_time: None,
@@ -4620,6 +4059,15 @@ pub mod live_output_properties {
         }
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Location {
+    pub name: String,
+}
+impl Location {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
+}
 #[doc = "A diagnostic log emitted by service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
@@ -4664,19 +4112,19 @@ pub struct MediaService {
     #[doc = "Properties of the Media Services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaServiceProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<MediaServiceIdentity>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<MediaServiceIdentity>,
 }
 impl MediaService {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
             properties: None,
-            system_data: None,
             identity: None,
+            system_data: None,
         }
     }
 }
@@ -4705,56 +4153,60 @@ impl MediaServiceCollection {
 pub struct MediaServiceIdentity {
     #[doc = "The identity type."]
     #[serde(rename = "type")]
-    pub type_: String,
+    pub type_: media_service_identity::Type,
     #[doc = "The Principal ID of the identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The Tenant ID of the identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[doc = "The User Assigned Managed Identities."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<UserAssignedManagedIdentities>,
 }
 impl MediaServiceIdentity {
-    pub fn new(type_: String) -> Self {
+    pub fn new(type_: media_service_identity::Type) -> Self {
         Self {
             type_,
             principal_id: None,
             tenant_id: None,
-            user_assigned_identities: None,
         }
     }
 }
-#[doc = "Status of media service operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MediaServiceOperationStatus {
-    #[doc = "Operation identifier."]
-    pub name: String,
-    #[doc = "Operation resource ID."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Operation start time."]
-    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
-    #[doc = "Operation end time."]
-    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
-    #[doc = "Operation status."]
-    pub status: String,
-    #[doc = "The error detail."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-impl MediaServiceOperationStatus {
-    pub fn new(name: String, status: String) -> Self {
-        Self {
-            name,
-            id: None,
-            start_time: None,
-            end_time: None,
-            status,
-            error: None,
+pub mod media_service_identity {
+    use super::*;
+    #[doc = "The identity type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        SystemAssigned,
+        None,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 0u32, "SystemAssigned"),
+                Self::None => serializer.serialize_unit_variant("Type", 1u32, "None"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -4771,17 +4223,6 @@ pub struct MediaServiceProperties {
     pub storage_authentication: Option<media_service_properties::StorageAuthentication>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<AccountEncryption>,
-    #[serde(rename = "keyDelivery", default, skip_serializing_if = "Option::is_none")]
-    pub key_delivery: Option<KeyDelivery>,
-    #[doc = "Whether or not public network access is allowed for resources under the Media Services account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<media_service_properties::PublicNetworkAccess>,
-    #[doc = "Provisioning state of the Media Services account."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<media_service_properties::ProvisioningState>,
-    #[doc = "The Private Endpoint Connections created for the Media Service account."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
-    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 impl MediaServiceProperties {
     pub fn new() -> Self {
@@ -4825,99 +4266,6 @@ pub mod media_service_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
-    }
-    #[doc = "Whether or not public network access is allowed for resources under the Media Services account."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "PublicNetworkAccess")]
-    pub enum PublicNetworkAccess {
-        Enabled,
-        Disabled,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for PublicNetworkAccess {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for PublicNetworkAccess {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for PublicNetworkAccess {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Enabled => serializer.serialize_unit_variant("PublicNetworkAccess", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Provisioning state of the Media Services account."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Failed,
-        InProgress,
-        Succeeded,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ProvisioningState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ProvisioningState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ProvisioningState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Failed"),
-                Self::InProgress => serializer.serialize_unit_variant("ProvisioningState", 1u32, "InProgress"),
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "A Media Services account update."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct MediaServiceUpdate {
-    #[doc = "Resource tags."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "Properties of the Media Services account."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MediaServiceProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<MediaServiceIdentity>,
-}
-impl MediaServiceUpdate {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "A metric dimension."]
@@ -4965,18 +4313,6 @@ pub struct MetricSpecification {
     #[doc = "The metric dimensions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<MetricDimension>,
-    #[doc = "Indicates whether regional MDM account is enabled."]
-    #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
-    pub enable_regional_mdm_account: Option<bool>,
-    #[doc = "The source MDM account."]
-    #[serde(rename = "sourceMdmAccount", default, skip_serializing_if = "Option::is_none")]
-    pub source_mdm_account: Option<String>,
-    #[doc = "The source MDM namespace."]
-    #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
-    pub source_mdm_namespace: Option<String>,
-    #[doc = "The supported time grain types."]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_time_grain_types: Vec<String>,
 }
 impl MetricSpecification {
     pub fn new() -> Self {
@@ -5143,6 +4479,27 @@ impl NoEncryption {
         Self::default()
     }
 }
+#[doc = "Information about an error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ODataError {
+    #[doc = "A language-independent error name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The target of the error (for example, the name of the property in error)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ODataError>,
+}
+impl ODataError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "An operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -5157,12 +4514,6 @@ pub struct Operation {
     #[doc = "The service specification property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Properties>,
-    #[doc = "Whether the operation applies to data-plane."]
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
-    #[doc = "Indicates the action type."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
-    pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
     pub fn new(name: String) -> Self {
@@ -5171,46 +4522,6 @@ impl Operation {
             display: None,
             origin: None,
             properties: None,
-            is_data_action: None,
-            action_type: None,
-        }
-    }
-}
-pub mod operation {
-    use super::*;
-    #[doc = "Indicates the action type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ActionType")]
-    pub enum ActionType {
-        Internal,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ActionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ActionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ActionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Internal => serializer.serialize_unit_variant("ActionType", 0u32, "Internal"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
         }
     }
 }
@@ -5220,6 +4531,15 @@ pub struct OperationCollection {
     #[doc = "A collection of Operation items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
+    #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationCollection {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
+    }
 }
 impl OperationCollection {
     pub fn new() -> Self {
@@ -5322,14 +4642,14 @@ impl PngImage {
     }
 }
 #[doc = "Describes the settings to produce a PNG image from the input video."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngLayer {
     #[serde(flatten)]
     pub layer: Layer,
 }
 impl PngLayer {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(layer: Layer) -> Self {
+        Self { layer }
     }
 }
 #[doc = "The presentation time range, this is asset related and not recommended for Account Filter."]
@@ -5369,118 +4689,6 @@ pub struct Preset {
 impl Preset {
     pub fn new(odata_type: String) -> Self {
         Self { odata_type }
-    }
-}
-#[doc = "An object of optional configuration settings for encoder."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PresetConfigurations {
-    #[doc = "Allows you to configure the encoder settings to control the balance between speed and quality. Example: set Complexity as Speed for faster encoding but less compression efficiency."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub complexity: Option<preset_configurations::Complexity>,
-    #[doc = "Sets the interleave mode of the output to control how audio and video are stored in the container format. Example: set InterleavedOutput as NonInterleavedOutput to produce audio-only and video-only outputs in separate MP4 files."]
-    #[serde(rename = "interleaveOutput", default, skip_serializing_if = "Option::is_none")]
-    pub interleave_output: Option<preset_configurations::InterleaveOutput>,
-    #[doc = "The key frame interval in seconds. Example: set KeyFrameIntervalInSeconds as 2 to reduce the playback buffering for some players."]
-    #[serde(rename = "keyFrameIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub key_frame_interval_in_seconds: Option<f32>,
-    #[doc = "The maximum bitrate in bits per second (threshold for the top video layer). Example: set MaxBitrateBps as 6000000 to avoid producing very high bitrate outputs for contents with high complexity."]
-    #[serde(rename = "maxBitrateBps", default, skip_serializing_if = "Option::is_none")]
-    pub max_bitrate_bps: Option<i32>,
-    #[doc = "The maximum height of output video layers. Example: set MaxHeight as 720 to produce output layers up to 720P even if the input is 4K."]
-    #[serde(rename = "maxHeight", default, skip_serializing_if = "Option::is_none")]
-    pub max_height: Option<i32>,
-    #[doc = "The maximum number of output video layers. Example: set MaxLayers as 4 to make sure at most 4 output layers are produced to control the overall cost of the encoding job."]
-    #[serde(rename = "maxLayers", default, skip_serializing_if = "Option::is_none")]
-    pub max_layers: Option<i32>,
-    #[doc = "The minimum bitrate in bits per second (threshold for the bottom video layer). Example: set MinBitrateBps as 200000 to have a bottom layer that covers users with low network bandwidth."]
-    #[serde(rename = "minBitrateBps", default, skip_serializing_if = "Option::is_none")]
-    pub min_bitrate_bps: Option<i32>,
-    #[doc = "The minimum height of output video layers. Example: set MinHeight as 360 to avoid output layers of smaller resolutions like 180P."]
-    #[serde(rename = "minHeight", default, skip_serializing_if = "Option::is_none")]
-    pub min_height: Option<i32>,
-}
-impl PresetConfigurations {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod preset_configurations {
-    use super::*;
-    #[doc = "Allows you to configure the encoder settings to control the balance between speed and quality. Example: set Complexity as Speed for faster encoding but less compression efficiency."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Complexity")]
-    pub enum Complexity {
-        Speed,
-        Balanced,
-        Quality,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Complexity {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Complexity {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Complexity {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Speed => serializer.serialize_unit_variant("Complexity", 0u32, "Speed"),
-                Self::Balanced => serializer.serialize_unit_variant("Complexity", 1u32, "Balanced"),
-                Self::Quality => serializer.serialize_unit_variant("Complexity", 2u32, "Quality"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Sets the interleave mode of the output to control how audio and video are stored in the container format. Example: set InterleavedOutput as NonInterleavedOutput to produce audio-only and video-only outputs in separate MP4 files."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "InterleaveOutput")]
-    pub enum InterleaveOutput {
-        NonInterleavedOutput,
-        InterleavedOutput,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for InterleaveOutput {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for InterleaveOutput {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for InterleaveOutput {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::NonInterleavedOutput => serializer.serialize_unit_variant("InterleaveOutput", 0u32, "NonInterleavedOutput"),
-                Self::InterleavedOutput => serializer.serialize_unit_variant("InterleaveOutput", 1u32, "InterleavedOutput"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "The Private Endpoint resource."]
@@ -5697,6 +4905,18 @@ impl Properties {
         Self::default()
     }
 }
+#[doc = "A resource provider."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Provider {
+    #[doc = "The provider name."]
+    #[serde(rename = "providerName")]
+    pub provider_name: String,
+}
+impl Provider {
+    pub fn new(provider_name: String) -> Self {
+        Self { provider_name }
+    }
+}
 #[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
@@ -5745,23 +4965,6 @@ pub struct Resource {
 impl Resource {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentity {
-    #[doc = "The user assigned managed identity's ARM ID to use when accessing a resource."]
-    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identity: Option<String>,
-    #[doc = "Indicates whether to use System Assigned Managed Identity. Mutual exclusive with User Assigned Managed Identity."]
-    #[serde(rename = "useSystemAssignedIdentity")]
-    pub use_system_assigned_identity: bool,
-}
-impl ResourceIdentity {
-    pub fn new(use_system_assigned_identity: bool) -> Self {
-        Self {
-            user_assigned_identity: None,
-            use_system_assigned_identity,
-        }
     }
 }
 #[doc = "Select audio tracks from the input by specifying an attribute and an attribute filter."]
@@ -6061,20 +5264,10 @@ pub struct StorageAccount {
     #[doc = "The type of the storage account."]
     #[serde(rename = "type")]
     pub type_: storage_account::Type,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentity>,
-    #[doc = "The current status of the storage account mapping."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
 }
 impl StorageAccount {
     pub fn new(type_: storage_account::Type) -> Self {
-        Self {
-            id: None,
-            type_,
-            identity: None,
-            status: None,
-        }
+        Self { id: None, type_ }
     }
 }
 pub mod storage_account {
@@ -6143,9 +5336,6 @@ pub struct StreamingEndpoint {
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
-    #[doc = "The streaming endpoint current sku."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<ArmStreamingEndpointCurrentSku>,
 }
 impl StreamingEndpoint {
     pub fn new(tracked_resource: TrackedResource) -> Self {
@@ -6153,7 +5343,6 @@ impl StreamingEndpoint {
             tracked_resource,
             properties: None,
             system_data: None,
-            sku: None,
         }
     }
 }
@@ -6316,17 +5505,6 @@ pub mod streaming_endpoint_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct StreamingEndpointSkuInfoListResult {
-    #[doc = "The result of the List StreamingEndpoint skus."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ArmStreamingEndpointSkuInfo>,
-}
-impl StreamingEndpointSkuInfoListResult {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "scale units definition"]
@@ -6766,91 +5944,6 @@ impl SyncStorageKeysInput {
         Self::default()
     }
 }
-#[doc = "Represents a text track in an asset. A text track is usually used for sparse data related to the audio or video tracks."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TextTrack {
-    #[serde(flatten)]
-    pub track_base: TrackBase,
-    #[doc = "The file name to the source file. This file is located in the storage container of the asset."]
-    #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
-    pub file_name: Option<String>,
-    #[doc = "The display name of the text track on a video player. In HLS, this maps to the NAME attribute of EXT-X-MEDIA."]
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[doc = "The RFC5646 language code for the text track."]
-    #[serde(rename = "languageCode", default, skip_serializing_if = "Option::is_none")]
-    pub language_code: Option<String>,
-    #[doc = "When PlayerVisibility is set to \"Visible\", the text track will be present in the DASH manifest or HLS playlist when requested by a client. When the PlayerVisibility is set to \"Hidden\", the text will not be available to the client. The default value is \"Visible\"."]
-    #[serde(rename = "playerVisibility", default, skip_serializing_if = "Option::is_none")]
-    pub player_visibility: Option<text_track::PlayerVisibility>,
-    #[doc = "The HLS setting for a track."]
-    #[serde(rename = "hlsSettings", default, skip_serializing_if = "Option::is_none")]
-    pub hls_settings: Option<HlsSettings>,
-}
-impl TextTrack {
-    pub fn new(track_base: TrackBase) -> Self {
-        Self {
-            track_base,
-            file_name: None,
-            display_name: None,
-            language_code: None,
-            player_visibility: None,
-            hls_settings: None,
-        }
-    }
-}
-pub mod text_track {
-    use super::*;
-    #[doc = "When PlayerVisibility is set to \"Visible\", the text track will be present in the DASH manifest or HLS playlist when requested by a client. When the PlayerVisibility is set to \"Hidden\", the text will not be available to the client. The default value is \"Visible\"."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "PlayerVisibility")]
-    pub enum PlayerVisibility {
-        Hidden,
-        Visible,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for PlayerVisibility {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for PlayerVisibility {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for PlayerVisibility {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Hidden => serializer.serialize_unit_variant("PlayerVisibility", 0u32, "Hidden"),
-                Self::Visible => serializer.serialize_unit_variant("PlayerVisibility", 1u32, "Visible"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "Base type for concrete track types. A derived type must be used to represent the Track."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
-impl TrackBase {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
-    }
-}
 #[doc = "Base type for all TrackDescriptor types, which define the metadata and selection for tracks that should be processed by a Job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackDescriptor {
@@ -7167,28 +6260,6 @@ impl TransportStreamFormat {
         Self { multi_bitrate_format }
     }
 }
-#[doc = "The User Assigned Managed Identities."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UserAssignedManagedIdentities {}
-impl UserAssignedManagedIdentities {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UserAssignedManagedIdentity {
-    #[doc = "The client ID."]
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-    #[doc = "The principal ID."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-}
-impl UserAssignedManagedIdentity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Specifies the clip time as a Utc time position in the media file.  The Utc time can point to a different position depending on whether the media file starts from a timestamp of zero or not."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UtcClipTime {
@@ -7394,9 +6465,9 @@ pub struct VideoLayer {
     pub adaptive_b_frame: Option<bool>,
 }
 impl VideoLayer {
-    pub fn new(bitrate: i32) -> Self {
+    pub fn new(layer: Layer, bitrate: i32) -> Self {
         Self {
-            layer: Layer::default(),
+            layer,
             bitrate,
             max_bitrate: None,
             b_frames: None,
@@ -7429,17 +6500,6 @@ impl VideoOverlay {
             opacity: None,
             crop_rectangle: None,
         }
-    }
-}
-#[doc = "Represents a video track in the asset."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VideoTrack {
-    #[serde(flatten)]
-    pub track_base: TrackBase,
-}
-impl VideoTrack {
-    pub fn new(track_base: TrackBase) -> Self {
-        Self { track_base }
     }
 }
 #[doc = "A TrackSelection to select video tracks."]

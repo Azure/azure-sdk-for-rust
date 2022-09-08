@@ -127,20 +127,8 @@ impl Client {
     pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn media_services_operation_results_client(&self) -> media_services_operation_results::Client {
-        media_services_operation_results::Client(self.clone())
-    }
-    pub fn media_services_operation_statuses_client(&self) -> media_services_operation_statuses::Client {
-        media_services_operation_statuses::Client(self.clone())
-    }
     pub fn mediaservices_client(&self) -> mediaservices::Client {
         mediaservices::Client(self.clone())
-    }
-    pub fn operation_results_client(&self) -> operation_results::Client {
-        operation_results::Client(self.clone())
-    }
-    pub fn operation_statuses_client(&self) -> operation_statuses::Client {
-        operation_statuses::Client(self.clone())
     }
     pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
@@ -159,9 +147,6 @@ impl Client {
     }
     pub fn streaming_policies_client(&self) -> streaming_policies::Client {
         streaming_policies::Client(self.clone())
-    }
-    pub fn tracks_client(&self) -> tracks::Client {
-        tracks::Client(self.clone())
     }
     pub fn transforms_client(&self) -> transforms::Client {
         transforms::Client(self.clone())
@@ -351,7 +336,7 @@ pub mod account_filters {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -367,7 +352,7 @@ pub mod account_filters {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -444,7 +429,7 @@ pub mod account_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -515,7 +500,7 @@ pub mod account_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -587,7 +572,7 @@ pub mod account_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -635,7 +620,7 @@ pub mod account_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -686,31 +671,60 @@ pub mod operations {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::OperationCollection, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Media/operations", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Media/operations", this.client.endpoint(),))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationCollection>> {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -842,7 +856,7 @@ pub mod mediaservices {
             }
         }
         #[doc = "List the media edge policies associated with the Media Services account."]
-        #[doc = "List all the media edge policies associated with the Media Services account."]
+        #[doc = "List the media edge policies associated with the Media Services account."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -935,7 +949,7 @@ pub mod mediaservices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -951,7 +965,7 @@ pub mod mediaservices {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1026,7 +1040,7 @@ pub mod mediaservices {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1054,9 +1068,6 @@ pub mod mediaservices {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1068,22 +1079,6 @@ pub mod mediaservices {
                 self.as_raw_response()
             }
         }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1093,7 +1088,6 @@ pub mod mediaservices {
             pub(crate) parameters: models::MediaService,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1115,7 +1109,7 @@ pub mod mediaservices {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1144,9 +1138,6 @@ pub mod mediaservices {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1158,22 +1149,6 @@ pub mod mediaservices {
                 self.as_raw_response()
             }
         }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1183,7 +1158,6 @@ pub mod mediaservices {
             pub(crate) parameters: models::MediaServiceUpdate,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1205,7 +1179,7 @@ pub mod mediaservices {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1251,7 +1225,7 @@ pub mod mediaservices {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1293,7 +1267,7 @@ pub mod mediaservices {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1359,7 +1333,7 @@ pub mod mediaservices {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1430,7 +1404,7 @@ pub mod mediaservices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1446,7 +1420,7 @@ pub mod mediaservices {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1472,7 +1446,7 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of group IDs."]
-        #[doc = "List supported group IDs."]
+        #[doc = "Get list of group IDs."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -1492,7 +1466,7 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Get group ID."]
-        #[doc = "Get details of a group ID."]
+        #[doc = "Get group ID."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -1569,7 +1543,7 @@ pub mod private_link_resources {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1639,7 +1613,7 @@ pub mod private_link_resources {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1657,8 +1631,8 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List private endpoint connections."]
-        #[doc = "List all private endpoint connections."]
+        #[doc = "Get all private endpoint connections."]
+        #[doc = "Get all private endpoint connections."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -1678,7 +1652,7 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Get private endpoint connection."]
-        #[doc = "Get the details of a private endpoint connection."]
+        #[doc = "Get private endpoint connection."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -1699,8 +1673,8 @@ pub mod private_endpoint_connections {
                 name: name.into(),
             }
         }
-        #[doc = "Update a private endpoint connection."]
-        #[doc = "Update an existing private endpoint connection."]
+        #[doc = "Update private endpoint connection."]
+        #[doc = "Update private endpoint connection."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -1724,8 +1698,8 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
-        #[doc = "Delete a private endpoint connection."]
-        #[doc = "Deletes a private endpoint connection."]
+        #[doc = "Delete private endpoint connection."]
+        #[doc = "Delete private endpoint connection."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
@@ -1802,7 +1776,7 @@ pub mod private_endpoint_connections {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1867,7 +1841,7 @@ pub mod private_endpoint_connections {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1931,7 +1905,7 @@ pub mod private_endpoint_connections {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1972,7 +1946,7 @@ pub mod private_endpoint_connections {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1991,7 +1965,7 @@ pub mod locations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `location_name`: Location name."]
+        #[doc = "* `location_name`: The name of the location"]
         #[doc = "* `parameters`: The request parameters"]
         pub fn check_name_availability(
             &self,
@@ -2061,7 +2035,7 @@ pub mod locations {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2071,213 +2045,6 @@ pub mod locations {
             }
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EntityNameAvailabilityCheckOutput>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod media_services_operation_statuses {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get operation status."]
-        #[doc = "Get media service operation status."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `location_name`: Location name."]
-        #[doc = "* `operation_id`: Operation ID."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            location_name: impl Into<String>,
-            operation_id: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                location_name: location_name.into(),
-                operation_id: operation_id.into(),
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::MediaServiceOperationStatus> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::MediaServiceOperationStatus = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) location_name: String,
-            pub(crate) operation_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Media/locations/{}/mediaServicesOperationStatuses/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.location_name,
-                            &this.operation_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MediaServiceOperationStatus>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod media_services_operation_results {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get operation result."]
-        #[doc = "Get media service operation result."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `location_name`: Location name."]
-        #[doc = "* `operation_id`: Operation Id."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            location_name: impl Into<String>,
-            operation_id: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                location_name: location_name.into(),
-                operation_id: operation_id.into(),
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::MediaService> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::MediaService = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) location_name: String,
-            pub(crate) operation_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Media/locations/{}/mediaServicesOperationResults/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.location_name,
-                            &this.operation_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MediaService>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2514,7 +2281,7 @@ pub mod assets {
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) filter: Option<String>,
-            pub(crate) top: Option<i32>,
+            pub(crate) top: Option<i64>,
             pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
@@ -2524,7 +2291,7 @@ pub mod assets {
                 self
             }
             #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
-            pub fn top(mut self, top: i32) -> Self {
+            pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
@@ -2560,7 +2327,7 @@ pub mod assets {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2576,7 +2343,7 @@ pub mod assets {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -2662,7 +2429,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2733,7 +2500,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2805,7 +2572,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2853,7 +2620,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2920,7 +2687,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2991,7 +2758,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -3057,7 +2824,7 @@ pub mod assets {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -3273,7 +3040,7 @@ pub mod asset_filters {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3289,7 +3056,7 @@ pub mod asset_filters {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3368,7 +3135,7 @@ pub mod asset_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3441,7 +3208,7 @@ pub mod asset_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3515,7 +3282,7 @@ pub mod asset_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3565,812 +3332,12 @@ pub mod asset_filters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
-            }
-        }
-    }
-}
-pub mod tracks {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "List Tracks in the Asset"]
-        #[doc = "Lists the Tracks in the asset"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        pub fn list(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-        ) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-            }
-        }
-        #[doc = "Get a Track"]
-        #[doc = "Get the details of a Track in the Asset"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-            }
-        }
-        #[doc = "Create or update a Track"]
-        #[doc = "Create or update a Track in the asset"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        #[doc = "* `parameters`: The request parameters"]
-        pub fn create_or_update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-            parameters: impl Into<models::AssetTrack>,
-        ) -> create_or_update::RequestBuilder {
-            create_or_update::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-                parameters: parameters.into(),
-            }
-        }
-        #[doc = "Update an Track"]
-        #[doc = "Updates an existing Track in the asset"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        #[doc = "* `parameters`: The request parameters"]
-        pub fn update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-            parameters: impl Into<models::AssetTrack>,
-        ) -> update::RequestBuilder {
-            update::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-                parameters: parameters.into(),
-            }
-        }
-        #[doc = "Delete a Track"]
-        #[doc = "Deletes a Track in the asset"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        pub fn delete(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-        ) -> delete::RequestBuilder {
-            delete::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-            }
-        }
-        #[doc = "Update the track data"]
-        #[doc = "Update the track data. Call this API after any changes are made to the track data stored in the asset container. For example, you have modified the WebVTT captions file in the Azure blob storage container for the asset, viewers will not see the new version of the captions unless this API is called. Note, the changes may not be reflected immediately. CDN cache may also need to be purged if applicable."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        pub fn update_track_data(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-        ) -> update_track_data::RequestBuilder {
-            update_track_data::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AssetTrackCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AssetTrackCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.asset_name
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetTrackCollection>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AssetTrack> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AssetTrack = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.asset_name,
-                            &this.track_name
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetTrack>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AssetTrack> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AssetTrack = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-            pub(crate) parameters: models::AssetTrack,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.asset_name,
-                            &this.track_name
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetTrack>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AssetTrack> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AssetTrack = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-            pub(crate) parameters: models::AssetTrack,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.asset_name,
-                            &this.track_name
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetTrack>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod delete {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.asset_name,
-                            &this.track_name
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod update_track_data {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}/updateTrackData" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . account_name , & this . asset_name , & this . track_name)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod operation_statuses {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get operation status."]
-        #[doc = "Get asset track operation status."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        #[doc = "* `operation_id`: Operation Id."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-            operation_id: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-                operation_id: operation_id.into(),
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AssetTrackOperationStatus> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AssetTrackOperationStatus = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-            pub(crate) operation_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}/operationStatuses/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . account_name , & this . asset_name , & this . track_name , & this . operation_id)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetTrackOperationStatus>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod operation_results {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get operation result."]
-        #[doc = "Get asset track operation result."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `asset_name`: The Asset name."]
-        #[doc = "* `track_name`: The Asset Track name."]
-        #[doc = "* `operation_id`: Operation Id."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            asset_name: impl Into<String>,
-            track_name: impl Into<String>,
-            operation_id: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                asset_name: asset_name.into(),
-                track_name: track_name.into(),
-                operation_id: operation_id.into(),
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AssetTrack> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AssetTrack = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The recommended number of seconds to wait before calling the URI specified in Azure-AsyncOperation."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URI to poll for completion status."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) asset_name: String,
-            pub(crate) track_name: String,
-            pub(crate) operation_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaServices/{}/assets/{}/tracks/{}/operationResults/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . account_name , & this . asset_name , & this . track_name , & this . operation_id)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetTrack>> {
-                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4557,7 +3524,7 @@ pub mod content_key_policies {
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) filter: Option<String>,
-            pub(crate) top: Option<i32>,
+            pub(crate) top: Option<i64>,
             pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
@@ -4567,7 +3534,7 @@ pub mod content_key_policies {
                 self
             }
             #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
-            pub fn top(mut self, top: i32) -> Self {
+            pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
@@ -4603,7 +3570,7 @@ pub mod content_key_policies {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4619,7 +3586,7 @@ pub mod content_key_policies {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -4705,7 +3672,7 @@ pub mod content_key_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4776,7 +3743,7 @@ pub mod content_key_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -4848,7 +3815,7 @@ pub mod content_key_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -4896,7 +3863,7 @@ pub mod content_key_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4955,7 +3922,7 @@ pub mod content_key_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -5168,7 +4135,7 @@ pub mod transforms {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5184,7 +4151,7 @@ pub mod transforms {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -5267,7 +4234,7 @@ pub mod transforms {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5338,7 +4305,7 @@ pub mod transforms {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -5410,7 +4377,7 @@ pub mod transforms {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -5458,7 +4425,7 @@ pub mod transforms {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5709,7 +4676,7 @@ pub mod jobs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5725,7 +4692,7 @@ pub mod jobs {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -5810,7 +4777,7 @@ pub mod jobs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5883,7 +4850,7 @@ pub mod jobs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -5957,7 +4924,7 @@ pub mod jobs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -6007,7 +4974,7 @@ pub mod jobs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6044,7 +5011,7 @@ pub mod jobs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -6188,7 +5155,7 @@ pub mod streaming_policies {
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) filter: Option<String>,
-            pub(crate) top: Option<i32>,
+            pub(crate) top: Option<i64>,
             pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
@@ -6198,7 +5165,7 @@ pub mod streaming_policies {
                 self
             }
             #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
-            pub fn top(mut self, top: i32) -> Self {
+            pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
@@ -6234,7 +5201,7 @@ pub mod streaming_policies {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6250,7 +5217,7 @@ pub mod streaming_policies {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6336,7 +5303,7 @@ pub mod streaming_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6407,7 +5374,7 @@ pub mod streaming_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -6455,7 +5422,7 @@ pub mod streaming_policies {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6644,7 +5611,7 @@ pub mod streaming_locators {
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) filter: Option<String>,
-            pub(crate) top: Option<i32>,
+            pub(crate) top: Option<i64>,
             pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
@@ -6654,7 +5621,7 @@ pub mod streaming_locators {
                 self
             }
             #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
-            pub fn top(mut self, top: i32) -> Self {
+            pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
@@ -6690,7 +5657,7 @@ pub mod streaming_locators {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6706,7 +5673,7 @@ pub mod streaming_locators {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6792,7 +5759,7 @@ pub mod streaming_locators {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6863,7 +5830,7 @@ pub mod streaming_locators {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -6911,7 +5878,7 @@ pub mod streaming_locators {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6970,7 +5937,7 @@ pub mod streaming_locators {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -7034,7 +6001,7 @@ pub mod streaming_locators {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -7328,7 +6295,7 @@ pub mod live_events {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -7344,7 +6311,7 @@ pub mod live_events {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -7421,7 +6388,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7499,7 +6466,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         if let Some(auto_start) = &this.auto_start {
                             req.url_mut().query_pairs_mut().append_pair("autoStart", &auto_start.to_string());
                         }
@@ -7575,7 +6542,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -7624,7 +6591,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7668,7 +6635,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -7713,7 +6680,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -7759,7 +6726,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -7804,7 +6771,7 @@ pub mod live_events {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -7987,7 +6954,7 @@ pub mod live_outputs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -8003,7 +6970,7 @@ pub mod live_outputs {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -8082,7 +7049,7 @@ pub mod live_outputs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8156,7 +7123,7 @@ pub mod live_outputs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -8207,7 +7174,7 @@ pub mod live_outputs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8333,29 +7300,6 @@ pub mod streaming_endpoints {
             streaming_endpoint_name: impl Into<String>,
         ) -> delete::RequestBuilder {
             delete::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                account_name: account_name.into(),
-                streaming_endpoint_name: streaming_endpoint_name.into(),
-            }
-        }
-        #[doc = "List StreamingEndpoint skus"]
-        #[doc = "List streaming endpoint supported skus."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
-        #[doc = "* `account_name`: The Media Services account name."]
-        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
-        pub fn skus(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            account_name: impl Into<String>,
-            streaming_endpoint_name: impl Into<String>,
-        ) -> skus::RequestBuilder {
-            skus::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -8497,7 +7441,7 @@ pub mod streaming_endpoints {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -8513,7 +7457,7 @@ pub mod streaming_endpoints {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -8590,7 +7534,7 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8668,7 +7612,7 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         if let Some(auto_start) = &this.auto_start {
                             req.url_mut().query_pairs_mut().append_pair("autoStart", &auto_start.to_string());
                         }
@@ -8744,7 +7688,7 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -8793,84 +7737,12 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
-            }
-        }
-    }
-    pub mod skus {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::StreamingEndpointSkuInfoListResult> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::StreamingEndpointSkuInfoListResult = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) account_name: String,
-            pub(crate) streaming_endpoint_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices/{}/streamingEndpoints/{}/skus",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.streaming_endpoint_name
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::StreamingEndpointSkuInfoListResult>> {
-                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -8909,7 +7781,7 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -8954,7 +7826,7 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -9000,7 +7872,7 @@ pub mod streaming_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
