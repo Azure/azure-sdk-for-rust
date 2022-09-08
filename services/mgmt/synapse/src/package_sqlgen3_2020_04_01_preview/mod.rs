@@ -220,8 +220,8 @@ pub mod sql_v3_operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::AvailableRpOperation>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::AvailableRpOperation>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -333,8 +333,8 @@ pub mod sql_v3_operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -566,8 +566,8 @@ pub mod sql_pools_v3 {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SqlPoolV3> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPoolV3>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -639,8 +639,8 @@ pub mod sql_pools_v3 {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SqlPoolV3> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPoolV3>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -712,8 +712,8 @@ pub mod sql_pools_v3 {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SqlPoolV3> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPoolV3>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1132,8 +1132,8 @@ pub mod sql_databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SqlDatabase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlDatabase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1205,8 +1205,8 @@ pub mod sql_databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SqlDatabase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlDatabase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1278,8 +1278,8 @@ pub mod sql_databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SqlDatabase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlDatabase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

@@ -525,8 +525,8 @@ pub mod device_update {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Update> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Update>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1043,8 +1043,8 @@ pub mod device_update {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UpdateFile> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpdateFile>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1239,8 +1239,8 @@ pub mod device_update {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UpdateOperation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpdateOperation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2057,8 +2057,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceClass> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceClass>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2125,8 +2125,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceClass> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceClass>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2467,8 +2467,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Device> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Device>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2535,8 +2535,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Device> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Device>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2599,8 +2599,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UpdateCompliance> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpdateCompliance>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2767,8 +2767,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Group> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Group>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2872,8 +2872,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UpdateCompliance> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpdateCompliance>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3148,8 +3148,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Deployment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3218,8 +3218,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Deployment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3327,8 +3327,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeploymentStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeploymentStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3499,8 +3499,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceClassSubgroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceClassSubgroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3608,8 +3608,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UpdateCompliance> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpdateCompliance>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3676,8 +3676,10 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceClassSubgroupUpdatableDevices> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceClassSubgroupUpdatableDevices>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3852,8 +3854,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Deployment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3966,8 +3968,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Deployment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4037,8 +4039,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Deployment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4107,8 +4109,10 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceClassSubgroupDeploymentStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceClassSubgroupDeploymentStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4300,8 +4304,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceOperation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceOperation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4477,8 +4481,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LogCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LogCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4545,8 +4549,8 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LogCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LogCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4704,8 +4708,10 @@ pub mod device_management {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LogCollectionOperationDetailedStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::LogCollectionOperationDetailedStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

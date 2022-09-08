@@ -214,8 +214,8 @@ pub mod usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentUsagesBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentUsagesBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -459,8 +459,8 @@ pub mod quota {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentQuotaLimitBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentQuotaLimitBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -528,8 +528,8 @@ pub mod quota {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentQuotaLimitBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentQuotaLimitBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -597,8 +597,8 @@ pub mod quota {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentQuotaLimitBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentQuotaLimitBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -797,8 +797,8 @@ pub mod quota_request_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaRequestDetails> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QuotaRequestDetails>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

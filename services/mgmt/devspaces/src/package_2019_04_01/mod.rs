@@ -204,8 +204,8 @@ pub mod container_host_mappings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ContainerHostMapping> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerHostMapping>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -515,8 +515,8 @@ pub mod controllers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Controller> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Controller>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -586,8 +586,8 @@ pub mod controllers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Controller> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Controller>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -656,8 +656,8 @@ pub mod controllers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Controller> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Controller>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -956,8 +956,8 @@ pub mod controllers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ControllerConnectionDetailsList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ControllerConnectionDetailsList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

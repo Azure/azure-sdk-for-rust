@@ -1175,8 +1175,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlSecret> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlSecret>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1399,8 +1399,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlCredential> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlCredential>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1753,8 +1753,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlExternalDataSource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlExternalDataSource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1968,8 +1968,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlProcedure> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlProcedure>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2185,8 +2185,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTable> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTable>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2711,8 +2711,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTableType> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTableType>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2928,8 +2928,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlPackage> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlPackage>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3145,8 +3145,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlView> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlView>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3364,8 +3364,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTableStatistics> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTableStatistics>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3603,8 +3603,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTablePreview> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTablePreview>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3673,8 +3673,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTablePartition> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTablePartition>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3759,8 +3759,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTablePreview> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTablePreview>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4127,8 +4127,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlTableValuedFunction> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlTableValuedFunction>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4342,8 +4342,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlAssembly> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlAssembly>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4555,8 +4555,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlSchema> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlSchema>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5652,8 +5652,8 @@ pub mod catalog {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::USqlDatabase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::USqlDatabase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

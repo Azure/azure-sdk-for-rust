@@ -291,8 +291,8 @@ pub mod check_name_availability {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -480,8 +480,8 @@ pub mod ledger {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ConfidentialLedger> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConfidentialLedger>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -551,8 +551,8 @@ pub mod ledger {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ConfidentialLedger> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConfidentialLedger>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -622,8 +622,8 @@ pub mod ledger {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ConfidentialLedger> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConfidentialLedger>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

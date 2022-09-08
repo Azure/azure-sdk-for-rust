@@ -941,11 +941,15 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             }
         });
 
-        let into_body = if let Some(response_type) = self.response_code.response_type() {
+        let into_future = if let Some(response_type) = self.response_code.response_type() {
             quote! {
                 #[doc = "Send the request and return the response body."]
-                pub async fn into_body(self) -> azure_core::Result<#response_type> {
-                    self.send().await?.into_body().await
+                pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<#response_type>> {
+                    Box::pin(
+                        async move {
+                            self.send().await?.into_body().await
+                        }
+                    )
                 }
             }
         } else {
@@ -966,7 +970,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     }
                 })
             }
-            #into_body
+            #into_future
         };
 
         let fut = if let Some(pageable) = &self.response_code.pageable {

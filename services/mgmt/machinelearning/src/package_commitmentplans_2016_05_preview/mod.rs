@@ -186,8 +186,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationEntityListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationEntityListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -267,8 +267,8 @@ pub mod skus {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SkuListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SkuListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -403,8 +403,8 @@ pub mod commitment_associations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommitmentAssociation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommitmentAssociation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -568,8 +568,8 @@ pub mod commitment_associations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommitmentAssociation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommitmentAssociation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -752,8 +752,8 @@ pub mod commitment_plans {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommitmentPlan> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommitmentPlan>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -822,8 +822,8 @@ pub mod commitment_plans {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommitmentPlan> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommitmentPlan>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -892,8 +892,8 @@ pub mod commitment_plans {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CommitmentPlan> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CommitmentPlan>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
