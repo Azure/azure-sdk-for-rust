@@ -30,6 +30,12 @@ pub enum Error {
     SharedAccessKeyIsRequired,
 }
 
+impl From<Error> for azure_core::Error {
+    fn from(error: Error) -> Self {
+        Self::new(azure_core::error::ErrorKind::Other, error.to_string())
+    }
+}
+
 pub(crate) struct SharedAccessSignature {
     shared_access_key_name: String,
     shared_access_key: String,
@@ -260,7 +266,7 @@ impl SharedAccessSignature {
         &self,
         signature_validity_duration: Duration,
     ) -> Result<Self, Error> {
-        if (self.shared_access_key.is_empty()) {
+        if self.shared_access_key.is_empty() {
             return Err(Error::SharedAccessKeyIsRequired);
         }
 
@@ -270,6 +276,26 @@ impl SharedAccessSignature {
             &self.shared_access_key,
             Some(signature_validity_duration),
         )
+    }
+
+    /// <summary>
+    ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
+    /// </summary>
+    ///
+    /// <param name="signatureValidityDuration">The duration that the signature should be considered valid.</param>
+    ///
+    /// <returns>A new <see cref="SharedAccessSignature" /> based on the same key, but with a new expiration time.</returns>
+    ///
+    pub fn update_with_new_expiration(
+        &mut self,
+        signature_validity_duration: Duration,
+    ) -> Result<(), Error> {
+        if self.shared_access_key.is_empty() {
+            return Err(Error::SharedAccessKeyIsRequired);
+        }
+        let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
+        self.signature_expiration = signature_expiration;
+        Ok(())
     }
 
     /// <summary>
