@@ -775,6 +775,7 @@ pub mod container_app {
             Succeeded,
             Failed,
             Canceled,
+            Deleting,
             #[serde(skip_deserializing)]
             UnknownValue(String),
         }
@@ -804,6 +805,7 @@ pub mod container_app {
                     Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Succeeded"),
                     Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Failed"),
                     Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Canceled"),
+                    Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Deleting"),
                     Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
                 }
             }
@@ -1123,9 +1125,9 @@ pub struct CustomHostnameAnalysisResult {
     #[doc = "DNS verification test result."]
     #[serde(rename = "customDomainVerificationTest", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain_verification_test: Option<custom_hostname_analysis_result::CustomDomainVerificationTest>,
-    #[doc = "App Service error response."]
+    #[doc = "Raw failure information if DNS verification fails."]
     #[serde(rename = "customDomainVerificationFailureInfo", default, skip_serializing_if = "Option::is_none")]
-    pub custom_domain_verification_failure_info: Option<DefaultErrorResponse>,
+    pub custom_domain_verification_failure_info: Option<custom_hostname_analysis_result::CustomDomainVerificationFailureInfo>,
     #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment; otherwise, <code>false</code>."]
     #[serde(rename = "hasConflictOnManagedEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub has_conflict_on_managed_environment: Option<bool>,
@@ -1161,6 +1163,27 @@ pub mod custom_hostname_analysis_result {
         Passed,
         Failed,
         Skipped,
+    }
+    #[doc = "Raw failure information if DNS verification fails."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct CustomDomainVerificationFailureInfo {
+        #[doc = "Standardized string to programmatically identify the error."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[doc = "Detailed error description and debugging information."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+        #[doc = "Detailed error description and debugging information."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub target: Option<String>,
+        #[doc = "Details or the error"]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub details: Vec<serde_json::Value>,
+    }
+    impl CustomDomainVerificationFailureInfo {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[doc = "The configuration settings of the custom Open ID Connect provider."]

@@ -728,7 +728,7 @@ pub enum ErrorCode {
     CopyIdMismatch,
     FeatureVersionMismatch,
     IncrementalCopyBlobMismatch,
-    IncrementalCopyOfEralierVersionSnapshotNotAllowed,
+    IncrementalCopyOfEarlierVersionSnapshotNotAllowed,
     IncrementalCopySourceMustBeSnapshot,
     InfiniteLeaseDurationRequired,
     InvalidBlobOrBlock,
@@ -875,8 +875,8 @@ impl Serialize for ErrorCode {
             Self::CopyIdMismatch => serializer.serialize_unit_variant("ErrorCode", 59u32, "CopyIdMismatch"),
             Self::FeatureVersionMismatch => serializer.serialize_unit_variant("ErrorCode", 60u32, "FeatureVersionMismatch"),
             Self::IncrementalCopyBlobMismatch => serializer.serialize_unit_variant("ErrorCode", 61u32, "IncrementalCopyBlobMismatch"),
-            Self::IncrementalCopyOfEralierVersionSnapshotNotAllowed => {
-                serializer.serialize_unit_variant("ErrorCode", 62u32, "IncrementalCopyOfEralierVersionSnapshotNotAllowed")
+            Self::IncrementalCopyOfEarlierVersionSnapshotNotAllowed => {
+                serializer.serialize_unit_variant("ErrorCode", 62u32, "IncrementalCopyOfEarlierVersionSnapshotNotAllowed")
             }
             Self::IncrementalCopySourceMustBeSnapshot => {
                 serializer.serialize_unit_variant("ErrorCode", 63u32, "IncrementalCopySourceMustBeSnapshot")

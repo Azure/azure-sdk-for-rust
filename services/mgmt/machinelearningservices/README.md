@@ -6,12 +6,12 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/machinelea
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2022-05-01`.
+The default tag is `package-preview-2022-06`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-preview-2022-06` has 128 operations from 1 API versions: `2022-06-01-preview`. Use crate feature `package-preview-2022-06` to enable. The operations will be in the `package_preview_2022_06` module.
 - `package-preview-2020-05` has 34 operations from 1 API versions: `2020-05-15-preview`. Use crate feature `package-preview-2020-05` to enable. The operations will be in the `package_preview_2020_05` module.
 - `package-2022-05-01` has 115 operations from 1 API versions: `2022-05-01`. Use crate feature `package-2022-05-01` to enable. The operations will be in the `package_2022_05_01` module.
 - `package-2022-02-01-preview` has 115 operations from 1 API versions: `2022-02-01-preview`. Use crate feature `package-2022-02-01-preview` to enable. The operations will be in the `package_2022_02_01_preview` module.
 - `package-2022-01-01-preview` has 40 operations from 1 API versions: `2022-01-01-preview`. Use crate feature `package-2022-01-01-preview` to enable. The operations will be in the `package_2022_01_01_preview` module.
-- `package-2021-07-01` has 40 operations from 1 API versions: `2021-07-01`. Use crate feature `package-2021-07-01` to enable. The operations will be in the `package_2021_07_01` module.

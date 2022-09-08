@@ -1,3 +1,6 @@
+# 0.6 (2022-09)
+- generated from azure-rest-api-specs [commit from 2022-09-08](https://github.com/Azure/azure-rest-api-specs/208c91dc71eec634400fb0c0a7e073e35afd2978)
+
 # 0.5 (2022-08)
 - generated from azure-rest-api-specs [commit from 2022-08-01](https://github.com/Azure/azure-rest-api-specs/commit/d1b0569d8adbd342a1111d6a69764d099f5f717c)
 

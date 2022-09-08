@@ -2187,9 +2187,9 @@ pub struct WorkbookErrorDefinition {
     #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[doc = "Internal error details."]
+    #[doc = "Error details"]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<serde_json::Value>,
+    pub inner_error: Option<WorkbookInnerErrorTrace>,
 }
 impl WorkbookErrorDefinition {
     pub fn new() -> Self {

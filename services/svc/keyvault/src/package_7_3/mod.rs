@@ -223,7 +223,7 @@ impl Client {
     #[doc = "The SetCertificateIssuer operation adds or updates the specified certificate issuer. This operation requires the certificates/setissuers permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `issuer_name`: The name of the issuer."]
+    #[doc = "* `issuer_name`: The name of the issuer. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameter`: Certificate issuer set parameter."]
     pub fn set_certificate_issuer(
         &self,
@@ -268,7 +268,7 @@ impl Client {
     #[doc = "If this is the first version, the certificate resource is created. This operation requires the certificates/create permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `certificate_name`: The name of the certificate."]
+    #[doc = "* `certificate_name`: The name of the certificate. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters to create a certificate."]
     pub fn create_certificate(
         &self,
@@ -285,7 +285,7 @@ impl Client {
     #[doc = "Imports an existing valid certificate, containing a private key, into Azure Key Vault. This operation requires the certificates/import permission. The certificate to be imported can be in either PFX or PEM format. If the certificate is in PEM format the PEM file must contain the key as well as x509 certificates. Key Vault will only accept a key in PKCS#8 format."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `certificate_name`: The name of the certificate."]
+    #[doc = "* `certificate_name`: The name of the certificate. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters to import the certificate."]
     pub fn import_certificate(
         &self,
@@ -499,7 +499,7 @@ impl Client {
     #[doc = "The create key operation can be used to create any key type in Azure Key Vault. If the named key already exists, Azure Key Vault creates a new version of the key. It requires the keys/create permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `key_name`: The name for the new key. The system will generate the version name for the new key."]
+    #[doc = "* `key_name`: The name for the new key. The system will generate the version name for the new key. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters to create a key."]
     pub fn create_key(
         &self,
@@ -527,7 +527,7 @@ impl Client {
     #[doc = "The import key operation may be used to import any key type into an Azure Key Vault. If the named key already exists, Azure Key Vault creates a new version of the key. This operation requires the keys/import permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `key_name`: Name for the imported key."]
+    #[doc = "* `key_name`: Name for the imported key. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters to import a key."]
     pub fn import_key(
         &self,
@@ -850,7 +850,7 @@ impl Client {
     #[doc = " The SET operation adds a secret to the Azure Key Vault. If the named secret already exists, Azure Key Vault creates a new version of that secret. This operation requires the secrets/set permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `secret_name`: The name of the secret."]
+    #[doc = "* `secret_name`: The name of the secret. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters for setting the secret."]
     pub fn set_secret(
         &self,
@@ -1079,7 +1079,7 @@ impl Client {
     #[doc = "Creates or updates a new storage account. This operation requires the storage/set permission."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `storage_account_name`: The name of the storage account. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters to create a storage account."]
     pub fn set_storage_account(
         &self,
@@ -1211,7 +1211,7 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `storage_account_name`: The name of the storage account."]
-    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition. The value you provide may be copied globally for the purpose of running the service. The value provided should not include personally identifiable or sensitive information."]
     #[doc = "* `parameters`: The parameters to create a SAS definition."]
     pub fn set_sas_definition(
         &self,

@@ -360,13 +360,13 @@ pub struct DataEncryption {
     #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub primary_user_assigned_identity_id: Option<String>,
     #[doc = "Primary key uri"]
-    #[serde(rename = "primaryKeyUri", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub primary_key_uri: Option<String>,
     #[doc = "Geo backup user identity resource id as identity can't cross region, need identity in same region as geo backup"]
     #[serde(rename = "geoBackupUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_user_assigned_identity_id: Option<String>,
     #[doc = "Geo backup key uri as key vault can't cross region, need cmk in same region as geo backup"]
-    #[serde(rename = "geoBackupKeyUri", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "geoBackupKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_key_uri: Option<String>,
     #[doc = "The key type, AzureKeyVault for enable cmk, SystemManaged for disable cmk."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]

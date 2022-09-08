@@ -341,6 +341,46 @@ pub mod calculate_price_response_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CalculateRefundRequest {
+    #[doc = "Fully qualified identifier of the reservation order being returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CalculateRefundRequestProperties>,
+}
+impl CalculateRefundRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CalculateRefundRequestProperties {
+    #[doc = "The scope of the refund, e.g. Reservation"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[doc = "Reservation to return"]
+    #[serde(rename = "reservationToReturn", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_to_return: Option<ReservationToReturn>,
+}
+impl CalculateRefundRequestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CalculateRefundResponse {
+    #[doc = "Fully qualified identifier of the reservation being returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundResponseProperties>,
+}
+impl CalculateRefundResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Catalog {
     #[doc = "The type of resource the SKU applies to."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -644,6 +684,8 @@ pub enum ErrorResponseCode {
     FulfillmentError,
     CalculatePriceFailed,
     AppliedScopesSameAsExisting,
+    SelfServiceRefundNotSupported,
+    RefundLimitExceeded,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -759,6 +801,10 @@ impl Serialize for ErrorResponseCode {
             Self::AppliedScopesSameAsExisting => {
                 serializer.serialize_unit_variant("ErrorResponseCode", 55u32, "AppliedScopesSameAsExisting")
             }
+            Self::SelfServiceRefundNotSupported => {
+                serializer.serialize_unit_variant("ErrorResponseCode", 56u32, "SelfServiceRefundNotSupported")
+            }
+            Self::RefundLimitExceeded => serializer.serialize_unit_variant("ErrorResponseCode", 57u32, "RefundLimitExceeded"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -1738,6 +1784,142 @@ pub struct QuotaRequestSubmitResponse201 {
     pub properties: Option<QuotaRequestStatusDetails>,
 }
 impl QuotaRequestSubmitResponse201 {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "billing information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundBillingInformation {
+    #[doc = "Represent the billing plans."]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
+    pub billing_plan: Option<ReservationBillingPlan>,
+    #[doc = "The number of completed transactions in this reservation's payment"]
+    #[serde(rename = "completedTransactions", default, skip_serializing_if = "Option::is_none")]
+    pub completed_transactions: Option<i32>,
+    #[doc = "The number of total transactions in this reservation's payment"]
+    #[serde(rename = "totalTransactions", default, skip_serializing_if = "Option::is_none")]
+    pub total_transactions: Option<i32>,
+    #[serde(rename = "billingCurrencyTotalPaidAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_currency_total_paid_amount: Option<Price>,
+    #[serde(rename = "billingCurrencyProratedAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_currency_prorated_amount: Option<Price>,
+    #[serde(
+        rename = "billingCurrencyRemainingCommitmentAmount",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub billing_currency_remaining_commitment_amount: Option<Price>,
+}
+impl RefundBillingInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "error details"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundPolicyError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorResponseCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl RefundPolicyError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Refund policy result"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundPolicyResult {
+    #[doc = "Refund policy result property"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundPolicyResultProperty>,
+}
+impl RefundPolicyResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Refund policy result property"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundPolicyResultProperty {
+    #[serde(rename = "consumedRefundsTotal", default, skip_serializing_if = "Option::is_none")]
+    pub consumed_refunds_total: Option<Price>,
+    #[serde(rename = "maxRefundLimit", default, skip_serializing_if = "Option::is_none")]
+    pub max_refund_limit: Option<Price>,
+    #[doc = "Refund Policy errors"]
+    #[serde(rename = "policyErrors", default, skip_serializing_if = "Vec::is_empty")]
+    pub policy_errors: Vec<RefundPolicyError>,
+}
+impl RefundPolicyResultProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundRequestProperties>,
+}
+impl RefundRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundRequestProperties {
+    #[doc = "SessionId that was returned by CalculateRefund API."]
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[doc = "The scope of the refund, e.g. Reservation"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[doc = "Reservation to return"]
+    #[serde(rename = "reservationToReturn", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_to_return: Option<ReservationToReturn>,
+    #[doc = "The reason of returning the reservation"]
+    #[serde(rename = "returnReason", default, skip_serializing_if = "Option::is_none")]
+    pub return_reason: Option<String>,
+}
+impl RefundRequestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundResponse {
+    #[doc = "Fully qualified identifier of the reservation being returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundResponseProperties>,
+}
+impl RefundResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundResponseProperties {
+    #[doc = "Refund session identifier"]
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[doc = "Quantity to be returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i32>,
+    #[serde(rename = "billingRefundAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_refund_amount: Option<Price>,
+    #[serde(rename = "pricingRefundAmount", default, skip_serializing_if = "Option::is_none")]
+    pub pricing_refund_amount: Option<Price>,
+    #[doc = "Refund policy result"]
+    #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
+    pub policy_result: Option<RefundPolicyResult>,
+    #[doc = "billing information"]
+    #[serde(rename = "billingInformation", default, skip_serializing_if = "Option::is_none")]
+    pub billing_information: Option<RefundBillingInformation>,
+}
+impl RefundResponseProperties {
     pub fn new() -> Self {
         Self::default()
     }

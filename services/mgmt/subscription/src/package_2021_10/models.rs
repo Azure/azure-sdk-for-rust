@@ -85,6 +85,9 @@ pub struct AcceptOwnershipStatusResponse {
     #[doc = "The accept ownership state of the resource."]
     #[serde(rename = "acceptOwnershipState", default, skip_serializing_if = "Option::is_none")]
     pub accept_ownership_state: Option<AcceptOwnershipState>,
+    #[doc = "The provisioning state of the resource."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
     #[doc = "UPN of the billing owner"]
     #[serde(rename = "billingOwner", default, skip_serializing_if = "Option::is_none")]
     pub billing_owner: Option<String>,
@@ -357,6 +360,45 @@ impl azure_core::Continuable for OperationListResult {
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The provisioning state of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ProvisioningState")]
+pub enum ProvisioningState {
+    Pending,
+    Accepted,
+    Succeeded,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Pending => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Pending"),
+            Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Accepted"),
+            Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "The parameters required to create a new subscription."]

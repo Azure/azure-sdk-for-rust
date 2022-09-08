@@ -283,6 +283,9 @@ pub struct BigDataPoolResourceProperties {
     #[doc = "Whether compute isolation is required or not."]
     #[serde(rename = "isComputeIsolationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_compute_isolation_enabled: Option<bool>,
+    #[doc = "Whether autotune is required or not."]
+    #[serde(rename = "isAutotuneEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_autotune_enabled: Option<bool>,
     #[doc = "Whether session level packages enabled."]
     #[serde(rename = "sessionLevelPackagesEnabled", default, skip_serializing_if = "Option::is_none")]
     pub session_level_packages_enabled: Option<bool>,
@@ -421,6 +424,38 @@ pub mod big_data_pool_resource_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "Workspace Check Default Storage Account Status."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckDefaultStorageAccountStatus {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Properties of the Check Default Storage Account Status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CheckDefaultStorageAccountStatusProperties>,
+}
+impl CheckDefaultStorageAccountStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of the Check Default Storage Account Status."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckDefaultStorageAccountStatusProperties {
+    #[doc = "Is Storage Account Status Linked."]
+    #[serde(rename = "isPrivateLinked", default, skip_serializing_if = "Option::is_none")]
+    pub is_private_linked: Option<bool>,
+    #[doc = "Endpoint ResourceId."]
+    #[serde(rename = "privateEndpointResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint_resource_id: Option<String>,
+}
+impl CheckDefaultStorageAccountStatusProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A request about whether a workspace name is available"]
@@ -766,6 +801,216 @@ pub mod data_masking_rule_properties {
         #[serde(rename = "SSN")]
         Ssn,
         Text,
+    }
+}
+#[doc = "Properties of a datawarehousequeries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWareHouseQueriesProperties {
+    #[doc = "Requested QueryId. of datawarehousequeries"]
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[doc = "The start time for queries datawarehousequeries"]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time for queries"]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The duration of requested queries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<f64>,
+    #[doc = " Status of dataWarehouseQueries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = " QueryText Message"]
+    #[serde(rename = "queryText", default, skip_serializing_if = "Option::is_none")]
+    pub query_text: Option<String>,
+    #[doc = "dataWarehouseQueries Importance"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub importance: Option<String>,
+    #[doc = "Requested GroupName "]
+    #[serde(rename = "groupName", default, skip_serializing_if = "Option::is_none")]
+    pub group_name: Option<String>,
+    #[doc = "Requested ClassifierName"]
+    #[serde(rename = "classifierName", default, skip_serializing_if = "Option::is_none")]
+    pub classifier_name: Option<String>,
+    #[doc = "AllocationPercentage of the Resource"]
+    #[serde(rename = "resourceAllocationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub resource_allocation_percentage: Option<String>,
+    #[doc = "The operation error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[doc = "Login Details"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub login: Option<String>,
+    #[doc = "Progress value"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<f64>,
+    #[doc = "SessionId for Resource"]
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[doc = "Requested ResourceClass"]
+    #[serde(rename = "resourceClass", default, skip_serializing_if = "Option::is_none")]
+    pub resource_class: Option<data_ware_house_queries_properties::ResourceClass>,
+    #[doc = "Requested ConcurrencySlots"]
+    #[serde(rename = "concurrencySlots", default, skip_serializing_if = "Option::is_none")]
+    pub concurrency_slots: Option<String>,
+}
+impl DataWareHouseQueriesProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_ware_house_queries_properties {
+    use super::*;
+    #[doc = "Requested ResourceClass"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResourceClass {
+        #[serde(rename = "xlargerc")]
+        Xlargerc,
+        #[serde(rename = "largerc")]
+        Largerc,
+        #[serde(rename = "mediumrc")]
+        Mediumrc,
+        #[serde(rename = "smallrc")]
+        Smallrc,
+    }
+}
+#[doc = "The response to a list datawarehouse queries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueries {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a datawarehousequeries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataWareHouseQueriesProperties>,
+}
+impl DataWarehouseQueries {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list datawarehouse queries.steps"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesSteps {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a datawarehousequeries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataWarehouseQueriesStepsProperties>,
+}
+impl DataWarehouseQueriesSteps {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a datawarehousequeries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesStepsProperties {
+    #[doc = "Requested QueryId. of datawarehousequeries steps"]
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[doc = "The start time of dataWarehouseQueries Steps."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time of dataWarehouseQueries Steps."]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The duration of requested dataWarehouseQueries Steps."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<f64>,
+    #[doc = " Status of dataWarehouseQueries Steps"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = " QueryText Message"]
+    #[serde(rename = "queryText", default, skip_serializing_if = "Option::is_none")]
+    pub query_text: Option<String>,
+    #[doc = "dataWarehouseQueries step index"]
+    #[serde(rename = "stepIndex", default, skip_serializing_if = "Option::is_none")]
+    pub step_index: Option<String>,
+    #[doc = "Type of operation"]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    pub operation_type: Option<data_warehouse_queries_steps_properties::OperationType>,
+    #[doc = "Type of distribution"]
+    #[serde(rename = "distributionType", default, skip_serializing_if = "Option::is_none")]
+    pub distribution_type: Option<data_warehouse_queries_steps_properties::DistributionType>,
+    #[doc = "Type of location"]
+    #[serde(rename = "locationType", default, skip_serializing_if = "Option::is_none")]
+    pub location_type: Option<data_warehouse_queries_steps_properties::LocationType>,
+    #[doc = "Number of rows count"]
+    #[serde(rename = "rowCount", default, skip_serializing_if = "Option::is_none")]
+    pub row_count: Option<String>,
+}
+impl DataWarehouseQueriesStepsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_warehouse_queries_steps_properties {
+    use super::*;
+    #[doc = "Type of operation"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OperationType {
+        BackupAzureDatabaseOperation,
+        BroadcastMoveOperation,
+        CheckEncryptionStatusOperation,
+        CopyOperation,
+        CreateDiagnosticsOperation,
+        #[serde(rename = "DSQLCallBackOperation")]
+        DsqlCallBackOperation,
+        DbccShowStatisticsOperation,
+        DistributedExchangeOperation,
+        DistributeReplicatedTableMoveOperation,
+        DropDiagnosticsNotifyOperation,
+        DropDiagnosticsSynchronizeOperation,
+        ExternalBroadcastMove,
+        ExternalExportControlMove,
+        ExternalExportControlOperation,
+        ExternalExportDistributedMove,
+        ExternalExportDistributedOperation,
+        ExternalExportReplicatedMove,
+        ExternalExportReplicatedOperation,
+        ExternalShuffleOperation,
+        ExternalStatisticsOperation,
+        HadoopBroadcastOperation,
+        HadoopRoundRobinOperation,
+        HadoopShuffleOperation,
+        InsertBulkOperation,
+        MetaDataCreateOperation,
+        MoveOperation,
+        OnOperation,
+        PartitionMoveOperation,
+        #[serde(rename = "RandomIDOperation")]
+        RandomIdOperation,
+        ReconfigureOperation,
+        ReturnOperation,
+        RoundRobinMoveOperation,
+        SetIdentityInsertOperation,
+        SetOptionsOperation,
+        ShuffleMoveOperation,
+        SingleSourceRoundRobinMoveOperation,
+        TempTablePropertiesOperation,
+        TrimMoveOperation,
+    }
+    #[doc = "Type of distribution"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DistributionType {
+        AllAzureEndpoints,
+        AllComputeNodes,
+        AllDistributions,
+        AllNodes,
+        ComputeNode,
+        Distribution,
+        SubsetDistributions,
+        SubsetNodes,
+        Unspecified,
+    }
+    #[doc = "Type of location"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LocationType {
+        Compute,
+        Control,
+        #[serde(rename = "DMS")]
+        Dms,
     }
 }
 #[doc = "User activities of a data warehouse"]
@@ -3952,6 +4197,149 @@ pub mod restore_point_properties {
         Discrete,
     }
 }
+#[doc = "Properties for Scope Pool"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScopePoolProperties {
+    #[doc = "The Creation Date for Scope Pool"]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
+    #[doc = "The maximum numbers of jobs that can queue up"]
+    #[serde(rename = "maxQueuedJobs", default, skip_serializing_if = "Option::is_none")]
+    pub max_queued_jobs: Option<f64>,
+    #[doc = "The maximum number of jobs that can run simultaneously"]
+    #[serde(rename = "maxRunningJobs", default, skip_serializing_if = "Option::is_none")]
+    pub max_running_jobs: Option<f64>,
+    #[doc = "The max tokens per pool"]
+    #[serde(rename = "maxTokens", default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<f64>,
+    #[doc = "The max ECO tokens per pool"]
+    #[serde(rename = "maxEcoTokens", default, skip_serializing_if = "Option::is_none")]
+    pub max_eco_tokens: Option<f64>,
+    #[doc = "Scope Pool Extended Properties"]
+    #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
+    pub extended_properties: Option<scope_pool_properties::ExtendedProperties>,
+    #[doc = "Provisioning State of Scope Pool"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<scope_pool_properties::ProvisioningState>,
+}
+impl ScopePoolProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod scope_pool_properties {
+    use super::*;
+    #[doc = "Scope Pool Extended Properties"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct ExtendedProperties {
+        #[doc = "Scope pool Limit And Policies"]
+        #[serde(rename = "poolLimitAndPolicies", default, skip_serializing_if = "Option::is_none")]
+        pub pool_limit_and_policies: Option<extended_properties::PoolLimitAndPolicies>,
+    }
+    impl ExtendedProperties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod extended_properties {
+        use super::*;
+        #[doc = "Scope pool Limit And Policies"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct PoolLimitAndPolicies {
+            #[doc = "Max Tokens Per Job"]
+            #[serde(rename = "maxTokensPerJob", default, skip_serializing_if = "Option::is_none")]
+            pub max_tokens_per_job: Option<f64>,
+            #[doc = "Max ECO Tokens Per Job"]
+            #[serde(rename = "maxEcoTokensPerJob", default, skip_serializing_if = "Option::is_none")]
+            pub max_eco_tokens_per_job: Option<f64>,
+        }
+        impl PoolLimitAndPolicies {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+    #[doc = "Provisioning State of Scope Pool"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Provisioning,
+        Succeeded,
+        Deleting,
+        Failed,
+        DeleteError,
+        UpdateError,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Provisioning => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Provisioning"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Succeeded"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::DeleteError => serializer.serialize_unit_variant("ProvisioningState", 4u32, "DeleteError"),
+                Self::UpdateError => serializer.serialize_unit_variant("ProvisioningState", 5u32, "UpdateError"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Scope pool for workspace"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScopePools {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Properties for Scope Pool"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScopePoolProperties>,
+}
+impl ScopePools {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list Scope pools request"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScopePoolsListResult {
+    #[doc = "A list of Scope pools"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+}
+impl azure_core::Continuable for ScopePoolsListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl ScopePoolsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {
@@ -4549,6 +4937,9 @@ pub struct ServerBlobAuditingPolicyProperties {
     #[doc = "Specifies the amount of time in milliseconds that can elapse before audit actions are forced to be processed.\r\nThe default minimum value is 1000 (1 second). The maximum is 2,147,483,647."]
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
+    #[doc = "Specifies the state of devops audit. If state is Enabled, devops logs will be sent to Azure Monitor.\r\nIn order to send the events to Azure Monitor, specify 'State' as 'Enabled', 'IsAzureMonitorTargetEnabled' as true and 'IsDevopsAuditEnabled' as true\r\n\r\nWhen using REST API to configure auditing, Diagnostic Settings with 'DevOpsOperationsAudit' diagnostic logs category on the master database should also be created.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/master/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
+    #[serde(rename = "isDevopsAuditEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_devops_audit_enabled: Option<bool>,
 }
 impl ServerBlobAuditingPolicyProperties {
     pub fn new(state: server_blob_auditing_policy_properties::State) -> Self {
@@ -4562,6 +4953,7 @@ impl ServerBlobAuditingPolicyProperties {
             is_storage_secondary_key_in_use: None,
             is_azure_monitor_target_enabled: None,
             queue_delay_ms: None,
+            is_devops_audit_enabled: None,
         }
     }
 }
@@ -4870,6 +5262,9 @@ pub struct SparkConfigurationInfo {
     #[doc = "The timestamp of resource creation."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
+    #[doc = "SparkConfiguration merge configs."]
+    #[serde(rename = "configMergeRule", default, skip_serializing_if = "Option::is_none")]
+    pub config_merge_rule: Option<serde_json::Value>,
 }
 impl SparkConfigurationInfo {
     pub fn new(configs: serde_json::Value) -> Self {
@@ -4880,6 +5275,7 @@ impl SparkConfigurationInfo {
             notes: None,
             created_by: None,
             created: None,
+            config_merge_rule: None,
         }
     }
 }
@@ -6278,6 +6674,50 @@ pub mod transparent_data_encryption_properties {
     pub enum Status {
         Enabled,
         Disabled,
+    }
+}
+#[doc = "Trusted Service By Pass Configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TrustedServiceByPassConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Trusted Service By Pass Configuration properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<trusted_service_by_pass_configuration::Properties>,
+}
+impl TrustedServiceByPassConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod trusted_service_by_pass_configuration {
+    use super::*;
+    #[doc = "Trusted Service By Pass Configuration properties"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "Trusted Service By pass Configuration Info"]
+        #[serde(rename = "trustedServiceBypassConfigurationInfo", default, skip_serializing_if = "Option::is_none")]
+        pub trusted_service_bypass_configuration_info: Option<properties::TrustedServiceBypassConfigurationInfo>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Trusted Service By pass Configuration Info"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct TrustedServiceBypassConfigurationInfo {
+            #[doc = "Trusted Service By pass Enabled"]
+            #[serde(rename = "trustedServiceBypassEnabled", default, skip_serializing_if = "Option::is_none")]
+            pub trusted_service_bypass_enabled: Option<bool>,
+        }
+        impl TrustedServiceBypassConfigurationInfo {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
     }
 }
 #[doc = "Update integration runtime node request."]
