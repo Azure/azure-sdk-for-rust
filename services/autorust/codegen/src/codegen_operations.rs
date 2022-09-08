@@ -329,12 +329,11 @@ impl WebOperationGen {
         })
     }
 
-    pub fn success_responses(&self) -> IndexMap<StatusCode, Response> {
+    pub fn success_responses(&self) -> IndexMap<&StatusCode, &Response> {
         self.0
             .responses
             .iter()
             .filter(|(status_code, _)| crate::status_codes::is_success(status_code))
-            .map(|(s, r)| (s.clone(), r.clone()))
             .collect()
     }
 }
@@ -788,14 +787,15 @@ impl ResponseCode {
             });
         }
         let headers = success_responses
-            .into_iter()
-            .flat_map(|(_, rsp)| rsp.headers)
+            .iter()
+            .flat_map(|(_, rsp)| &rsp.headers)
             .filter_map(|(name, header)| match header {
-                autorust_openapi::ReferenceOr::Item(header) => Some((name.clone(), HeaderCode::new(name, &header))),
+                autorust_openapi::ReferenceOr::Item(header) => Some((name.clone(), HeaderCode::new(name.clone(), header))),
                 _ => None,
             })
-            .collect::<IndexMap<_, _>>();
-        let headers = headers.into_values().collect::<Result<Vec<_>>>()?;
+            .collect::<IndexMap<_, _>>()
+            .into_values()
+            .collect::<Result<Vec<_>>>()?;
         Ok(Self {
             status_responses,
             pageable: operation.pageable(),
