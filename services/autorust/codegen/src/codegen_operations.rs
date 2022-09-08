@@ -692,6 +692,7 @@ struct HeaderCode {
     header_name: String,
     function_name: Ident,
     type_name_code: TypeNameCode,
+    description: DocCommentCode,
 }
 
 impl HeaderCode {
@@ -716,10 +717,12 @@ impl HeaderCode {
             })),
         }?;
         let type_name_code = TypeNameCode::new(&type_name)?;
+        let description = DocCommentCode::new(header.description.clone());
         Ok(Self {
             header_name,
             function_name,
             type_name_code,
+            description,
         })
     }
 }
@@ -730,7 +733,9 @@ impl ToTokens for HeaderCode {
             header_name,
             function_name,
             type_name_code,
+            description,
         } = &self;
+        description.to_tokens(tokens);
         if type_name_code.is_string() {
             tokens.extend(quote! {
                 pub fn #function_name(&self) -> azure_core::Result<&str> {
@@ -1268,14 +1273,8 @@ impl ToTokens for ClientFunctionCode {
             }
         }
 
-        let summary = match &self.summary {
-            Some(summary) if !summary.is_empty() => quote! { #[doc = #summary] },
-            _ => quote! {},
-        };
-        let description = match &self.description {
-            Some(desc) if !desc.is_empty() => quote! { #[doc = #desc] },
-            _ => quote! {},
-        };
+        let summary = DocCommentCode::new(self.summary.clone());
+        let description = DocCommentCode::new(self.description.clone());
 
         let mut param_descriptions: Vec<TokenStream> = Vec::new();
         if self
@@ -1285,7 +1284,7 @@ impl ToTokens for ClientFunctionCode {
             .any(|param| param.description.is_some())
         {
             // Add a blank link before the arguments if there is a summary or description.
-            if !summary.is_empty() || !description.is_empty() {
+            if !summary.is_some() || !description.is_some() {
                 param_descriptions.push(quote! { #[doc = ""] });
             }
             param_descriptions.push(quote! { #[doc = "Arguments:"] });
@@ -1311,6 +1310,28 @@ impl ToTokens for ClientFunctionCode {
                 }
             }
         });
+    }
+}
+
+#[derive(Clone)]
+struct DocCommentCode {
+    comment: Option<String>,
+}
+
+impl DocCommentCode {
+    pub fn new(comment: Option<String>) -> Self {
+        Self { comment }
+    }
+    pub fn is_some(&self) -> bool {
+        self.comment.is_some()
+    }
+}
+
+impl ToTokens for DocCommentCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(comment) = &self.comment {
+            tokens.extend(quote! { #[doc = #comment] })
+        }
     }
 }
 
