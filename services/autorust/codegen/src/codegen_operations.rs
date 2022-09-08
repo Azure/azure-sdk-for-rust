@@ -778,14 +778,17 @@ struct StatusResponseCode {
 
 impl ResponseCode {
     fn new(operation: &WebOperationGen, produces: String) -> Result<Self> {
-        let mut status_responses = Vec::new();
         let success_responses = operation.success_responses();
-        for (status_code, rsp) in &success_responses {
-            status_responses.push(StatusResponseCode {
-                status_code_name: get_status_code_ident(status_code)?,
-                response_type: create_response_type(rsp)?,
-            });
-        }
+        let status_responses = success_responses
+            .iter()
+            .map(|(status_code, rsp)| {
+                Ok(StatusResponseCode {
+                    status_code_name: get_status_code_ident(status_code)?,
+                    response_type: create_response_type(rsp)?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
         let headers = success_responses
             .iter()
             .flat_map(|(_, rsp)| &rsp.headers)
