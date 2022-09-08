@@ -106,6 +106,9 @@ impl Client {
     pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
+    pub fn configuration_client(&self) -> configuration::Client {
+        configuration::Client(self.clone())
+    }
     pub fn consumer_groups_client(&self) -> consumer_groups::Client {
         consumer_groups::Client(self.clone())
     }
@@ -747,6 +750,94 @@ pub mod namespaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of IP Filter rules for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn list_ip_filter_rules(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_ip_filter_rules::RequestBuilder {
+            list_ip_filter_rules::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Gets an IpFilterRule for a Namespace by rule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `ip_filter_rule_name`: The IP Filter Rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn get_ip_filter_rule(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            ip_filter_rule_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_ip_filter_rule::RequestBuilder {
+            get_ip_filter_rule::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                ip_filter_rule_name: ip_filter_rule_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Creates or updates an IpFilterRule for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `ip_filter_rule_name`: The IP Filter Rule name."]
+        #[doc = "* `parameters`: The Namespace IpFilterRule."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn create_or_update_ip_filter_rule(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            ip_filter_rule_name: impl Into<String>,
+            parameters: impl Into<models::IpFilterRule>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update_ip_filter_rule::RequestBuilder {
+            create_or_update_ip_filter_rule::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                ip_filter_rule_name: ip_filter_rule_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Deletes an IpFilterRule for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `ip_filter_rule_name`: The IP Filter Rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn delete_ip_filter_rule(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            ip_filter_rule_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete_ip_filter_rule::RequestBuilder {
+            delete_ip_filter_rule::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                ip_filter_rule_name: ip_filter_rule_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
         #[doc = "Lists all the available Namespaces within a subscription, irrespective of the resource groups."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -853,6 +944,135 @@ pub mod namespaces {
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Gets a list of VirtualNetwork rules for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn list_virtual_network_rules(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_virtual_network_rules::RequestBuilder {
+            list_virtual_network_rules::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Gets an VirtualNetworkRule for a Namespace by rule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `virtual_network_rule_name`: The Virtual Network Rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn get_virtual_network_rule(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            virtual_network_rule_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_virtual_network_rule::RequestBuilder {
+            get_virtual_network_rule::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                virtual_network_rule_name: virtual_network_rule_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Creates or updates an VirtualNetworkRule for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `virtual_network_rule_name`: The Virtual Network Rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: The Namespace VirtualNetworkRule."]
+        pub fn create_or_update_virtual_network_rule(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            virtual_network_rule_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            parameters: impl Into<models::VirtualNetworkRule>,
+        ) -> create_or_update_virtual_network_rule::RequestBuilder {
+            create_or_update_virtual_network_rule::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                virtual_network_rule_name: virtual_network_rule_name.into(),
+                subscription_id: subscription_id.into(),
+                parameters: parameters.into(),
+            }
+        }
+        #[doc = "Deletes an VirtualNetworkRule for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `virtual_network_rule_name`: The Virtual Network Rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn delete_virtual_network_rule(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            virtual_network_rule_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete_virtual_network_rule::RequestBuilder {
+            delete_virtual_network_rule::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                virtual_network_rule_name: virtual_network_rule_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Gets NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn get_network_rule_set(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_network_rule_set::RequestBuilder {
+            get_network_rule_set::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Create or update NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: The Namespace IpFilterRule."]
+        pub fn create_or_update_network_rule_set(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            parameters: impl Into<models::NetworkRuleSet>,
+        ) -> create_or_update_network_rule_set::RequestBuilder {
+            create_or_update_network_rule_set::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                subscription_id: subscription_id.into(),
+                parameters: parameters.into(),
             }
         }
         #[doc = "Gets a list of authorization rules for a Namespace."]
@@ -1004,6 +1224,288 @@ pub mod namespaces {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 parameters: parameters.into(),
+            }
+        }
+    }
+    pub mod list_ip_filter_rules {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::IpFilterRuleListResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::IpFilterRuleListResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::IpFilterRuleListResult, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/ipfilterrules",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get_ip_filter_rule {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::IpFilterRule> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::IpFilterRule = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) ip_filter_rule_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/ipfilterrules/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.ip_filter_rule_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IpFilterRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update_ip_filter_rule {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::IpFilterRule> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::IpFilterRule = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) ip_filter_rule_name: String,
+            pub(crate) parameters: models::IpFilterRule,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/ipfilterrules/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.ip_filter_rule_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IpFilterRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete_ip_filter_rule {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) ip_filter_rule_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/ipfilterrules/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.ip_filter_rule_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
             }
         }
     }
@@ -1446,6 +1948,426 @@ pub mod namespaces {
             }
         }
     }
+    pub mod list_virtual_network_rules {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::VirtualNetworkRuleListResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::VirtualNetworkRuleListResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::VirtualNetworkRuleListResult, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/virtualnetworkrules",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get_virtual_network_rule {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::VirtualNetworkRule> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::VirtualNetworkRule = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) virtual_network_rule_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/virtualnetworkrules/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.virtual_network_rule_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualNetworkRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update_virtual_network_rule {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::VirtualNetworkRule> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::VirtualNetworkRule = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) virtual_network_rule_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) parameters: models::VirtualNetworkRule,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/virtualnetworkrules/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.virtual_network_rule_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualNetworkRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete_virtual_network_rule {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) virtual_network_rule_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/virtualnetworkrules/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.virtual_network_rule_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_network_rule_set {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::NetworkRuleSet> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::NetworkRuleSet = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets/default",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NetworkRuleSet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update_network_rule_set {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::NetworkRuleSet> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::NetworkRuleSet = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) parameters: models::NetworkRuleSet,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets/default",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NetworkRuleSet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
     pub mod list_authorization_rules {
         use super::models;
         pub struct Response(azure_core::Response);
@@ -1507,7 +2429,7 @@ pub mod namespaces {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1523,7 +2445,7 @@ pub mod namespaces {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1600,7 +2522,7 @@ pub mod namespaces {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1671,7 +2593,7 @@ pub mod namespaces {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1719,7 +2641,7 @@ pub mod namespaces {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1778,7 +2700,7 @@ pub mod namespaces {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -1843,7 +2765,7 @@ pub mod namespaces {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1909,7 +2831,7 @@ pub mod namespaces {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2373,6 +3295,195 @@ pub mod private_link_resources {
         }
     }
 }
+pub mod configuration {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get all Event Hubs Cluster settings - a collection of key/value pairs which represent the quotas and settings imposed on the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        #[doc = "Replace all specified Event Hubs Cluster settings with those contained in the request body. Leaves the settings not specified in the request body unmodified."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
+        #[doc = "* `parameters`: Parameters for creating an Event Hubs Cluster resource."]
+        pub fn patch(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            parameters: impl Into<models::ClusterQuotaConfigurationProperties>,
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ClusterQuotaConfigurationProperties> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ClusterQuotaConfigurationProperties = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/quotaConfiguration/default",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.cluster_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterQuotaConfigurationProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod patch {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ClusterQuotaConfigurationProperties> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ClusterQuotaConfigurationProperties = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) parameters: models::ClusterQuotaConfigurationProperties,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/quotaConfiguration/default",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.cluster_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterQuotaConfigurationProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
 pub mod disaster_recovery_configs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -2449,6 +3560,160 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check the give Namespace name availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `parameters`: Parameters to check availability of the given Alias name"]
+        pub fn check_name_availability(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            parameters: impl Into<models::CheckNameAvailabilityParameter>,
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        #[doc = "Gets all Alias(Disaster Recovery configurations)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn list(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Retrieves Alias(Disaster Recovery configuration) for primary or secondary namespace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            alias: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                alias: alias.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Creates or updates a new Alias(Disaster Recovery configuration)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `parameters`: Parameters required to create an Alias(Disaster Recovery configuration)"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            alias: impl Into<String>,
+            parameters: impl Into<models::ArmDisasterRecovery>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                alias: alias.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Deletes an Alias(Disaster Recovery configuration)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            alias: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                alias: alias.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "This operation disables the Disaster Recovery and stops replicating changes from primary to secondary namespaces"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn break_pairing(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            alias: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> break_pairing::RequestBuilder {
+            break_pairing::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                alias: alias.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Invokes GEO DR failover and reconfigure the alias to point to the secondary namespace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        pub fn fail_over(
+            &self,
+            resource_group_name: impl Into<String>,
+            namespace_name: impl Into<String>,
+            alias: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> fail_over::RequestBuilder {
+            fail_over::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                namespace_name: namespace_name.into(),
+                alias: alias.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
     }
     pub mod list_authorization_rules {
         use super::models;
@@ -2506,7 +3771,7 @@ pub mod disaster_recovery_configs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2522,7 +3787,7 @@ pub mod disaster_recovery_configs {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2593,7 +3858,7 @@ pub mod disaster_recovery_configs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2657,7 +3922,7 @@ pub mod disaster_recovery_configs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2668,6 +3933,426 @@ pub mod disaster_recovery_configs {
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AccessKeys>> {
                 Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::CheckNameAvailabilityResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) parameters: models::CheckNameAvailabilityParameter,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/checkNameAvailability" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . namespace_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ArmDisasterRecoveryListResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ArmDisasterRecoveryListResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ArmDisasterRecoveryListResult, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ArmDisasterRecovery> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ArmDisasterRecovery = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) alias: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.alias
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ArmDisasterRecovery>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ArmDisasterRecovery> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ArmDisasterRecovery = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) alias: String,
+            pub(crate) parameters: models::ArmDisasterRecovery,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.alias
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ArmDisasterRecovery>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) alias: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.namespace_name,
+                            &this.alias
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod break_pairing {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) alias: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/breakPairing" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . namespace_name , & this . alias)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod fail_over {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) namespace_name: String,
+            pub(crate) alias: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/failover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . namespace_name , & this . alias)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
             }
         }
     }
@@ -2976,7 +4661,7 @@ pub mod event_hubs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2992,7 +4677,7 @@ pub mod event_hubs {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3063,7 +4748,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3128,7 +4813,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3170,7 +4855,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3230,7 +4915,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -3296,7 +4981,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3383,7 +5068,7 @@ pub mod event_hubs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3399,7 +5084,7 @@ pub mod event_hubs {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 if let Some(skip) = &this.skip {
                                     req.url_mut().query_pairs_mut().append_pair("$skip", &skip.to_string());
                                 }
@@ -3482,7 +5167,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3553,7 +5238,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3601,7 +5286,7 @@ pub mod event_hubs {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3769,7 +5454,7 @@ pub mod consumer_groups {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3834,7 +5519,7 @@ pub mod consumer_groups {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3876,7 +5561,7 @@ pub mod consumer_groups {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3960,7 +5645,7 @@ pub mod consumer_groups {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3976,7 +5661,7 @@ pub mod consumer_groups {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 if let Some(skip) = &this.skip {
                                     req.url_mut().query_pairs_mut().append_pair("$skip", &skip.to_string());
                                 }
@@ -4065,7 +5750,7 @@ pub mod operations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4081,7 +5766,7 @@ pub mod operations {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -4178,7 +5863,7 @@ pub mod regions {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4194,7 +5879,7 @@ pub mod regions {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2017-04-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?

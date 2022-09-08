@@ -33,6 +33,85 @@ impl AccessKeys {
         Self::default()
     }
 }
+#[doc = "Single item in List or Get Alias(Disaster Recovery configuration) operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArmDisasterRecovery {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Properties required to the Create Or Update Alias(Disaster Recovery configurations)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<arm_disaster_recovery::Properties>,
+}
+impl ArmDisasterRecovery {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod arm_disaster_recovery {
+    use super::*;
+    #[doc = "Properties required to the Create Or Update Alias(Disaster Recovery configurations)"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "Provisioning state of the Alias(Disaster Recovery configuration) - possible values 'Accepted' or 'Succeeded' or 'Failed'"]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "ARM Id of the Primary/Secondary eventhub namespace name, which is part of GEO DR pairing"]
+        #[serde(rename = "partnerNamespace", default, skip_serializing_if = "Option::is_none")]
+        pub partner_namespace: Option<String>,
+        #[doc = "Alternate name specified when alias and namespace names are same."]
+        #[serde(rename = "alternateName", default, skip_serializing_if = "Option::is_none")]
+        pub alternate_name: Option<String>,
+        #[doc = "role of namespace in GEO DR - possible values 'Primary' or 'PrimaryNotReplicating' or 'Secondary'"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub role: Option<properties::Role>,
+        #[doc = "Number of entities pending to be replicated."]
+        #[serde(rename = "pendingReplicationOperationsCount", default, skip_serializing_if = "Option::is_none")]
+        pub pending_replication_operations_count: Option<i64>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Provisioning state of the Alias(Disaster Recovery configuration) - possible values 'Accepted' or 'Succeeded' or 'Failed'"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum ProvisioningState {
+            Accepted,
+            Succeeded,
+            Failed,
+        }
+        #[doc = "role of namespace in GEO DR - possible values 'Primary' or 'PrimaryNotReplicating' or 'Secondary'"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum Role {
+            Primary,
+            PrimaryNotReplicating,
+            Secondary,
+        }
+    }
+}
+#[doc = "The result of the List Alias(Disaster Recovery configuration) operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArmDisasterRecoveryListResult {
+    #[doc = "List of Alias(Disaster Recovery configurations)"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ArmDisasterRecovery>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Alias(Disaster Recovery configuration)"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ArmDisasterRecoveryListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ArmDisasterRecoveryListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Single item in a List or Get AuthorizationRule operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationRule {
@@ -229,6 +308,18 @@ impl azure_core::Continuable for ClusterListResult {
     }
 }
 impl ClusterListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Contains all settings for the cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ClusterQuotaConfigurationProperties {
+    #[doc = "All possible Cluster settings - a collection of key/value paired settings which apply to quotas and configurations imposed on the cluster."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+}
+impl ClusterQuotaConfigurationProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -714,6 +805,102 @@ pub mod identity {
         }
     }
 }
+#[doc = "Single item in a List or Get IpFilterRules operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpFilterRule {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Properties supplied to create or update IpFilterRules"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ip_filter_rule::Properties>,
+}
+impl IpFilterRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod ip_filter_rule {
+    use super::*;
+    #[doc = "Properties supplied to create or update IpFilterRules"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "IP Mask"]
+        #[serde(rename = "ipMask", default, skip_serializing_if = "Option::is_none")]
+        pub ip_mask: Option<String>,
+        #[doc = "The IP Filter Action"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub action: Option<properties::Action>,
+        #[doc = "IP Filter name"]
+        #[serde(rename = "filterName", default, skip_serializing_if = "Option::is_none")]
+        pub filter_name: Option<String>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "The IP Filter Action"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "Action")]
+        pub enum Action {
+            Accept,
+            Reject,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for Action {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for Action {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for Action {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Accept => serializer.serialize_unit_variant("Action", 0u32, "Accept"),
+                    Self::Reject => serializer.serialize_unit_variant("Action", 1u32, "Reject"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+}
+#[doc = "The response from the List namespace operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpFilterRuleListResult {
+    #[doc = "Result of the List IpFilter Rules operation."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<IpFilterRule>,
+    #[doc = "Link to the next set of results. Not empty if Value contains an incomplete list of IpFilter Rules"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IpFilterRuleListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl IpFilterRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Properties to configure keyVault Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
@@ -783,6 +970,152 @@ impl azure_core::Continuable for MessagingRegionsListResult {
 impl MessagingRegionsListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The response from the List namespace operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NwRuleSetIpRules {
+    #[doc = "IP Mask"]
+    #[serde(rename = "ipMask", default, skip_serializing_if = "Option::is_none")]
+    pub ip_mask: Option<String>,
+    #[doc = "The IP Filter Action"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<nw_rule_set_ip_rules::Action>,
+}
+impl NwRuleSetIpRules {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod nw_rule_set_ip_rules {
+    use super::*;
+    #[doc = "The IP Filter Action"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Action")]
+    pub enum Action {
+        Allow,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Action {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Action {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Action {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "Allow"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The response from the List namespace operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NwRuleSetVirtualNetworkRules {
+    #[doc = "Properties supplied for Subnet"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subnet: Option<Subnet>,
+    #[doc = "Value that indicates whether to ignore missing Vnet Service Endpoint"]
+    #[serde(rename = "ignoreMissingVnetServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub ignore_missing_vnet_service_endpoint: Option<bool>,
+}
+impl NwRuleSetVirtualNetworkRules {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Description of topic resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NetworkRuleSet {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "NetworkRuleSet properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<network_rule_set::Properties>,
+}
+impl NetworkRuleSet {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod network_rule_set {
+    use super::*;
+    #[doc = "NetworkRuleSet properties"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "Value that indicates whether Trusted Service Access is Enabled or not."]
+        #[serde(rename = "trustedServiceAccessEnabled", default, skip_serializing_if = "Option::is_none")]
+        pub trusted_service_access_enabled: Option<bool>,
+        #[doc = "Default Action for Network Rule Set"]
+        #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+        pub default_action: Option<properties::DefaultAction>,
+        #[doc = "List VirtualNetwork Rules"]
+        #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+        pub virtual_network_rules: Vec<NwRuleSetVirtualNetworkRules>,
+        #[doc = "List of IpRules"]
+        #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
+        pub ip_rules: Vec<NwRuleSetIpRules>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Default Action for Network Rule Set"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "DefaultAction")]
+        pub enum DefaultAction {
+            Allow,
+            Deny,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for DefaultAction {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for DefaultAction {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for DefaultAction {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Allow => serializer.serialize_unit_variant("DefaultAction", 0u32, "Allow"),
+                    Self::Deny => serializer.serialize_unit_variant("DefaultAction", 1u32, "Deny"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
     }
 }
 #[doc = "A Event Hub REST API operation"]
@@ -1149,6 +1482,18 @@ pub mod sku {
         }
     }
 }
+#[doc = "Properties supplied for Subnet"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Subnet {
+    #[doc = "Resource ID of Virtual Network Subnet"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl Subnet {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Definition of resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
@@ -1175,4 +1520,54 @@ pub enum UnavailableReason {
     NameInUse,
     NameInLockdown,
     TooManyNamespaceInCurrentSubscription,
+}
+#[doc = "Single item in a List or Get VirtualNetworkRules operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VirtualNetworkRule {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Properties supplied to create or update VirtualNetworkRules"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<virtual_network_rule::Properties>,
+}
+impl VirtualNetworkRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod virtual_network_rule {
+    use super::*;
+    #[doc = "Properties supplied to create or update VirtualNetworkRules"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "ARM ID of Virtual Network Subnet"]
+        #[serde(rename = "virtualNetworkSubnetId", default, skip_serializing_if = "Option::is_none")]
+        pub virtual_network_subnet_id: Option<String>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "The response from the List namespace operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VirtualNetworkRuleListResult {
+    #[doc = "Result of the List VirtualNetwork Rules operation."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VirtualNetworkRule>,
+    #[doc = "Link to the next set of results. Not empty if Value contains an incomplete list of VirtualNetwork Rules"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkRuleListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl VirtualNetworkRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
