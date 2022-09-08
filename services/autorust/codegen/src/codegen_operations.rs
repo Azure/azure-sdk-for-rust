@@ -701,9 +701,14 @@ impl HeaderCode {
         let type_name = match (header.type_.as_str(), header.format.as_ref().map(String::as_str)) {
             ("string", None) => Ok(TypeName::String),
             ("string", Some("byte")) => Ok(TypeName::String), // base64-encoded
+            ("string", Some("duration")) => Ok(TypeName::String),
+            ("string", Some("uuid")) => Ok(TypeName::String),
             ("string", Some("date-time-rfc1123")) => Ok(TypeName::DateTimeRfc1123),
             ("integer", None) => Ok(TypeName::Int32),
             ("integer", Some("int32")) => Ok(TypeName::Int32),
+            ("number", None) => Ok(TypeName::Float32),
+            ("number", Some("float")) => Ok(TypeName::Float32),
+            ("number", Some("double")) => Ok(TypeName::Float64),
             ("integer", Some("int64")) => Ok(TypeName::Int64),
             ("boolean", None) => Ok(TypeName::Boolean),
             (header_type, header_format) => Err(Error::with_message(ErrorKind::CodeGen, || {
