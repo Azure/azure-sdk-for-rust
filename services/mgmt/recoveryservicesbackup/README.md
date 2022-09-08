@@ -6,12 +6,12 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/recoveryse
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-passivestamp-2021-11-15`.
+The default tag is `package-2022-03`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
-- `package-passivestamp-2021-11-15` has 13 operations from 1 API versions: `2021-11-15`. Use crate feature `package-passivestamp-2021-11-15` to enable. The operations will be in the `package_passivestamp_2021_11_15` module.
-- `package-passivestamp-2018-12-20` has 13 operations from 1 API versions: `2018-12-20`. Use crate feature `package-passivestamp-2018-12-20` to enable. The operations will be in the `package_passivestamp_2018_12_20` module.
 - `package-2022-06-01-preview` has 76 operations from 1 API versions: `2022-06-01-preview`. Use crate feature `package-2022-06-01-preview` to enable. The operations will be in the `package_2022_06_01_preview` module.
 - `package-2022-03` has 76 operations from 1 API versions: `2022-03-01`. Use crate feature `package-2022-03` to enable. The operations will be in the `package_2022_03` module.
 - `package-2022-02` has 76 operations from 1 API versions: `2022-02-01`. Use crate feature `package-2022-02` to enable. The operations will be in the `package_2022_02` module.
+- `package-2022-01` has 76 operations from 1 API versions: `2022-01-01`. Use crate feature `package-2022-01` to enable. The operations will be in the `package_2022_01` module.
+- `package-2021-12` has 76 operations from 1 API versions: `2021-12-01`. Use crate feature `package-2021-12` to enable. The operations will be in the `package_2021_12` module.

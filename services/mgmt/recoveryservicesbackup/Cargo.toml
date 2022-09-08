@@ -29,12 +29,12 @@ env_logger = "0.9"
 all-features = true
 
 [features]
-default = ["package-passivestamp-2021-11-15", "enable_reqwest"]
+default = ["package-2022-03", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-passivestamp-2021-11-15" = []
-"package-passivestamp-2018-12-20" = []
 "package-2022-06-01-preview" = []
 "package-2022-03" = []
 "package-2022-02" = []
+"package-2022-01" = []
+"package-2021-12" = []
