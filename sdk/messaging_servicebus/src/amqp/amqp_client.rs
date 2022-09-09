@@ -5,7 +5,9 @@ use azure_core::{
     Url,
 };
 
-use crate::core::TransportClient;
+use crate::{
+    client::service_bus_transport_metrics::ServiceBusTransportMetrics, core::TransportClient,
+};
 
 use super::{
     amqp_connection_scope::AmqpConnectionScope, amqp_receiver::AmqpReceiver,
@@ -62,7 +64,7 @@ where
     connection_scope: AmqpConnectionScope,
 
     // public override ServiceBusTransportMetrics TransportMetrics { get; }
-    transport_metrics: (),
+    transport_metrics: ServiceBusTransportMetrics,
 }
 
 impl<C: TokenCredential> TransportClient for AmqpClient<C> {

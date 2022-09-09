@@ -60,7 +60,7 @@ pub(crate) struct ServiceBusConnection<C> {
     pub(crate) inner_client: C,
 }
 
-impl<C> ServiceBusConnection<C> {
+impl<C: TransportClient> ServiceBusConnection<C> {
     /// Indicates whether or not this [`ServiceBusConnection`] has been closed.
     ///
     /// # Value

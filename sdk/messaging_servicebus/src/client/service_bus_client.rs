@@ -1,4 +1,9 @@
 use crate::{
+    amqp::amqp_client::AmqpClient,
+    authorization::{
+        service_bus_token_credential::ServiceBusTokenCredential,
+        shared_access_credential::SharedAccessCredential,
+    },
     core::TransportClient,
     primitives::{
         inner_client::InnerClient, service_bus_connection::ServiceBusConnection,
@@ -36,7 +41,7 @@ pub struct ServiceBusClient {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection,
+    connection: ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<SharedAccessCredential>>>, // TODO: use trait objects?
 }
 
 impl ServiceBusClient {
