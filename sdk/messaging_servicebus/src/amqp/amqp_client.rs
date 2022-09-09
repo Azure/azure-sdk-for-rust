@@ -6,7 +6,12 @@ use azure_core::{
 };
 
 use crate::{
-    client::service_bus_transport_metrics::ServiceBusTransportMetrics, core::TransportClient,
+    authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    client::{
+        service_bus_client_options::ServiceBusClientOptions,
+        service_bus_transport_metrics::ServiceBusTransportMetrics,
+    },
+    core::TransportClient,
 };
 
 use super::{
@@ -15,6 +20,12 @@ use super::{
 };
 
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpClientError {
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+}
 
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
 /// It is intended that the public <see cref="ServiceBusConnection" /> make use of an instance via containment
@@ -64,7 +75,41 @@ where
     connection_scope: AmqpConnectionScope,
 
     // public override ServiceBusTransportMetrics TransportMetrics { get; }
-    transport_metrics: ServiceBusTransportMetrics,
+    transport_metrics: Option<ServiceBusTransportMetrics>,
+}
+
+impl<C: TokenCredential> AmqpClient<ServiceBusTokenCredential<C>> {
+    pub async fn create(
+        host: &str,
+        credential: ServiceBusTokenCredential<C>,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, AmqpClientError> {
+        let service_endpoint = {
+            let scheme = options.transport_type.url_scheme();
+            let addr = format!("{scheme}://{host}");
+            Url::parse(&addr)?
+        };
+
+        let connection_endpoint = match options
+            .custom_endpoint_address
+            .as_ref()
+            .and_then(|url| url.host_str())
+        {
+            Some(custom_host) => {
+                let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
+                Url::parse(&addr)?
+            }
+            None => service_endpoint.clone(),
+        };
+
+        let transport_metrics = match options.enable_transport_metrics {
+            true => Some(ServiceBusTransportMetrics::new()),
+            false => None,
+        };
+
+        // Create AmqpConnectionScope
+        todo!()
+    }
 }
 
 impl<C: TokenCredential> TransportClient for AmqpClient<C> {

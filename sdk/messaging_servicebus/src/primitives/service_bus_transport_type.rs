@@ -14,3 +14,11 @@ impl Default for ServiceBusTransportType {
         ServiceBusTransportType::AmqpTcp
     }
 }
+
+impl ServiceBusTransportType {
+    const AMQP_URI_SCHEME: &'static str = "amqps";
+
+    pub fn url_scheme(&self) -> &str {
+        Self::AMQP_URI_SCHEME
+    }
+}

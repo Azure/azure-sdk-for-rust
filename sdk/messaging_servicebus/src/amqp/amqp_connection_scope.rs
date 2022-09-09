@@ -124,6 +124,10 @@ impl AmqpConnectionScope {
     async fn begin_amqp_session(&mut self) -> Result<SessionHandle<()>, ()> {
         todo!()
     }
+
+    pub async fn create() -> Result<Self, ()> {
+        todo!()
+    }
 }
 
 #[async_trait]
