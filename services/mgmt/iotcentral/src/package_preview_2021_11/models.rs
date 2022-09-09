@@ -381,6 +381,11 @@ impl Serialize for NetworkAction {
         }
     }
 }
+impl Default for NetworkAction {
+    fn default() -> Self {
+        Self::Allow
+    }
+}
 #[doc = "An object for an IP range that will be allowed access."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSetIpRule {
@@ -833,6 +838,11 @@ impl Serialize for PublicNetworkAccess {
             Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+impl Default for PublicNetworkAccess {
+    fn default() -> Self {
+        Self::Enabled
     }
 }
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]

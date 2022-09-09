@@ -2096,7 +2096,7 @@ pub mod backup_instances {
                 backup_instance_name: backup_instance_name.into(),
             }
         }
-        #[doc = "This operation will stop backups for backup instance"]
+        #[doc = "This operation will stop backup for a backup instance and retains the backup data as per the policy (except latest Recovery point, which will be retained forever)"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The subscription Id."]

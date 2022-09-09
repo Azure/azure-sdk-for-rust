@@ -73,27 +73,24 @@ impl AppServiceInfo {
     }
 }
 #[doc = "Response of a list App Services Operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceListResponse {
     #[doc = "The items on this page"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AppServiceInfo>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppServiceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl AppServiceListResponse {
-    pub fn new(value: Vec<AppServiceInfo>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Update settings of OneAgent."]
@@ -258,27 +255,24 @@ impl DynatraceSingleSignOnResource {
     }
 }
 #[doc = "The response of a DynatraceSingleSignOnResource list operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DynatraceSingleSignOnResourceListResult {
     #[doc = "The items on this page"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DynatraceSingleSignOnResource>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DynatraceSingleSignOnResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl DynatraceSingleSignOnResourceListResult {
-    pub fn new(value: Vec<DynatraceSingleSignOnResource>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Dynatrace Environment Information"]
@@ -704,27 +698,24 @@ impl MonitorResource {
     }
 }
 #[doc = "The response of a MonitorResource list operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorResourceListResult {
     #[doc = "The items on this page"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MonitorResource>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitorResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl MonitorResourceListResult {
-    pub fn new(value: Vec<MonitorResource>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The updatable properties of the MonitorResource."]
@@ -779,27 +770,24 @@ impl MonitoredResource {
     }
 }
 #[doc = "List of all the resources being monitored by Dynatrace monitor resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoredResourceListResponse {
     #[doc = "The items on this page"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MonitoredResource>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoredResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl MonitoredResourceListResponse {
-    pub fn new(value: Vec<MonitoredResource>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
@@ -1501,27 +1489,24 @@ impl TagRule {
     }
 }
 #[doc = "The response of a TagRule list operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagRuleListResult {
     #[doc = "The items on this page"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TagRule>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TagRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl TagRuleListResult {
-    pub fn new(value: Vec<TagRule>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The updatable properties of the TagRule."]
@@ -1674,27 +1659,24 @@ impl VmExtensionPayload {
     }
 }
 #[doc = "Response of a list VM Host Operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmHostsListResponse {
     #[doc = "The items on this page"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VmInfo>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VmHostsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl VmHostsListResponse {
-    pub fn new(value: Vec<VmInfo>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Details of VM Resource having Dynatrace OneAgent installed"]

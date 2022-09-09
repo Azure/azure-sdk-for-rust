@@ -603,6 +603,9 @@ pub struct Conditions {
     #[serde(rename = "alertRuleId", default, skip_serializing_if = "Option::is_none")]
     pub alert_rule_id: Option<Condition>,
     #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "alertRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub alert_rule_name: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<Condition>,
     #[doc = "condition to trigger an action rule"]

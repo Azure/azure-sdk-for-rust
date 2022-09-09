@@ -3879,7 +3879,7 @@ pub mod providers {
                 subscription_id: subscription_id.into(),
             }
         }
-        #[doc = "Registers a management group with a resource provider."]
+        #[doc = "Registers a management group with a resource provider. Use this operation to register a resource provider with resource types that can be deployed at the management group scope. It does not recursively register subscriptions within the management group. Instead, you must register subscriptions individually."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_provider_namespace`: The namespace of the resource provider to register."]

@@ -5,20 +5,23 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 pub type AvailabilityZone = String;
 #[doc = "Response for ElasticSan request."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticSan {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "Elastic San response properties."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ElasticSanProperties>,
+    pub properties: ElasticSanProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl ElasticSan {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(properties: ElasticSanProperties) -> Self {
+        Self {
+            tracked_resource: TrackedResource::default(),
+            properties,
+            system_data: None,
+        }
     }
 }
 #[doc = "List of Elastic Sans"]
@@ -87,10 +90,9 @@ impl ElasticSanOperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticSanProperties {
     #[doc = "The SKU name. Required for account creation; optional for update."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub sku: Sku,
     #[doc = "Logical zone for Elastic San resource; example: [\"1\"]."]
-    #[serde(rename = "availabilityZones")]
+    #[serde(rename = "availabilityZones", default, skip_serializing_if = "Vec::is_empty")]
     pub availability_zones: Vec<AvailabilityZone>,
     #[doc = "Provisioning state of the iSCSI Target."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -118,10 +120,10 @@ pub struct ElasticSanProperties {
     pub total_size_ti_b: Option<i64>,
 }
 impl ElasticSanProperties {
-    pub fn new(availability_zones: Vec<AvailabilityZone>, base_size_ti_b: i64, extended_capacity_size_ti_b: i64) -> Self {
+    pub fn new(sku: Sku, base_size_ti_b: i64, extended_capacity_size_ti_b: i64) -> Self {
         Self {
-            sku: None,
-            availability_zones,
+            sku,
+            availability_zones: Vec::new(),
             provisioning_state: None,
             base_size_ti_b,
             extended_capacity_size_ti_b,
@@ -434,149 +436,65 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "SkuInformation object"]
+#[doc = "The capability information in the specified SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceTypeSku {
-    #[doc = "The Sku tier"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sku: Vec<Sku>,
-    #[doc = "Availability of the SKU for the location/zone"]
-    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub location_info: Vec<SkuLocationInfo>,
-    #[doc = "San scalability target"]
-    #[serde(rename = "elasticSan", default, skip_serializing_if = "Option::is_none")]
-    pub elastic_san: Option<SanTierInfo>,
-    #[doc = "Volume Group scalability target"]
-    #[serde(rename = "volumeGroup", default, skip_serializing_if = "Option::is_none")]
-    pub volume_group: Option<VolumeGroupTierInfo>,
-    #[doc = "Volume scalability target"]
+pub struct SkuCapability {
+    #[doc = "The name of capability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub volume: Option<VolumeTierInfo>,
+    pub name: Option<String>,
+    #[doc = "A string value to indicate states of given capability."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
 }
-impl ResourceTypeSku {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "San scalability target"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SanTierInfo {
-    #[doc = "Maximum San account capacity in TiB"]
-    #[serde(rename = "maxSizeTiB", default, skip_serializing_if = "Option::is_none")]
-    pub max_size_ti_b: Option<i64>,
-    #[doc = "Minimum San account capacity in TiB"]
-    #[serde(rename = "minSizeTiB", default, skip_serializing_if = "Option::is_none")]
-    pub min_size_ti_b: Option<i64>,
-    #[doc = "Increment the San capacity in TiB"]
-    #[serde(rename = "minIncrementSizeTiB", default, skip_serializing_if = "Option::is_none")]
-    pub min_increment_size_ti_b: Option<i64>,
-    #[doc = "Maximum IOPS per BaseTiB"]
-    #[serde(rename = "iopsPerBaseTiB", default, skip_serializing_if = "Option::is_none")]
-    pub iops_per_base_ti_b: Option<i64>,
-    #[doc = "Maximum MBps per BaseTiB"]
-    #[serde(rename = "mbpsPerBaseTiB", default, skip_serializing_if = "Option::is_none")]
-    pub mbps_per_base_ti_b: Option<i64>,
-    #[doc = "Maximum MBps"]
-    #[serde(rename = "maxMBps", default, skip_serializing_if = "Option::is_none")]
-    pub max_m_bps: Option<i64>,
-    #[doc = "Maximum number of volume groups per San account"]
-    #[serde(rename = "maxVolumeGroupCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_volume_group_count: Option<i64>,
-}
-impl SanTierInfo {
+impl SkuCapability {
     pub fn new() -> Self {
         Self::default()
     }
 }
 #[doc = "The SKU name. Required for account creation; optional for update."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The sku name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku::Name>,
+    pub name: SkuName,
     #[doc = "The sku tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<sku::Tier>,
+    pub tier: Option<SkuTier>,
 }
 impl Sku {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(name: SkuName) -> Self {
+        Self { name, tier: None }
     }
 }
-pub mod sku {
-    use super::*;
+#[doc = "ElasticSAN SKU and its properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuInformation {
     #[doc = "The sku name."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        #[serde(rename = "Premium_LRS")]
-        PremiumLrs,
-        #[serde(rename = "Premium_ZRS")]
-        PremiumZrs,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::PremiumLrs => serializer.serialize_unit_variant("Name", 0u32, "Premium_LRS"),
-                Self::PremiumZrs => serializer.serialize_unit_variant("Name", 1u32, "Premium_ZRS"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+    pub name: SkuName,
     #[doc = "The sku tier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Tier")]
-    pub enum Tier {
-        Premium,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Tier {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Tier {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Tier {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Premium => serializer.serialize_unit_variant("Tier", 0u32, "Premium"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<SkuTier>,
+    #[doc = "The type of the resource."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "The set of locations that the SKU is available. This will be supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.)."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[doc = "Availability of the SKU for the location/zone"]
+    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub location_info: Vec<SkuLocationInfo>,
+    #[doc = "The capability information in the specified SKU."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capabilities: Vec<SkuCapability>,
+}
+impl SkuInformation {
+    pub fn new(name: SkuName) -> Self {
+        Self {
+            name,
+            tier: None,
+            resource_type: None,
+            locations: Vec::new(),
+            location_info: Vec::new(),
+            capabilities: Vec::new(),
         }
     }
 }
@@ -585,10 +503,7 @@ pub mod sku {
 pub struct SkuInformationList {
     #[doc = "List of ResourceType Sku"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ResourceTypeSku>,
-    #[doc = "Links to the next set of results"]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub value: Vec<SkuInformation>,
 }
 impl azure_core::Continuable for SkuInformationList {
     type Continuation = String;
@@ -616,22 +531,93 @@ impl SkuLocationInfo {
         Self::default()
     }
 }
-#[doc = "Data source used when creating the volume."]
+#[doc = "The sku name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SkuName")]
+pub enum SkuName {
+    #[serde(rename = "Premium_LRS")]
+    PremiumLrs,
+    #[serde(rename = "Premium_ZRS")]
+    PremiumZrs,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SkuName {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SkuName {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SkuName {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::PremiumLrs => serializer.serialize_unit_variant("SkuName", 0u32, "Premium_LRS"),
+            Self::PremiumZrs => serializer.serialize_unit_variant("SkuName", 1u32, "Premium_ZRS"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The sku tier."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SkuTier")]
+pub enum SkuTier {
+    Premium,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SkuTier {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SkuTier {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SkuTier {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Premium => serializer.serialize_unit_variant("SkuTier", 0u32, "Premium"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Data source used when creating the volume."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceCreationData {
     #[doc = "This enumerates the possible sources of a volume creation."]
-    #[serde(rename = "createSource")]
-    pub create_source: source_creation_data::CreateSource,
+    #[serde(rename = "createSource", default, skip_serializing_if = "Option::is_none")]
+    pub create_source: Option<source_creation_data::CreateSource>,
     #[doc = "If createOption is Copy, this is the ARM id of the source snapshot or disk. If createOption is Restore, this is the ARM-like id of the source disk restore point."]
     #[serde(rename = "sourceUri", default, skip_serializing_if = "Option::is_none")]
     pub source_uri: Option<String>,
 }
 impl SourceCreationData {
-    pub fn new(create_source: source_creation_data::CreateSource) -> Self {
-        Self {
-            create_source,
-            source_uri: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 pub mod source_creation_data {
@@ -796,38 +782,22 @@ impl VolumeGroupList {
     }
 }
 #[doc = "VolumeGroup response properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroupProperties {
     #[doc = "Provisioning state of the iSCSI Target."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Storage Target type."]
-    #[serde(rename = "protocolType")]
-    pub protocol_type: StorageTargetType,
+    #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
+    pub protocol_type: Option<StorageTargetType>,
     #[doc = "The type of key used to encrypt the data of the disk."]
-    pub encryption: EncryptionType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionType>,
     #[doc = "A set of rules governing the network accessibility."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
 }
 impl VolumeGroupProperties {
-    pub fn new(protocol_type: StorageTargetType, encryption: EncryptionType) -> Self {
-        Self {
-            provisioning_state: None,
-            protocol_type,
-            encryption,
-            network_acls: None,
-        }
-    }
-}
-#[doc = "Volume Group scalability target"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VolumeGroupTierInfo {
-    #[doc = "Maximum number of Volumes per Volume Groups per San account"]
-    #[serde(rename = "maxVolumeCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_volume_count: Option<i64>,
-}
-impl VolumeGroupTierInfo {
     pub fn new() -> Self {
         Self::default()
     }
@@ -848,24 +818,21 @@ impl VolumeGroupUpdate {
     }
 }
 #[doc = "VolumeGroup response properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroupUpdateProperties {
     #[doc = "Storage Target type."]
-    #[serde(rename = "protocolType")]
-    pub protocol_type: StorageTargetType,
+    #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
+    pub protocol_type: Option<StorageTargetType>,
     #[doc = "The type of key used to encrypt the data of the disk."]
-    pub encryption: EncryptionType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionType>,
     #[doc = "A set of rules governing the network accessibility."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
 }
 impl VolumeGroupUpdateProperties {
-    pub fn new(protocol_type: StorageTargetType, encryption: EncryptionType) -> Self {
-        Self {
-            protocol_type,
-            encryption,
-            network_acls: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "List of Volumes"]
@@ -905,33 +872,6 @@ pub struct VolumeProperties {
     pub storage_target: Option<IscsiTargetInfo>,
 }
 impl VolumeProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Volume scalability target"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VolumeTierInfo {
-    #[doc = "Maximum volume capacity in GiB"]
-    #[serde(rename = "maxSizeGiB", default, skip_serializing_if = "Option::is_none")]
-    pub max_size_gi_b: Option<i64>,
-    #[doc = "Minimum volume capacity in GiB"]
-    #[serde(rename = "minSizeGiB", default, skip_serializing_if = "Option::is_none")]
-    pub min_size_gi_b: Option<i64>,
-    #[doc = "Increment volume capacity in GiB"]
-    #[serde(rename = "minIncrementSizeGiB", default, skip_serializing_if = "Option::is_none")]
-    pub min_increment_size_gi_b: Option<i64>,
-    #[doc = "Maximum IOPS per GiB"]
-    #[serde(rename = "iopsPerBaseGiB", default, skip_serializing_if = "Option::is_none")]
-    pub iops_per_base_gi_b: Option<i64>,
-    #[doc = "Maximum IOPS"]
-    #[serde(rename = "maxIops", default, skip_serializing_if = "Option::is_none")]
-    pub max_iops: Option<i64>,
-    #[doc = "Maximum MBps"]
-    #[serde(rename = "maxMBps", default, skip_serializing_if = "Option::is_none")]
-    pub max_m_bps: Option<i64>,
-}
-impl VolumeTierInfo {
     pub fn new() -> Self {
         Self::default()
     }

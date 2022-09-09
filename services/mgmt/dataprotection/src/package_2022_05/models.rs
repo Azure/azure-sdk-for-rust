@@ -992,6 +992,9 @@ pub struct BackupVault {
     #[doc = "Storage Settings"]
     #[serde(rename = "storageSettings")]
     pub storage_settings: Vec<StorageSetting>,
+    #[doc = "Is vault protected by resource guard"]
+    #[serde(rename = "isVaultProtectedByResourceGuard", default, skip_serializing_if = "Option::is_none")]
+    pub is_vault_protected_by_resource_guard: Option<bool>,
 }
 impl BackupVault {
     pub fn new(storage_settings: Vec<StorageSetting>) -> Self {
@@ -1001,6 +1004,7 @@ impl BackupVault {
             resource_move_state: None,
             resource_move_details: None,
             storage_settings,
+            is_vault_protected_by_resource_guard: None,
         }
     }
 }
