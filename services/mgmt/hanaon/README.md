@@ -6,7 +6,7 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/hanaonazur
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2017-11`.
+The default tag is `package-2020-02-07-preview`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
