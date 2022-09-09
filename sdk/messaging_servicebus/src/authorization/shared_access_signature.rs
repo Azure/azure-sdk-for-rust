@@ -10,7 +10,7 @@ use time::OffsetDateTime;
 use crate::constants::DEFAULT_OFFSET_DATE_TIME;
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum SasSignatureError {
     #[error(transparent)]
     HmacSha256(#[from] InvalidLength),
 
@@ -30,12 +30,13 @@ pub enum Error {
     SharedAccessKeyIsRequired,
 }
 
-impl From<Error> for azure_core::Error {
-    fn from(error: Error) -> Self {
+impl From<SasSignatureError> for azure_core::Error {
+    fn from(error: SasSignatureError) -> Self {
         Self::new(azure_core::error::ErrorKind::Other, error.to_string())
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct SharedAccessSignature {
     shared_access_key_name: String,
     shared_access_key: String,
@@ -133,7 +134,7 @@ impl SharedAccessSignature {
         shared_access_key_name: impl Into<String>,
         shared_access_key: impl Into<String>,
         signature_validity_duration: Option<Duration>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, SasSignatureError> {
         let service_bus_resource = service_bus_resource.into();
         let shared_access_key_name = shared_access_key_name.into();
         let shared_access_key = shared_access_key.into();
@@ -141,10 +142,10 @@ impl SharedAccessSignature {
         let signature_validity_duration =
             signature_validity_duration.unwrap_or(Self::DEFAULT_SIGNATURE_VALIDITY_DURATION);
         if shared_access_key_name.len() > Self::MAXIMUM_KEY_NAME_LENGTH {
-            return Err(Error::SasKeyNameTooLong);
+            return Err(SasSignatureError::SasKeyNameTooLong);
         }
         if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
-            return Err(Error::SasKeyTooLong);
+            return Err(SasSignatureError::SasKeyTooLong);
         }
 
         let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
@@ -172,7 +173,9 @@ impl SharedAccessSignature {
     ///
     /// <param name="sharedAccessSignature">The shared access signature that will be parsed as the basis of this instance.</param>
     ///
-    pub fn try_from_signature(shared_access_signature: impl Into<String>) -> Result<Self, Error> {
+    pub fn try_from_signature(
+        shared_access_signature: impl Into<String>,
+    ) -> Result<Self, SasSignatureError> {
         // TODO: Optional or just empty string?
         Self::try_from_signature_and_key(shared_access_signature, "")
     }
@@ -187,12 +190,12 @@ impl SharedAccessSignature {
     pub fn try_from_signature_and_key(
         shared_access_signature: impl Into<String>,
         shared_access_key: impl Into<String>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, SasSignatureError> {
         let shared_access_signature = shared_access_signature.into();
         let shared_access_key = shared_access_key.into();
 
         if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
-            return Err(Error::SasKeyTooLong);
+            return Err(SasSignatureError::SasKeyTooLong);
         }
 
         let parts = Self::parse_signature(&shared_access_signature)?;
@@ -222,27 +225,27 @@ impl SharedAccessSignature {
         shared_access_key: impl Into<String>,
         value: impl Into<String>,
         signature_expiration: OffsetDateTime,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, SasSignatureError> {
         let event_hub_resource = event_hub_resource.into();
         let shared_access_key_name = shared_access_key_name.into();
         let shared_access_key = shared_access_key.into();
         let value = value.into();
 
         if event_hub_resource.is_empty() {
-            return Err(Error::ArgumentIsEmpty);
+            return Err(SasSignatureError::ArgumentIsEmpty);
         }
         if shared_access_key_name.is_empty() {
-            return Err(Error::ArgumentIsEmpty);
+            return Err(SasSignatureError::ArgumentIsEmpty);
         }
         if shared_access_key.is_empty() {
-            return Err(Error::ArgumentIsEmpty);
+            return Err(SasSignatureError::ArgumentIsEmpty);
         }
 
         if shared_access_key_name.len() > Self::MAXIMUM_KEY_NAME_LENGTH {
-            return Err(Error::SasKeyNameTooLong);
+            return Err(SasSignatureError::SasKeyNameTooLong);
         }
         if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
-            return Err(Error::SasKeyTooLong);
+            return Err(SasSignatureError::SasKeyTooLong);
         }
 
         Ok(Self {
@@ -265,9 +268,9 @@ impl SharedAccessSignature {
     pub fn clone_with_new_expiration(
         &self,
         signature_validity_duration: Duration,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, SasSignatureError> {
         if self.shared_access_key.is_empty() {
-            return Err(Error::SharedAccessKeyIsRequired);
+            return Err(SasSignatureError::SharedAccessKeyIsRequired);
         }
 
         Self::try_from_parts(
@@ -289,9 +292,9 @@ impl SharedAccessSignature {
     pub fn update_with_new_expiration(
         &mut self,
         signature_validity_duration: Duration,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SasSignatureError> {
         if self.shared_access_key.is_empty() {
-            return Err(Error::SharedAccessKeyIsRequired);
+            return Err(SasSignatureError::SharedAccessKeyIsRequired);
         }
         let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
         self.signature_expiration = signature_expiration;
@@ -306,7 +309,7 @@ impl SharedAccessSignature {
     ///
     /// <returns>The set of composite properties parsed from the signature.</returns>
     ///
-    fn parse_signature(shared_access_signature: &str) -> Result<SignatureParts, Error> {
+    fn parse_signature(shared_access_signature: &str) -> Result<SignatureParts, SasSignatureError> {
         let mut key_name = None;
         let mut resource = None;
         let mut expiration_time = DEFAULT_OFFSET_DATE_TIME;
@@ -316,46 +319,46 @@ impl SharedAccessSignature {
             let mut split = token_value_pair.split(Self::TOKEN_VALUE_SEPARATOR);
             let token = split
                 .next()
-                .ok_or(Error::InvalidSharedAccessSignaure)?
+                .ok_or(SasSignatureError::InvalidSharedAccessSignaure)?
                 .trim();
             let value = split
                 .next()
-                .ok_or(Error::InvalidSharedAccessSignaure)?
+                .ok_or(SasSignatureError::InvalidSharedAccessSignaure)?
                 .trim();
 
             if value.is_empty() {
-                return Err(Error::InvalidSharedAccessSignaure);
+                return Err(SasSignatureError::InvalidSharedAccessSignaure);
             }
 
             match token {
                 Self::SIGNED_RESOURCE_FULL_IDENTIFIER_TOKEN => {
                     resource = Some(
                         urlencoding::decode(value)
-                            .map_err(|_| Error::InvalidSharedAccessSignaure)?,
+                            .map_err(|_| SasSignatureError::InvalidSharedAccessSignaure)?,
                     );
                 }
                 Self::SIGNED_KEY_NAME_TOKEN => {
                     key_name = Some(
                         urlencoding::decode(value)
-                            .map_err(|_| Error::InvalidSharedAccessSignaure)?,
+                            .map_err(|_| SasSignatureError::InvalidSharedAccessSignaure)?,
                     );
                 }
                 Self::SIGNED_EXPIRY_TOKEN => {
                     let value = urlencoding::decode(value)
-                        .map_err(|_| Error::InvalidSharedAccessSignaure)?;
+                        .map_err(|_| SasSignatureError::InvalidSharedAccessSignaure)?;
                     let unix_time: i64 = value
                         .parse()
-                        .map_err(|_| Error::InvalidSharedAccessSignaure)?;
+                        .map_err(|_| SasSignatureError::InvalidSharedAccessSignaure)?;
                     expiration_time = OffsetDateTime::from_unix_timestamp(unix_time)
-                        .map_err(|_| Error::InvalidSharedAccessSignaure)?;
+                        .map_err(|_| SasSignatureError::InvalidSharedAccessSignaure)?;
                 }
                 _ => {}
             }
         }
 
         Ok(SignatureParts {
-            key_name: key_name.ok_or(Error::InvalidSharedAccessSignaure)?, // TODO: Optional or Error?
-            resource: resource.ok_or(Error::InvalidSharedAccessSignaure)?,
+            key_name: key_name.ok_or(SasSignatureError::InvalidSharedAccessSignaure)?, // TODO: Optional or SasSignatureError?
+            resource: resource.ok_or(SasSignatureError::InvalidSharedAccessSignaure)?,
             expiration_time,
         })
     }

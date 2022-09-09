@@ -1,7 +1,13 @@
 use azure_core::Url;
 
 use crate::{
-    amqp::amqp_client::AmqpClient, client::service_bus_client_options::ServiceBusClientOptions,
+    amqp::amqp_client::AmqpClient,
+    authorization::{
+        service_bus_token_credential::ServiceBusTokenCredential,
+        shared_access_credential::SharedAccessCredential,
+        shared_access_signature::{SasSignatureError, SharedAccessSignature},
+    },
+    client::service_bus_client_options::ServiceBusClientOptions,
     core::TransportClient,
 };
 
@@ -20,22 +26,41 @@ pub enum Error {
 
     #[error(transparent)]
     FormatError(#[from] FormatError),
+
+    #[error(transparent)]
+    SasSignatureError(#[from] SasSignatureError),
+}
+
+macro_rules! ok_if_not_none_or_empty {
+    ($id:expr, $type_name:literal) => {
+        match $id {
+            Some(s) if s.is_empty() => Err(Error::ArgumentError(format!(
+                "{} cannot be empty",
+                $type_name
+            ))),
+            None => Err(Error::ArgumentError(format!(
+                "{} cannot be None",
+                $type_name
+            ))),
+            Some(s) => Ok(s),
+        }
+    };
 }
 
 /// A connection to the Azure Service Bus service, enabling client communications with a specific
 /// Service Bus entity instance within a Service Bus namespace. There is a one-to-one correspondence
 /// between [`ServiceBusClient`] and [`ServiceBusConnection`] instances.
 #[derive(Debug)]
-pub(crate) struct ServiceBusConnection {
+pub(crate) struct ServiceBusConnection<C> {
     fully_qualified_namespace: String,
     entity_path: String,
     transport_type: ServiceBusTransportType,
     retry_options: ServiceBusRetryOptions,
 
-    pub(crate) inner_client: InnerClient,
+    pub(crate) inner_client: C,
 }
 
-impl ServiceBusConnection {
+impl<C> ServiceBusConnection<C> {
     /// Indicates whether or not this [`ServiceBusConnection`] has been closed.
     ///
     /// # Value
@@ -88,18 +113,58 @@ impl ServiceBusConnection {
     ///
     fn build_connection_resource(
         transport_type: ServiceBusTransportType,
-        fully_qualified_namespa: impl Into<String>,
-        entity_name: impl Into<String>,
+        fully_qualified_namespace: Option<impl Into<String>>,
+        entity_name: Option<impl Into<String>>,
     ) -> String {
         todo!()
     }
+}
 
+impl ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<SharedAccessCredential>>> {
     pub(crate) async fn open<'a>(
         connection_string: impl AsRef<str> + 'a,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         let connection_string_properties =
             ServiceBusConnectionStringProperties::parse(connection_string.as_ref())?;
+
+        let fully_qualified_namespace = connection_string_properties
+            .endpoint()
+            .and_then(|url| url.host_str());
+        let transport_type = options.transport_type;
+        let entity_path = connection_string_properties.entity_path();
+        let retry_options = options.retry_options;
+
+        let shared_access_signature = match connection_string_properties.shared_access_signature() {
+            Some(shared_access_signature) => {
+                SharedAccessSignature::try_from_signature(shared_access_signature)?
+            }
+            None => {
+                let resource = Self::build_connection_resource(
+                    transport_type,
+                    fully_qualified_namespace,
+                    entity_path,
+                );
+                let shared_access_key_name = ok_if_not_none_or_empty!(
+                    connection_string_properties.shared_access_key_name(),
+                    "shared_access_key_name"
+                )?;
+                let shared_access_key = ok_if_not_none_or_empty!(
+                    connection_string_properties.shared_access_key(),
+                    "shared_access_key"
+                )?;
+                SharedAccessSignature::try_from_parts(
+                    resource,
+                    shared_access_key_name,
+                    shared_access_key,
+                    None,
+                )?
+            }
+        };
+
+        let shared_access_credential =
+            SharedAccessCredential::from_signature(shared_access_signature);
+        let token_credential = ServiceBusTokenCredential::new(shared_access_credential);
 
         todo!()
     }

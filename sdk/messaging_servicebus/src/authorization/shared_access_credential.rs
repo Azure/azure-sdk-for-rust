@@ -1,11 +1,11 @@
 use std::{sync::Mutex, time::Duration};
 
-use async_trait::async_trait;
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use time::OffsetDateTime;
 
-use super::shared_access_signature::{self, SharedAccessSignature};
+use super::shared_access_signature::{self, SasSignatureError, SharedAccessSignature};
 
+#[derive(Debug)]
 pub(crate) struct AzureNamedKeyCredential {
     name: String,
     key: String,
@@ -35,6 +35,7 @@ impl AzureNamedKeyCredential {
 
 impl AzureNamedKeyCredential {}
 
+#[derive(Debug)]
 pub(crate) struct AzureSasCredential(String);
 
 impl AzureSasCredential {
@@ -55,6 +56,7 @@ impl AzureSasCredential {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct SharedAccessCredential {
     source_key_credential: Option<AzureNamedKeyCredential>,
     source_sas_credential: Option<AzureSasCredential>,
@@ -94,7 +96,7 @@ impl SharedAccessCredential {
     ///
     pub fn try_from_sas_credential(
         source_sas_credential: AzureSasCredential,
-    ) -> Result<Self, shared_access_signature::Error> {
+    ) -> Result<Self, SasSignatureError> {
         let shared_access_signature =
             SharedAccessSignature::try_from_signature(&source_sas_credential.0)?;
 
@@ -115,7 +117,7 @@ impl SharedAccessCredential {
     pub fn try_from_named_key_credential(
         source_credential: AzureNamedKeyCredential,
         signature_resource: impl Into<String>,
-    ) -> Result<Self, shared_access_signature::Error> {
+    ) -> Result<Self, SasSignatureError> {
         let (name, key) = (source_credential.name(), source_credential.key());
         let shared_access_signature =
             SharedAccessSignature::try_from_parts(signature_resource, name, key, None)?;

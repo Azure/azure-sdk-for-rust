@@ -5,7 +5,7 @@ use azure_core::auth::{TokenCredential, TokenResponse};
 /// </summary>
 ///
 /// <seealso cref="Azure.Core.TokenCredential" />
-///
+#[derive(Debug)]
 pub(crate) struct ServiceBusTokenCredential<T>
 where
     T: TokenCredential,
@@ -18,6 +18,10 @@ impl<T> ServiceBusTokenCredential<T>
 where
     T: TokenCredential,
 {
+    pub fn new(credential: T) -> Self {
+        Self { credential }
+    }
+
     // /// <summary>
     // ///   Indicates whether the credential is based on an Service Bus
     // ///   shared access policy.
