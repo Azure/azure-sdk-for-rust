@@ -25,8 +25,16 @@ pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a T
     let is_preview = default_tag.map(|tag| tag.name().contains("preview")).unwrap_or_default();
     let stable_tag = tags.iter().find(|tag| !tag.name().contains("preview"));
     match (default_tag, is_preview, stable_tag) {
-        (Some(tag), false, _) => tag,
-        (Some(tag), true, None) => tag,
+        (Some(default_tag), false, _) => default_tag,
+        (Some(default_tag), true, None) => default_tag,
+        (Some(default_tag), true, Some(stable_tag)) => {
+            println!(
+                "  WARN preview tag `{}` used instead of stable tag `{}`",
+                default_tag.name(),
+                stable_tag.name()
+            );
+            default_tag
+        }
         (_, _, Some(tag)) => tag,
         _ => tags[0],
     }
@@ -56,28 +64,6 @@ pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a T
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // Some readme.md are specifying the default tag as a preview.
-    // If there is a stable version, we should use it instead.
-    #[test]
-    fn default_tag_is_stable_if_available() -> Result<()> {
-        let tags = vec![
-            "package-preview-2022-05",
-            "package-2021-06",
-            "package-2020-09",
-            "package-2020-04",
-            "package-2019-12",
-            "package-2019-06-preview",
-            "package-2019-06",
-            "package-2019-04",
-            "package-2017-10",
-            "package-2017-04",
-        ];
-        let tags: Vec<_> = tags.into_iter().map(Tag::new).collect();
-        let tags: Vec<_> = tags.iter().collect();
-        assert_eq!("package-2021-06", get_default_tag(&tags, Some("package-preview-2022-05")).name());
-        Ok(())
-    }
 
     #[test]
     fn default_tag_is_stable() -> Result<()> {
