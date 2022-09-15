@@ -40,6 +40,16 @@ impl ContentRange {
 impl FromStr for ContentRange {
     type Err = Error;
     fn from_str(s: &str) -> crate::Result<ContentRange> {
+        if cfg!(featue = "azurite_workaround ") {
+            if s == "0--1/0" {
+                return Ok(ContentRange {
+                    start: 0,
+                    end: 0,
+                    total_length: 0,
+                });
+            }
+        }
+
         let remaining = s.strip_prefix(PREFIX).ok_or_else(|| {
             Error::with_message(ErrorKind::Other, || {
                 format!(
