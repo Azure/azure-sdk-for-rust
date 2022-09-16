@@ -5,10 +5,10 @@ use time::OffsetDateTime;
 operation! {
     PutAppendBlob,
     client: BlobClient,
-    ?content_type: ContentType,
-    ?content_encoding: ContentEncoding,
-    ?content_language: ContentLanguage,
-    ?content_disposition: ContentDisposition,
+    ?content_type: BlobContentType,
+    ?content_encoding: BlobContentEncoding,
+    ?content_language: BlobContentLanguage,
+    ?content_disposition: BlobContentDisposition,
     ?metadata: Metadata,
     ?tags: Tags,
     ?lease_id: LeaseId
