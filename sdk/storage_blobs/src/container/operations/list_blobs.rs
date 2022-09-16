@@ -340,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_xml() {
+    fn parse_xml_with_blob_prefix() {
         const XML: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
         <EnumerationResults ServiceEndpoint="https://sisuautomatedtest.blob.core.windows.net/" ContainerName="lowlatencyrequests">
           <Prefix>get-most-recent-key-5/</Prefix>
