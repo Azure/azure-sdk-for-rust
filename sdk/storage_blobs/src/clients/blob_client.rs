@@ -18,6 +18,7 @@ use azure_storage::{
     StorageCredentials,
 };
 use futures::StreamExt;
+use std::convert::TryFrom;
 use time::OffsetDateTime;
 use url::Url;
 
@@ -299,9 +300,73 @@ impl BlobClient {
     }
 }
 
+impl TryFrom<Url> for BlobClient {
+    type Error = azure_core::Error;
+    fn try_from(url: Url) -> Result<Self, Self::Error> {
+        Self::try_from(&url)
+    }
+}
+
+impl TryFrom<&Url> for BlobClient {
+    type Error = azure_core::Error;
+    fn try_from(url: &Url) -> Result<Self, Self::Error> {
+        let container_client: ContainerClient = url.try_into()?;
+        // TODO: this currently only works for cloud locations Public and China
+        let path: Vec<_> = url.path().split_terminator('/').skip(2).collect();
+        if path.is_empty() {
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                || "unable to find blob path",
+            ))
+        } else {
+            let path = path.join("/");
+            Ok(container_client.blob_client(path))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_from_url() -> azure_core::Result<()> {
+        let path = "my/complex/nested/path/here";
+        let container = "mycontainer";
+        let account = "accountname";
+
+        let example = format!("https://{account}.blob.core.windows.net/{container}/{path}?token=1");
+        let url = Url::parse(&example)?;
+        let blob_client: BlobClient = url.try_into().unwrap();
+
+        assert_eq!(blob_client.blob_name(), path);
+        assert_eq!(blob_client.container_client().container_name(), container);
+
+        let creds = blob_client.container_client.credentials();
+        assert!(matches!(creds, StorageCredentials::SASToken(_)));
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer/myblob")?;
+        assert!(matches!(BlobClient::try_from(url), Err(_)), "missing token");
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer?token=1")?;
+        assert!(matches!(BlobClient::try_from(url), Err(_)), "missing path");
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/?token=1")?;
+        assert!(
+            matches!(BlobClient::try_from(url), Err(_)),
+            "missing container"
+        );
+
+        let example =
+            format!("https://{account}.blob.core.chinacloudapi.cn/{container}/{path}?token=1");
+        let url = Url::parse(&example)?;
+        let blob_client: BlobClient = url.try_into().unwrap();
+
+        assert_eq!(blob_client.blob_name(), path);
+        assert_eq!(blob_client.container_client().container_name(), container);
+
+        Ok(())
+    }
 
     struct FakeSas {
         token: String,

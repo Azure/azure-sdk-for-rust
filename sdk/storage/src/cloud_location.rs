@@ -1,7 +1,7 @@
+use crate::{clients::ServiceType, StorageCredentials};
 use once_cell::sync::Lazy;
-
-use crate::clients::ServiceType;
-use crate::StorageCredentials;
+use std::convert::TryFrom;
+use url::Url;
 
 /// The cloud with which you want to interact.
 // TODO: Other govt clouds?
@@ -28,7 +28,7 @@ pub enum CloudLocation {
 
 impl CloudLocation {
     /// the base URL for a given cloud location
-    pub fn url(&self, service_type: ServiceType) -> azure_core::Result<url::Url> {
+    pub fn url(&self, service_type: ServiceType) -> azure_core::Result<Url> {
         let url = match self {
             CloudLocation::Public { account, .. } => {
                 format!(
@@ -58,6 +58,53 @@ impl CloudLocation {
             CloudLocation::China { credentials, .. } => credentials,
             CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
             CloudLocation::Custom { credentials, .. } => credentials,
+        }
+    }
+}
+
+impl TryFrom<&Url> for CloudLocation {
+    type Error = azure_core::Error;
+
+    // TODO: This only works for Public and China clouds
+    fn try_from(url: &Url) -> azure_core::Result<Self> {
+        let token = url.query().ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                "missing token"
+            })
+        })?;
+        let credentials = StorageCredentials::sas_token(token)?;
+
+        let host = url.host_str().ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                "unable to find host from url"
+            })
+        })?;
+
+        let mut domain = host.split_terminator('.').collect::<Vec<_>>();
+        if domain.len() < 2 {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                || "unable to find host from url",
+            ));
+        }
+
+        let account = domain.remove(0).to_string();
+        domain.remove(0);
+        let rest = domain.join(".");
+
+        match rest.as_str() {
+            "core.windows.net" => Ok(CloudLocation::Public {
+                account,
+                credentials,
+            }),
+            "core.chinacloudapi.cn" => Ok(CloudLocation::China {
+                account,
+                credentials,
+            }),
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                || format!("CloudLocation conversion failed: {}", rest),
+            )),
         }
     }
 }
