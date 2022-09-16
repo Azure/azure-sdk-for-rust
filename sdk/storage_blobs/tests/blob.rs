@@ -14,6 +14,44 @@ use url::Url;
 use uuid::Uuid;
 
 #[tokio::test]
+async fn content_headers() -> azure_core::Result<()> {
+    let container_name = format!("headers-{}", Uuid::new_v4());
+    let blob_service = initialize();
+    let container_client = blob_service.container_client(&container_name);
+    container_client.create().into_future().await?;
+    let blob_client = container_client.blob_client("as_json.json");
+
+    let content_type = "text/plain";
+    let content_language = "custom/language";
+    let content_disposition = "inline";
+
+    blob_client
+        .put_block_blob("data")
+        .content_type(content_type)
+        .content_language(content_language)
+        .content_disposition(content_disposition)
+        .into_future()
+        .await?;
+
+    let properties = blob_client.get_properties().into_future().await?;
+
+    print!("got: {:#?}", properties.blob.properties);
+
+    assert_eq!(content_type, properties.blob.properties.content_type);
+    assert_eq!(
+        content_language,
+        properties.blob.properties.content_language.unwrap()
+    );
+    assert_eq!(
+        content_disposition,
+        properties.blob.properties.content_disposition.unwrap()
+    );
+
+    container_client.delete().into_future().await?;
+    Ok(())
+}
+
+#[tokio::test]
 async fn create_and_delete_container() -> azure_core::Result<()> {
     let container_name = format!("create-{}", Uuid::new_v4());
 
