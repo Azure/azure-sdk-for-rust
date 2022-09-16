@@ -213,10 +213,11 @@ mod integration_tests {
             .await
             .expect("list blobs next() should return value")
             .expect("list blobs should succeed");
-        assert_eq!(list.blobs.blobs.len(), 1);
-        assert_eq!(list.blobs.blobs[0].name, "hello.txt");
+        let blobs: Vec<_> = list.blobs.blobs().collect();
+        assert_eq!(blobs.len(), 1);
+        assert_eq!(blobs[0].name, "hello.txt");
         assert_eq!(
-            list.blobs.blobs[0]
+            blobs[0]
                 .properties
                 .content_md5
                 .as_ref()

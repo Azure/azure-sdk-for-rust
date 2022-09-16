@@ -27,7 +27,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("List blob returned {} blobs.", page.blobs.blobs.len());
+    println!("List blob returned {} blobs.", page.blobs.blobs().count());
 
     for i in 0..3 {
         container_client
@@ -46,7 +46,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("List blob returned {} blobs.", page.blobs.blobs.len());
+    println!("List blob returned {} blobs.", page.blobs.blobs().count());
 
     container_client.delete().into_future().await?;
     println!("Container {} deleted", container_name);

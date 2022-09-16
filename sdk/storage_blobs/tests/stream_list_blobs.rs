@@ -59,7 +59,7 @@ async fn stream_list_blobs() {
 
     let mut cnt = 0u32;
     while let Some(value) = stream.next().await {
-        let len = value.unwrap().blobs.blobs.len();
+        let len = value.unwrap().blobs.blobs().count();
         println!("received {} blobs", len);
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),

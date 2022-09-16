@@ -53,7 +53,7 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    assert!(page.blobs.blobs.is_empty());
+    assert!(page.blobs.blobs().next().is_some());
 
     println!("Adding blobs");
 
@@ -131,14 +131,11 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "List blob / returned {} blobs with blob_prefix == {:?}",
-        page.blobs.blobs.len(),
-        page.blobs.blob_prefix
+        page.blobs.blobs().count(),
+        page.blobs.prefixes().collect::<Vec<_>>()
     );
-    page.blobs
-        .blobs
-        .iter()
-        .for_each(|b| println!("\t{}", b.name));
-    assert_eq!(page.blobs.blobs.len(), 4);
+    page.blobs.blobs().for_each(|b| println!("\t{}", b.name));
+    assert_eq!(page.blobs.blobs().count(), 4);
 
     let page = container_client
         .list_blobs()
@@ -152,14 +149,11 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "List blob firstfolder/ returned {} blobs with blob_prefix == {:?}",
-        page.blobs.blobs.len(),
-        page.blobs.blob_prefix
+        page.blobs.blobs().count(),
+        page.blobs.prefixes().collect::<Vec<_>>()
     );
-    page.blobs
-        .blobs
-        .iter()
-        .for_each(|b| println!("\t{}", b.name));
-    assert_eq!(page.blobs.blobs.len(), 3);
+    page.blobs.blobs().for_each(|b| println!("\t{}", b.name));
+    assert_eq!(page.blobs.blobs().count(), 3);
 
     let mut stream = container_client
         .list_blobs()
@@ -169,7 +163,7 @@ async fn main() -> azure_core::Result<()> {
     println!("Streaming results without prefix");
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
-        let len = value?.blobs.blobs.len();
+        let len = value?.blobs.blobs().count();
         println!("\treceived {} blobs", len);
         match cnt {
             // we added 21 blobs so 5x4 + 1

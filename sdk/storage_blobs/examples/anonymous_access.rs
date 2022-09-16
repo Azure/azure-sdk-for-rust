@@ -15,7 +15,7 @@ async fn main() -> azure_core::Result<()> {
     let mut blob_stream = container_client.list_blobs().into_stream();
     while let Some(blob_entry) = blob_stream.next().await {
         let blob_entry = blob_entry?;
-        for blob in blob_entry.blobs.blobs {
+        for blob in blob_entry.blobs.blobs() {
             println!("\t{}", blob.name);
         }
     }

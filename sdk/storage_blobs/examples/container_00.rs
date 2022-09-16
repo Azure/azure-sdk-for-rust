@@ -44,8 +44,8 @@ async fn main() -> azure_core::Result<()> {
     let mut count = 0;
     while let Some(result) = stream.next().await {
         let result = result?;
-        count += result.blobs.blobs.len();
-        for blob in result.blobs.blobs.iter() {
+        for blob in result.blobs.blobs() {
+            count += 1;
             println!(
                 "\t{}\t{} MB",
                 blob.name,

@@ -21,7 +21,7 @@ async fn main() -> azure_core::Result<()> {
     let mut list_blobs = container_client.list_blobs().into_stream();
     while let Some(list_blobs_response) = list_blobs.next().await {
         let list_blobs_response = list_blobs_response?;
-        count += list_blobs_response.blobs.blobs.len();
+        count += list_blobs_response.blobs.blobs().count();
     }
 
     println!("blob count {}", count);
