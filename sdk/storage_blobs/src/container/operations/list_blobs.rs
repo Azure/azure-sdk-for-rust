@@ -109,12 +109,35 @@ struct ListBlobsResponseInternal {
     pub blobs: Blobs,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blobs {
-    pub blob_prefix: Option<Vec<BlobPrefix>>,
-    #[serde(rename = "Blob", default)]
-    pub blobs: Vec<Blob>,
+    #[serde(rename = "$value", default)]
+    pub items: Vec<BlobItem>,
+}
+
+impl Blobs {
+    pub fn blobs(&self) -> impl Iterator<Item = &Blob> {
+        self.items.iter().filter_map(|item| match item {
+            BlobItem::Blob(blob) => Some(blob),
+            _ => None,
+        })
+    }
+
+    pub fn prefixes(&self) -> impl Iterator<Item = &BlobPrefix> {
+        self.items.iter().filter_map(|item| match item {
+            BlobItem::BlobPrefix(prefix) => Some(prefix),
+            _ => None,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+#[allow(clippy::large_enum_variant)]
+pub enum BlobItem {
+    Blob(Blob),
+    BlobPrefix(BlobPrefix),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
