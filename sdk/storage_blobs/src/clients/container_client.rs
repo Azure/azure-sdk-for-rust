@@ -100,7 +100,7 @@ impl ContainerClient {
                     canonicalized_resource,
                     permissions,
                     expiry,
-                    BlobSignedResource::Blob,
+                    BlobSignedResource::Container,
                 ))
             }
             _ => Err(Error::message(
