@@ -49,6 +49,14 @@ impl FromStr for ContentRange {
             })
         })?;
 
+        if cfg!(feature = "azurite_workaround") && remaining == "0--1/0" {
+            return Ok(ContentRange {
+                start: 0,
+                end: 0,
+                total_length: 0,
+            });
+        }
+
         let mut split_at_dash = remaining.split('-');
         let start = split_at_dash
             .next()
@@ -125,6 +133,16 @@ impl fmt::Display for ContentRange {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[cfg(feature = "azurite_workaround")]
+    #[test]
+    fn test_azurite_workaround() {
+        let range = "bytes 0--1/0".parse::<ContentRange>().unwrap();
+
+        assert_eq!(range.start(), 0);
+        assert_eq!(range.end(), 0);
+        assert_eq!(range.total_length(), 0);
+    }
 
     #[test]
     fn test_parse() {
