@@ -22,7 +22,7 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
-    /// Create a new `ContainerClient` from a `BlobServiceClient` aund a container name
+    /// Create a new `ContainerClient` from a `BlobServiceClient` and a container name
     pub(crate) fn new(service_client: BlobServiceClient, container_name: String) -> Self {
         Self {
             service_client,
