@@ -273,6 +273,9 @@ pub mod action_rules {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -282,6 +285,13 @@ pub mod action_rules {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -460,6 +470,9 @@ pub mod action_rules {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -469,6 +482,13 @@ pub mod action_rules {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -649,6 +669,9 @@ pub mod action_rules {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -658,6 +681,13 @@ pub mod action_rules {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -697,8 +727,8 @@ pub mod action_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ActionRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ActionRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -717,6 +747,9 @@ pub mod action_rules {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -726,6 +759,13 @@ pub mod action_rules {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -767,8 +807,8 @@ pub mod action_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ActionRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ActionRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -787,6 +827,9 @@ pub mod action_rules {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -796,6 +839,13 @@ pub mod action_rules {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -837,8 +887,8 @@ pub mod action_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ActionRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ActionRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -857,6 +907,9 @@ pub mod action_rules {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -866,6 +919,13 @@ pub mod action_rules {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -905,8 +965,8 @@ pub mod action_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<bool> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<bool>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1182,8 +1242,8 @@ pub mod alerts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AlertsMetaData> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AlertsMetaData>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1502,8 +1562,8 @@ pub mod alerts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Alert> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Alert>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1582,8 +1642,8 @@ pub mod alerts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Alert> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Alert>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1648,8 +1708,8 @@ pub mod alerts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AlertModification> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AlertModification>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1820,8 +1880,8 @@ pub mod alerts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AlertsSummary> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AlertsSummary>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2108,6 +2168,9 @@ pub mod smart_groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2117,6 +2180,13 @@ pub mod smart_groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2154,8 +2224,8 @@ pub mod smart_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SmartGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SmartGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2174,6 +2244,9 @@ pub mod smart_groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2183,6 +2256,13 @@ pub mod smart_groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2224,8 +2304,8 @@ pub mod smart_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SmartGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SmartGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2290,8 +2370,8 @@ pub mod smart_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SmartGroupModification> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SmartGroupModification>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2696,8 +2776,8 @@ pub mod smart_detector_alert_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AlertRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AlertRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2766,8 +2846,8 @@ pub mod smart_detector_alert_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AlertRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AlertRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2836,8 +2916,8 @@ pub mod smart_detector_alert_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AlertRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AlertRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

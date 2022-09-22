@@ -121,6 +121,9 @@ impl Client {
     pub fn private_endpoints_client(&self) -> private_endpoints::Client {
         private_endpoints::Client(self.clone())
     }
+    pub fn sku_client(&self) -> sku::Client {
+        sku::Client(self.clone())
+    }
     pub fn streaming_jobs_client(&self) -> streaming_jobs::Client {
         streaming_jobs::Client(self.clone())
     }
@@ -314,6 +317,9 @@ pub mod functions {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -323,6 +329,13 @@ pub mod functions {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the function. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -364,8 +377,8 @@ pub mod functions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Function> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Function>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -384,6 +397,9 @@ pub mod functions {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -393,6 +409,13 @@ pub mod functions {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the function. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -454,8 +477,8 @@ pub mod functions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Function> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Function>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -474,6 +497,9 @@ pub mod functions {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -483,6 +509,13 @@ pub mod functions {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the function. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -535,8 +568,8 @@ pub mod functions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Function> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Function>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -766,8 +799,8 @@ pub mod functions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ResourceTestStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResourceTestStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -845,8 +878,8 @@ pub mod functions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Function> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Function>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1011,6 +1044,9 @@ pub mod inputs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1020,6 +1056,13 @@ pub mod inputs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the input. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1061,8 +1104,8 @@ pub mod inputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Input> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Input>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1081,6 +1124,9 @@ pub mod inputs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1090,6 +1136,13 @@ pub mod inputs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the input. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1151,8 +1204,8 @@ pub mod inputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Input> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Input>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1171,6 +1224,9 @@ pub mod inputs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1180,6 +1236,13 @@ pub mod inputs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the input. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1232,8 +1295,8 @@ pub mod inputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Input> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Input>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1463,8 +1526,8 @@ pub mod inputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ResourceTestStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResourceTestStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1629,6 +1692,9 @@ pub mod outputs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1638,6 +1704,13 @@ pub mod outputs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the output. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1679,8 +1752,8 @@ pub mod outputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Output> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Output>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1699,6 +1772,9 @@ pub mod outputs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1708,6 +1784,13 @@ pub mod outputs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the output. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1769,8 +1852,8 @@ pub mod outputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Output> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Output>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1789,6 +1872,9 @@ pub mod outputs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1798,6 +1884,13 @@ pub mod outputs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the output. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1850,8 +1943,8 @@ pub mod outputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Output> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Output>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2081,8 +2174,8 @@ pub mod outputs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ResourceTestStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResourceTestStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2381,6 +2474,9 @@ pub mod streaming_jobs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2390,6 +2486,13 @@ pub mod streaming_jobs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the streaming job. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2438,8 +2541,8 @@ pub mod streaming_jobs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::StreamingJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StreamingJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2458,6 +2561,9 @@ pub mod streaming_jobs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2467,6 +2573,13 @@ pub mod streaming_jobs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the streaming job. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2527,8 +2640,8 @@ pub mod streaming_jobs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::StreamingJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StreamingJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2547,6 +2660,9 @@ pub mod streaming_jobs {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2556,6 +2672,13 @@ pub mod streaming_jobs {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the streaming job. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2606,8 +2729,8 @@ pub mod streaming_jobs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::StreamingJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StreamingJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3009,6 +3132,128 @@ pub mod streaming_jobs {
         }
     }
 }
+pub mod sku {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets a list of available SKUs about the specified streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            job_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                job_name: job_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::GetStreamingJobSkuResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::GetStreamingJobSkuResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) job_name: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::GetStreamingJobSkuResults, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/skus",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.job_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-10-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-10-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+}
 pub mod transformations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -3104,6 +3349,9 @@ pub mod transformations {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -3113,6 +3361,13 @@ pub mod transformations {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the transformation. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -3154,8 +3409,8 @@ pub mod transformations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Transformation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Transformation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3174,6 +3429,9 @@ pub mod transformations {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -3183,6 +3441,13 @@ pub mod transformations {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the transformation. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -3244,8 +3509,8 @@ pub mod transformations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Transformation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Transformation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3264,6 +3529,9 @@ pub mod transformations {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -3273,6 +3541,13 @@ pub mod transformations {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The current entity tag for the transformation. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -3325,8 +3600,8 @@ pub mod transformations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Transformation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Transformation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3504,8 +3779,8 @@ pub mod subscriptions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionQuotasListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionQuotasListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3573,8 +3848,8 @@ pub mod subscriptions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QueryTestingResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QueryTestingResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3641,8 +3916,8 @@ pub mod subscriptions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QueryCompilationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QueryCompilationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3710,8 +3985,8 @@ pub mod subscriptions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SampleInputResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SampleInputResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3779,8 +4054,8 @@ pub mod subscriptions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TestDatasourceResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TestDatasourceResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3848,8 +4123,8 @@ pub mod subscriptions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TestDatasourceResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TestDatasourceResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4052,8 +4327,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4141,8 +4416,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4221,8 +4496,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4715,8 +4990,8 @@ pub mod private_endpoints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpoint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpoint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4805,8 +5080,8 @@ pub mod private_endpoints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpoint> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpoint>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

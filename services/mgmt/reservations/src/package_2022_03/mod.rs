@@ -106,6 +106,9 @@ impl Client {
     pub fn calculate_exchange_client(&self) -> calculate_exchange::Client {
         calculate_exchange::Client(self.clone())
     }
+    pub fn calculate_refund_client(&self) -> calculate_refund::Client {
+        calculate_refund::Client(self.clone())
+    }
     pub fn exchange_client(&self) -> exchange::Client {
         exchange::Client(self.clone())
     }
@@ -123,6 +126,9 @@ impl Client {
     }
     pub fn reservation_order_client(&self) -> reservation_order::Client {
         reservation_order::Client(self.clone())
+    }
+    pub fn return_client(&self) -> return_::Client {
+        return_::Client(self.clone())
     }
 }
 pub mod reservation {
@@ -313,8 +319,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AvailableScopeProperties> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AvailableScopeProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -380,8 +386,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::ReservationResponse>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::ReservationResponse>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -447,8 +453,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::ReservationResponse>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::ReservationResponse>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -615,8 +621,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -684,8 +690,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1062,8 +1068,8 @@ pub mod get_catalog {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<Vec<models::Catalog>> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::Catalog>>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1126,8 +1132,8 @@ pub mod get_applied_reservation_list {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::AppliedReservations> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AppliedReservations>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1255,8 +1261,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CalculatePriceResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CalculatePriceResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1419,8 +1425,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationOrderResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationOrderResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1486,8 +1492,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationOrderResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationOrderResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1552,8 +1558,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ChangeDirectoryResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ChangeDirectoryResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1658,6 +1664,172 @@ pub mod operation {
         }
     }
 }
+pub mod calculate_refund {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Calculate the refund amount of a reservation order."]
+        #[doc = "Calculate price for returning `Reservations` if there are no policy errors.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Information needed for calculating refund of a reservation."]
+        pub fn post(&self, body: impl Into<models::CalculateRefundRequest>) -> post::RequestBuilder {
+            post::RequestBuilder {
+                client: self.0.clone(),
+                body: body.into(),
+            }
+        }
+    }
+    pub mod post {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::CalculateRefundResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::CalculateRefundResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) body: models::CalculateRefundRequest,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url =
+                            azure_core::Url::parse(&format!("{}/providers/Microsoft.Capacity/calculateRefund", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.body)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CalculateRefundResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod return_ {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Return a reservation."]
+        #[doc = "Return a reservation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Information needed for returning reservation."]
+        pub fn post(&self, body: impl Into<models::RefundRequest>) -> post::RequestBuilder {
+            post::RequestBuilder {
+                client: self.0.clone(),
+                body: body.into(),
+            }
+        }
+    }
+    pub mod post {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::RefundResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::RefundResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) body: models::RefundRequest,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Capacity/return", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.body)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RefundResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
 pub mod calculate_exchange {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -1689,6 +1861,9 @@ pub mod calculate_exchange {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1698,6 +1873,22 @@ pub mod calculate_exchange {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "URL for checking the ongoing status of the operation."]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            #[doc = "URL for determining when an operation has completed. Only use this value only when Azure-AsyncOperation isn't returned."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "Clients should wait for the Retry-After interval before polling again"]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1734,8 +1925,10 @@ pub mod calculate_exchange {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CalculateExchangeOperationResultResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CalculateExchangeOperationResultResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1771,6 +1964,9 @@ pub mod exchange {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1780,6 +1976,22 @@ pub mod exchange {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "URL for checking the ongoing status of the operation."]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            #[doc = "URL for determining when an operation has completed. Only use this value only when Azure-AsyncOperation isn't returned."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "Clients should wait for the Retry-After interval before polling again"]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1813,8 +2025,8 @@ pub mod exchange {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ExchangeOperationResultResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ExchangeOperationResultResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1930,6 +2142,9 @@ pub mod quota {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1939,6 +2154,13 @@ pub mod quota {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. It should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1980,8 +2202,8 @@ pub mod quota {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentQuotaLimitBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentQuotaLimitBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2053,8 +2275,8 @@ pub mod quota {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentQuotaLimitBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentQuotaLimitBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2126,8 +2348,8 @@ pub mod quota {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CurrentQuotaLimitBase> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CurrentQuotaLimitBase>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2146,6 +2368,9 @@ pub mod quota {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2155,6 +2380,13 @@ pub mod quota {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2343,8 +2575,8 @@ pub mod quota_request_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaRequestDetails> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QuotaRequestDetails>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

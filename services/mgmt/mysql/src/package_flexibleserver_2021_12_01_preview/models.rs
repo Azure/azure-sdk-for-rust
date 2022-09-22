@@ -3,6 +3,106 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "A List of azure ad administrators."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AdministratorListResult {
+    #[doc = "The list of azure ad administrator of a server"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<AzureAdAdministrator>,
+    #[doc = "The link used to get the next page of operations."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AdministratorListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl AdministratorListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of an administrator."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AdministratorProperties {
+    #[doc = "Type of the sever administrator."]
+    #[serde(rename = "administratorType", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_type: Option<administrator_properties::AdministratorType>,
+    #[doc = "Login name of the server administrator."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub login: Option<String>,
+    #[doc = "SID (object ID) of the server administrator."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
+    #[doc = "Tenant ID of the administrator."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The resource id of the identity used for AAD Authentication."]
+    #[serde(rename = "identityResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub identity_resource_id: Option<String>,
+}
+impl AdministratorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod administrator_properties {
+    use super::*;
+    #[doc = "Type of the sever administrator."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AdministratorType")]
+    pub enum AdministratorType {
+        ActiveDirectory,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AdministratorType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AdministratorType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AdministratorType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ActiveDirectory => serializer.serialize_unit_variant("AdministratorType", 0u32, "ActiveDirectory"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Represents a Administrator."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureAdAdministrator {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of an administrator."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AdministratorProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl AzureAdAdministrator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Storage Profile properties of a server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Backup {
@@ -403,13 +503,13 @@ pub struct DataEncryption {
     #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub primary_user_assigned_identity_id: Option<String>,
     #[doc = "Primary key uri"]
-    #[serde(rename = "primaryKeyUri", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub primary_key_uri: Option<String>,
     #[doc = "Geo backup user identity resource id as identity can't cross region, need identity in same region as geo backup"]
     #[serde(rename = "geoBackupUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_user_assigned_identity_id: Option<String>,
     #[doc = "Geo backup key uri as key vault can't cross region, need cmk in same region as geo backup"]
-    #[serde(rename = "geoBackupKeyUri", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "geoBackupKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_key_uri: Option<String>,
     #[doc = "The key type, AzureKeyVault for enable cmk, SystemManaged for disable cmk."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]

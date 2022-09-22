@@ -316,8 +316,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Properties> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Properties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -383,8 +383,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::ReservationResponse>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::ReservationResponse>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -450,8 +450,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::ReservationResponse>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::ReservationResponse>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -618,8 +618,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -687,8 +687,8 @@ pub mod reservation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -971,8 +971,8 @@ pub mod get_catalog {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<Vec<models::Catalog>> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::Catalog>>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1035,8 +1035,8 @@ pub mod get_applied_reservation_list {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::AppliedReservations> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AppliedReservations>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1147,8 +1147,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CalculatePriceResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CalculatePriceResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1311,8 +1311,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationOrderResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationOrderResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1378,8 +1378,8 @@ pub mod reservation_order {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReservationOrderResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationOrderResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

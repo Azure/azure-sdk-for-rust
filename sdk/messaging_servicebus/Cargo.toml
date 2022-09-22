@@ -16,7 +16,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = {path = "../core", version = "0.4"}
+azure_core = {path = "../core", version = "0.5"}
 base64 = "0.13"
 bytes = "1.0"
 const_format = "0.2"

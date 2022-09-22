@@ -324,8 +324,8 @@ pub mod data_exports {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataExportListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataExportListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -394,8 +394,8 @@ pub mod data_exports {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataExport> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataExport>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -466,8 +466,8 @@ pub mod data_exports {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataExport> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataExport>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -677,8 +677,8 @@ pub mod data_sources {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataSource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataSource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -749,8 +749,8 @@ pub mod data_sources {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataSource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataSource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1044,8 +1044,8 @@ pub mod data_collector_logs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataCollectorLog> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataCollectorLog>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1158,8 +1158,8 @@ pub mod data_collector_logs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataCollectorLogsListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataCollectorLogsListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1369,8 +1369,8 @@ pub mod intelligence_packs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::IntelligencePack>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::IntelligencePack>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1533,8 +1533,8 @@ pub mod linked_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedService> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedService>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1606,8 +1606,8 @@ pub mod linked_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedService> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedService>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1677,8 +1677,8 @@ pub mod linked_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedService> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedService>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1746,8 +1746,8 @@ pub mod linked_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedServiceListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedServiceListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1903,8 +1903,8 @@ pub mod linked_storage_accounts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedStorageAccountsResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedStorageAccountsResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1968,8 +1968,8 @@ pub mod linked_storage_accounts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedStorageAccountsResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedStorageAccountsResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2067,8 +2067,8 @@ pub mod linked_storage_accounts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LinkedStorageAccountsListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LinkedStorageAccountsListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2161,8 +2161,10 @@ pub mod management_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListManagementGroupsResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspaceListManagementGroupsResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2355,8 +2357,8 @@ pub mod operation_statuses {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2468,8 +2470,8 @@ pub mod shared_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SharedKeys> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SharedKeys>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2531,8 +2533,8 @@ pub mod shared_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SharedKeys> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SharedKeys>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2625,8 +2627,8 @@ pub mod usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListUsagesResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspaceListUsagesResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2805,8 +2807,8 @@ pub mod workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspaceListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2872,8 +2874,8 @@ pub mod workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspaceListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2940,8 +2942,8 @@ pub mod workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Workspace> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Workspace>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3011,8 +3013,8 @@ pub mod workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Workspace> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Workspace>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3081,8 +3083,8 @@ pub mod workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Workspace> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Workspace>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3229,8 +3231,8 @@ pub mod deleted_workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspaceListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3296,8 +3298,8 @@ pub mod deleted_workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspaceListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3666,8 +3668,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3780,8 +3782,8 @@ pub mod clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Cluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Cluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3979,8 +3981,8 @@ pub mod storage_insight_configs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::StorageInsight> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StorageInsight>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4044,8 +4046,8 @@ pub mod storage_insight_configs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::StorageInsight> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StorageInsight>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4335,8 +4337,8 @@ pub mod saved_searches {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SavedSearch> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SavedSearch>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4407,8 +4409,8 @@ pub mod saved_searches {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SavedSearch> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SavedSearch>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4518,8 +4520,8 @@ pub mod saved_searches {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SavedSearchesListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SavedSearchesListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4605,8 +4607,8 @@ pub mod available_service_tiers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::AvailableServiceTier>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::AvailableServiceTier>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4770,8 +4772,8 @@ pub mod schema {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SearchGetSchemaResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SearchGetSchemaResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4840,6 +4842,9 @@ pub mod workspace_purge {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4849,6 +4854,14 @@ pub mod workspace_purge {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The location from which to request the operation status."]
+            pub fn x_ms_status_location(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-status-location"))
             }
         }
         #[derive(Clone)]
@@ -4890,8 +4903,8 @@ pub mod workspace_purge {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspacePurgeResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspacePurgeResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4960,8 +4973,8 @@ pub mod workspace_purge {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspacePurgeStatusResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::WorkspacePurgeStatusResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5101,8 +5114,8 @@ pub mod tables {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TablesListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TablesListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5171,8 +5184,8 @@ pub mod tables {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Table> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Table>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5243,8 +5256,8 @@ pub mod tables {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Table> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Table>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

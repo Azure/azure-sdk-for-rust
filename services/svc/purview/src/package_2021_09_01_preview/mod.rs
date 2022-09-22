@@ -374,8 +374,8 @@ pub mod assets {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Asset> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Asset>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -443,8 +443,8 @@ pub mod assets {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Asset> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Asset>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -735,8 +735,8 @@ pub mod asset_mappings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssetMapping> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetMapping>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -804,8 +804,8 @@ pub mod asset_mappings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssetMapping> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssetMapping>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1068,8 +1068,8 @@ pub mod received_invitations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReceivedInvitation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReceivedInvitation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1143,8 +1143,8 @@ pub mod received_invitations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReceivedInvitation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReceivedInvitation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1374,8 +1374,8 @@ pub mod received_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReceivedShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReceivedShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1437,8 +1437,8 @@ pub mod received_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ReceivedShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReceivedShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1822,8 +1822,8 @@ pub mod sent_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SentShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SentShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1884,8 +1884,8 @@ pub mod sent_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SentShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SentShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2173,8 +2173,8 @@ pub mod accepted_sent_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AcceptedSentShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AcceptedSentShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2251,8 +2251,8 @@ pub mod accepted_sent_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AcceptedSentShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AcceptedSentShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2328,8 +2328,8 @@ pub mod accepted_sent_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AcceptedSentShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AcceptedSentShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2406,8 +2406,8 @@ pub mod accepted_sent_shares {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AcceptedSentShare> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AcceptedSentShare>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2658,8 +2658,8 @@ pub mod sent_share_invitations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SentShareInvitation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2726,8 +2726,8 @@ pub mod sent_share_invitations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitation> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SentShareInvitation>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2861,8 +2861,8 @@ pub mod email_registration {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TenantEmailRegistration> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TenantEmailRegistration>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2930,8 +2930,8 @@ pub mod email_registration {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TenantEmailRegistration> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TenantEmailRegistration>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

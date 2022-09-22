@@ -215,8 +215,8 @@ pub mod location {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -310,8 +310,8 @@ pub mod assessment_options {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssessmentOptionsResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssessmentOptionsResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -473,6 +473,9 @@ pub mod projects {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -482,6 +485,13 @@ pub mod projects {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -527,8 +537,8 @@ pub mod projects {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProjectResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProjectResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -547,6 +557,9 @@ pub mod projects {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -556,6 +569,13 @@ pub mod projects {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -603,8 +623,8 @@ pub mod projects {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProjectResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProjectResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -623,6 +643,9 @@ pub mod projects {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -632,6 +655,13 @@ pub mod projects {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -680,8 +710,8 @@ pub mod projects {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Project> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Project>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -700,6 +730,9 @@ pub mod projects {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -709,6 +742,13 @@ pub mod projects {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -768,8 +808,8 @@ pub mod projects {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Project> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Project>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -788,6 +828,9 @@ pub mod projects {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -797,6 +840,13 @@ pub mod projects {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -856,8 +906,8 @@ pub mod projects {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Project> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Project>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -926,6 +976,9 @@ pub mod projects {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -935,6 +988,13 @@ pub mod projects {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -984,8 +1044,8 @@ pub mod projects {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProjectKey> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProjectKey>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1055,6 +1115,9 @@ pub mod machines {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1064,6 +1127,13 @@ pub mod machines {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1113,8 +1183,8 @@ pub mod machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::MachineResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MachineResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1133,6 +1203,9 @@ pub mod machines {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1142,6 +1215,13 @@ pub mod machines {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1192,8 +1272,8 @@ pub mod machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Machine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Machine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1312,6 +1392,9 @@ pub mod groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1321,6 +1404,13 @@ pub mod groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1370,8 +1460,8 @@ pub mod groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GroupResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GroupResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1390,6 +1480,9 @@ pub mod groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1399,6 +1492,13 @@ pub mod groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1449,8 +1549,8 @@ pub mod groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Group> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Group>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1469,6 +1569,9 @@ pub mod groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1478,6 +1581,13 @@ pub mod groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1539,8 +1649,8 @@ pub mod groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Group> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Group>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1771,6 +1881,9 @@ pub mod assessments {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1780,6 +1893,13 @@ pub mod assessments {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1831,8 +1951,8 @@ pub mod assessments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssessmentResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssessmentResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1851,6 +1971,9 @@ pub mod assessments {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1860,6 +1983,13 @@ pub mod assessments {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1909,8 +2039,8 @@ pub mod assessments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssessmentResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssessmentResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1929,6 +2059,9 @@ pub mod assessments {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1938,6 +2071,13 @@ pub mod assessments {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -1990,8 +2130,8 @@ pub mod assessments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Assessment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Assessment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2010,6 +2150,9 @@ pub mod assessments {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2019,6 +2162,13 @@ pub mod assessments {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2082,8 +2232,8 @@ pub mod assessments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Assessment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Assessment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2156,6 +2306,9 @@ pub mod assessments {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2165,6 +2318,13 @@ pub mod assessments {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2210,8 +2370,8 @@ pub mod assessments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DownloadUrl> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DownloadUrl>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2293,6 +2453,9 @@ pub mod assessed_machines {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2302,6 +2465,13 @@ pub mod assessed_machines {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2347,8 +2517,8 @@ pub mod assessed_machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssessedMachineResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssessedMachineResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2367,6 +2537,9 @@ pub mod assessed_machines {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2376,6 +2549,13 @@ pub mod assessed_machines {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2421,8 +2601,8 @@ pub mod assessed_machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AssessedMachine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AssessedMachine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2489,8 +2669,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationResultList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationResultList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

@@ -10145,6 +10145,41 @@ impl GoogleCloudStorageReadSettings {
         }
     }
 }
+#[doc = "Linked service for GoogleSheets."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GoogleSheetsLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "GoogleSheets linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: GoogleSheetsLinkedServiceTypeProperties,
+}
+impl GoogleSheetsLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: GoogleSheetsLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "GoogleSheets linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GoogleSheetsLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl GoogleSheetsLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
+        }
+    }
+}
 #[doc = "Greenplum Dataset Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GreenplumDatasetTypeProperties {

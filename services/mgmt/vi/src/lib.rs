@@ -7,6 +7,10 @@
 pub mod package_2022_08_01;
 #[cfg(all(feature = "package-2022-08-01", not(feature = "no-default-tag")))]
 pub use package_2022_08_01::*;
+#[cfg(feature = "package-2022-07-20-preview")]
+pub mod package_2022_07_20_preview;
+#[cfg(all(feature = "package-2022-07-20-preview", not(feature = "no-default-tag")))]
+pub use package_2022_07_20_preview::*;
 #[cfg(feature = "package-2022-04-13-preview")]
 pub mod package_2022_04_13_preview;
 #[cfg(all(feature = "package-2022-04-13-preview", not(feature = "no-default-tag")))]
@@ -19,7 +23,3 @@ pub use package_2021_11_10_preview::*;
 pub mod package_2021_10_27_preview;
 #[cfg(all(feature = "package-2021-10-27-preview", not(feature = "no-default-tag")))]
 pub use package_2021_10_27_preview::*;
-#[cfg(feature = "package-2021-10-18-preview")]
-pub mod package_2021_10_18_preview;
-#[cfg(all(feature = "package-2021-10-18-preview", not(feature = "no-default-tag")))]
-pub use package_2021_10_18_preview::*;

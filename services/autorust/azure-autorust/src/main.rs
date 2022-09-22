@@ -1,5 +1,6 @@
 // cargo run --release -p azure-autorust
 // cargo run --release -p azure-autorust -- -p azure_svc_blobstorage
+// cargo run --release -p azure-autorust -- -p azure_svc_queuestorage
 
 use autorust_codegen::{
     crates::{list_crate_names, list_dirs},

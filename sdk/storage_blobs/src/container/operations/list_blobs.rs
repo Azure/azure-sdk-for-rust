@@ -109,12 +109,35 @@ struct ListBlobsResponseInternal {
     pub blobs: Blobs,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blobs {
-    pub blob_prefix: Option<Vec<BlobPrefix>>,
-    #[serde(rename = "Blob", default)]
-    pub blobs: Vec<Blob>,
+    #[serde(rename = "$value", default)]
+    pub items: Vec<BlobItem>,
+}
+
+impl Blobs {
+    pub fn blobs(&self) -> impl Iterator<Item = &Blob> {
+        self.items.iter().filter_map(|item| match item {
+            BlobItem::Blob(blob) => Some(blob),
+            _ => None,
+        })
+    }
+
+    pub fn prefixes(&self) -> impl Iterator<Item = &BlobPrefix> {
+        self.items.iter().filter_map(|item| match item {
+            BlobItem::BlobPrefix(prefix) => Some(prefix),
+            _ => None,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+#[allow(clippy::large_enum_variant)]
+pub enum BlobItem {
+    Blob(Blob),
+    BlobPrefix(BlobPrefix),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -314,5 +337,91 @@ mod tests {
 
         let bytes = Bytes::from(S);
         let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&bytes).unwrap();
+    }
+
+    #[test]
+    fn parse_xml_with_blob_prefix() {
+        const XML: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+        <EnumerationResults ServiceEndpoint="https://sisuautomatedtest.blob.core.windows.net/" ContainerName="lowlatencyrequests">
+          <Prefix>get-most-recent-key-5/</Prefix>
+          <Delimiter>/</Delimiter>
+          <Blobs>
+            <Blob>
+              <Name>get-most-recent-key-5/2021-08-04-testfile1</Name>
+              <Properties>
+                <Creation-Time>Tue, 13 Sep 2022 08:20:48 GMT</Creation-Time>
+                <Last-Modified>Tue, 13 Sep 2022 08:20:48 GMT</Last-Modified>
+                <Etag>0x8DA9560DD170CFD</Etag>
+                <Content-Length>19</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-Encoding />
+                <Content-Language />
+                <Content-CRC64 />
+                <Content-MD5>3X/+gWTy92gIJFXx57gLYA==</Content-MD5>
+                <Cache-Control />
+                <Content-Disposition />
+                <BlobType>BlockBlob</BlobType>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+              </Properties>
+              <OrMetadata />
+            </Blob>
+            <BlobPrefix>
+              <Name>get-most-recent-key-5/2021-08-04T21:48:48.592953Z-15839722113750148182/</Name>
+            </BlobPrefix>
+            <Blob>
+              <Name>get-most-recent-key-5/2021-09-04-testfile2</Name>
+              <Properties>
+                <Creation-Time>Tue, 13 Sep 2022 08:07:01 GMT</Creation-Time>
+                <Last-Modified>Tue, 13 Sep 2022 08:19:21 GMT</Last-Modified>
+                <Etag>0x8DA9560A916932D</Etag>
+                <Content-Length>19</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-Encoding />
+                <Content-Language />
+                <Content-CRC64 />
+                <Content-MD5>b0CPJB6eDfKUzzW7dlboKQ==</Content-MD5>
+                <Cache-Control />
+                <Content-Disposition />
+                <BlobType>BlockBlob</BlobType>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+              </Properties>
+              <OrMetadata />
+            </Blob>
+            <Blob>
+              <Name>get-most-recent-key-5/2022-08-04-testfile3</Name>
+              <Properties>
+                <Creation-Time>Tue, 13 Sep 2022 08:07:01 GMT</Creation-Time>
+                <Last-Modified>Tue, 13 Sep 2022 08:19:21 GMT</Last-Modified>
+                <Etag>0x8DA9560A91F9296</Etag>
+                <Content-Length>34</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-Encoding />
+                <Content-Language />
+                <Content-CRC64 />
+                <Content-MD5>1F1MssyZOvhY4OZevHWEsw==</Content-MD5>
+                <Cache-Control />
+                <Content-Disposition />
+                <BlobType>BlockBlob</BlobType>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+              </Properties>
+              <OrMetadata />
+            </Blob>
+          </Blobs>
+          <NextMarker />
+        </EnumerationResults>"#;
+
+        let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(XML).unwrap();
     }
 }

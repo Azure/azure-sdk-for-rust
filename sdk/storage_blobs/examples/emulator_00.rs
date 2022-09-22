@@ -6,8 +6,7 @@ async fn main() -> azure_core::Result<()> {
     env_logger::init();
 
     // this is how you use the emulator.
-    let storage_account = BlobServiceClientBuilder::emulator().build();
-    let container_client = storage_account.container_client("emulcont");
+    let container_client = ClientBuilder::emulator().container_client("emulcont");
 
     // create container
     container_client

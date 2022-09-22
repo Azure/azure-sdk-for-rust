@@ -181,6 +181,9 @@ pub mod application {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -190,6 +193,25 @@ pub mod application {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -314,6 +336,9 @@ pub mod application {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -323,6 +348,25 @@ pub mod application {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -390,8 +434,8 @@ pub mod application {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApplicationSummary> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationSummary>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -703,6 +747,9 @@ pub mod pool {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -712,6 +759,25 @@ pub mod pool {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -863,6 +929,9 @@ pub mod pool {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -872,6 +941,25 @@ pub mod pool {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -938,8 +1026,8 @@ pub mod pool {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PoolStatistics> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PoolStatistics>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -958,6 +1046,9 @@ pub mod pool {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -967,6 +1058,25 @@ pub mod pool {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -1188,6 +1298,9 @@ pub mod pool {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1197,6 +1310,25 @@ pub mod pool {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -1318,8 +1450,8 @@ pub mod pool {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CloudPool> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudPool>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1832,6 +1964,9 @@ pub mod pool {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1841,6 +1976,29 @@ pub mod pool {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The OData ID of the resource to which the request applied."]
+            pub fn data_service_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("dataserviceid"))
             }
         }
         #[derive(Clone)]
@@ -1910,8 +2068,8 @@ pub mod pool {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AutoScaleRun> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AutoScaleRun>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2351,6 +2509,9 @@ pub mod account {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2360,6 +2521,25 @@ pub mod account {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -2493,6 +2673,9 @@ pub mod account {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2502,6 +2685,17 @@ pub mod account {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
             }
         }
         #[derive(Clone)]
@@ -2884,6 +3078,9 @@ pub mod job {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2893,6 +3090,25 @@ pub mod job {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -2959,8 +3175,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::JobStatistics> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::JobStatistics>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2979,6 +3195,9 @@ pub mod job {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2988,6 +3207,25 @@ pub mod job {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -3109,8 +3347,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CloudJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3777,6 +4015,9 @@ pub mod job {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -3786,6 +4027,25 @@ pub mod job {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -4007,6 +4267,9 @@ pub mod job {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4016,6 +4279,25 @@ pub mod job {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -4169,6 +4451,9 @@ pub mod job {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4178,6 +4463,25 @@ pub mod job {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -4327,6 +4631,9 @@ pub mod job {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4336,6 +4643,17 @@ pub mod job {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
             }
         }
         #[derive(Clone)]
@@ -4403,8 +4721,8 @@ pub mod job {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TaskCountsResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TaskCountsResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4511,6 +4829,9 @@ pub mod certificate {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4520,6 +4841,25 @@ pub mod certificate {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -4808,6 +5148,9 @@ pub mod certificate {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4817,6 +5160,25 @@ pub mod certificate {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -4899,8 +5261,8 @@ pub mod certificate {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Certificate> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5192,6 +5554,9 @@ pub mod file {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5201,6 +5566,50 @@ pub mod file {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The file creation time."]
+            pub fn ocp_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-creation-time"))?)
+            }
+            #[doc = "Whether the object represents a directory."]
+            pub fn ocp_batch_file_isdirectory(&self) -> azure_core::Result<bool> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("ocp-batch-file-isdirectory"))
+            }
+            #[doc = "The URL of the file."]
+            pub fn ocp_batch_file_url(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-batch-file-url"))
+            }
+            #[doc = "The file mode attribute in octal format."]
+            pub fn ocp_batch_file_mode(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-batch-file-mode"))
+            }
+            #[doc = "The content type of the file."]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "The length of the file."]
+            pub fn content_length(&self) -> azure_core::Result<i64> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
             }
         }
         #[derive(Clone)]
@@ -5303,8 +5712,8 @@ pub mod file {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5504,6 +5913,9 @@ pub mod file {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5513,6 +5925,50 @@ pub mod file {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The file creation time."]
+            pub fn ocp_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-creation-time"))?)
+            }
+            #[doc = "Whether the object represents a directory."]
+            pub fn ocp_batch_file_isdirectory(&self) -> azure_core::Result<bool> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("ocp-batch-file-isdirectory"))
+            }
+            #[doc = "The URL of the file."]
+            pub fn ocp_batch_file_url(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-batch-file-url"))
+            }
+            #[doc = "The file mode attribute in octal format."]
+            pub fn ocp_batch_file_mode(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-batch-file-mode"))
+            }
+            #[doc = "The content type of the file."]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "The length of the file."]
+            pub fn content_length(&self) -> azure_core::Result<i64> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
             }
         }
         #[derive(Clone)]
@@ -5615,8 +6071,8 @@ pub mod file {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5816,6 +6272,9 @@ pub mod file {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5825,6 +6284,25 @@ pub mod file {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -5974,6 +6452,9 @@ pub mod file {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5983,6 +6464,25 @@ pub mod file {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -6328,6 +6828,9 @@ pub mod job_schedule {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -6337,6 +6840,25 @@ pub mod job_schedule {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -6458,8 +6980,8 @@ pub mod job_schedule {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CloudJobSchedule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudJobSchedule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7229,6 +7751,9 @@ pub mod job_schedule {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7238,6 +7763,25 @@ pub mod job_schedule {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -7653,6 +8197,9 @@ pub mod task {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7662,6 +8209,25 @@ pub mod task {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -7885,6 +8451,9 @@ pub mod task {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7894,6 +8463,17 @@ pub mod task {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
             }
         }
         #[derive(Clone)]
@@ -7963,8 +8543,8 @@ pub mod task {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TaskAddCollectionResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TaskAddCollectionResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7983,6 +8563,9 @@ pub mod task {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7992,6 +8575,29 @@ pub mod task {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The OData ID of the resource to which the request applied."]
+            pub fn data_service_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("dataserviceid"))
             }
         }
         #[derive(Clone)]
@@ -8115,8 +8721,8 @@ pub mod task {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CloudTask> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudTask>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -8351,6 +8957,9 @@ pub mod task {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -8360,6 +8969,25 @@ pub mod task {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -8442,8 +9070,8 @@ pub mod task {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CloudTaskListSubtasksResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CloudTaskListSubtasksResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9167,6 +9795,9 @@ pub mod compute_node {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9176,6 +9807,25 @@ pub mod compute_node {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -9258,8 +9908,8 @@ pub mod compute_node {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ComputeNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComputeNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9615,6 +10265,9 @@ pub mod compute_node {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9624,6 +10277,25 @@ pub mod compute_node {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -9697,8 +10369,10 @@ pub mod compute_node {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ComputeNodeGetRemoteLoginSettingsResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComputeNodeGetRemoteLoginSettingsResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9717,6 +10391,9 @@ pub mod compute_node {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9726,6 +10403,25 @@ pub mod compute_node {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -9799,8 +10495,8 @@ pub mod compute_node {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9819,6 +10515,9 @@ pub mod compute_node {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9828,6 +10527,17 @@ pub mod compute_node {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
             }
         }
         #[derive(Clone)]
@@ -9903,8 +10613,8 @@ pub mod compute_node {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UploadBatchServiceLogsResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UploadBatchServiceLogsResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9923,6 +10633,9 @@ pub mod compute_node {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9932,6 +10645,25 @@ pub mod compute_node {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -10123,6 +10855,9 @@ pub mod compute_node_extension {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10132,6 +10867,25 @@ pub mod compute_node_extension {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]
@@ -10216,8 +10970,8 @@ pub mod compute_node_extension {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NodeVmExtension> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeVmExtension>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10236,6 +10990,9 @@ pub mod compute_node_extension {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10245,6 +11002,25 @@ pub mod compute_node_extension {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The client-request-id provided by the client during the request. This will be returned only if the return-client-request-id parameter was set to true."]
+            pub fn client_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("client-request-id"))
+            }
+            #[doc = "A unique identifier for the request that was made to the Batch service. If a request is consistently failing and you have verified that the request is properly formulated, you may use this value to report the error to Microsoft. In your report, include the value of this request ID, the approximate time that the request was made, the Batch Account against which the request was made, and the region that Account resides in."]
+            pub fn request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("request-id"))
+            }
+            #[doc = "The ETag HTTP response header. This is an opaque string. You can use it to detect whether the resource has changed between requests. In particular, you can pass the ETag to one of the If-Modified-Since, If-Unmodified-Since, If-Match or If-None-Match headers."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The time at which the resource was last modified."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
         #[derive(Clone)]

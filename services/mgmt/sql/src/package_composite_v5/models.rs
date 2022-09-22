@@ -539,6 +539,99 @@ impl BaseLongTermRetentionPolicyProperties {
         Self::default()
     }
 }
+#[doc = "SQL Vulnerability Assessment baseline Details"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Baseline {
+    #[doc = "SQL Vulnerability Assessment baseline expected results"]
+    #[serde(rename = "expectedResults", default, skip_serializing_if = "Vec::is_empty")]
+    pub expected_results: Vec<Vec<String>>,
+    #[doc = "SQL Vulnerability Assessment baseline update time (UTC)"]
+    #[serde(rename = "updatedTime", default, with = "azure_core::date::rfc3339::option")]
+    pub updated_time: Option<time::OffsetDateTime>,
+}
+impl Baseline {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "SQL Vulnerability Assessment baseline adjusted results"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BaselineAdjustedResult {
+    #[doc = "SQL Vulnerability Assessment baseline Details"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub baseline: Option<Baseline>,
+    #[doc = "SQL Vulnerability Assessment baseline status"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<baseline_adjusted_result::Status>,
+    #[doc = "SQL Vulnerability Assessment results that are not in baseline"]
+    #[serde(rename = "resultsNotInBaseline", default, skip_serializing_if = "Vec::is_empty")]
+    pub results_not_in_baseline: Vec<Vec<String>>,
+    #[doc = "SQL Vulnerability Assessment results that are in baseline."]
+    #[serde(rename = "resultsOnlyInBaseline", default, skip_serializing_if = "Vec::is_empty")]
+    pub results_only_in_baseline: Vec<Vec<String>>,
+}
+impl BaselineAdjustedResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod baseline_adjusted_result {
+    use super::*;
+    #[doc = "SQL Vulnerability Assessment baseline status"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        NonFinding,
+        Finding,
+        InternalError,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NonFinding => serializer.serialize_unit_variant("Status", 0u32, "NonFinding"),
+                Self::Finding => serializer.serialize_unit_variant("Status", 1u32, "Finding"),
+                Self::InternalError => serializer.serialize_unit_variant("Status", 2u32, "InternalError"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "SQL Vulnerability Assessment benchmark reference"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BenchmarkReference {
+    #[doc = "SQL Vulnerability Assessment benchmark name"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub benchmark: Option<String>,
+    #[doc = "SQL Vulnerability Assessment benchmark reference."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reference: Option<String>,
+}
+impl BenchmarkReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A request to check whether the specified name for a resource is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
@@ -2321,6 +2414,166 @@ pub struct DatabaseSecurityAlertPolicy {
 impl DatabaseSecurityAlertPolicy {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "A database sql vulnerability assessment baseline set."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseSqlVulnerabilityAssessmentBaselineSet {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of a database Sql Vulnerability Assessment baseline set."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseSqlVulnerabilityAssessmentBaselineSetProperties>,
+}
+impl DatabaseSqlVulnerabilityAssessmentBaselineSet {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of SQL Vulnerability Assessments baseline set."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseSqlVulnerabilityAssessmentBaselineSetListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DatabaseSqlVulnerabilityAssessmentBaselineSet>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatabaseSqlVulnerabilityAssessmentBaselineSetListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl DatabaseSqlVulnerabilityAssessmentBaselineSetListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a database Sql Vulnerability Assessment baseline set."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseSqlVulnerabilityAssessmentBaselineSetProperties {
+    #[doc = "The baseline set result"]
+    pub results: serde_json::Value,
+}
+impl DatabaseSqlVulnerabilityAssessmentBaselineSetProperties {
+    pub fn new(results: serde_json::Value) -> Self {
+        Self { results }
+    }
+}
+#[doc = "A database sql vulnerability assessment rule baseline."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaseline {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of a database Sql Vulnerability Assessment rule baseline."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseSqlVulnerabilityAssessmentRuleBaselineProperties>,
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaseline {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A database sql vulnerability assessment rule baseline input."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineInput {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of a database Sql Vulnerability Assessment rule baseline."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseSqlVulnerabilityAssessmentRuleBaselineInputProperties>,
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaselineInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a database Sql Vulnerability Assessment rule baseline."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineInputProperties {
+    #[doc = "The latest scan flag"]
+    #[serde(rename = "latestScan")]
+    pub latest_scan: bool,
+    #[doc = "The rule baseline result"]
+    pub results: Vec<Vec<String>>,
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaselineInputProperties {
+    pub fn new(latest_scan: bool, results: Vec<Vec<String>>) -> Self {
+        Self { latest_scan, results }
+    }
+}
+#[doc = "A database sql vulnerability assessment rule baseline list input."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineListInput {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of a database Sql Vulnerability Assessment rule baseline."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseSqlVulnerabilityAssessmentRuleBaselineListInputProperties>,
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaselineListInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a database Sql Vulnerability Assessment rule baseline."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineListInputProperties {
+    #[doc = "The latest scan flag"]
+    #[serde(rename = "latestScan")]
+    pub latest_scan: bool,
+    #[doc = "The rule baseline result list"]
+    pub results: serde_json::Value,
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaselineListInputProperties {
+    pub fn new(latest_scan: bool, results: serde_json::Value) -> Self {
+        Self { latest_scan, results }
+    }
+}
+#[doc = "A list of SQL Vulnerability Assessments rule baseline."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DatabaseSqlVulnerabilityAssessmentRuleBaseline>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatabaseSqlVulnerabilityAssessmentRuleBaselineListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaselineListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a database Sql Vulnerability Assessment rule baseline."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineProperties {
+    #[doc = "The rule baseline result"]
+    pub results: Vec<Vec<String>>,
+}
+impl DatabaseSqlVulnerabilityAssessmentRuleBaselineProperties {
+    pub fn new(results: Vec<Vec<String>>) -> Self {
+        Self { results }
     }
 }
 #[doc = "A database table resource."]
@@ -7580,6 +7833,20 @@ impl ManagedDatabaseListResult {
         Self::default()
     }
 }
+#[doc = "Contains the information necessary to perform a managed database move."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedDatabaseMoveDefinition {
+    #[doc = "The destination managed database ID"]
+    #[serde(rename = "destinationManagedDatabaseId")]
+    pub destination_managed_database_id: String,
+}
+impl ManagedDatabaseMoveDefinition {
+    pub fn new(destination_managed_database_id: String) -> Self {
+        Self {
+            destination_managed_database_id,
+        }
+    }
+}
 #[doc = "The managed database's properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseProperties {
@@ -7616,7 +7883,10 @@ pub struct ManagedDatabaseProperties {
     #[doc = "The restorable dropped database resource id to restore when creating this database."]
     #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub restorable_dropped_database_id: Option<String>,
-    #[doc = "Conditional. If createMode is RestoreExternalBackup, this value is required. Specifies the storage container sas token."]
+    #[doc = "Conditional. If createMode is RestoreExternalBackup, this value is used. Specifies the identity used for storage container authentication. Can be 'SharedAccessSignature' or 'ManagedIdentity'; if not specified 'SharedAccessSignature' is assumed."]
+    #[serde(rename = "storageContainerIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub storage_container_identity: Option<String>,
+    #[doc = "Conditional. If createMode is RestoreExternalBackup and storageContainerIdentity is not ManagedIdentity, this value is required. Specifies the storage container sas token."]
     #[serde(rename = "storageContainerSasToken", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_sas_token: Option<String>,
     #[doc = "Instance Failover Group resource identifier that this managed database belongs to."]
@@ -7776,15 +8046,51 @@ pub mod managed_database_properties {
         }
     }
 }
+#[doc = "The managed database's restore details backup set properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseRestoreDetailsBackupSetProperties {
+    #[doc = "Backup set status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = "First stripe name."]
+    #[serde(rename = "firstStripeName", default, skip_serializing_if = "Option::is_none")]
+    pub first_stripe_name: Option<String>,
+    #[doc = "Number of stripes."]
+    #[serde(rename = "numberOfStripes", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_stripes: Option<i32>,
+    #[doc = "Backup size."]
+    #[serde(rename = "backupSizeMB", default, skip_serializing_if = "Option::is_none")]
+    pub backup_size_mb: Option<i32>,
+    #[doc = "Last restored file time."]
+    #[serde(rename = "restoreStartedTimestampUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub restore_started_timestamp_utc: Option<time::OffsetDateTime>,
+    #[doc = "Last restored file time."]
+    #[serde(rename = "restoreFinishedTimestampUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub restore_finished_timestamp_utc: Option<time::OffsetDateTime>,
+}
+impl ManagedDatabaseRestoreDetailsBackupSetProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The managed database's restore details properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseRestoreDetailsProperties {
+    #[doc = "Restore type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[doc = "Restore status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "Current restoring file name."]
-    #[serde(rename = "currentRestoringFileName", default, skip_serializing_if = "Option::is_none")]
-    pub current_restoring_file_name: Option<String>,
+    #[doc = "The reason why restore is in Blocked state."]
+    #[serde(rename = "blockReason", default, skip_serializing_if = "Option::is_none")]
+    pub block_reason: Option<String>,
+    #[doc = "Last uploaded file name."]
+    #[serde(rename = "lastUploadedFileName", default, skip_serializing_if = "Option::is_none")]
+    pub last_uploaded_file_name: Option<String>,
+    #[doc = "Last uploaded file time."]
+    #[serde(rename = "lastUploadedFileTime", default, with = "azure_core::date::rfc3339::option")]
+    pub last_uploaded_file_time: Option<time::OffsetDateTime>,
     #[doc = "Last restored file name."]
     #[serde(rename = "lastRestoredFileName", default, skip_serializing_if = "Option::is_none")]
     pub last_restored_file_name: Option<String>,
@@ -7793,22 +8099,49 @@ pub struct ManagedDatabaseRestoreDetailsProperties {
     pub last_restored_file_time: Option<time::OffsetDateTime>,
     #[doc = "Percent completed."]
     #[serde(rename = "percentCompleted", default, skip_serializing_if = "Option::is_none")]
-    pub percent_completed: Option<f64>,
-    #[doc = "List of unrestorable files."]
-    #[serde(rename = "unrestorableFiles", default, skip_serializing_if = "Vec::is_empty")]
-    pub unrestorable_files: Vec<String>,
+    pub percent_completed: Option<i32>,
+    #[doc = "Current restored size MB."]
+    #[serde(rename = "currentRestoredSizeMB", default, skip_serializing_if = "Option::is_none")]
+    pub current_restored_size_mb: Option<i32>,
+    #[doc = "Current restore plan size MB."]
+    #[serde(rename = "currentRestorePlanSizeMB", default, skip_serializing_if = "Option::is_none")]
+    pub current_restore_plan_size_mb: Option<i32>,
+    #[doc = "Current backup type."]
+    #[serde(rename = "currentBackupType", default, skip_serializing_if = "Option::is_none")]
+    pub current_backup_type: Option<String>,
+    #[doc = "Current restoring file name."]
+    #[serde(rename = "currentRestoringFileName", default, skip_serializing_if = "Option::is_none")]
+    pub current_restoring_file_name: Option<String>,
     #[doc = "Number of files detected."]
     #[serde(rename = "numberOfFilesDetected", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_files_detected: Option<i64>,
-    #[doc = "Last uploaded file name."]
-    #[serde(rename = "lastUploadedFileName", default, skip_serializing_if = "Option::is_none")]
-    pub last_uploaded_file_name: Option<String>,
-    #[doc = "Last uploaded file time."]
-    #[serde(rename = "lastUploadedFileTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_uploaded_file_time: Option<time::OffsetDateTime>,
-    #[doc = "The reason why restore is in Blocked state."]
-    #[serde(rename = "blockReason", default, skip_serializing_if = "Option::is_none")]
-    pub block_reason: Option<String>,
+    pub number_of_files_detected: Option<i32>,
+    #[doc = "Number of files queued."]
+    #[serde(rename = "numberOfFilesQueued", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_files_queued: Option<i32>,
+    #[doc = "Number of files skipped."]
+    #[serde(rename = "numberOfFilesSkipped", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_files_skipped: Option<i32>,
+    #[doc = "Number of files restoring."]
+    #[serde(rename = "numberOfFilesRestoring", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_files_restoring: Option<i32>,
+    #[doc = "Number of files restored."]
+    #[serde(rename = "numberOfFilesRestored", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_files_restored: Option<i32>,
+    #[doc = "Number of files unrestorable."]
+    #[serde(rename = "numberOfFilesUnrestorable", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_files_unrestorable: Option<i32>,
+    #[doc = "Full backup sets."]
+    #[serde(rename = "fullBackupSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub full_backup_sets: Vec<ManagedDatabaseRestoreDetailsBackupSetProperties>,
+    #[doc = "Diff backup sets."]
+    #[serde(rename = "diffBackupSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub diff_backup_sets: Vec<ManagedDatabaseRestoreDetailsBackupSetProperties>,
+    #[doc = "Log backup sets."]
+    #[serde(rename = "logBackupSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub log_backup_sets: Vec<ManagedDatabaseRestoreDetailsBackupSetProperties>,
+    #[doc = "Unrestorable files."]
+    #[serde(rename = "unrestorableFiles", default, skip_serializing_if = "Vec::is_empty")]
+    pub unrestorable_files: Vec<ManagedDatabaseRestoreDetailsUnrestorableFileProperties>,
 }
 impl ManagedDatabaseRestoreDetailsProperties {
     pub fn new() -> Self {
@@ -7825,6 +8158,18 @@ pub struct ManagedDatabaseRestoreDetailsResult {
     pub properties: Option<ManagedDatabaseRestoreDetailsProperties>,
 }
 impl ManagedDatabaseRestoreDetailsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The managed database's restore details unrestorable file properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseRestoreDetailsUnrestorableFileProperties {
+    #[doc = "File name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl ManagedDatabaseRestoreDetailsUnrestorableFileProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -7862,6 +8207,69 @@ impl azure_core::Continuable for ManagedDatabaseSecurityAlertPolicyListResult {
 impl ManagedDatabaseSecurityAlertPolicyListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Contains the information necessary to start a managed database move."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedDatabaseStartMoveDefinition {
+    #[doc = "The destination managed database ID"]
+    #[serde(rename = "destinationManagedDatabaseId")]
+    pub destination_managed_database_id: String,
+    #[doc = "The move operation mode."]
+    #[serde(rename = "operationMode", default, skip_serializing_if = "Option::is_none")]
+    pub operation_mode: Option<managed_database_start_move_definition::OperationMode>,
+}
+impl ManagedDatabaseStartMoveDefinition {
+    pub fn new(destination_managed_database_id: String) -> Self {
+        Self {
+            destination_managed_database_id,
+            operation_mode: None,
+        }
+    }
+}
+pub mod managed_database_start_move_definition {
+    use super::*;
+    #[doc = "The move operation mode."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "OperationMode")]
+    pub enum OperationMode {
+        Move,
+        Copy,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for OperationMode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for OperationMode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for OperationMode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Move => serializer.serialize_unit_variant("OperationMode", 0u32, "Move"),
+                Self::Copy => serializer.serialize_unit_variant("OperationMode", 1u32, "Copy"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for OperationMode {
+        fn default() -> Self {
+            Self::Move
+        }
     }
 }
 #[doc = "An managed database update."]
@@ -10920,6 +11328,24 @@ impl ProxyResourceWithWritableName {
         Self::default()
     }
 }
+#[doc = "SQL Vulnerability Assessment query check object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct QueryCheck {
+    #[doc = "SQL Vulnerability Assessment rule query."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    #[doc = "SQL Vulnerability Assessment query expected result."]
+    #[serde(rename = "expectedResult", default, skip_serializing_if = "Vec::is_empty")]
+    pub expected_result: Vec<Vec<String>>,
+    #[doc = "SQL Vulnerability Assessment column names of query expected result."]
+    #[serde(rename = "columnNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub column_names: Vec<String>,
+}
+impl QueryCheck {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Properties of a query metrics interval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryMetricInterval {
@@ -11619,6 +12045,27 @@ impl RecoverableManagedDatabaseProperties {
         Self::default()
     }
 }
+#[doc = "SQL Vulnerability Assessment remediation Details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Remediation {
+    #[doc = "SQL Vulnerability Assessment remediation description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "SQL Vulnerability Assessment remediation script."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scripts: Vec<String>,
+    #[doc = "SQL Vulnerability Assessment is remediation automated."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub automated: Option<bool>,
+    #[doc = "SQL Vulnerability Assessment optional link to remediate in Azure Portal."]
+    #[serde(rename = "portalLink", default, skip_serializing_if = "Option::is_none")]
+    pub portal_link: Option<String>,
+}
+impl Remediation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A replication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLink {
@@ -12159,6 +12606,27 @@ pub mod restore_point_properties {
         Continuous,
         #[serde(rename = "DISCRETE")]
         Discrete,
+    }
+}
+#[doc = "A list of vulnerability assessment scan results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SqlVulnerabilityAssessmentScanResults>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlVulnerabilityAssessmentScanListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl SqlVulnerabilityAssessmentScanListResult {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Properties of a security alert policy."]
@@ -14328,6 +14796,345 @@ pub mod sql_agent_configuration_properties {
         Disabled,
     }
 }
+#[doc = "A SQL Vulnerability Assessment."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlVulnerabilityAssessmentPolicyProperties>,
+}
+impl SqlVulnerabilityAssessment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of SQL Vulnerability Assessments."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SqlVulnerabilityAssessment>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlVulnerabilityAssessmentListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl SqlVulnerabilityAssessmentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentPolicyProperties {
+    #[doc = "Specifies the state of the SQL Vulnerability Assessment, whether it is enabled or disabled or a state has not been applied yet on the specific database or server."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<sql_vulnerability_assessment_policy_properties::State>,
+}
+impl SqlVulnerabilityAssessmentPolicyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod sql_vulnerability_assessment_policy_properties {
+    use super::*;
+    #[doc = "Specifies the state of the SQL Vulnerability Assessment, whether it is enabled or disabled or a state has not been applied yet on the specific database or server."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Enabled,
+        Disabled,
+    }
+}
+#[doc = "Properties of a vulnerability assessment scan error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanError {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl SqlVulnerabilityAssessmentScanError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A vulnerability assessment scan record."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanRecord {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of a vulnerability assessment scan record."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlVulnerabilityAssessmentScanRecordProperties>,
+}
+impl SqlVulnerabilityAssessmentScanRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of vulnerability assessment scan records."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanRecordListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SqlVulnerabilityAssessmentScanRecord>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlVulnerabilityAssessmentScanRecordListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl SqlVulnerabilityAssessmentScanRecordListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a vulnerability assessment scan record."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanRecordProperties {
+    #[doc = "The scan ID."]
+    #[serde(rename = "scanId", default, skip_serializing_if = "Option::is_none")]
+    pub scan_id: Option<String>,
+    #[doc = "The scan trigger type."]
+    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
+    pub trigger_type: Option<sql_vulnerability_assessment_scan_record_properties::TriggerType>,
+    #[doc = "The scan status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<sql_vulnerability_assessment_scan_record_properties::State>,
+    #[doc = "The scan start time (UTC)."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The scan end time (UTC)."]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The scan errors."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<SqlVulnerabilityAssessmentScanError>,
+    #[doc = "The server name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<String>,
+    #[doc = "The database name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<String>,
+    #[doc = "The SQL version."]
+    #[serde(rename = "sqlVersion", default, skip_serializing_if = "Option::is_none")]
+    pub sql_version: Option<String>,
+    #[doc = "The number of failed rules with high severity."]
+    #[serde(rename = "highSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
+    pub high_severity_failed_rules_count: Option<i32>,
+    #[doc = "The number of failed rules with medium severity."]
+    #[serde(rename = "mediumSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
+    pub medium_severity_failed_rules_count: Option<i32>,
+    #[doc = "The number of failed rules with low severity."]
+    #[serde(rename = "lowSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
+    pub low_severity_failed_rules_count: Option<i32>,
+    #[doc = "The number of total passed rules."]
+    #[serde(rename = "totalPassedRulesCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_passed_rules_count: Option<i32>,
+    #[doc = "The number of total failed rules."]
+    #[serde(rename = "totalFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_failed_rules_count: Option<i32>,
+    #[doc = "The number of total rules assessed."]
+    #[serde(rename = "totalRulesCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_rules_count: Option<i32>,
+    #[doc = "Baseline created for this database, and has one or more rules."]
+    #[serde(rename = "isBaselineApplied", default, skip_serializing_if = "Option::is_none")]
+    pub is_baseline_applied: Option<bool>,
+}
+impl SqlVulnerabilityAssessmentScanRecordProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod sql_vulnerability_assessment_scan_record_properties {
+    use super::*;
+    #[doc = "The scan trigger type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "TriggerType")]
+    pub enum TriggerType {
+        OnDemand,
+        Recurring,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for TriggerType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for TriggerType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for TriggerType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::OnDemand => serializer.serialize_unit_variant("TriggerType", 0u32, "OnDemand"),
+                Self::Recurring => serializer.serialize_unit_variant("TriggerType", 1u32, "Recurring"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The scan status."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Passed,
+        Failed,
+        FailedToRun,
+        InProgress,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Passed => serializer.serialize_unit_variant("State", 0u32, "Passed"),
+                Self::Failed => serializer.serialize_unit_variant("State", 1u32, "Failed"),
+                Self::FailedToRun => serializer.serialize_unit_variant("State", 2u32, "FailedToRun"),
+                Self::InProgress => serializer.serialize_unit_variant("State", 3u32, "InProgress"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "SQL Vulnerability Assessment scan result properties for a single rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanResultProperties {
+    #[doc = "SQL Vulnerability Assessment rule Id."]
+    #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
+    pub rule_id: Option<String>,
+    #[doc = "SQL Vulnerability Assessment rule result status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<sql_vulnerability_assessment_scan_result_properties::Status>,
+    #[doc = "SQL Vulnerability Assessment error message."]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[doc = "SQL Vulnerability Assessment is the query results trimmed."]
+    #[serde(rename = "isTrimmed", default, skip_serializing_if = "Option::is_none")]
+    pub is_trimmed: Option<bool>,
+    #[doc = "SQL Vulnerability Assessment query results that was run."]
+    #[serde(rename = "queryResults", default, skip_serializing_if = "Vec::is_empty")]
+    pub query_results: Vec<Vec<String>>,
+    #[doc = "SQL Vulnerability Assessment remediation Details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remediation: Option<Remediation>,
+    #[doc = "SQL Vulnerability Assessment baseline adjusted results"]
+    #[serde(rename = "baselineAdjustedResult", default, skip_serializing_if = "Option::is_none")]
+    pub baseline_adjusted_result: Option<BaselineAdjustedResult>,
+    #[doc = "SQL Vulnerability Assessment rule metadata details."]
+    #[serde(rename = "ruleMetadata", default, skip_serializing_if = "Option::is_none")]
+    pub rule_metadata: Option<VaRule>,
+}
+impl SqlVulnerabilityAssessmentScanResultProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod sql_vulnerability_assessment_scan_result_properties {
+    use super::*;
+    #[doc = "SQL Vulnerability Assessment rule result status."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        NonFinding,
+        Finding,
+        InternalError,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NonFinding => serializer.serialize_unit_variant("Status", 0u32, "NonFinding"),
+                Self::Finding => serializer.serialize_unit_variant("Status", 1u32, "Finding"),
+                Self::InternalError => serializer.serialize_unit_variant("Status", 2u32, "InternalError"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlVulnerabilityAssessmentScanResults {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "SQL Vulnerability Assessment scan result properties for a single rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlVulnerabilityAssessmentScanResultProperties>,
+}
+impl SqlVulnerabilityAssessmentScanResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The storage account type capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageCapability {
@@ -15704,6 +16511,129 @@ pub struct UserIdentity {
 impl UserIdentity {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "SQL Vulnerability Assessment rule metadata details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VaRule {
+    #[doc = "SQL Vulnerability Assessment rule Id."]
+    #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
+    pub rule_id: Option<String>,
+    #[doc = "SQL Vulnerability Assessment rule severity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<va_rule::Severity>,
+    #[doc = "SQL Vulnerability Assessment rule category."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[doc = "SQL Vulnerability Assessment rule type."]
+    #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
+    pub rule_type: Option<va_rule::RuleType>,
+    #[doc = "SQL Vulnerability Assessment rule title."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[doc = "SQL Vulnerability Assessment rule description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "SQL Vulnerability Assessment rule rationale."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rationale: Option<String>,
+    #[doc = "SQL Vulnerability Assessment query check object."]
+    #[serde(rename = "queryCheck", default, skip_serializing_if = "Option::is_none")]
+    pub query_check: Option<QueryCheck>,
+    #[doc = "SQL Vulnerability Assessment benchmark references."]
+    #[serde(rename = "benchmarkReferences", default, skip_serializing_if = "Vec::is_empty")]
+    pub benchmark_references: Vec<BenchmarkReference>,
+}
+impl VaRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod va_rule {
+    use super::*;
+    #[doc = "SQL Vulnerability Assessment rule severity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Severity")]
+    pub enum Severity {
+        High,
+        Medium,
+        Low,
+        Informational,
+        Obsolete,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Severity {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Severity {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Severity {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::High => serializer.serialize_unit_variant("Severity", 0u32, "High"),
+                Self::Medium => serializer.serialize_unit_variant("Severity", 1u32, "Medium"),
+                Self::Low => serializer.serialize_unit_variant("Severity", 2u32, "Low"),
+                Self::Informational => serializer.serialize_unit_variant("Severity", 3u32, "Informational"),
+                Self::Obsolete => serializer.serialize_unit_variant("Severity", 4u32, "Obsolete"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "SQL Vulnerability Assessment rule type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "RuleType")]
+    pub enum RuleType {
+        Binary,
+        BaselineExpected,
+        PositiveList,
+        NegativeList,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for RuleType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for RuleType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for RuleType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Binary => serializer.serialize_unit_variant("RuleType", 0u32, "Binary"),
+                Self::BaselineExpected => serializer.serialize_unit_variant("RuleType", 1u32, "BaselineExpected"),
+                Self::PositiveList => serializer.serialize_unit_variant("RuleType", 2u32, "PositiveList"),
+                Self::NegativeList => serializer.serialize_unit_variant("RuleType", 3u32, "NegativeList"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "An Azure SQL virtual cluster."]

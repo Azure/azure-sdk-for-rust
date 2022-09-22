@@ -303,8 +303,8 @@ pub mod credit_summary_by_billing_profile {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CreditSummary> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CreditSummary>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -403,8 +403,8 @@ pub mod events_by_billing_profile {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Events> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Events>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -487,8 +487,8 @@ pub mod lots_by_billing_profile {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Lots> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Lots>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -525,6 +525,9 @@ pub mod invoice_pricesheet {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -534,6 +537,26 @@ pub mod invoice_pricesheet {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "GET this URL to retrieve the status of the asynchronous operation."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The amount of delay to use while the status of the operation is checked. The value is expressed in seconds."]
+            pub fn retry_after(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
+            }
+            #[doc = "To get the progress of the operation, call GET operation on the URL in Azure-AsyncOperation header field."]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            #[doc = "The operation entity Id GUID."]
+            pub fn o_data_entity_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("odata-entityid"))
             }
         }
         #[derive(Clone)]
@@ -573,8 +596,8 @@ pub mod invoice_pricesheet {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PricesheetDownloadResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PricesheetDownloadResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -611,6 +634,9 @@ pub mod billing_profile_pricesheet {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -620,6 +646,26 @@ pub mod billing_profile_pricesheet {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "GET this URL to retrieve the status of the asynchronous operation."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The amount of delay to use while the status of the operation is checked. The value is expressed in seconds."]
+            pub fn retry_after(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
+            }
+            #[doc = "To get the progress of the operation, call GET operation on the URL in Azure-AsyncOperation header field."]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            #[doc = "The operation entity Id GUID."]
+            pub fn o_data_entity_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("odata-entityid"))
             }
         }
         #[derive(Clone)]
@@ -659,8 +705,8 @@ pub mod billing_profile_pricesheet {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PricesheetDownloadResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PricesheetDownloadResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -764,8 +810,8 @@ pub mod charges_by_billing_account {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ChargesListByBillingAccount> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ChargesListByBillingAccount>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -864,8 +910,8 @@ pub mod charges_by_billing_profile {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ChargesListByBillingProfile> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ChargesListByBillingProfile>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -974,8 +1020,8 @@ pub mod charges_by_invoice_section {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ChargesListByInvoiceSection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ChargesListByInvoiceSection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

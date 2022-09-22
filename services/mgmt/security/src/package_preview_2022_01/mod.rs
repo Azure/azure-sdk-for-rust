@@ -383,8 +383,8 @@ pub mod governance_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -451,8 +451,8 @@ pub mod governance_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -849,8 +849,8 @@ pub mod security_connector_governance_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -914,8 +914,8 @@ pub mod security_connector_governance_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -995,6 +995,9 @@ pub mod subscription_governance_rules_execute_status {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1004,6 +1007,13 @@ pub mod subscription_governance_rules_execute_status {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Location URL for the execution status"]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -1044,8 +1054,8 @@ pub mod subscription_governance_rules_execute_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ExecuteRuleStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ExecuteRuleStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1095,6 +1105,9 @@ pub mod security_connector_governance_rules_execute_status {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1104,6 +1117,13 @@ pub mod security_connector_governance_rules_execute_status {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Location URL for the execution status"]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -1140,8 +1160,8 @@ pub mod security_connector_governance_rules_execute_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ExecuteRuleStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ExecuteRuleStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1381,8 +1401,8 @@ pub mod governance_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GovernanceAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1451,8 +1471,8 @@ pub mod governance_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GovernanceAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

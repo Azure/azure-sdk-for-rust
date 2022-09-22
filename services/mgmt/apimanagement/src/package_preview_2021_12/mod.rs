@@ -433,8 +433,8 @@ pub mod api_export {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiExportResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiExportResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -774,6 +774,9 @@ pub mod api {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -783,6 +786,13 @@ pub mod api {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -824,8 +834,8 @@ pub mod api {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -844,6 +854,9 @@ pub mod api {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -853,6 +866,13 @@ pub mod api {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -906,8 +926,8 @@ pub mod api {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -926,6 +946,9 @@ pub mod api {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -935,6 +958,13 @@ pub mod api {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -980,8 +1010,8 @@ pub mod api {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1686,6 +1716,9 @@ pub mod api_release {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1695,6 +1728,13 @@ pub mod api_release {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1738,8 +1778,8 @@ pub mod api_release {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiReleaseContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiReleaseContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1758,6 +1798,9 @@ pub mod api_release {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1767,6 +1810,13 @@ pub mod api_release {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1821,8 +1871,8 @@ pub mod api_release {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiReleaseContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiReleaseContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1841,6 +1891,9 @@ pub mod api_release {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1850,6 +1903,13 @@ pub mod api_release {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1897,8 +1957,8 @@ pub mod api_release {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiReleaseContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiReleaseContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2314,6 +2374,9 @@ pub mod api_operation {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2323,6 +2386,13 @@ pub mod api_operation {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2366,8 +2436,8 @@ pub mod api_operation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2386,6 +2456,9 @@ pub mod api_operation {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2395,6 +2468,13 @@ pub mod api_operation {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2449,8 +2529,8 @@ pub mod api_operation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2469,6 +2549,9 @@ pub mod api_operation {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2478,6 +2561,13 @@ pub mod api_operation {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2525,8 +2615,8 @@ pub mod api_operation {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2832,8 +2922,8 @@ pub mod api_operation_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2852,6 +2942,9 @@ pub mod api_operation_policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2861,6 +2954,13 @@ pub mod api_operation_policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2906,8 +3006,8 @@ pub mod api_operation_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2926,6 +3026,9 @@ pub mod api_operation_policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2935,6 +3038,13 @@ pub mod api_operation_policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -2982,8 +3092,8 @@ pub mod api_operation_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3750,6 +3860,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -3759,6 +3872,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -3795,8 +3915,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3860,8 +3980,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4082,6 +4202,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4091,6 +4214,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -4134,8 +4264,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4154,6 +4284,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4163,6 +4296,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -4206,8 +4346,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4442,6 +4582,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4451,6 +4594,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -4494,8 +4644,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4566,8 +4716,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4809,6 +4959,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4818,6 +4971,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -4859,8 +5019,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4879,6 +5039,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4888,6 +5051,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -4940,8 +5110,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4960,6 +5130,9 @@ pub mod tag {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4969,6 +5142,13 @@ pub mod tag {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -5014,8 +5194,8 @@ pub mod tag {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5465,8 +5645,8 @@ pub mod api_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5485,6 +5665,9 @@ pub mod api_policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5494,6 +5677,13 @@ pub mod api_policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -5546,8 +5736,8 @@ pub mod api_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5566,6 +5756,9 @@ pub mod api_policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5575,6 +5768,13 @@ pub mod api_policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -5629,8 +5829,8 @@ pub mod api_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -6006,6 +6206,9 @@ pub mod api_schema {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -6015,6 +6218,13 @@ pub mod api_schema {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -6058,8 +6268,8 @@ pub mod api_schema {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SchemaContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SchemaContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -6531,6 +6741,9 @@ pub mod api_diagnostic {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -6540,6 +6753,13 @@ pub mod api_diagnostic {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -6583,8 +6803,8 @@ pub mod api_diagnostic {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DiagnosticContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -6603,6 +6823,9 @@ pub mod api_diagnostic {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -6612,6 +6835,13 @@ pub mod api_diagnostic {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -6666,8 +6896,8 @@ pub mod api_diagnostic {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DiagnosticContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -6686,6 +6916,9 @@ pub mod api_diagnostic {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -6695,6 +6928,13 @@ pub mod api_diagnostic {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -6742,8 +6982,8 @@ pub mod api_diagnostic {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DiagnosticContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7162,6 +7402,9 @@ pub mod api_issue {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7171,6 +7414,13 @@ pub mod api_issue {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -7225,8 +7475,8 @@ pub mod api_issue {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7245,6 +7495,9 @@ pub mod api_issue {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7254,6 +7507,13 @@ pub mod api_issue {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -7308,8 +7568,8 @@ pub mod api_issue {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7328,6 +7588,9 @@ pub mod api_issue {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7337,6 +7600,13 @@ pub mod api_issue {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -7384,8 +7654,8 @@ pub mod api_issue {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7777,6 +8047,9 @@ pub mod api_issue_comment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7786,6 +8059,13 @@ pub mod api_issue_comment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -7822,8 +8102,8 @@ pub mod api_issue_comment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueCommentContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueCommentContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -7842,6 +8122,9 @@ pub mod api_issue_comment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -7851,6 +8134,13 @@ pub mod api_issue_comment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -7898,8 +8188,8 @@ pub mod api_issue_comment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueCommentContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueCommentContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -8269,6 +8559,9 @@ pub mod api_issue_attachment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -8278,6 +8571,13 @@ pub mod api_issue_attachment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -8314,8 +8614,8 @@ pub mod api_issue_attachment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueAttachmentContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueAttachmentContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -8334,6 +8634,9 @@ pub mod api_issue_attachment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -8343,6 +8646,13 @@ pub mod api_issue_attachment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -8390,8 +8700,8 @@ pub mod api_issue_attachment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueAttachmentContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueAttachmentContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -8752,6 +9062,9 @@ pub mod api_tag_description {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -8761,6 +9074,13 @@ pub mod api_tag_description {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -8804,8 +9124,8 @@ pub mod api_tag_description {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagDescriptionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagDescriptionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -8824,6 +9144,9 @@ pub mod api_tag_description {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -8833,6 +9156,13 @@ pub mod api_tag_description {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -8887,8 +9217,8 @@ pub mod api_tag_description {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TagDescriptionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TagDescriptionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9443,6 +9773,9 @@ pub mod api_version_set {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9452,6 +9785,13 @@ pub mod api_version_set {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -9493,8 +9833,8 @@ pub mod api_version_set {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiVersionSetContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiVersionSetContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9513,6 +9853,9 @@ pub mod api_version_set {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9522,6 +9865,13 @@ pub mod api_version_set {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -9574,8 +9924,8 @@ pub mod api_version_set {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiVersionSetContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiVersionSetContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -9594,6 +9944,9 @@ pub mod api_version_set {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -9603,6 +9956,13 @@ pub mod api_version_set {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -9648,8 +10008,8 @@ pub mod api_version_set {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiVersionSetContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiVersionSetContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10053,6 +10413,9 @@ pub mod authorization_server {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10062,6 +10425,13 @@ pub mod authorization_server {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10103,8 +10473,8 @@ pub mod authorization_server {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AuthorizationServerContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AuthorizationServerContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10123,6 +10493,9 @@ pub mod authorization_server {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10132,6 +10505,13 @@ pub mod authorization_server {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10184,8 +10564,8 @@ pub mod authorization_server {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AuthorizationServerContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AuthorizationServerContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10204,6 +10584,9 @@ pub mod authorization_server {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10213,6 +10596,13 @@ pub mod authorization_server {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10258,8 +10648,8 @@ pub mod authorization_server {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AuthorizationServerContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AuthorizationServerContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10366,6 +10756,9 @@ pub mod authorization_server {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10375,6 +10768,13 @@ pub mod authorization_server {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10410,8 +10810,10 @@ pub mod authorization_server {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AuthorizationServerSecretsContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::AuthorizationServerSecretsContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10728,6 +11130,9 @@ pub mod backend {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10737,6 +11142,13 @@ pub mod backend {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10778,8 +11190,8 @@ pub mod backend {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BackendContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BackendContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10798,6 +11210,9 @@ pub mod backend {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10807,6 +11222,13 @@ pub mod backend {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10859,8 +11281,8 @@ pub mod backend {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BackendContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BackendContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -10879,6 +11301,9 @@ pub mod backend {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -10888,6 +11313,13 @@ pub mod backend {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -10933,8 +11365,8 @@ pub mod backend {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BackendContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BackendContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -11360,6 +11792,9 @@ pub mod cache {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -11369,6 +11804,13 @@ pub mod cache {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -11410,8 +11852,8 @@ pub mod cache {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CacheContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CacheContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -11430,6 +11872,9 @@ pub mod cache {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -11439,6 +11884,13 @@ pub mod cache {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -11491,8 +11943,8 @@ pub mod cache {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CacheContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CacheContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -11511,6 +11963,9 @@ pub mod cache {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -11520,6 +11975,13 @@ pub mod cache {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -11565,8 +12027,8 @@ pub mod cache {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CacheContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CacheContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -11954,6 +12416,9 @@ pub mod certificate {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -11963,6 +12428,13 @@ pub mod certificate {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -12004,8 +12476,8 @@ pub mod certificate {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CertificateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CertificateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -12024,6 +12496,9 @@ pub mod certificate {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -12033,6 +12508,13 @@ pub mod certificate {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -12085,8 +12567,8 @@ pub mod certificate {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CertificateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CertificateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -12193,6 +12675,9 @@ pub mod certificate {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -12202,6 +12687,13 @@ pub mod certificate {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -12237,8 +12729,8 @@ pub mod certificate {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CertificateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CertificateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -12518,6 +13010,9 @@ pub mod content_type {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -12527,6 +13022,13 @@ pub mod content_type {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -12568,8 +13070,8 @@ pub mod content_type {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ContentTypeContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContentTypeContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -12588,6 +13090,9 @@ pub mod content_type {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -12597,6 +13102,13 @@ pub mod content_type {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -12657,8 +13169,8 @@ pub mod content_type {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ContentTypeContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContentTypeContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -12946,6 +13458,9 @@ pub mod content_item {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -12955,6 +13470,13 @@ pub mod content_item {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -12990,8 +13512,8 @@ pub mod content_item {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ContentItemContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContentItemContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -13010,6 +13532,9 @@ pub mod content_item {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -13019,6 +13544,13 @@ pub mod content_item {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -13063,8 +13595,8 @@ pub mod content_item {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ContentItemContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContentItemContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -13354,8 +13886,8 @@ pub mod deleted_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeletedServiceContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeletedServiceContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -13915,8 +14447,8 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -13986,8 +14518,8 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14054,8 +14586,8 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14125,8 +14657,8 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14196,8 +14728,8 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14495,8 +15027,10 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceGetSsoTokenResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceGetSsoTokenResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14561,8 +15095,10 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceNameAvailabilityResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceNameAvailabilityResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14626,8 +15162,11 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceGetDomainOwnershipIdentifierResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceGetDomainOwnershipIdentifierResult>>
+            {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14700,8 +15239,8 @@ pub mod api_management_service {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiManagementServiceResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiManagementServiceResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -14995,6 +15534,9 @@ pub mod diagnostic {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -15004,6 +15546,13 @@ pub mod diagnostic {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -15045,8 +15594,8 @@ pub mod diagnostic {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DiagnosticContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -15065,6 +15614,9 @@ pub mod diagnostic {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -15074,6 +15626,13 @@ pub mod diagnostic {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -15126,8 +15685,8 @@ pub mod diagnostic {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DiagnosticContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -15146,6 +15705,9 @@ pub mod diagnostic {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -15155,6 +15717,13 @@ pub mod diagnostic {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -15200,8 +15769,8 @@ pub mod diagnostic {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DiagnosticContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -15583,6 +16152,9 @@ pub mod email_template {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -15592,6 +16164,13 @@ pub mod email_template {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -15633,8 +16212,8 @@ pub mod email_template {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EmailTemplateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EmailTemplateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -15714,8 +16293,8 @@ pub mod email_template {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EmailTemplateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EmailTemplateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -15734,6 +16313,9 @@ pub mod email_template {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -15743,6 +16325,13 @@ pub mod email_template {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -15788,8 +16377,8 @@ pub mod email_template {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EmailTemplateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EmailTemplateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16239,6 +16828,9 @@ pub mod gateway {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -16248,6 +16840,13 @@ pub mod gateway {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -16289,8 +16888,8 @@ pub mod gateway {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16309,6 +16908,9 @@ pub mod gateway {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -16318,6 +16920,13 @@ pub mod gateway {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -16370,8 +16979,8 @@ pub mod gateway {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16390,6 +16999,9 @@ pub mod gateway {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -16399,6 +17011,13 @@ pub mod gateway {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -16444,8 +17063,8 @@ pub mod gateway {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16552,6 +17171,9 @@ pub mod gateway {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -16561,6 +17183,13 @@ pub mod gateway {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -16603,8 +17232,8 @@ pub mod gateway {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayKeysContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayKeysContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16720,8 +17349,8 @@ pub mod gateway {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayTokenContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayTokenContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16996,6 +17625,9 @@ pub mod gateway_hostname_configuration {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -17005,6 +17637,13 @@ pub mod gateway_hostname_configuration {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -17040,8 +17679,10 @@ pub mod gateway_hostname_configuration {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayHostnameConfigurationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayHostnameConfigurationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -17060,6 +17701,9 @@ pub mod gateway_hostname_configuration {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -17069,6 +17713,13 @@ pub mod gateway_hostname_configuration {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -17115,8 +17766,10 @@ pub mod gateway_hostname_configuration {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayHostnameConfigurationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayHostnameConfigurationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -17506,8 +18159,8 @@ pub mod gateway_api {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -17872,6 +18525,9 @@ pub mod gateway_certificate_authority {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -17881,6 +18537,13 @@ pub mod gateway_certificate_authority {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -17916,8 +18579,10 @@ pub mod gateway_certificate_authority {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayCertificateAuthorityContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayCertificateAuthorityContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -17936,6 +18601,9 @@ pub mod gateway_certificate_authority {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -17945,6 +18613,13 @@ pub mod gateway_certificate_authority {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -17991,8 +18666,10 @@ pub mod gateway_certificate_authority {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GatewayCertificateAuthorityContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayCertificateAuthorityContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18362,6 +19039,9 @@ pub mod group {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -18371,6 +19051,13 @@ pub mod group {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -18412,8 +19099,8 @@ pub mod group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GroupContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GroupContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18432,6 +19119,9 @@ pub mod group {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -18441,6 +19131,13 @@ pub mod group {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -18493,8 +19190,8 @@ pub mod group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GroupContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GroupContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18513,6 +19210,9 @@ pub mod group {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -18522,6 +19222,13 @@ pub mod group {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -18567,8 +19274,8 @@ pub mod group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GroupContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GroupContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18959,8 +19666,8 @@ pub mod group_user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UserContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19336,6 +20043,9 @@ pub mod identity_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -19345,6 +20055,13 @@ pub mod identity_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -19386,8 +20103,8 @@ pub mod identity_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IdentityProviderContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IdentityProviderContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19406,6 +20123,9 @@ pub mod identity_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -19415,6 +20135,13 @@ pub mod identity_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -19467,8 +20194,8 @@ pub mod identity_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IdentityProviderContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IdentityProviderContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19487,6 +20214,9 @@ pub mod identity_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -19496,6 +20226,13 @@ pub mod identity_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -19541,8 +20278,8 @@ pub mod identity_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IdentityProviderContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IdentityProviderContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19649,6 +20386,9 @@ pub mod identity_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -19658,6 +20398,13 @@ pub mod identity_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -19693,8 +20440,8 @@ pub mod identity_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ClientSecretContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClientSecretContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19887,6 +20634,9 @@ pub mod issue {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -19896,6 +20646,13 @@ pub mod issue {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -19937,8 +20694,8 @@ pub mod issue {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IssueContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IssueContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -20232,6 +20989,9 @@ pub mod logger {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -20241,6 +21001,13 @@ pub mod logger {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -20282,8 +21049,8 @@ pub mod logger {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LoggerContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LoggerContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -20302,6 +21069,9 @@ pub mod logger {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -20311,6 +21081,13 @@ pub mod logger {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -20363,8 +21140,8 @@ pub mod logger {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LoggerContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LoggerContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -20383,6 +21160,9 @@ pub mod logger {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -20392,6 +21172,13 @@ pub mod logger {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -20437,8 +21224,8 @@ pub mod logger {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::LoggerContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LoggerContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -20876,6 +21663,9 @@ pub mod named_value {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -20885,6 +21675,13 @@ pub mod named_value {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -20926,8 +21723,8 @@ pub mod named_value {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NamedValueContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NamedValueContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21137,6 +21934,9 @@ pub mod named_value {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -21146,6 +21946,13 @@ pub mod named_value {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -21188,8 +21995,8 @@ pub mod named_value {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NamedValueSecretContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NamedValueSecretContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21341,8 +22148,10 @@ pub mod network_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::NetworkStatusContractByLocation>> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::NetworkStatusContractByLocation>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21411,8 +22220,8 @@ pub mod network_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NetworkStatusContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NetworkStatusContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21668,8 +22477,8 @@ pub mod notification {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NotificationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NotificationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21747,8 +22556,8 @@ pub mod notification {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NotificationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NotificationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21913,8 +22722,8 @@ pub mod notification_recipient_user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecipientUserCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecipientUserCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -21977,8 +22786,8 @@ pub mod notification_recipient_user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecipientUserContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecipientUserContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -22217,8 +23026,8 @@ pub mod notification_recipient_email {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecipientEmailCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecipientEmailCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -22281,8 +23090,8 @@ pub mod notification_recipient_email {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecipientEmailContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecipientEmailContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -22672,6 +23481,9 @@ pub mod open_id_connect_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -22681,6 +23493,13 @@ pub mod open_id_connect_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -22722,8 +23541,8 @@ pub mod open_id_connect_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenidConnectProviderContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenidConnectProviderContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -22742,6 +23561,9 @@ pub mod open_id_connect_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -22751,6 +23573,13 @@ pub mod open_id_connect_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -22803,8 +23632,8 @@ pub mod open_id_connect_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenidConnectProviderContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenidConnectProviderContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -22823,6 +23652,9 @@ pub mod open_id_connect_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -22832,6 +23664,13 @@ pub mod open_id_connect_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -22877,8 +23716,8 @@ pub mod open_id_connect_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OpenidConnectProviderContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OpenidConnectProviderContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -22985,6 +23824,9 @@ pub mod open_id_connect_provider {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -22994,6 +23836,13 @@ pub mod open_id_connect_provider {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -23029,8 +23878,8 @@ pub mod open_id_connect_provider {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ClientSecretContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClientSecretContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23116,8 +23965,8 @@ pub mod outbound_network_dependencies_endpoints {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OutboundEnvironmentEndpointList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OutboundEnvironmentEndpointList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23305,8 +24154,8 @@ pub mod policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23325,6 +24174,9 @@ pub mod policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -23334,6 +24186,13 @@ pub mod policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -23384,8 +24243,8 @@ pub mod policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23404,6 +24263,9 @@ pub mod policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -23413,6 +24275,13 @@ pub mod policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version"]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -23465,8 +24334,8 @@ pub mod policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23656,8 +24525,8 @@ pub mod policy_description {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyDescriptionCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyDescriptionCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23909,8 +24778,8 @@ pub mod policy_fragment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyFragmentCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyFragmentCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -23929,6 +24798,9 @@ pub mod policy_fragment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -23938,6 +24810,13 @@ pub mod policy_fragment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -23988,8 +24867,8 @@ pub mod policy_fragment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyFragmentContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyFragmentContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -24008,6 +24887,9 @@ pub mod policy_fragment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -24017,6 +24899,13 @@ pub mod policy_fragment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -24070,8 +24959,8 @@ pub mod policy_fragment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyFragmentContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyFragmentContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -24240,8 +25129,8 @@ pub mod policy_fragment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ResourceCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResourceCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -24507,6 +25396,9 @@ pub mod portal_revision {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -24516,6 +25408,13 @@ pub mod portal_revision {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -24557,8 +25456,8 @@ pub mod portal_revision {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalRevisionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalRevisionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -24787,8 +25686,8 @@ pub mod portal_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalSettingsCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalSettingsCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -24899,6 +25798,9 @@ pub mod sign_in_settings {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -24908,6 +25810,13 @@ pub mod sign_in_settings {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -24947,8 +25856,8 @@ pub mod sign_in_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalSigninSettings> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalSigninSettings>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -25026,8 +25935,8 @@ pub mod sign_in_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalSigninSettings> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalSigninSettings>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -25224,6 +26133,9 @@ pub mod sign_up_settings {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -25233,6 +26145,13 @@ pub mod sign_up_settings {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -25272,8 +26191,8 @@ pub mod sign_up_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalSignupSettings> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalSignupSettings>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -25351,8 +26270,8 @@ pub mod sign_up_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalSignupSettings> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalSignupSettings>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -25568,6 +26487,9 @@ pub mod delegation_settings {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -25577,6 +26499,13 @@ pub mod delegation_settings {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -25616,8 +26545,8 @@ pub mod delegation_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalDelegationSettings> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalDelegationSettings>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -25695,8 +26624,8 @@ pub mod delegation_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalDelegationSettings> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalDelegationSettings>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -25844,8 +26773,10 @@ pub mod delegation_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalSettingValidationKeyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalSettingValidationKeyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26037,8 +26968,8 @@ pub mod portal_config {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalConfigCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalConfigCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26057,6 +26988,9 @@ pub mod portal_config {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -26066,6 +27000,13 @@ pub mod portal_config {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -26107,8 +27048,8 @@ pub mod portal_config {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalConfigContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalConfigContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26181,8 +27122,8 @@ pub mod portal_config {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalConfigContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalConfigContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26255,8 +27196,8 @@ pub mod portal_config {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PortalConfigContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PortalConfigContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26501,8 +27442,10 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpointConnectionListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpointConnectionListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26564,8 +27507,8 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpointConnection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpointConnection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26708,8 +27651,8 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateLinkResourceListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateLinkResourceListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -26778,8 +27721,8 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateLinkResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateLinkResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -27119,6 +28062,9 @@ pub mod product {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -27128,6 +28074,13 @@ pub mod product {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -27169,8 +28122,8 @@ pub mod product {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProductContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProductContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -27189,6 +28142,9 @@ pub mod product {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -27198,6 +28154,13 @@ pub mod product {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -27250,8 +28213,8 @@ pub mod product {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProductContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProductContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -27270,6 +28233,9 @@ pub mod product {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -27279,6 +28245,13 @@ pub mod product {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -27324,8 +28297,8 @@ pub mod product {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProductContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProductContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -27862,8 +28835,8 @@ pub mod product_api {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -28256,8 +29229,8 @@ pub mod product_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GroupContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GroupContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -28709,8 +29682,8 @@ pub mod product_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -28729,6 +29702,9 @@ pub mod product_policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -28738,6 +29714,13 @@ pub mod product_policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -28790,8 +29773,8 @@ pub mod product_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -28810,6 +29793,9 @@ pub mod product_policy {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -28819,6 +29805,13 @@ pub mod product_policy {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -28873,8 +29866,8 @@ pub mod product_policy {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PolicyContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -29088,8 +30081,8 @@ pub mod quota_by_counter_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaCounterCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QuotaCounterCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -29160,8 +30153,8 @@ pub mod quota_by_counter_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaCounterCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QuotaCounterCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -29291,8 +30284,8 @@ pub mod quota_by_period_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaCounterContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QuotaCounterContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -29365,8 +30358,8 @@ pub mod quota_by_period_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaCounterContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QuotaCounterContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -30667,8 +31660,8 @@ pub mod reports {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RequestReportCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RequestReportCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -30934,6 +31927,9 @@ pub mod global_schema {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -30943,6 +31939,13 @@ pub mod global_schema {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -30984,8 +31987,8 @@ pub mod global_schema {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GlobalSchemaContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GlobalSchemaContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -31004,6 +32007,9 @@ pub mod global_schema {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -31013,6 +32019,13 @@ pub mod global_schema {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -31066,8 +32079,8 @@ pub mod global_schema {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GlobalSchemaContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GlobalSchemaContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -31328,6 +32341,9 @@ pub mod tenant_settings {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -31337,6 +32353,13 @@ pub mod tenant_settings {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -31378,8 +32401,8 @@ pub mod tenant_settings {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TenantSettingsContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TenantSettingsContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -31852,6 +32875,9 @@ pub mod subscription {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -31861,6 +32887,13 @@ pub mod subscription {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -31902,8 +32935,8 @@ pub mod subscription {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -31922,6 +32955,9 @@ pub mod subscription {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -31931,6 +32967,13 @@ pub mod subscription {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -32001,8 +33044,8 @@ pub mod subscription {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -32021,6 +33064,9 @@ pub mod subscription {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -32030,6 +33076,13 @@ pub mod subscription {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -32093,8 +33146,8 @@ pub mod subscription {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -32275,6 +33328,9 @@ pub mod subscription {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -32284,6 +33340,13 @@ pub mod subscription {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -32319,8 +33382,8 @@ pub mod subscription {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionKeysContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionKeysContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -32789,6 +33852,9 @@ pub mod tenant_access {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -32798,6 +33864,13 @@ pub mod tenant_access {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -32839,8 +33912,8 @@ pub mod tenant_access {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AccessInformationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AccessInformationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -32859,6 +33932,9 @@ pub mod tenant_access {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -32868,6 +33944,13 @@ pub mod tenant_access {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -32913,8 +33996,8 @@ pub mod tenant_access {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AccessInformationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AccessInformationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -32933,6 +34016,9 @@ pub mod tenant_access {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -32942,6 +34028,13 @@ pub mod tenant_access {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -32987,8 +34080,8 @@ pub mod tenant_access {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AccessInformationContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AccessInformationContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -33124,6 +34217,9 @@ pub mod tenant_access {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -33133,6 +34229,13 @@ pub mod tenant_access {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -33175,8 +34278,8 @@ pub mod tenant_access {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AccessInformationSecretsContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AccessInformationSecretsContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -33610,8 +34713,10 @@ pub mod tenant_configuration {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TenantConfigurationSyncStateContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::TenantConfigurationSyncStateContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -33968,6 +35073,9 @@ pub mod user {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -33977,6 +35085,13 @@ pub mod user {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -34018,8 +35133,8 @@ pub mod user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UserContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -34038,6 +35153,9 @@ pub mod user {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -34047,6 +35165,13 @@ pub mod user {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -34108,8 +35233,8 @@ pub mod user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UserContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -34128,6 +35253,9 @@ pub mod user {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -34137,6 +35265,13 @@ pub mod user {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -34182,8 +35317,8 @@ pub mod user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UserContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -34370,8 +35505,8 @@ pub mod user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GenerateSsoUrlResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GenerateSsoUrlResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -34442,8 +35577,8 @@ pub mod user {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UserTokenResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserTokenResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -34801,6 +35936,9 @@ pub mod user_subscription {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -34810,6 +35948,13 @@ pub mod user_subscription {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -34853,8 +35998,8 @@ pub mod user_subscription {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionContract> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionContract>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

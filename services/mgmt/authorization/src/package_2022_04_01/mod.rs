@@ -781,8 +781,8 @@ pub mod deny_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DenyAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DenyAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -841,8 +841,8 @@ pub mod deny_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DenyAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DenyAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1040,8 +1040,8 @@ pub mod provider_operations_metadata {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ProviderOperationsMetadata> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ProviderOperationsMetadata>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1717,8 +1717,8 @@ pub mod role_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1785,8 +1785,8 @@ pub mod role_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1860,8 +1860,8 @@ pub mod role_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2049,8 +2049,8 @@ pub mod role_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2111,8 +2111,8 @@ pub mod role_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2180,8 +2180,8 @@ pub mod role_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2310,8 +2310,8 @@ pub mod role_definitions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleDefinition>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2376,8 +2376,8 @@ pub mod role_definitions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleDefinition>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2444,8 +2444,8 @@ pub mod role_definitions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleDefinition>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2510,8 +2510,8 @@ pub mod role_definitions {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleDefinition> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleDefinition>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3074,8 +3074,8 @@ pub mod role_assignment_schedules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentSchedule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignmentSchedule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3373,8 +3373,8 @@ pub mod role_assignment_schedule_instances {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentScheduleInstance> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignmentScheduleInstance>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3518,8 +3518,8 @@ pub mod role_assignment_schedule_requests {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentScheduleRequest> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignmentScheduleRequest>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3586,8 +3586,8 @@ pub mod role_assignment_schedule_requests {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentScheduleRequest> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignmentScheduleRequest>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3796,8 +3796,8 @@ pub mod role_assignment_schedule_requests {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleAssignmentScheduleRequest> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleAssignmentScheduleRequest>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3891,8 +3891,8 @@ pub mod role_eligibility_schedules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleEligibilitySchedule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleEligibilitySchedule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4190,8 +4190,8 @@ pub mod role_eligibility_schedule_instances {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleEligibilityScheduleInstance> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleEligibilityScheduleInstance>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4339,8 +4339,8 @@ pub mod role_eligibility_schedule_requests {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleEligibilityScheduleRequest> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleEligibilityScheduleRequest>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4407,8 +4407,8 @@ pub mod role_eligibility_schedule_requests {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleEligibilityScheduleRequest> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleEligibilityScheduleRequest>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4617,8 +4617,8 @@ pub mod role_eligibility_schedule_requests {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleEligibilityScheduleRequest> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleEligibilityScheduleRequest>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4742,8 +4742,8 @@ pub mod role_management_policies {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleManagementPolicy> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleManagementPolicy>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4810,8 +4810,8 @@ pub mod role_management_policies {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleManagementPolicy> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleManagementPolicy>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5071,8 +5071,8 @@ pub mod role_management_policy_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleManagementPolicyAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleManagementPolicyAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5139,8 +5139,8 @@ pub mod role_management_policy_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RoleManagementPolicyAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RoleManagementPolicyAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

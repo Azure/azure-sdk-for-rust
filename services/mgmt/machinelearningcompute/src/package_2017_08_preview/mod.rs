@@ -340,8 +340,8 @@ pub mod operationalization_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationalizationCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationalizationCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -405,8 +405,8 @@ pub mod operationalization_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationalizationCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationalizationCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -469,8 +469,8 @@ pub mod operationalization_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationalizationCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationalizationCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -577,8 +577,10 @@ pub mod operationalization_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationalizationClusterCredentials> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationalizationClusterCredentials>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -640,8 +642,10 @@ pub mod operationalization_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CheckSystemServicesUpdatesAvailableResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckSystemServicesUpdatesAvailableResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -660,6 +664,9 @@ pub mod operationalization_clusters {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -669,6 +676,13 @@ pub mod operationalization_clusters {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "URI of the async operation."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -704,8 +718,8 @@ pub mod operationalization_clusters {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::UpdateSystemServicesResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpdateSystemServicesResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -982,8 +996,8 @@ pub mod machine_learning_compute {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AvailableOperations> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AvailableOperations>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

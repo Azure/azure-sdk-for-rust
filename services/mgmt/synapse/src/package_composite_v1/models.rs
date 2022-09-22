@@ -283,6 +283,9 @@ pub struct BigDataPoolResourceProperties {
     #[doc = "Whether compute isolation is required or not."]
     #[serde(rename = "isComputeIsolationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_compute_isolation_enabled: Option<bool>,
+    #[doc = "Whether autotune is required or not."]
+    #[serde(rename = "isAutotuneEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_autotune_enabled: Option<bool>,
     #[doc = "Whether session level packages enabled."]
     #[serde(rename = "sessionLevelPackagesEnabled", default, skip_serializing_if = "Option::is_none")]
     pub session_level_packages_enabled: Option<bool>,
@@ -4890,6 +4893,9 @@ pub struct SparkConfigurationInfo {
     #[doc = "The timestamp of resource creation."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
+    #[doc = "SparkConfiguration merge configs."]
+    #[serde(rename = "configMergeRule", default, skip_serializing_if = "Option::is_none")]
+    pub config_merge_rule: Option<serde_json::Value>,
 }
 impl SparkConfigurationInfo {
     pub fn new(configs: serde_json::Value) -> Self {
@@ -4900,6 +4906,7 @@ impl SparkConfigurationInfo {
             notes: None,
             created_by: None,
             created: None,
+            config_merge_rule: None,
         }
     }
 }

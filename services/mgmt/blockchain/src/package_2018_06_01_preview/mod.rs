@@ -348,8 +348,8 @@ pub mod blockchain_members {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BlockchainMember> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BlockchainMember>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -428,8 +428,8 @@ pub mod blockchain_members {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BlockchainMember> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BlockchainMember>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -507,8 +507,8 @@ pub mod blockchain_members {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BlockchainMember> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BlockchainMember>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -903,8 +903,8 @@ pub mod blockchain_members {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiKeyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiKeyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -982,8 +982,8 @@ pub mod blockchain_members {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiKeyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiKeyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1075,8 +1075,8 @@ pub mod blockchain_member_operation_results {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1191,8 +1191,8 @@ pub mod locations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NameAvailability> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NameAvailability>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1258,8 +1258,8 @@ pub mod locations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ConsortiumCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConsortiumCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1437,8 +1437,8 @@ pub mod skus {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ResourceTypeSkuCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResourceTypeSkuCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1667,8 +1667,8 @@ pub mod transaction_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TransactionNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TransactionNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1749,8 +1749,8 @@ pub mod transaction_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TransactionNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TransactionNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1830,8 +1830,8 @@ pub mod transaction_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::TransactionNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TransactionNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2035,8 +2035,8 @@ pub mod transaction_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiKeyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiKeyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2109,8 +2109,8 @@ pub mod transaction_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ApiKeyCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApiKeyCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

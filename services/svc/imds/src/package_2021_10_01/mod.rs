@@ -184,8 +184,8 @@ pub mod instances {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Instance> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Instance>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -271,8 +271,8 @@ pub mod attested {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AttestedData> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AttestedData>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -413,8 +413,8 @@ pub mod identity {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IdentityTokenResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IdentityTokenResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -474,8 +474,8 @@ pub mod identity {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IdentityInfoResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IdentityInfoResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

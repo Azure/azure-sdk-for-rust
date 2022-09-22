@@ -100,7 +100,7 @@ impl ContainerClient {
                     canonicalized_resource,
                     permissions,
                     expiry,
-                    BlobSignedResource::Blob,
+                    BlobSignedResource::Container,
                 ))
             }
             _ => Err(Error::message(
@@ -164,12 +164,11 @@ impl ContainerClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::clients::BlobServiceClientBuilder;
+    use crate::clients::ClientBuilder;
     use futures::StreamExt;
 
     fn get_emulator_client(container_name: &str) -> ContainerClient {
-        let service_client = BlobServiceClientBuilder::emulator().build();
-        service_client.container_client(container_name)
+        ClientBuilder::emulator().container_client(container_name)
     }
 
     #[tokio::test]
@@ -214,10 +213,11 @@ mod integration_tests {
             .await
             .expect("list blobs next() should return value")
             .expect("list blobs should succeed");
-        assert_eq!(list.blobs.blobs.len(), 1);
-        assert_eq!(list.blobs.blobs[0].name, "hello.txt");
+        let blobs: Vec<_> = list.blobs.blobs().collect();
+        assert_eq!(blobs.len(), 1);
+        assert_eq!(blobs[0].name, "hello.txt");
         assert_eq!(
-            list.blobs.blobs[0]
+            blobs[0]
                 .properties
                 .content_md5
                 .as_ref()

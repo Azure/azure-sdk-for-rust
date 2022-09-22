@@ -563,7 +563,7 @@ pub struct RedisCommonProperties {
     #[doc = "All Redis Settings. Few possible keys: rdb-backup-enabled,rdb-storage-connection-string,rdb-backup-frequency,maxmemory-delta,maxmemory-policy,notify-keyspace-events,maxmemory-samples,slowlog-log-slower-than,slowlog-max-len,list-max-ziplist-entries,list-max-ziplist-value,hash-max-ziplist-entries,hash-max-ziplist-value,set-max-intset-entries,zset-max-ziplist-entries,zset-max-ziplist-value etc."]
     #[serde(rename = "redisConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub redis_configuration: Option<redis_common_properties::RedisConfiguration>,
-    #[doc = "Redis version. Only major version will be used in PUT/PATCH request with current valid values: (4, 6)"]
+    #[doc = "Redis version. This should be in the form 'major[.minor[.build]]' (only 'major' is required) or the value 'latest' which refers to the latest stable Redis version that is available. Only the major and minor version are used in a PUT/PATCH request. Supported versions: 4.0, 6.0."]
     #[serde(rename = "redisVersion", default, skip_serializing_if = "Option::is_none")]
     pub redis_version: Option<String>,
     #[doc = "Specifies whether the non-ssl Redis server port (6379) is enabled."]

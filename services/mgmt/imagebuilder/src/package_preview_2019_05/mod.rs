@@ -534,8 +534,8 @@ pub mod virtual_machine_image_templates {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ImageTemplate> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ImageTemplate>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -605,8 +605,8 @@ pub mod virtual_machine_image_templates {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ImageTemplate> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ImageTemplate>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -676,8 +676,8 @@ pub mod virtual_machine_image_templates {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ImageTemplate> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ImageTemplate>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -921,8 +921,8 @@ pub mod virtual_machine_image_templates {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RunOutput> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RunOutput>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

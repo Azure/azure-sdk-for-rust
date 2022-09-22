@@ -186,8 +186,8 @@ pub mod network_function {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -564,8 +564,8 @@ pub mod azure_traffic_collectors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AzureTrafficCollector> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AzureTrafficCollector>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -635,8 +635,8 @@ pub mod azure_traffic_collectors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AzureTrafficCollector> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AzureTrafficCollector>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -705,8 +705,8 @@ pub mod azure_traffic_collectors {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AzureTrafficCollector> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AzureTrafficCollector>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -995,8 +995,8 @@ pub mod collector_policies {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CollectorPolicy> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CollectorPolicy>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1061,8 +1061,8 @@ pub mod collector_policies {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CollectorPolicy> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CollectorPolicy>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

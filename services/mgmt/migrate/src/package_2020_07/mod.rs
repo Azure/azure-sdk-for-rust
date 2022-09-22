@@ -295,8 +295,8 @@ pub mod hyper_v_cluster {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVCluster> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVCluster>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -588,8 +588,8 @@ pub mod hyper_v_host {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVHost> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVHost>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -855,8 +855,8 @@ pub mod hyper_v_jobs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1073,8 +1073,8 @@ pub mod hyper_v_machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVMachine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVMachine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1304,8 +1304,8 @@ pub mod hyper_v_operations_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1421,8 +1421,8 @@ pub mod hyper_v_run_as_accounts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVRunAsAccount> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVRunAsAccount>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1755,8 +1755,8 @@ pub mod hyper_v_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1825,8 +1825,8 @@ pub mod hyper_v_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1895,8 +1895,8 @@ pub mod hyper_v_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2145,8 +2145,8 @@ pub mod hyper_v_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::HyperVSiteUsage> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::HyperVSiteUsage>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2165,6 +2165,9 @@ pub mod hyper_v_sites {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2174,6 +2177,13 @@ pub mod hyper_v_sites {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2258,6 +2268,9 @@ pub mod hyper_v_sites {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -2267,6 +2280,13 @@ pub mod hyper_v_sites {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -2450,8 +2470,8 @@ pub mod jobs {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareJob> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareJob>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2712,8 +2732,8 @@ pub mod machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareMachine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareMachine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3050,8 +3070,8 @@ pub mod run_as_accounts {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareRunAsAccount> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareRunAsAccount>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3360,8 +3380,8 @@ pub mod sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3430,8 +3450,8 @@ pub mod sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3500,8 +3520,8 @@ pub mod sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3750,8 +3770,8 @@ pub mod sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VMwareSiteUsage> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VMwareSiteUsage>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3915,8 +3935,8 @@ pub mod v_center {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VCenter> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VCenter>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4206,8 +4226,8 @@ pub mod v_mware_operations_status {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationStatus> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4574,8 +4594,8 @@ pub mod master_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::MasterSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MasterSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4637,6 +4657,9 @@ pub mod master_sites {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4646,6 +4669,14 @@ pub mod master_sites {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Tracking URL for long running operation."]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
         }
         #[derive(Clone)]
@@ -4687,8 +4718,8 @@ pub mod master_sites {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::MasterSite> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::MasterSite>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4796,8 +4827,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AvailableOperations> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AvailableOperations>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -4950,8 +4981,8 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpointConnection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpointConnection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5015,8 +5046,8 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpointConnection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpointConnection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5119,8 +5150,10 @@ pub mod private_endpoint_connection {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateEndpointConnectionCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateEndpointConnectionCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5236,8 +5269,8 @@ pub mod private_link_resources {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateLinkResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateLinkResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5304,8 +5337,8 @@ pub mod private_link_resources {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateLinkResourceCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateLinkResourceCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -5354,6 +5387,9 @@ pub mod v_mware_sites {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5363,6 +5399,13 @@ pub mod v_mware_sites {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]
@@ -5447,6 +5490,9 @@ pub mod v_mware_sites {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -5456,6 +5502,13 @@ pub mod v_mware_sites {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Service generated Request ID."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
             }
         }
         #[derive(Clone)]

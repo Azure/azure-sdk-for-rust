@@ -425,8 +425,8 @@ pub mod kusto_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::KustoPoolListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KustoPoolListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -495,8 +495,8 @@ pub mod kusto_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::KustoPool> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KustoPool>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -586,8 +586,8 @@ pub mod kusto_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::KustoPool> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KustoPool>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -668,8 +668,8 @@ pub mod kusto_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::KustoPool> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KustoPool>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -780,8 +780,8 @@ pub mod kusto_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CheckNameResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -985,8 +985,8 @@ pub mod databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatabaseListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatabaseListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1057,8 +1057,8 @@ pub mod databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Database>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1132,8 +1132,8 @@ pub mod databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Database>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1207,8 +1207,8 @@ pub mod databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Database>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1467,8 +1467,8 @@ pub mod data_connections {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataConnectionListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1532,8 +1532,8 @@ pub mod data_connections {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataConnection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1600,8 +1600,8 @@ pub mod data_connections {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataConnection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1668,8 +1668,8 @@ pub mod data_connections {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DataConnection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1877,8 +1877,10 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ClusterPrincipalAssignmentListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterPrincipalAssignmentListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1941,8 +1943,8 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ClusterPrincipalAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterPrincipalAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2008,8 +2010,8 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ClusterPrincipalAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterPrincipalAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2229,8 +2231,10 @@ pub mod database_principal_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatabasePrincipalAssignmentListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatabasePrincipalAssignmentListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2294,8 +2298,8 @@ pub mod database_principal_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatabasePrincipalAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatabasePrincipalAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2362,8 +2366,8 @@ pub mod database_principal_assignments {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DatabasePrincipalAssignment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DatabasePrincipalAssignment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

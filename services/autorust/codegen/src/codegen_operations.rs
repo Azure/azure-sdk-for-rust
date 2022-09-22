@@ -2,13 +2,12 @@ use crate::{
     codegen::{parse_path_params, PARAM_RE},
     codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
-    spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
+    spec::{get_type_name_for_schema_ref, TypeName, WebOperation, WebParameter, WebVerb},
     status_codes::get_status_code_ident,
-    status_codes::get_success_responses,
-    CodeGen,
+    CodeGen, Error, ErrorKind,
 };
 use crate::{content_type, Result};
-use autorust_openapi::{CollectionFormat, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, Header, ParameterType, Response, StatusCode};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
 use indexmap::IndexMap;
@@ -329,6 +328,14 @@ impl WebOperationGen {
             next_link_name: p.next_link_name.clone(),
         })
     }
+
+    pub fn success_responses(&self) -> IndexMap<&StatusCode, &Response> {
+        self.0
+            .responses
+            .iter()
+            .filter(|(status_code, _)| crate::status_codes::is_success(status_code))
+            .collect()
+    }
 }
 
 /// Creating a function name from the path and verb when an operationId is not specified.
@@ -646,6 +653,115 @@ struct ResponseCode {
     status_responses: Vec<StatusResponseCode>,
     pageable: Option<Pageable>,
     produces: String,
+    headers: HeadersCode,
+}
+
+#[derive(Clone)]
+struct HeadersCode {
+    headers: Vec<HeaderCode>,
+}
+
+impl HeadersCode {
+    fn new(headers: Vec<HeaderCode>) -> Result<Self> {
+        Ok(Self { headers })
+    }
+
+    fn has_headers(&self) -> bool {
+        !self.headers.is_empty()
+    }
+}
+
+impl ToTokens for HeadersCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if self.has_headers() {
+            let headers = &self.headers;
+            tokens.extend(quote! {
+                pub struct Headers<'a>(&'a azure_core::headers::Headers);
+                impl<'a> Headers<'a> {
+                    #(#headers)*
+                }
+            })
+        }
+    }
+}
+
+/// Code for a function to get a header value from the http response.
+#[derive(Clone)]
+struct HeaderCode {
+    header_name: String,
+    function_name: Ident,
+    type_name_code: TypeNameCode,
+    description: DocCommentCode,
+}
+
+impl HeaderCode {
+    fn new(header_name: String, header: &Header) -> Result<Self> {
+        let function_name = header_name.to_snake_case_ident()?; // ETag as e_tag
+        let header_name = header_name.to_lowercase(); // ETag as etag
+        let type_name = match (header.type_.as_str(), header.format.as_deref()) {
+            ("string", None) => Ok(TypeName::String),
+            ("string", Some("byte")) => Ok(TypeName::String), // base64-encoded
+            ("string", Some("duration")) => Ok(TypeName::String),
+            ("string", Some("uuid")) => Ok(TypeName::String),
+            ("string", Some("date-time-rfc1123")) => Ok(TypeName::DateTimeRfc1123),
+            ("integer", None) => Ok(TypeName::Int32),
+            ("integer", Some("int32")) => Ok(TypeName::Int32),
+            ("number", None) => Ok(TypeName::Float32),
+            ("number", Some("float")) => Ok(TypeName::Float32),
+            ("number", Some("double")) => Ok(TypeName::Float64),
+            ("integer", Some("int64")) => Ok(TypeName::Int64),
+            ("boolean", None) => Ok(TypeName::Boolean),
+            (header_type, header_format) => Err(Error::with_message(ErrorKind::CodeGen, || {
+                format!("header type '{}' format '{:?}' not matched", header_type, header_format)
+            })),
+        }?;
+        let type_name_code = TypeNameCode::new(&type_name)?;
+        let description = DocCommentCode::new(header.description.clone());
+        Ok(Self {
+            header_name,
+            function_name,
+            type_name_code,
+            description,
+        })
+    }
+}
+
+impl ToTokens for HeaderCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            header_name,
+            function_name,
+            type_name_code,
+            description,
+        } = &self;
+        let hdr_fn = if type_name_code.is_string() {
+            quote! {
+                pub fn #function_name(&self) -> azure_core::Result<&str> {
+                    self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))
+                }
+            }
+        } else if type_name_code.is_date_time() {
+            quote! {
+                pub fn #function_name(&self) -> azure_core::Result<time::OffsetDateTime> {
+                    azure_core::date::parse_rfc3339(self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))?)
+                }
+            }
+        } else if type_name_code.is_date_time_rfc1123() {
+            quote! {
+                pub fn #function_name(&self) -> azure_core::Result<time::OffsetDateTime> {
+                    azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static(#header_name))?)
+                }
+            }
+        } else {
+            quote! {
+                pub fn #function_name(&self) -> azure_core::Result<#type_name_code> {
+                    self.0.get_as(&azure_core::headers::HeaderName::from_static(#header_name))
+                }
+            }
+        };
+        description.to_tokens(tokens);
+        hdr_fn.to_tokens(tokens)
+    }
 }
 
 #[derive(Clone)]
@@ -662,18 +778,32 @@ struct StatusResponseCode {
 
 impl ResponseCode {
     fn new(operation: &WebOperationGen, produces: String) -> Result<Self> {
-        let mut status_responses = Vec::new();
-        let responses = &operation.0.responses;
-        for (status_code, rsp) in &get_success_responses(responses) {
-            status_responses.push(StatusResponseCode {
-                status_code_name: get_status_code_ident(status_code)?,
-                response_type: create_response_type(rsp)?,
-            });
-        }
+        let success_responses = operation.success_responses();
+        let status_responses = success_responses
+            .iter()
+            .map(|(status_code, rsp)| {
+                Ok(StatusResponseCode {
+                    status_code_name: get_status_code_ident(status_code)?,
+                    response_type: create_response_type(rsp)?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        let headers = success_responses
+            .iter()
+            .flat_map(|(_, rsp)| &rsp.headers)
+            .filter_map(|(name, header)| match header {
+                autorust_openapi::ReferenceOr::Item(header) => Some((name.clone(), HeaderCode::new(name.clone(), header))),
+                _ => None,
+            })
+            .collect::<IndexMap<_, _>>()
+            .into_values()
+            .collect::<Result<Vec<_>>>()?;
         Ok(Self {
             status_responses,
             pageable: operation.pageable(),
             produces,
+            headers: HeadersCode::new(headers)?,
         })
     }
 
@@ -721,6 +851,13 @@ impl ToTokens for ResponseCode {
                     let body: #response_type = serde_json::from_slice(&bytes)?;
                 }
             };
+
+            let headers_fn = if self.headers.has_headers() {
+                quote! { pub fn headers(&self) -> Headers { Headers(self.0.headers()) } }
+            } else {
+                quote! {}
+            };
+
             tokens.extend(quote! {
                 impl Response {
                     pub async fn into_body(self) -> azure_core::Result<#response_type> {
@@ -734,6 +871,7 @@ impl ToTokens for ResponseCode {
                     pub fn as_raw_response(&self) -> &azure_core::Response {
                         &self.0
                     }
+                    #headers_fn
                 }
                 impl From<Response> for azure_core::Response {
                     fn from(rsp: Response) -> Self {
@@ -746,6 +884,7 @@ impl ToTokens for ResponseCode {
                     }
                 }
             });
+            tokens.extend(self.headers.to_token_stream());
         }
     }
 }
@@ -804,11 +943,15 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             }
         });
 
-        let into_body = if let Some(response_type) = self.response_code.response_type() {
+        let into_future = if let Some(response_type) = self.response_code.response_type() {
             quote! {
                 #[doc = "Send the request and return the response body."]
-                pub async fn into_body(self) -> azure_core::Result<#response_type> {
-                    self.send().await?.into_body().await
+                pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<#response_type>> {
+                    Box::pin(
+                        async move {
+                            self.send().await?.into_body().await
+                        }
+                    )
                 }
             }
         } else {
@@ -829,7 +972,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     }
                 })
             }
-            #into_body
+            #into_future
         };
 
         let fut = if let Some(pageable) = &self.response_code.pageable {
@@ -1135,14 +1278,8 @@ impl ToTokens for ClientFunctionCode {
             }
         }
 
-        let summary = match &self.summary {
-            Some(summary) if !summary.is_empty() => quote! { #[doc = #summary] },
-            _ => quote! {},
-        };
-        let description = match &self.description {
-            Some(desc) if !desc.is_empty() => quote! { #[doc = #desc] },
-            _ => quote! {},
-        };
+        let summary = DocCommentCode::new(self.summary.clone());
+        let description = DocCommentCode::new(self.description.clone());
 
         let mut param_descriptions: Vec<TokenStream> = Vec::new();
         if self
@@ -1178,6 +1315,32 @@ impl ToTokens for ClientFunctionCode {
                 }
             }
         });
+    }
+}
+
+#[derive(Clone)]
+struct DocCommentCode {
+    comment: Option<String>,
+}
+
+impl DocCommentCode {
+    pub fn new(comment: Option<String>) -> Self {
+        Self { comment }
+    }
+    pub fn is_empty(&self) -> bool {
+        if let Some(comment) = &self.comment {
+            comment.is_empty()
+        } else {
+            true
+        }
+    }
+}
+
+impl ToTokens for DocCommentCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(comment) = &self.comment {
+            tokens.extend(quote! { #[doc = #comment] })
+        }
     }
 }
 

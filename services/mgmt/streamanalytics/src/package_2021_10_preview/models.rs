@@ -2023,6 +2023,136 @@ impl GatewayMessageBusStreamInputDataSourceProperties {
         Self::default()
     }
 }
+#[doc = "Describes an available SKU information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GetStreamingJobSkuResult {
+    #[doc = "The type of resource the SKU applies to."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<get_streaming_job_sku_result::ResourceType>,
+    #[doc = "The properties that are associated with a SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<get_streaming_job_sku_result::Sku>,
+    #[doc = "Describes scaling information of a SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<SkuCapacity>,
+}
+impl GetStreamingJobSkuResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod get_streaming_job_sku_result {
+    use super::*;
+    #[doc = "The type of resource the SKU applies to."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ResourceType")]
+    pub enum ResourceType {
+        #[serde(rename = "Microsoft.StreamAnalytics/streamingjobs")]
+        MicrosoftStreamAnalyticsStreamingjobs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ResourceType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ResourceType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ResourceType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::MicrosoftStreamAnalyticsStreamingjobs => {
+                    serializer.serialize_unit_variant("ResourceType", 0u32, "Microsoft.StreamAnalytics/streamingjobs")
+                }
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The properties that are associated with a SKU."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Sku {
+        #[doc = "The name of the SKU."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub name: Option<sku::Name>,
+    }
+    impl Sku {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod sku {
+        use super::*;
+        #[doc = "The name of the SKU."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "Name")]
+        pub enum Name {
+            Standard,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for Name {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for Name {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for Name {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Standard => serializer.serialize_unit_variant("Name", 0u32, "Standard"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+}
+#[doc = "Result of the request to get streaming job SKUs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GetStreamingJobSkuResults {
+    #[doc = "The list of available SKUs that the streaming job can use."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GetStreamingJobSkuResult>,
+    #[doc = "The link (url) to the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GetStreamingJobSkuResults {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl GetStreamingJobSkuResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Describes how identity is verified"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
@@ -3535,6 +3665,9 @@ pub struct Sku {
     #[doc = "The name of the SKU. Required on PUT (CreateOrReplace) requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
+    #[doc = "The capacity of the SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
 }
 impl Sku {
     pub fn new() -> Self {
@@ -3574,6 +3707,75 @@ pub mod sku {
         {
             match self {
                 Self::Standard => serializer.serialize_unit_variant("Name", 0u32, "Standard"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Describes scaling information of a SKU."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SkuCapacity {
+    #[doc = "Specifies the minimum streaming units that the streaming job can use."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum: Option<i32>,
+    #[doc = "Specifies the maximum streaming units that the streaming job can use."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maximum: Option<i32>,
+    #[doc = "Specifies the default streaming units that the streaming job can use."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default: Option<i32>,
+    #[doc = "The scale type applicable to the SKU."]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    pub scale_type: Option<sku_capacity::ScaleType>,
+    #[doc = "Specifies the valid streaming units a streaming job can scale to."]
+    #[serde(rename = "allowedValues", default, skip_serializing_if = "Vec::is_empty")]
+    pub allowed_values: Vec<i32>,
+}
+impl SkuCapacity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod sku_capacity {
+    use super::*;
+    #[doc = "The scale type applicable to the SKU."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ScaleType")]
+    pub enum ScaleType {
+        #[serde(rename = "automatic")]
+        Automatic,
+        #[serde(rename = "manual")]
+        Manual,
+        #[serde(rename = "none")]
+        None,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ScaleType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ScaleType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ScaleType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Automatic => serializer.serialize_unit_variant("ScaleType", 0u32, "automatic"),
+                Self::Manual => serializer.serialize_unit_variant("ScaleType", 1u32, "manual"),
+                Self::None => serializer.serialize_unit_variant("ScaleType", 2u32, "none"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3646,6 +3848,9 @@ impl StreamInputProperties {
 pub struct StreamingJob {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The properties that are associated with a SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
     #[doc = "The properties that are associated with a streaming job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingJobProperties>,

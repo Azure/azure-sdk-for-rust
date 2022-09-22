@@ -66,8 +66,8 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    println!("List blob returned {} blobs.", page.blobs.blobs.len());
-    for cont in page.blobs.blobs.iter() {
+    println!("List blob returned {} blobs.", page.blobs.blobs().count());
+    for cont in page.blobs.blobs() {
         println!("\t{}\t{} bytes", cont.name, cont.properties.content_length);
     }
 
@@ -78,7 +78,7 @@ async fn main() -> azure_core::Result<()> {
 
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
-        let len = value?.blobs.blobs.len();
+        let len = value?.blobs.blobs().count();
         println!("received {} blobs", len);
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),

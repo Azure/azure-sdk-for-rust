@@ -1467,6 +1467,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_healthcareapis
 
+  azure_mgmt_hybridaks:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_hybridaks
+
   azure_mgmt_hybridcompute:
     if: always()
     runs-on: ubuntu-latest
@@ -3546,6 +3562,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_svc_datalakeanalytics
+
+  azure_svc_devcenter:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_svc_devcenter
 
   azure_svc_deviceprovisioningservices:
     if: always()

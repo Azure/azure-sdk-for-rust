@@ -332,8 +332,8 @@ pub mod get_test_result_file {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::TestResultFileResponse> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TestResultFileResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }

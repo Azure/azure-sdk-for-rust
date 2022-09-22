@@ -404,8 +404,8 @@ pub mod management_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ManagementGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagementGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -424,6 +424,9 @@ pub mod management_groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -433,6 +436,18 @@ pub mod management_groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "URL for determining when an operation has completed. Send a GET request to the URL in Location header.\n The URI should return a 202 until the operation reaches a terminal state and 200 once it reaches a terminal state \n\nFor more info: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#202-accepted-and-location-headers"]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "URL for checking the ongoing status of the operation.\n To get the status of the asynchronous operation, send a GET request to the URL in Azure-AsyncOperation header value.\n\nFor more info: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#asynchronous-operations"]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
         }
         #[derive(Clone)]
@@ -480,8 +495,8 @@ pub mod management_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ManagementGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagementGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -555,8 +570,8 @@ pub mod management_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ManagementGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagementGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -575,6 +590,9 @@ pub mod management_groups {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -584,6 +602,18 @@ pub mod management_groups {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "URL for determining when an operation has completed. Send a GET request to the URL in Location header.\n The URI should return a 202 until the operation reaches a terminal state and 200 once it reaches a terminal state \n\nFor more info: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#202-accepted-and-location-headers"]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "URL for checking the ongoing status of the operation.\n To get the status of the asynchronous operation, send a GET request to the URL in Azure-AsyncOperation header value.\n\nFor more info: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#asynchronous-operations"]
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
         }
         #[derive(Clone)]
@@ -629,8 +659,8 @@ pub mod management_groups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationResults> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1055,8 +1085,8 @@ pub mod check_name_availability {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityResult> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResult>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1118,8 +1148,8 @@ pub mod start_tenant_backfill {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::TenantBackfillStatusResult> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TenantBackfillStatusResult>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -1181,8 +1211,8 @@ pub mod tenant_backfill_status {
             })
         }
         #[doc = "Send the request and return the response body."]
-        pub async fn into_body(self) -> azure_core::Result<models::TenantBackfillStatusResult> {
-            self.send().await?.into_body().await
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TenantBackfillStatusResult>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }

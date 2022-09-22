@@ -1112,6 +1112,55 @@ pub mod policy_set_definition_properties {
         }
     }
 }
+#[doc = "The variable column."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyVariableColumn {
+    #[doc = "The name of this policy variable column."]
+    #[serde(rename = "columnName")]
+    pub column_name: String,
+}
+impl PolicyVariableColumn {
+    pub fn new(column_name: String) -> Self {
+        Self { column_name }
+    }
+}
+#[doc = "The variable properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyVariableProperties {
+    #[doc = "Variable column definitions."]
+    pub columns: Vec<PolicyVariableColumn>,
+}
+impl PolicyVariableProperties {
+    pub fn new(columns: Vec<PolicyVariableColumn>) -> Self {
+        Self { columns }
+    }
+}
+#[doc = "The name value tuple for this variable value column."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyVariableValueColumnValue {
+    #[doc = "Column name for the variable value"]
+    #[serde(rename = "columnName")]
+    pub column_name: String,
+    #[doc = "Column value for the variable value; this can be an integer, double, boolean, null or a string."]
+    #[serde(rename = "columnValue")]
+    pub column_value: serde_json::Value,
+}
+impl PolicyVariableValueColumnValue {
+    pub fn new(column_name: String, column_value: serde_json::Value) -> Self {
+        Self { column_name, column_value }
+    }
+}
+#[doc = "The variable value properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyVariableValueProperties {
+    #[doc = "Variable value column value array."]
+    pub values: Vec<PolicyVariableValueColumnValue>,
+}
+impl PolicyVariableValueProperties {
+    pub fn new(values: Vec<PolicyVariableValueColumnValue>) -> Self {
+        Self { values }
+    }
+}
 #[doc = "The resource type aliases definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeAliases {
@@ -1123,6 +1172,106 @@ pub struct ResourceTypeAliases {
     pub aliases: Vec<Alias>,
 }
 impl ResourceTypeAliases {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The variable."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Variable {
+    #[doc = "The variable properties."]
+    pub properties: PolicyVariableProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "The ID of the variable."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the variable."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of the resource (Microsoft.Authorization/variables)."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl Variable {
+    pub fn new(properties: PolicyVariableProperties) -> Self {
+        Self {
+            properties,
+            system_data: None,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "List of variables."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VariableListResult {
+    #[doc = "An array of variables."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Variable>,
+    #[doc = "The URL to use for getting the next set of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VariableListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl VariableListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The variable value."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VariableValue {
+    #[doc = "The variable value properties."]
+    pub properties: PolicyVariableValueProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "The ID of the variable."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the variable."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of the resource (Microsoft.Authorization/variables/values)."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl VariableValue {
+    pub fn new(properties: PolicyVariableValueProperties) -> Self {
+        Self {
+            properties,
+            system_data: None,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "List of variable values."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VariableValueListResult {
+    #[doc = "An array of variable values."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VariableValue>,
+    #[doc = "The URL to use for getting the next set of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VariableValueListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl VariableValueListResult {
     pub fn new() -> Self {
         Self::default()
     }

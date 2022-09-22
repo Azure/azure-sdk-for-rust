@@ -539,8 +539,8 @@ pub mod features {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::FeatureResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FeatureResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -608,8 +608,8 @@ pub mod features {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::FeatureResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FeatureResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -677,8 +677,8 @@ pub mod features {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::FeatureResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FeatureResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -835,8 +835,8 @@ pub mod subscription_feature_registrations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionFeatureRegistration> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionFeatureRegistration>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -917,8 +917,8 @@ pub mod subscription_feature_registrations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::SubscriptionFeatureRegistration> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SubscriptionFeatureRegistration>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

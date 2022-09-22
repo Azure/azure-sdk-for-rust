@@ -362,8 +362,8 @@ pub mod server_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ServerKey> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServerKey>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -435,8 +435,8 @@ pub mod server_keys {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ServerKey> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServerKey>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

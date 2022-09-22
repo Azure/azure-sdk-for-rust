@@ -305,8 +305,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NameAvailabilityResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NameAvailabilityResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -372,8 +372,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResourceList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResourceList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -437,8 +437,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResourceList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResourceList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -505,8 +505,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -525,6 +525,9 @@ pub mod b2c_tenants {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -534,6 +537,17 @@ pub mod b2c_tenants {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Location URI to poll for result"]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "Contains the number of seconds to wait before polling the location."]
+            pub fn retry_after(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -584,8 +598,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -662,8 +676,8 @@ pub mod b2c_tenants {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::B2cTenantResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::B2cTenantResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -777,8 +791,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AvailableOperations> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AvailableOperations>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -961,8 +975,8 @@ pub mod guest_usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GuestUsagesResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GuestUsagesResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1040,8 +1054,8 @@ pub mod guest_usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GuestUsagesResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GuestUsagesResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1119,8 +1133,8 @@ pub mod guest_usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GuestUsagesResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GuestUsagesResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1225,8 +1239,8 @@ pub mod guest_usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GuestUsagesResourceList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GuestUsagesResourceList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1292,8 +1306,8 @@ pub mod guest_usages {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GuestUsagesResourceList> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GuestUsagesResourceList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

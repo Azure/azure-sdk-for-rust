@@ -243,8 +243,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IndividualEnrollment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IndividualEnrollment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -314,8 +314,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::IndividualEnrollment> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IndividualEnrollment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -376,6 +376,9 @@ pub mod individual_enrollment {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -385,6 +388,21 @@ pub mod individual_enrollment {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The continuation token for getting the next page of results."]
+            pub fn x_ms_continuation(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation"))
+            }
+            #[doc = "The maximum number of items returned in a page."]
+            pub fn x_ms_max_item_count(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("x-ms-max-item-count"))
+            }
+            #[doc = "The list of values returned from the query."]
+            pub fn x_ms_item_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-item-type"))
             }
         }
         #[derive(Clone)]
@@ -435,8 +453,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::IndividualEnrollment>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::IndividualEnrollment>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -497,8 +515,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AttestationMechanism> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AttestationMechanism>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -558,8 +576,8 @@ pub mod individual_enrollment {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BulkEnrollmentOperationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BulkEnrollmentOperationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -697,8 +715,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -768,8 +786,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -830,6 +848,9 @@ pub mod enrollment_group {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -839,6 +860,21 @@ pub mod enrollment_group {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The continuation token for getting the next page of results."]
+            pub fn x_ms_continuation(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation"))
+            }
+            #[doc = "The maximum number of items returned in a page."]
+            pub fn x_ms_max_item_count(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("x-ms-max-item-count"))
+            }
+            #[doc = "The list of values returned from the query."]
+            pub fn x_ms_item_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-item-type"))
             }
         }
         #[derive(Clone)]
@@ -889,8 +925,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::EnrollmentGroup>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::EnrollmentGroup>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -954,8 +990,8 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::AttestationMechanism> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AttestationMechanism>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1015,8 +1051,10 @@ pub mod enrollment_group {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::BulkEnrollmentGroupOperationResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::BulkEnrollmentGroupOperationResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1114,8 +1152,8 @@ pub mod device_registration_state {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceRegistrationState> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeviceRegistrationState>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1176,6 +1214,9 @@ pub mod device_registration_state {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1185,6 +1226,21 @@ pub mod device_registration_state {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The continuation token for getting the next page of results."]
+            pub fn x_ms_continuation(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation"))
+            }
+            #[doc = "The maximum number of items returned in a page."]
+            pub fn x_ms_max_item_count(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("x-ms-max-item-count"))
+            }
+            #[doc = "The list of values returned from the query."]
+            pub fn x_ms_item_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-item-type"))
             }
         }
         #[derive(Clone)]
@@ -1235,8 +1291,8 @@ pub mod device_registration_state {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::DeviceRegistrationState>> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Vec<models::DeviceRegistrationState>>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

@@ -361,8 +361,8 @@ pub mod record_sets {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecordSet> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecordSet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -453,8 +453,8 @@ pub mod record_sets {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecordSet> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecordSet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -536,8 +536,8 @@ pub mod record_sets {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::RecordSet> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RecordSet>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1131,8 +1131,8 @@ pub mod zones {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Zone> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Zone>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1219,8 +1219,8 @@ pub mod zones {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Zone> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Zone>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1298,8 +1298,8 @@ pub mod zones {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Zone> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Zone>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1643,8 +1643,8 @@ pub mod dns_resource_reference {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DnsResourceReferenceResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DnsResourceReferenceResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

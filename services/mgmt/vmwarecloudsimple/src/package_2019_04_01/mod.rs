@@ -276,6 +276,9 @@ pub mod operations {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -285,6 +288,15 @@ pub mod operations {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -326,8 +338,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationResource> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -765,8 +777,8 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCloudNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCloudNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -785,6 +797,9 @@ pub mod dedicated_cloud_nodes {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -794,6 +809,19 @@ pub mod dedicated_cloud_nodes {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -838,8 +866,8 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCloudNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCloudNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -908,8 +936,8 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCloudNode> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCloudNode>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1385,8 +1413,8 @@ pub mod dedicated_cloud_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCloudService> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCloudService>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1455,8 +1483,8 @@ pub mod dedicated_cloud_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCloudService> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCloudService>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1525,8 +1553,8 @@ pub mod dedicated_cloud_services {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DedicatedCloudService> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DedicatedCloudService>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1893,8 +1921,8 @@ pub mod private_clouds {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::PrivateCloud> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateCloud>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2112,8 +2140,8 @@ pub mod customization_policies {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CustomizationPolicy> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CustomizationPolicy>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2328,8 +2356,8 @@ pub mod resource_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ResourcePool> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResourcePool>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2537,8 +2565,8 @@ pub mod virtual_machine_templates {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VirtualMachineTemplate> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualMachineTemplate>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2759,8 +2787,8 @@ pub mod virtual_networks {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VirtualNetwork> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualNetwork>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3373,8 +3401,8 @@ pub mod virtual_machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VirtualMachine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualMachine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3393,6 +3421,9 @@ pub mod virtual_machines {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -3402,6 +3433,13 @@ pub mod virtual_machines {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
             }
         }
         #[derive(Clone)]
@@ -3446,8 +3484,8 @@ pub mod virtual_machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VirtualMachine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualMachine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3517,8 +3555,8 @@ pub mod virtual_machines {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VirtualMachine> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualMachine>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

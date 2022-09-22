@@ -173,8 +173,8 @@ pub mod operations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::OperationListValue> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationListValue>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -314,8 +314,10 @@ pub mod support_plan_types {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanResponseEnvelope> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CanonicalSupportPlanResponseEnvelope>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -383,8 +385,10 @@ pub mod support_plan_types {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanResponseEnvelope> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CanonicalSupportPlanResponseEnvelope>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -452,8 +456,10 @@ pub mod support_plan_types {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanResponseEnvelope> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CanonicalSupportPlanResponseEnvelope>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -517,8 +523,8 @@ pub mod support_plan_types {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::CanonicalSupportPlanInfo> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CanonicalSupportPlanInfo>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

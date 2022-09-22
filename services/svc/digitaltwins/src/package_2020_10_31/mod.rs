@@ -395,8 +395,10 @@ pub mod digital_twin_models {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NonPagedDigitalTwinsModelDataCollection> {
-                self.send().await?.into_body().await
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::NonPagedDigitalTwinsModelDataCollection>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -484,8 +486,8 @@ pub mod digital_twin_models {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::DigitalTwinsModelData> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DigitalTwinsModelData>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -627,6 +629,9 @@ pub mod query {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -636,6 +641,13 @@ pub mod query {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The query charge."]
+            pub fn query_charge(&self) -> azure_core::Result<f32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("query-charge"))
             }
         }
         #[derive(Clone)]
@@ -695,8 +707,8 @@ pub mod query {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::QueryResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QueryResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -965,6 +977,9 @@ pub mod digital_twins {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -974,6 +989,13 @@ pub mod digital_twins {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1023,8 +1045,8 @@ pub mod digital_twins {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1043,6 +1065,9 @@ pub mod digital_twins {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1052,6 +1077,13 @@ pub mod digital_twins {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1112,8 +1144,8 @@ pub mod digital_twins {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1254,6 +1286,9 @@ pub mod digital_twins {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1263,6 +1298,13 @@ pub mod digital_twins {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1318,8 +1360,8 @@ pub mod digital_twins {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1338,6 +1380,9 @@ pub mod digital_twins {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1347,6 +1392,13 @@ pub mod digital_twins {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1413,8 +1465,8 @@ pub mod digital_twins {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1929,6 +1981,9 @@ pub mod digital_twins {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1938,6 +1993,13 @@ pub mod digital_twins {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Weak Etag."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
         }
         #[derive(Clone)]
@@ -1993,8 +2055,8 @@ pub mod digital_twins {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2306,8 +2368,8 @@ pub mod event_routes {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::EventRoute> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EventRoute>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

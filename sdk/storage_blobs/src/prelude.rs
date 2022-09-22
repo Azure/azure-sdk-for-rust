@@ -3,7 +3,7 @@ pub use crate::options::*;
 pub use crate::{
     blob::{Blob, BlobBlockType, BlockList, BlockListType},
     clients::{
-        BlobClient, BlobLeaseClient, BlobServiceClient, BlobServiceClientBuilder, ContainerClient,
+        BlobClient, BlobLeaseClient, BlobServiceClient, ClientBuilder, ContainerClient,
         ContainerLeaseClient,
     },
 };

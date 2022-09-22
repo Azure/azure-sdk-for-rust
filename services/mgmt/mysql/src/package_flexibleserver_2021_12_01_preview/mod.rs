@@ -103,6 +103,9 @@ impl Client {
             pipeline,
         }
     }
+    pub fn azure_ad_administrators_client(&self) -> azure_ad_administrators::Client {
+        azure_ad_administrators::Client(self.clone())
+    }
     pub fn backups_client(&self) -> backups::Client {
         backups::Client(self.clone())
     }
@@ -276,8 +279,8 @@ pub mod backups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ServerBackup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServerBackup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -346,8 +349,8 @@ pub mod backups {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ServerBackup> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServerBackup>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -611,8 +614,8 @@ pub mod configurations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Configuration> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Configuration>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -684,8 +687,8 @@ pub mod configurations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Configuration> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Configuration>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -755,8 +758,8 @@ pub mod configurations {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::ConfigurationListResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConfigurationListResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1052,8 +1055,8 @@ pub mod databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Database>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1125,8 +1128,8 @@ pub mod databases {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Database>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1430,8 +1433,8 @@ pub mod firewall_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::FirewallRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FirewallRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1503,8 +1506,8 @@ pub mod firewall_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::FirewallRule> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FirewallRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1905,8 +1908,8 @@ pub mod servers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Server> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Server>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -1976,8 +1979,8 @@ pub mod servers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Server> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Server>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2047,8 +2050,8 @@ pub mod servers {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::Server> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Server>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2900,8 +2903,8 @@ pub mod check_virtual_network_subnet_usage {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::VirtualNetworkSubnetUsageResult> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VirtualNetworkSubnetUsageResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -2993,8 +2996,8 @@ pub mod check_name_availability {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NameAvailability> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NameAvailability>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3081,8 +3084,8 @@ pub mod check_name_availability_without_location {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::NameAvailability> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NameAvailability>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3154,8 +3157,8 @@ pub mod get_private_dns_zone_suffix {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub async fn into_body(self) -> azure_core::Result<models::GetPrivateDnsZoneSuffixResponse> {
-                self.send().await?.into_body().await
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GetPrivateDnsZoneSuffixResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -3206,6 +3209,384 @@ pub mod operations {
                     async move {
                         let mut url =
                             azure_core::Url::parse(&format!("{}/providers/Microsoft.DBforMySQL/operations", this.client.endpoint(),))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+}
+pub mod azure_ad_administrators {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets information about an azure ad administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `administrator_name`: The name of the Azure AD Administrator."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            administrator_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                administrator_name: administrator_name.into(),
+            }
+        }
+        #[doc = "Creates or updates an existing Azure Active Directory administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `administrator_name`: The name of the Azure AD Administrator."]
+        #[doc = "* `parameters`: The required parameters for creating or updating an aad administrator."]
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            administrator_name: impl Into<String>,
+            parameters: impl Into<models::AzureAdAdministrator>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                administrator_name: administrator_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        #[doc = "Deletes an Azure AD Administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `administrator_name`: The name of the Azure AD Administrator."]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            administrator_name: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                administrator_name: administrator_name.into(),
+            }
+        }
+        #[doc = "List all the AAD administrators in a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        pub fn list_by_server(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+        ) -> list_by_server::RequestBuilder {
+            list_by_server::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::AzureAdAdministrator> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::AzureAdAdministrator = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) administrator_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/flexibleServers/{}/administrators/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name,
+                            &this.administrator_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AzureAdAdministrator>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::AzureAdAdministrator> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::AzureAdAdministrator = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) administrator_name: String,
+            pub(crate) parameters: models::AzureAdAdministrator,
+        }
+        impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/flexibleServers/{}/administrators/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name,
+                            &this.administrator_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AzureAdAdministrator>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) administrator_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/flexibleServers/{}/administrators/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name,
+                            &this.administrator_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_by_server {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::AdministratorListResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::AdministratorListResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::AdministratorListResult, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/flexibleServers/{}/administrators",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name
+                        ))?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");

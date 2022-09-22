@@ -20,4 +20,9 @@ boxed = [
         "InnerError",
         "innerError"
     ],
+    [
+        "../../../azure-rest-api-specs/specification/deviceupdate/data-plane/Microsoft.DeviceUpdate/stable/2022-10-01/deviceupdate.json",
+        "InnerError",
+        "innerError"
+    ],
 ]
