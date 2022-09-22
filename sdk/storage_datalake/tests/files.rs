@@ -14,7 +14,7 @@ async fn file_create_delete() -> azure_core::Result<()> {
         .clone()
         .file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -25,16 +25,16 @@ async fn file_create_delete() -> azure_core::Result<()> {
     let file_path = "some/path/e2etest-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
 
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
-    let create_file_if_not_exists_result = file_client.create_if_not_exists().into_future().await;
+    let create_file_if_not_exists_result = file_client.create_if_not_exists().await;
     assert!(create_file_if_not_exists_result.is_err());
 
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
-    file_client.delete().into_future().await?;
+    file_client.delete().await?;
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }
@@ -50,7 +50,7 @@ async fn file_read() -> azure_core::Result<()> {
         .clone()
         .file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -59,19 +59,15 @@ async fn file_read() -> azure_core::Result<()> {
     let file_path = "some/path/e2etest-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
 
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
-    file_client.append(0, bytes).into_future().await?;
+    file_client.append(0, bytes).await?;
 
-    file_client
-        .flush(file_length)
-        .close(true)
-        .into_future()
-        .await?;
+    file_client.flush(file_length).close(true).await?;
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }
@@ -87,7 +83,7 @@ async fn file_upload() -> azure_core::Result<()> {
         .clone()
         .file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -96,22 +92,18 @@ async fn file_upload() -> azure_core::Result<()> {
     let file_path = "some/path/e2etest-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
 
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
-    file_client.append(0, bytes.clone()).into_future().await?;
+    file_client.append(0, bytes.clone()).await?;
 
-    file_client
-        .flush(file_length)
-        .close(true)
-        .into_future()
-        .await?;
+    file_client.flush(file_length).close(true).await?;
 
-    let read_file_response = file_client.read().into_future().await?;
+    let read_file_response = file_client.read().await?;
     assert_eq!(bytes, read_file_response.data);
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }
@@ -127,7 +119,7 @@ async fn file_rename() -> azure_core::Result<()> {
         .clone()
         .file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -144,22 +136,18 @@ async fn file_rename() -> azure_core::Result<()> {
     file_client1
         .create()
         .properties(file_properties.clone())
-        .into_future()
         .await?;
-    file_client2.create().into_future().await?;
+    file_client2.create().await?;
 
     // original file properties
-    let original_target_file_properties = file_client2.get_properties().into_future().await?;
+    let original_target_file_properties = file_client2.get_properties().await?;
 
-    let rename_file_if_not_exists_result = file_client1
-        .rename_if_not_exists(file_path2)
-        .into_future()
-        .await;
+    let rename_file_if_not_exists_result = file_client1.rename_if_not_exists(file_path2).await;
     assert!(rename_file_if_not_exists_result.is_err());
 
-    file_client1.rename(file_path2).into_future().await?;
+    file_client1.rename(file_path2).await?;
 
-    let renamed_file_properties = file_client2.get_properties().into_future().await?;
+    let renamed_file_properties = file_client2.get_properties().await?;
 
     // when renaming a file, the source file properties should be propagated
     assert_eq!(renamed_file_properties.properties, Some(file_properties));
@@ -169,10 +157,10 @@ async fn file_rename() -> azure_core::Result<()> {
     );
 
     // getting properties for the source file should fail, when the file no longer exists
-    let source_file_properties_result = file_client1.get_properties().into_future().await;
+    let source_file_properties_result = file_client1.get_properties().await;
     assert!(source_file_properties_result.is_err());
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }
@@ -188,7 +176,7 @@ async fn file_get_properties() -> azure_core::Result<()> {
         .clone()
         .file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -197,7 +185,7 @@ async fn file_get_properties() -> azure_core::Result<()> {
     let file_path = "some/path/e2etest-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
 
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
     let mut file_properties = Properties::new();
     file_properties.insert("AddedVia", "Azure SDK for Rust");
@@ -205,26 +193,25 @@ async fn file_get_properties() -> azure_core::Result<()> {
     file_client
         .create()
         .properties(file_properties.clone())
-        .into_future()
         .await?;
 
     // Get properties
-    let file_properties = file_client.get_properties().into_future().await?;
+    let file_properties = file_client.get_properties().await?;
     assert!(file_properties.properties.is_some());
 
     // Get status (ie: only system-defined properties)
-    let file_properties = file_client.get_status().into_future().await?;
+    let file_properties = file_client.get_status().await?;
     assert!(!file_properties.properties.is_some());
 
     // Get access control list for the file
-    let file_acl = file_client.get_access_control_list().into_future().await?;
+    let file_acl = file_client.get_access_control_list().await?;
     assert_eq!(
         file_acl.acl,
         Some("user::rw-,group::r--,other::---".to_string())
     );
 
     // Cleanup
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }

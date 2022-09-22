@@ -46,19 +46,13 @@ async fn main() -> azure_core::Result<()> {
     }
     drop(list_databases_stream);
 
-    let db = client
-        .create_database(&args.database_name)
-        .into_future()
-        .await?;
+    let db = client.create_database(&args.database_name).await?;
     println!("created database = {:#?}", db);
 
     // create collection!
     {
         let database = client.database_client(args.database_name.clone());
-        let create_collection_response = database
-            .create_collection("panzadoro", "/id")
-            .into_future()
-            .await?;
+        let create_collection_response = database.create_collection("panzadoro", "/id").await?;
 
         println!(
             "create_collection_response == {:#?}",
@@ -67,7 +61,7 @@ async fn main() -> azure_core::Result<()> {
 
         let db_collection = database.collection_client("panzadoro");
 
-        let get_collection_response = db_collection.get_collection().into_future().await?;
+        let get_collection_response = db_collection.get_collection().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
         let mut stream = database.list_collections().into_stream();
@@ -76,14 +70,13 @@ async fn main() -> azure_core::Result<()> {
             println!("res == {:#?}", res);
         }
 
-        let delete_response = db_collection.delete_collection().into_future().await?;
+        let delete_response = db_collection.delete_collection().await?;
         println!("collection deleted: {:#?}", delete_response);
     }
 
     let resp = client
         .database_client(args.database_name)
         .delete_database()
-        .into_future()
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

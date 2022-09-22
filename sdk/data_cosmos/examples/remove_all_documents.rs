@@ -72,7 +72,6 @@ async fn main() -> azure_core::Result<()> {
         collection
             .document_client(id.clone(), &partition_key)?
             .delete_document()
-            .into_future()
             .await?;
     }
 

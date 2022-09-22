@@ -40,17 +40,15 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("put_blob {:?}", res);
 
-    let res = blob_client.snapshot().into_future().await?;
+    let res = blob_client.snapshot().await?;
     println!("blob snapshot: {:?}", res.snapshot);
 
     let res = blob_client
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .into_future()
         .await?;
     println!("Delete blob == {:?}", res);
 

@@ -93,7 +93,6 @@ impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
 
 azure_core::future!(ExecuteStoredProcedure<T>);
 
-#[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for ExecuteStoredProcedureBuilder<T> {
     type IntoFuture = ExecuteStoredProcedure<T>;
     type Output = <ExecuteStoredProcedure<T> as std::future::Future>::Output;

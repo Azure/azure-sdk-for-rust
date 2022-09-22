@@ -30,7 +30,6 @@ async fn put_block_blob_and_snapshot() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -41,17 +40,16 @@ async fn put_block_blob_and_snapshot() {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", BLOB_NAME);
 
-    let snapshot = blob.snapshot().into_future().await.unwrap().snapshot;
+    let snapshot = blob.snapshot().await.unwrap().snapshot;
 
     trace!("crated snapshot: {:?} of {:?}", snapshot, BLOB_NAME);
 
     // Clean-up test
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
     trace!("container {} deleted!", CONTAINER_NAME);
 }

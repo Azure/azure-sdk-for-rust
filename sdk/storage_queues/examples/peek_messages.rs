@@ -24,11 +24,7 @@ async fn main() -> azure_core::Result<()> {
 
     trace!("peeking messages");
 
-    let response = queue
-        .peek_messages()
-        .number_of_messages(2)
-        .into_future()
-        .await?;
+    let response = queue.peek_messages().number_of_messages(2).await?;
 
     println!("response == {:#?}", response);
 

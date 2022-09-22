@@ -35,7 +35,6 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
@@ -45,7 +44,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
         println!("\tAdded blob {}", i);
     }
@@ -69,7 +67,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

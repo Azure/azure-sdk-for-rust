@@ -61,14 +61,12 @@ async fn main() -> azure_core::Result<()> {
 
     let ret = trigger
         .create_trigger("something", TriggerType::Post, TriggerOperation::All)
-        .into_future()
         .await?;
     println!("Create response object:\n{:#?}", ret);
 
     let ret = trigger
         .replace_trigger(TRIGGER_BODY, TriggerType::Post, TriggerOperation::All)
         .consistency_level(ret)
-        .into_future()
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
@@ -91,7 +89,6 @@ async fn main() -> azure_core::Result<()> {
     let ret = trigger
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .into_future()
         .await?;
     println!("Delete response object:\n{:#?}", ret);
 

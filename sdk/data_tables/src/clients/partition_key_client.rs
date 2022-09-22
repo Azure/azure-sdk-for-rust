@@ -82,14 +82,10 @@ mod integration_tests {
         let table = table_service.table_client("PartitionKeyClientTransaction");
 
         println!("Delete the table (if it exists)");
-        let _ = table.delete().into_future().await;
+        let _ = table.delete().await;
 
         println!("Create the table");
-        table
-            .create()
-            .into_future()
-            .await
-            .expect("the table should be created");
+        table.create().await.expect("the table should be created");
 
         let partition_client = table.partition_key_client("Milan");
 
@@ -113,7 +109,6 @@ mod integration_tests {
             .unwrap()
             .insert(&entity2)
             .unwrap()
-            .into_future()
             .await
             .expect("transaction compete");
 

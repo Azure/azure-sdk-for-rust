@@ -24,7 +24,7 @@ async fn get_certficate(
         std::sync::Arc::new(creds),
     )?
     .secret_client();
-    let secret = client.get(certificate_name).into_future().await?;
+    let secret = client.get(certificate_name).await?;
     let cert = base64::decode(secret.value)?;
     Ok(cert)
 }

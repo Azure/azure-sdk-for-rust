@@ -45,7 +45,7 @@ async fn main() -> azure_core::Result<()> {
     try_join_all(upload_block_futures).await?;
 
     // Commit uploaded blocks.
-    let resp = blob_client.put_block_list(block_list).into_future().await?;
+    let resp = blob_client.put_block_list(block_list).await?;
     println!("PutBlockListResponse: {:?}", resp);
 
     Ok(())

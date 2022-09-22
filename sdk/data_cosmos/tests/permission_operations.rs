@@ -15,24 +15,19 @@ async fn permission_operations() {
     let client = setup_mock::initialize("permission_operations").unwrap();
 
     // create a temp database
-    let _ = client
-        .create_database(DATABASE_NAME)
-        .into_future()
-        .await
-        .unwrap();
+    let _ = client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
     // create two users
     let user1 = database.user_client(USER_NAME1);
-    let _create_user_response = user1.create_user().into_future().await.unwrap();
+    let _create_user_response = user1.create_user().await.unwrap();
     let user2 = database.user_client(USER_NAME2);
-    let _create_user_response = user2.create_user().into_future().await.unwrap();
+    let _create_user_response = user2.create_user().await.unwrap();
 
     // create a temp collection
     let create_collection_response = database
         .create_collection(COLLECTION_NAME, "/id")
-        .into_future()
         .await
         .unwrap();
 
@@ -43,14 +38,12 @@ async fn permission_operations() {
     let _ = permission_user1
         .create_permission(create_collection_response.collection.all_permission())
         .expiry_seconds(18000u64) // 5 hours, max!
-        .into_future()
         .await
         .unwrap();
 
     let _ = permission_user2
         .create_permission(create_collection_response.collection.read_permission())
         .expiry_seconds(18000u64) // 5 hours, max!
-        .into_future()
         .await
         .unwrap();
 
@@ -73,5 +66,5 @@ async fn permission_operations() {
     assert_eq!(list_permissions_response.permissions.len(), 1);
 
     // delete the database
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }

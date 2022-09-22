@@ -13,7 +13,7 @@ async fn main() -> azure_core::Result<()> {
     let file_system_client = data_lake_client.file_system_client(file_system_name.to_string());
 
     println!("creating file system '{}'...", &file_system_name);
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path = "some/path/example-file.txt";
@@ -25,12 +25,11 @@ async fn main() -> azure_core::Result<()> {
     let create_file_response = file_client
         .create()
         .properties(file_properties.clone())
-        .into_future()
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
     println!("getting properties for file '{}'...", file_path);
-    let get_properties_response = file_client.get_properties().into_future().await?;
+    let get_properties_response = file_client.get_properties().await?;
     println!(
         "get file properties response == {:?}\n",
         get_properties_response
@@ -38,32 +37,29 @@ async fn main() -> azure_core::Result<()> {
 
     println!("setting properties for file '{}'...", file_path);
     file_properties.insert("ModifiedBy", "Iota");
-    let set_properties_response = file_client
-        .set_properties(file_properties)
-        .into_future()
-        .await?;
+    let set_properties_response = file_client.set_properties(file_properties).await?;
     println!(
         "set file properties response == {:?}\n",
         set_properties_response
     );
 
     println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_client.create_if_not_exists().into_future().await;
+    let create_file_if_not_exists_result = file_client.create_if_not_exists().await;
     println!(
         "create file result (should fail) == {:?}\n",
         create_file_if_not_exists_result
     );
 
     println!("creating file '{}' (overwrite)...", file_path);
-    let create_file_response = file_client.create().into_future().await?;
+    let create_file_response = file_client.create().await?;
     println!("create file response == {:?}\n", create_file_response);
 
     println!("deleting file '{}'...", file_path);
-    let delete_file_response = file_client.delete().into_future().await?;
+    let delete_file_response = file_client.delete().await?;
     println!("delete_file file response == {:?}\n", delete_file_response);
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().into_future().await?;
+    let delete_fs_response = file_system_client.delete().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())

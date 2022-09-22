@@ -75,7 +75,7 @@ async fn main() -> azure_core::Result<()> {
         collection
             .create_document(document_to_insert)
             .is_upsert(true)
-            .into_future()
+
             .await?;
     }
 
