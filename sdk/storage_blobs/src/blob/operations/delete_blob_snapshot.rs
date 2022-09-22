@@ -14,7 +14,7 @@ impl DeleteBlobSnapshotBuilder {
         Box::pin(async move {
             let mut url = self.client.url()?;
 
-            (&self.snapshot).append_to_url_query(&mut url);
+            self.snapshot.append_to_url_query(&mut url);
             let permanent = self.permanent.unwrap_or(false);
             if permanent {
                 url.query_pairs_mut().append_pair("deletetype", "permanent");
