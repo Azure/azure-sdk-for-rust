@@ -30,6 +30,19 @@ impl ContainerClient {
         }
     }
 
+    pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
+        let cloud_location: CloudLocation = url.try_into()?;
+
+        let container = url.path().split_terminator('/').nth(1).ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                "unable to find storage container from url"
+            })
+        })?;
+
+        let client = ClientBuilder::with_location(cloud_location).container_client(container);
+        Ok(client)
+    }
+
     /// Create a container
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self.clone())
@@ -157,30 +170,6 @@ impl ContainerClient {
     ) -> azure_core::Result<Request> {
         self.service_client
             .finalize_request(url, method, headers, request_body)
-    }
-}
-
-impl TryFrom<Url> for ContainerClient {
-    type Error = azure_core::Error;
-    fn try_from(url: Url) -> Result<Self, Self::Error> {
-        Self::try_from(&url)
-    }
-}
-
-impl TryFrom<&Url> for ContainerClient {
-    type Error = azure_core::Error;
-    fn try_from(url: &Url) -> Result<Self, Self::Error> {
-        let cloud_location: CloudLocation = url.try_into()?;
-
-        let container = url.path().split_terminator('/').nth(1).ok_or_else(|| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
-                "unable to find storage container from url"
-            })
-        })?;
-
-        let client = ClientBuilder::with_location(cloud_location).container_client(container);
-
-        Ok(client)
     }
 }
 
