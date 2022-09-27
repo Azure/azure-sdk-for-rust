@@ -23,7 +23,7 @@ futures = "0.3"
 http-types = { version = "2.12", default-features = false }
 log = "0.4"
 rand = "0.8"
-reqwest = { version = "0.11", features = [
+reqwest = { version = "0.11.14", features = [
   "stream",
 ], default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"] }
@@ -54,3 +54,4 @@ enable_reqwest_rustls = ["reqwest/rustls-tls"]
 test_e2e = []
 azurite_workaround = []
 xml = ["quick-xml"]
+wasm-bindgen = ["time/wasm-bindgen"]
