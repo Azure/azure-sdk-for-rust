@@ -102,7 +102,7 @@ impl SchemaGen {
         self.schema.common.xml.as_ref().and_then(|xml| xml.wrapped).unwrap_or_default()
     }
 
-    fn name(&self) -> Result<&str> {
+    pub fn name(&self) -> Result<&str> {
         Ok(&self
             .ref_key
             .as_ref()
