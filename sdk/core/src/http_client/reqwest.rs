@@ -2,6 +2,7 @@ use crate::error::{ErrorKind, ResultExt};
 use crate::{Body, HttpClient, PinnedStream};
 
 use async_trait::async_trait;
+#[cfg(not(target_arch = "wasm32"))]
 use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr};
 
@@ -11,7 +12,8 @@ pub fn new_reqwest_client() -> std::sync::Arc<dyn HttpClient> {
     std::sync::Arc::new(::reqwest::Client::new())
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
@@ -24,6 +26,10 @@ impl HttpClient for ::reqwest::Client {
 
         let reqwest_request = match body {
             Body::Bytes(bytes) => req.body(bytes).build(),
+            // Hack... Temporarily remove for wasm32
+            // Need to implement properly when reqwest has support for streaming body.
+            // https://github.com/seanmonstar/reqwest/pull/1576
+            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.context(
                     ErrorKind::Other,
@@ -31,6 +37,13 @@ impl HttpClient for ::reqwest::Client {
                 )?;
                 req.body(::reqwest::Body::wrap_stream(seekable_stream))
                     .build()
+            }
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(crate::error::Error::message(
+                    ErrorKind::Io,
+                    "error converting `reqwest` request into a byte stream",
+                ))
             }
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
@@ -43,6 +56,22 @@ impl HttpClient for ::reqwest::Client {
 
         let status = rsp.status();
         let headers = to_headers(rsp.headers());
+
+        // Hack... Temporarily workaround for wasm32
+        // Need to implement properly when reqwest has support for streaming body.
+        // https://github.com/seanmonstar/reqwest/pull/1576
+        #[cfg(target_arch = "wasm32")]
+        let body: PinnedStream = Box::pin(futures::stream::once(futures::future::ok(
+            rsp.bytes().await.map_err(|error| {
+                crate::error::Error::full(
+                    ErrorKind::Io,
+                    error,
+                    "error converting `reqwest` request into a byte stream",
+                )
+            })?,
+        )));
+
+        #[cfg(not(target_arch = "wasm32"))]
         let body: PinnedStream = Box::pin(rsp.bytes_stream().map_err(|error| {
             crate::error::Error::full(
                 ErrorKind::Io,

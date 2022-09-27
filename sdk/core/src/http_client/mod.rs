@@ -1,19 +1,8 @@
 mod noop;
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-))]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 mod reqwest;
-#[cfg(all(
-    target_arch = "wasm32",
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-))]
-compile_error!("The `enable_request` and `enable_reqwest_rustls` features are not allowed for `wasm32` targets");
 
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-))]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub use self::reqwest::*;
 pub use noop::*;
 
@@ -23,10 +12,7 @@ use std::sync::Arc;
 pub fn new_http_client() -> Arc<dyn HttpClient> {
     #[allow(unused)]
     let http_client: Arc<dyn HttpClient> = Arc::new(NoopClient);
-    #[cfg(all(
-        not(target_arch = "wasm32"),
-        any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-    ))]
+    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
     let http_client = new_reqwest_client();
     http_client
 }
