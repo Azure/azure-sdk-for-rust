@@ -11,6 +11,7 @@ documentation = "https://docs.rs/azure_storage_blobs"
 keywords = ["sdk", "azure", "storage", "blobs"]
 categories = ["api-bindings"]
 edition = "2021"
+rust-version = "1.64.0"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.5", features = ["xml"] }

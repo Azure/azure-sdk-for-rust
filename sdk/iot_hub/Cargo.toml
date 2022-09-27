@@ -5,6 +5,7 @@ authors = ["Microsoft Corp."]
 edition = "2021"
 description = "Azure IoT Hub"
 license = "MIT"
+rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
