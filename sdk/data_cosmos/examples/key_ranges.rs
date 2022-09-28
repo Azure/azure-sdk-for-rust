@@ -24,7 +24,7 @@ async fn main() -> azure_core::Result<()> {
         .database_client(args.database_name)
         .collection_client(args.collection_name);
 
-    let resp = client.get_partition_key_ranges().into_future().await?;
+    let resp = client.get_partition_key_ranges().await?;
     println!("resp == {:#?}", resp);
 
     Ok(())

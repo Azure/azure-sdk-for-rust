@@ -11,6 +11,7 @@ documentation = "https://docs.rs/azure_data_tables"
 keywords = ["sdk", "azure", "storage", "data-tables"]
 categories = ["api-bindings"]
 edition = "2021"
+rust-version = "1.64.0"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.5" }

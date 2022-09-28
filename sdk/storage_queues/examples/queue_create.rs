@@ -35,11 +35,7 @@ async fn main() -> azure_core::Result<()> {
         format!("{:?}", OffsetDateTime::now_utc()).into(),
     );
 
-    let response = queue
-        .create()
-        .metadata(metadata.clone())
-        .into_future()
-        .await?;
+    let response = queue.create().metadata(metadata.clone()).await?;
     println!("response == {:#?}", response);
 
     // let's add some more metadata
@@ -51,11 +47,11 @@ async fn main() -> azure_core::Result<()> {
 
     println!("metadata == {:#?}", metadata);
 
-    let response = queue.set_metadata(metadata).into_future().await?;
+    let response = queue.set_metadata(metadata).await?;
     println!("response == {:#?}", response);
 
     // let's get back the metadata
-    let response = queue.get_metadata().into_future().await?;
+    let response = queue.get_metadata().await?;
     println!("response == {:#?}", response);
 
     // use two queue stored access policies
@@ -75,15 +71,15 @@ async fn main() -> azure_core::Result<()> {
         .enable_all(),
     ];
 
-    let response = queue.set_acl(policies).into_future().await?;
+    let response = queue.set_acl(policies).await?;
     println!("response == {:#?}", response);
 
     // get the queue ACL
-    let response = queue.get_acl().into_future().await?;
+    let response = queue.get_acl().await?;
     println!("response == {:#?}", response);
 
     // now let's delete it
-    let response = queue.delete().into_future().await?;
+    let response = queue.delete().await?;
     println!("response == {:#?}", response);
 
     Ok(())

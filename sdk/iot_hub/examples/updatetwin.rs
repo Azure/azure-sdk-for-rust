@@ -21,7 +21,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let updated_twin = service_client
         .update_device_twin(device_id)
         .desired_properties(serde_json::from_str(&payload)?)
-        .into_future()
         .await?;
 
     println!("Received device twin: {:?}", updated_twin);

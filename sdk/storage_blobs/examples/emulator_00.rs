@@ -12,7 +12,6 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await?;
 
     let res = container_client

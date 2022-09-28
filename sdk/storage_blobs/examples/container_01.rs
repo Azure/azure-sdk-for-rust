@@ -32,11 +32,10 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::Container)
         .metadata(metadata)
-        .into_future()
         .await?;
 
     // get acl without stored access policy list
-    let result = container_client.get_acl().into_future().await?;
+    let result = container_client.get_acl().await?;
     println!("\nget_acl() == {:?}", result);
 
     // set stored access policy list
@@ -50,11 +49,10 @@ async fn main() -> azure_core::Result<()> {
     let _result = container_client
         .set_acl(PublicAccess::Blob)
         .stored_access_policy_list(sapl.clone())
-        .into_future()
         .await?;
 
     // now we get back the acess policy list and compare to the one created
-    let result = container_client.get_acl().into_future().await?;
+    let result = container_client.get_acl().await?;
 
     println!("\nget_acl() == {:?}", result);
 
@@ -78,19 +76,17 @@ async fn main() -> azure_core::Result<()> {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = container_client.get_properties().into_future().await?;
+    let res = container_client.get_properties().await?;
     println!("\nget_properties() == {:?}", res);
 
     let res = container_client
         .acquire_lease(Duration::from_secs(15))
-        .into_future()
         .await?;
     println!("\nacquire_lease() == {:?}", res);
 
     container_client
         .delete()
         .lease_id(res.lease_id) // we need to specify the lease or it won't work!
-        .into_future()
         .await?;
 
     Ok(())

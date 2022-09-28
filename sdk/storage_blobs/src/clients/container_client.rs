@@ -178,12 +178,10 @@ mod integration_tests {
 
         container_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
         container_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -195,7 +193,6 @@ mod integration_tests {
 
         container_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
 
@@ -203,7 +200,6 @@ mod integration_tests {
         container_client
             .blob_client("hello.txt")
             .put_block_blob("world")
-            .into_future()
             .await
             .expect("put block blob should succeed");
         let list = container_client
@@ -228,7 +224,6 @@ mod integration_tests {
 
         container_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }

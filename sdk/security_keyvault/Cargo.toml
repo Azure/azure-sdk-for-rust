@@ -11,6 +11,7 @@ categories = ["api-bindings"]
 readme = "README.md"
 license = "MIT"
 edition = "2021"
+rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"

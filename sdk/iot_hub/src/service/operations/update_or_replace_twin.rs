@@ -54,7 +54,7 @@ impl UpdateOrReplaceTwinBuilder {
     /// let twin = iot_hub.update_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
     ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
-    ///              .into_future();
+    ///              ;
     /// ```
     pub fn into_future(mut self) -> UpdateOrReplaceTwin {
         Box::pin(async move {

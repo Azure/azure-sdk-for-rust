@@ -150,7 +150,7 @@ mod integration_tests {
 
         println!("Create a table in the storage account");
         let table_client = service_client.table_client("TableServiceClientList");
-        let _ = table_client.create().into_future().await;
+        let _ = table_client.create().await;
 
         println!("Check that the table is listed correctly");
         let mut stream = service_client.list().into_stream();
