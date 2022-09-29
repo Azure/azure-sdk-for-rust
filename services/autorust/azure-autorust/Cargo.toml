@@ -7,4 +7,4 @@ publish = false
 
 [dependencies]
 autorust_codegen = { path = "../codegen" }
-clap = { version = "3.2.7", features = ["derive"] }
+clap = { version = "4.0.2", features = ["derive"] }
