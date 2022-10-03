@@ -3,7 +3,7 @@ use std::{sync::Mutex, time::Duration};
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use time::OffsetDateTime;
 
-use super::shared_access_signature::{self, SasSignatureError, SharedAccessSignature};
+use super::shared_access_signature::{SasSignatureError, SharedAccessSignature};
 
 #[derive(Debug)]
 pub(crate) struct AzureNamedKeyCredential {

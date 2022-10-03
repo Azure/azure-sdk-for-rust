@@ -33,9 +33,9 @@ pub enum AmqpClientError {
 ///
 /// See also [`TransportClient`]
 #[derive(Debug)]
-pub(crate) struct AmqpClient<C>
+pub(crate) struct AmqpClient<TC>
 where
-    C: TokenCredential,
+    TC: TokenCredential,
 {
     /// <summary>
     ///   The buffer to apply when considering refreshing; credentials that expire less than this duration will be refreshed.
@@ -61,18 +61,19 @@ where
     ///
     connection_endpoint: Url,
 
-    /// <summary>
-    ///   Gets the credential to use for authorization with the Service Bus service.
-    /// </summary>
-    ///
-    credential: C,
+    // /// <summary>
+    // ///   Gets the credential to use for authorization with the Service Bus service.
+    // /// </summary>
+    // ///
+    // credential: TC, // TODO: is this the same credential used in `connection_scope`?
 
+    //
     /// <summary>
     ///   The AMQP connection scope responsible for managing transport constructs for this instance.
     /// </summary>
     ///
     // private AmqpConnectionScope ConnectionScope { get; }
-    connection_scope: AmqpConnectionScope,
+    connection_scope: AmqpConnectionScope<TC>,
 
     // public override ServiceBusTransportMetrics TransportMetrics { get; }
     transport_metrics: Option<ServiceBusTransportMetrics>,

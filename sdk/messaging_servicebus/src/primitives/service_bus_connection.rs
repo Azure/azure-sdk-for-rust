@@ -164,7 +164,8 @@ impl ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<SharedAccessCrede
 
         let shared_access_credential =
             SharedAccessCredential::from_signature(shared_access_signature);
-        let token_credential = ServiceBusTokenCredential::new(shared_access_credential);
+        let token_credential: ServiceBusTokenCredential<SharedAccessCredential> =
+            ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 
         todo!()
     }

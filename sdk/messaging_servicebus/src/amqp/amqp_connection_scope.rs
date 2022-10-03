@@ -1,40 +1,54 @@
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration as StdDuration};
 
 use async_trait::async_trait;
-use azure_core::Url;
+use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
     connection::ConnectionHandle,
     session::SessionHandle,
     transaction::Controller,
     transport::protocol_header::{ProtocolHeader, ProtocolId},
+    Connection,
 };
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
+use rand::rngs::StdRng;
+use serde_amqp::Value;
+use time::Duration as TimeSpan;
+use tokio::time::Interval;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
-    core::TransportConnectionScope, primitives::service_bus_transport_type::ServiceBusTransportType,
+    authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    client::service_bus_transport_metrics::ServiceBusTransportMetrics,
+    core::TransportConnectionScope,
+    primitives::service_bus_transport_type::ServiceBusTransportType,
 };
 
 use super::cbs_token_provider::CbsTokenProvider;
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum AmqpConnectionScopeError {}
+
 #[derive(Debug)]
-pub(crate) struct AmqpConnectionScope {
+pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
     /// <summary>The seed to use for initializing random number generated for a given thread-specific instance.</summary>
     // private static int s_randomSeed = Environment.TickCount;
 
     /// <summary>The random number generator to use for a specific thread.</summary>
     // private static readonly ThreadLocal<Random> RandomNumberGenerator = new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref s_randomSeed)), false);
+    random_number_generator: StdRng,
 
     /// <summary>Indicates whether or not this instance has been disposed.</summary>
-    disposed: bool,
+    is_disposed: bool,
 
-    // /// <summary>
-    // ///   The cancellation token to use with operations initiated by the scope.
-    // /// </summary>
-    // private CancellationTokenSource OperationCancellationSource { get; } = new();
+    /// The cancellation token to use with operations initiated by the scope.
+    operation_cancellation_source: CancellationToken,
 
-    //
+    /// The set of active AMQP links associated with the connection scope.  These are considered
+    /// children of the active connection and should be managed as such.
+    active_links: HashMap<Value, Interval>,
+
     /// The unique identifier of the scope.
     id: String,
 
@@ -42,7 +56,7 @@ pub(crate) struct AmqpConnectionScope {
     service_endpoint: Url,
 
     /// The provider to use for obtaining a token for authorization with the Service Bus service.
-    cbs_token_provider: CbsTokenProvider,
+    cbs_token_provider: CbsTokenProvider<TC>,
 
     /// The type of transport to use for communication.
     transport: ServiceBusTransportType,
@@ -61,9 +75,11 @@ pub(crate) struct AmqpConnectionScope {
 
     /// The controller responsible for managing transactions.
     transaction_controller: Controller,
+
+    use_single_session: bool,
 }
 
-impl AmqpConnectionScope {
+impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     /// The name to assign to the SASL handler to specify that CBS tokens are in use.
     const CBS_SASL_HANDLER_NAME: &'static str = "MSSBCBS";
 
@@ -80,13 +96,13 @@ impl AmqpConnectionScope {
 
     /// The amount of time to allow an AMQP connection to be idle before considering
     /// it to be timed out.
-    const CONNECTION_IDLE_TIMEOUT: Duration = Duration::from_secs(1 * 60);
+    const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(1 * 60);
 
     /// The amount of buffer to apply to account for clock skew when
     /// refreshing authorization.  Authorization will be refreshed earlier
     /// than the expected expiration by this amount.
-    const AUTHORIZATION_REFRESH_BUFFER: Duration =
-        Duration::from_secs(AUTHORIZATION_REFRESH_BUFFER_SECONDS); // 7 mins
+    const AUTHORIZATION_REFRESH_BUFFER: StdDuration =
+        StdDuration::from_secs(AUTHORIZATION_REFRESH_BUFFER_SECONDS); // 7 mins
 
     /// The amount of seconds to use as the basis for calculating a random jitter amount
     /// when refreshing token authorization.  This is intended to ensure that multiple
@@ -95,7 +111,7 @@ impl AmqpConnectionScope {
 
     /// The minimum amount of time for authorization to be refreshed; any calculations that
     /// call for refreshing more frequently will be substituted with this value.
-    const MINIMUM_AUTHORIZATION_REFRESH: Duration = Duration::from_secs(3 * 60);
+    const MINIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(3 * 60);
 
     /// The maximum amount of time to allow before authorization is refreshed; any calculations
     /// that call for refreshing less frequently will be substituted with this value.
@@ -104,19 +120,19 @@ impl AmqpConnectionScope {
     ///
     /// This value must be less than 49 days, 17 hours, 2 minutes, 47 seconds, 294 milliseconds
     /// in order to not overflow the Timer used to track authorization refresh.
-    const MAXIMUM_AUTHORIZATION_REFRESH: Duration = Duration::from_secs(49 * 24 * 60 * 60); // 49 days
+    const MAXIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(49 * 24 * 60 * 60); // 49 days
 
     /// The amount time to allow to refresh authorization of an AMQP link.
-    const AUTHORIZATION_REFRESH_TIMEOUT: Duration = Duration::from_secs(3 * 60); // 3 mins
+    const AUTHORIZATION_REFRESH_TIMEOUT: StdDuration = StdDuration::from_secs(3 * 60); // 3 mins
 
     /// The amount of buffer to apply when considering an authorization token
     /// to be expired.  The token's actual expiration will be decreased by this
     /// amount, ensuring that it is renewed before it has expired.
-    const AUTHORIZATION_TOKEN_EXPIRATION_BUFFER: Duration =
-        Duration::from_secs(AUTHORIZATION_REFRESH_BUFFER_SECONDS + 2 * 60);
+    const AUTHORIZATION_TOKEN_EXPIRATION_BUFFER: TimeSpan =
+        TimeSpan::seconds(AUTHORIZATION_REFRESH_BUFFER_SECONDS as i64 + 2 * 60);
 }
 
-impl AmqpConnectionScope {
+impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     async fn negotiate_claim(&mut self) -> Result<(), ()> {
         todo!()
     }
@@ -125,22 +141,70 @@ impl AmqpConnectionScope {
         todo!()
     }
 
-    pub async fn new() -> Result<Self, ()> {
+    /// Initializes a new instance of the <see cref="AmqpConnectionScope"/> class.
+    ///
+    /// # Arguments
+    ///
+    /// * `service_endpoint` - Endpoint for the Service Bus service to which the scope is
+    ///   associated.
+    /// * `connection_endpoint` - The endpoint to use for the initial connection to the Service Bus
+    ///   service.
+    /// * `credential` - The credential to use for authorization with the Service Bus service.
+    /// * `transport` - The transport to use for communication.
+    /// * `use_single_session` - If true, all links will use a single session.
+    /// * `operation_timeout` - The timeout for operations associated with the connection.
+    /// * `metrics` - The metrics instance to populate transport metrics. May be null.
+    pub async fn new(
+        service_endpoint: Url,
+        connection_endpoint: Url,
+        credential: ServiceBusTokenCredential<TC>,
+        transport: ServiceBusTransportType,
+        use_single_session: bool,
+        operation_timeout: StdDuration,
+        metrics: Option<ServiceBusTransportMetrics>,
+    ) -> Result<Self, ()> {
+        // `Guid` from dotnet:
+        // This is a convenient static method that you can call to get a new Guid. The method
+        // creates a Version 4 Universally Unique Identifier (UUID) as described in RFC 4122, Sec.
+        // 4.4. The returned Guid is guaranteed to not equal Guid.Empty.
+        let uuid = uuid::Uuid::new_v4();
+        let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
+        let operation_cancellation_source = CancellationToken::new();
+        let token_provider = CbsTokenProvider::new(
+            credential,
+            Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+            operation_cancellation_source.child_token(),
+        );
+
         todo!()
     }
 }
 
 #[async_trait]
-impl TransportConnectionScope for AmqpConnectionScope {
+impl<TC: TokenCredential> TransportConnectionScope for AmqpConnectionScope<TC> {
     fn is_disposed(&self) -> bool {
-        self.disposed
+        self.is_disposed
     }
 
     fn set_is_disposed(&mut self, value: bool) {
-        self.disposed = value;
+        self.is_disposed = value;
     }
 
     async fn dispose(&mut self) {
         todo!()
     }
+}
+
+async fn open_connection(
+    service_endpoint: Url,
+    connection_endpoint: Url,
+    transport_type: ServiceBusTransportType,
+    scope_identifier: &str,
+    timeout: TimeSpan,
+    metrics: ServiceBusTransportMetrics,
+) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
+    let service_host_name = service_endpoint.host_str();
+    let connection_host_name = connection_endpoint.host_str();
+
+    todo!()
 }

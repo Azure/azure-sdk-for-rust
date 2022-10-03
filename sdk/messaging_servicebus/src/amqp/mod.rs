@@ -10,5 +10,6 @@ pub(crate) mod amqp_rule_manager;
 pub(crate) mod amqp_sender;
 pub(crate) mod cbs_token_provider;
 pub(crate) mod error;
+pub(crate) mod token_type;
 
 pub use error::Error;
