@@ -1,4 +1,4 @@
-use azure_core::Url;
+use azure_core::{auth::TokenCredential, Url};
 
 use crate::{
     amqp::amqp_client::AmqpClient,
@@ -120,7 +120,7 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     }
 }
 
-impl ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<SharedAccessCredential>>> {
+impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<TC>>> {
     pub(crate) async fn open<'a>(
         connection_string: impl AsRef<str> + 'a,
         options: ServiceBusClientOptions,
@@ -164,7 +164,7 @@ impl ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<SharedAccessCrede
 
         let shared_access_credential =
             SharedAccessCredential::from_signature(shared_access_signature);
-        let token_credential: ServiceBusTokenCredential<SharedAccessCredential> =
+        let token_credential: ServiceBusTokenCredential<TC> =
             ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 
         todo!()
