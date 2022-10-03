@@ -125,7 +125,7 @@ impl AmqpConnectionScope {
         todo!()
     }
 
-    pub async fn create() -> Result<Self, ()> {
+    pub async fn new() -> Result<Self, ()> {
         todo!()
     }
 }

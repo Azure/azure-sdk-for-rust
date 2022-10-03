@@ -79,7 +79,7 @@ where
 }
 
 impl<C: TokenCredential> AmqpClient<ServiceBusTokenCredential<C>> {
-    pub async fn create(
+    pub async fn new(
         host: &str,
         credential: ServiceBusTokenCredential<C>,
         options: ServiceBusClientOptions,
