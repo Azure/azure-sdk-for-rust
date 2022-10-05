@@ -21,8 +21,6 @@ base64 = "0.13"
 bytes = "1.0"
 const_format = "0.2"
 digest = "0.10"
-fe2o3-amqp = {version = "0.6.1", features = ["transaction"]}
-fe2o3-amqp-types = "0.5.1"
 hmac = "0.12"
 http = "0.2"
 log = "0.4"
@@ -37,6 +35,11 @@ tokio-util = "0.7.3"
 url = "2.2"
 urlencoding = "2"
 uuid = "1"
+
+# AMQP dependencies
+fe2o3-amqp = {version = "0.6.7", features = ["transaction"]}
+fe2o3-amqp-cbs = "0.0.1"
+fe2o3-amqp-types = "0.5.3"
 
 [dev-dependencies]
 env_logger = "0.9"
