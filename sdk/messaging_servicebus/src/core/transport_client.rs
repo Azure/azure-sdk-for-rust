@@ -89,7 +89,7 @@ pub(crate) trait TransportClient {
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
     async fn close(
         &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>>,
+        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error>;
 
     /// Performs the task needed to clean up resources used by the client,
