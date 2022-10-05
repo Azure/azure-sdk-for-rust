@@ -1,4 +1,4 @@
-use azure_core::auth::TokenCredential;
+use azure_core::auth::{TokenCredential, TokenResponse};
 use tokio::sync::Semaphore;
 
 use crate::authorization::service_bus_token_credential::ServiceBusTokenCredential;
@@ -16,6 +16,9 @@ pub(crate) enum TokenType<TC: TokenCredential> {
         /// Tokens are only cached for JWT-based credentials; no need
         /// to instantiate the semaphore if no caching is taking place.
         semaphore: Semaphore,
+
+        /// The JWT-based <see cref="CbsToken" /> that is currently cached for authorization.
+        cached_token: Option<TokenResponse>,
     },
 }
 

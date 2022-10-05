@@ -1,5 +1,5 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
-use time::Duration as TimeSpan;
+use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
 
@@ -20,11 +20,6 @@ pub(crate) struct CbsTokenProvider<TC: TokenCredential> {
 
     /// The cancellation token to consider when making requests.
     cancellation_token: CancellationToken,
-    //
-
-    // TODO:
-    // /// <summary>The JWT-based <see cref="CbsToken" /> that is currently cached for authorization.</summary>
-    // private CbsToken _cachedJwtToken;
 }
 
 impl<TC> CbsTokenProvider<TC>
@@ -51,6 +46,7 @@ where
                 // Tokens are only cached for JWT-based credentials; no need
                 // to instantiate the semaphore if no caching is taking place.
                 semaphore: Semaphore::new(1),
+                cached_token: None,
             }
         };
 
@@ -73,14 +69,43 @@ where
     ///
     /// <returns>The token to use for authorization.</returns>
     ///
-    pub async fn get_token(&mut self) -> TokenResponse {
-        match &self.token_type {
-            TokenType::SharedAccessToken { credential } => todo!(),
+    pub async fn get_token(&mut self) -> azure_core::error::Result<TokenResponse> {
+        match &mut self.token_type {
+            TokenType::SharedAccessToken { credential } => {
+                // GetTokenUsingDefaultScopeAsync
+                credential.get_token("").await
+            }
             TokenType::JsonWebToken {
                 credential,
                 semaphore,
-            } => todo!(),
+                cached_token,
+            } => match cached_token {
+                Some(cached) => {
+                    let _permit = semaphore.acquire().await.map_err(|e| {
+                        azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
+                    })?;
+
+                    if is_nearing_expiration(cached, self.token_expiration_buffer) {
+                        *cached = credential.get_token("").await?;
+                    }
+
+                    Ok(cached.clone())
+                }
+                None => {
+                    let _permit = semaphore.acquire().await.map_err(|e| {
+                        azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
+                    })?;
+
+                    // GetTokenUsingDefaultScopeAsync
+                    let token = credential.get_token("").await?;
+                    *cached_token = Some(token.clone());
+                    Ok(token)
+                }
+            },
         }
-        todo!()
     }
+}
+
+fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpan) -> bool {
+    token.expires_on - token_expiration_buffer <= OffsetDateTime::now_utc()
 }

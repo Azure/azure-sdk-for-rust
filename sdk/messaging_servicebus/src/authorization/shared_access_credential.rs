@@ -143,7 +143,7 @@ impl TokenCredential for SharedAccessCredential {
     ///
     /// <returns>The token representing the shared access signature for this credential.</returns>
     ///
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, _resource: &str) -> azure_core::Result<TokenResponse> {
         let mut signature = self.shared_access_signature.lock().map_err(|error| {
             azure_core::Error::new(azure_core::error::ErrorKind::Other, error.to_string())
         })?;
