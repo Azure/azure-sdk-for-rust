@@ -3,17 +3,18 @@ use std::{collections::HashMap, time::Duration as StdDuration};
 use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
-    connection::ConnectionHandle,
+    connection::{ConnectionHandle, OpenError},
     session::SessionHandle,
     transaction::Controller,
     transport::protocol_header::{ProtocolHeader, ProtocolId},
     Connection,
 };
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
+use fe2o3_amqp_ws::WebSocketStream;
 use rand::rngs::StdRng;
 use serde_amqp::Value;
 use time::Duration as TimeSpan;
-use tokio::time::Interval;
+use tokio::{net::TcpStream, time::Interval};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -23,12 +24,18 @@ use crate::{
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };
 
-use super::cbs_token_provider::CbsTokenProvider;
+use super::{amqp_constants, cbs_token_provider::CbsTokenProvider};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum AmqpConnectionScopeError {}
+pub(crate) enum AmqpConnectionScopeError {
+    #[error(transparent)]
+    Open(#[from] OpenError),
+
+    #[error(transparent)]
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+}
 
 #[derive(Debug)]
 pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
@@ -156,7 +163,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     /// * `metrics` - The metrics instance to populate transport metrics. May be null.
     pub async fn new(
         service_endpoint: Url,
-        connection_endpoint: Url,
+        connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
         credential: ServiceBusTokenCredential<TC>,
         transport: ServiceBusTransportType,
         use_single_session: bool,
@@ -178,6 +185,38 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
 
         todo!()
     }
+
+    async fn open_connection(
+        // service_endpoint: Url,
+        connection_endpoint: Url,
+        transport_type: ServiceBusTransportType,
+        scope_identifier: &str,
+        // timeout: TimeSpan, // FIXME: do timeout outside?
+    ) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
+        // This is the `hostname` field in the `Open` frame
+        // let service_host_name = service_endpoint.host_str();
+        // This is what will be used for Tcp/Tls or Ws/Wss connection
+        // let connection_host_name = connection_endpoint.host_str();
+
+        let idle_time_out = Self::CONNECTION_IDLE_TIMEOUT.as_millis() as u32; // FIXME: bound check?
+        let max_frame_size = amqp_constants::DEFAULT_MAX_FRAME_SIZE;
+        let container_id = scope_identifier;
+
+        let connection_builder = Connection::builder()
+            .container_id(container_id)
+            .max_frame_size(max_frame_size)
+            .idle_time_out(idle_time_out);
+        let connection = match transport_type {
+            ServiceBusTransportType::AmqpTcp => {
+                connection_builder.open(connection_endpoint).await?
+            }
+            ServiceBusTransportType::AmqpWebSockets => {
+                let (ws_stream, _) = WebSocketStream::connect(connection_endpoint).await?;
+                connection_builder.open_with_stream(ws_stream).await?
+            }
+        };
+        Ok(connection)
+    }
 }
 
 #[async_trait]
@@ -193,18 +232,4 @@ impl<TC: TokenCredential> TransportConnectionScope for AmqpConnectionScope<TC> {
     async fn dispose(&mut self) {
         todo!()
     }
-}
-
-async fn open_connection(
-    service_endpoint: Url,
-    connection_endpoint: Url,
-    transport_type: ServiceBusTransportType,
-    scope_identifier: &str,
-    timeout: TimeSpan,
-    metrics: ServiceBusTransportMetrics,
-) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
-    let service_host_name = service_endpoint.host_str();
-    let connection_host_name = connection_endpoint.host_str();
-
-    todo!()
 }

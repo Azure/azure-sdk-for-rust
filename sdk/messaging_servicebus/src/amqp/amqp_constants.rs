@@ -59,3 +59,4 @@ pub(crate) const SEGMENT_SIZE: i32 = 512;
 pub(crate) const AMQP_FORMAT: u8 = 1;
 
 // pub(crate) static readonly TimeSpan DefaultTimeout;
+pub(crate) const DEFAULT_WEBSOCKET_PORT: u16 = 443;
