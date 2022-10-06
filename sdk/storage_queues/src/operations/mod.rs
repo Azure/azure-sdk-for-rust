@@ -19,6 +19,7 @@ pub use clear_messages::ClearMessagesBuilder;
 pub use create_queue::CreateQueueBuilder;
 pub use delete_message::DeleteMessageBuilder;
 pub use delete_queue::DeleteQueueBuilder;
+pub use get_messages::Message;
 pub use get_messages::GetMessagesBuilder;
 pub use get_queue_acl::GetQueueACLBuilder;
 pub use get_queue_metadata::GetQueueMetadataBuilder;
