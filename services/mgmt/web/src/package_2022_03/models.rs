@@ -11238,16 +11238,16 @@ pub struct SiteConfig {
     #[serde(rename = "publishingUsername", default, skip_serializing_if = "Option::is_none")]
     pub publishing_username: Option<String>,
     #[doc = "Application settings."]
-    #[serde(rename = "appSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "appSettings", deserialize_with = "azure_core::util::deserialize_null_default", skip_serializing_if = "Vec::is_empty")]
     pub app_settings: Vec<NameValuePair>,
     #[doc = "Connection strings."]
-    #[serde(rename = "connectionStrings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "connectionStrings", deserialize_with = "azure_core::util::deserialize_null_default", skip_serializing_if = "Vec::is_empty")]
     pub connection_strings: Vec<ConnStringInfo>,
     #[doc = "MachineKey of an app."]
     #[serde(rename = "machineKey", default, skip_serializing_if = "Option::is_none")]
     pub machine_key: Option<SiteMachineKey>,
     #[doc = "Handler mappings."]
-    #[serde(rename = "handlerMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "handlerMappings", deserialize_with = "azure_core::util::deserialize_null_default", skip_serializing_if = "Vec::is_empty")]
     pub handler_mappings: Vec<HandlerMapping>,
     #[doc = "Document root."]
     #[serde(rename = "documentRoot", default, skip_serializing_if = "Option::is_none")]
@@ -14726,7 +14726,7 @@ pub struct VirtualApplication {
     #[serde(rename = "preloadEnabled", default, skip_serializing_if = "Option::is_none")]
     pub preload_enabled: Option<bool>,
     #[doc = "Virtual directories for virtual application."]
-    #[serde(rename = "virtualDirectories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "virtualDirectories", deserialize_with = "azure_core::util::deserialize_null_default", skip_serializing_if = "Vec::is_empty")]
     pub virtual_directories: Vec<VirtualDirectory>,
 }
 impl VirtualApplication {
