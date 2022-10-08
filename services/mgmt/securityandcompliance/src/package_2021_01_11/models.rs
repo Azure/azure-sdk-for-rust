@@ -88,7 +88,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of service operations supported by the Microsoft.SecurityAndCompliance resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -205,7 +209,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -345,7 +353,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -363,10 +375,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -416,7 +438,11 @@ pub struct PrivateLinkServicesForEdmUploadDescriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of service description objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkServicesForEdmUploadDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForEdmUploadDescriptionListResult {
@@ -454,7 +480,11 @@ pub struct PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of service description objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkServicesForM365ComplianceCenterDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
@@ -492,7 +522,11 @@ pub struct PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of service description objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkServicesForM365SecurityCenterDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
@@ -530,7 +564,11 @@ pub struct PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult 
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of service description objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkServicesForO365ManagementActivityApiDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
@@ -568,7 +606,11 @@ pub struct PrivateLinkServicesForSccPowershellDescriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of service description objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkServicesForSccPowershellDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForSccPowershellDescriptionListResult {
@@ -636,13 +678,25 @@ pub type ServiceCorsConfigurationHeaderEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceCorsConfigurationInfo {
     #[doc = "The origins to be allowed via CORS."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub origins: Vec<ServiceCorsConfigurationOriginEntry>,
     #[doc = "The headers to be allowed via CORS."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub headers: Vec<ServiceCorsConfigurationHeaderEntry>,
     #[doc = "The methods to be allowed via CORS."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub methods: Vec<ServiceCorsConfigurationMethodEntry>,
     #[doc = "The max age to be allowed via CORS."]
     #[serde(rename = "maxAge", default, skip_serializing_if = "Option::is_none")]
@@ -722,7 +776,12 @@ pub struct ServicesProperties {
     #[serde(rename = "exportConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub export_configuration: Option<ServiceExportConfigurationInfo>,
     #[doc = "The list of private endpoint connections that are set up for this resource."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]

@@ -8,7 +8,12 @@ pub struct HiveJobProperties {
     #[serde(flatten)]
     pub job_properties: JobProperties,
     #[doc = "Gets or sets the statement information for each statement in the script"]
-    #[serde(rename = "statementInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statementInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statement_info: Vec<HiveJobStatementInfo>,
     #[doc = "Gets or sets the Hive logs location"]
     #[serde(rename = "logsLocation", default, skip_serializing_if = "Option::is_none")]
@@ -65,7 +70,11 @@ pub struct JobDataPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub command: Option<String>,
     #[doc = "Gets the list of paths to all of the job data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<String>,
 }
 impl JobDataPath {
@@ -137,7 +146,11 @@ pub mod job_error_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInfoListResult {
     #[doc = "Gets the list of jobInfo items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobInformation>,
     #[doc = "Gets the link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -172,7 +185,12 @@ pub struct JobInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub submitter: Option<String>,
     #[doc = "Gets the error message details for the job, if the job failed."]
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorMessage",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_message: Vec<JobErrorDetails>,
     #[doc = "Gets or sets the degree of parallelism used for this job. This must be greater than 0."]
     #[serde(rename = "degreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
@@ -199,7 +217,12 @@ pub struct JobInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<job_information::Result>,
     #[doc = "Gets the job state audit records, indicating when various operations have been performed on this job."]
-    #[serde(rename = "stateAuditRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "stateAuditRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub state_audit_records: Vec<JobStateAuditRecord>,
     #[doc = "the name of hierarchy queue node this job is assigned to, null if job has not been assigned yet or the account doesn't have hierarchy queue."]
     #[serde(rename = "hierarchyQueueNode", default, skip_serializing_if = "Option::is_none")]
@@ -387,7 +410,11 @@ pub struct JobStatistics {
     #[serde(rename = "lastUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Gets the list of stages for the job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub stages: Vec<JobStatisticsVertexStage>,
 }
 impl JobStatistics {
@@ -469,7 +496,11 @@ pub struct USqlJobProperties {
     #[serde(flatten)]
     pub job_properties: JobProperties,
     #[doc = "Gets or sets the list of resources that are required by the job"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<JobResource>,
     #[doc = "The Data Lake Analytics U-SQL job execution statistics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

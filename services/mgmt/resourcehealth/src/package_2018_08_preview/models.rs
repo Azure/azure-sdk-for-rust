@@ -45,7 +45,11 @@ impl MetadataEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataEntityListResult {
     #[doc = "The list of metadata entities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MetadataEntity>,
     #[doc = "The link used to get the next page of metadata."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -69,13 +73,28 @@ pub struct MetadataEntityProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The list of keys on which this entity depends on."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
     #[doc = "The list of scenarios applicable to this metadata entity."]
-    #[serde(rename = "applicableScenarios", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicableScenarios",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applicable_scenarios: Vec<String>,
     #[doc = "The list of supported values."]
-    #[serde(rename = "supportedValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_values: Vec<MetadataSupportedValueDetail>,
 }
 impl MetadataEntityProperties {
@@ -188,10 +207,20 @@ pub mod availability_status {
         #[serde(rename = "recentlyResolved", default, skip_serializing_if = "Option::is_none")]
         pub recently_resolved: Option<properties::RecentlyResolved>,
         #[doc = "Lists actions the user can take based on the current availabilityState of the resource."]
-        #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "recommendedActions",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub recommended_actions: Vec<RecommendedAction>,
         #[doc = "Lists the service impacting events that may be affecting the health of the resource."]
-        #[serde(rename = "serviceImpactingEvents", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "serviceImpactingEvents",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
     }
     impl Properties {
@@ -326,10 +355,20 @@ pub struct EmergingIssue {
     #[serde(rename = "refreshTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub refresh_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The list of emerging issues of banner type."]
-    #[serde(rename = "statusBanners", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusBanners",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_banners: Vec<StatusBanner>,
     #[doc = "The list of emerging issues of active event type."]
-    #[serde(rename = "statusActiveEvents", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusActiveEvents",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_active_events: Vec<StatusActiveEvent>,
 }
 impl EmergingIssue {
@@ -347,7 +386,11 @@ pub struct EmergingIssueImpact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The list of impacted regions for corresponding emerging issues."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub regions: Vec<ImpactedRegion>,
 }
 impl EmergingIssueImpact {
@@ -359,7 +402,11 @@ impl EmergingIssueImpact {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssueListResult {
     #[doc = "The list of emerging issues."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EmergingIssuesGetResult>,
     #[doc = "The link used to get the next page of emerging issues."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -437,7 +484,11 @@ pub mod event {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub article: Option<properties::Article>,
         #[doc = "Useful links of event."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub links: Vec<Link>,
         #[doc = "It provides the Timestamp for when the health impacting event started."]
         #[serde(rename = "impactStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -446,13 +497,21 @@ pub mod event {
         #[serde(rename = "impactMitigationTime", default, with = "azure_core::date::rfc3339::option")]
         pub impact_mitigation_time: Option<time::OffsetDateTime>,
         #[doc = "List services impacted by the service health event."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub impact: Vec<Impact>,
         #[doc = "Recommended actions of event."]
         #[serde(rename = "recommendedActions", default, skip_serializing_if = "Option::is_none")]
         pub recommended_actions: Option<properties::RecommendedActions>,
         #[doc = "Frequently asked questions for the service health event."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub faqs: Vec<Faq>,
         #[doc = "It provides information if the event is High incident rate event or not."]
         #[serde(rename = "isHIR", default, skip_serializing_if = "Option::is_none")]
@@ -703,7 +762,11 @@ pub mod event {
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub message: Option<String>,
             #[doc = "Recommended actions for the service health event."]
-            #[serde(default, skip_serializing_if = "Vec::is_empty")]
+            #[serde(
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
             pub actions: Vec<serde_json::Value>,
             #[doc = "Recommended action locale for the service health event."]
             #[serde(rename = "localeCode", default, skip_serializing_if = "Option::is_none")]
@@ -761,7 +824,12 @@ pub struct Impact {
     #[serde(rename = "impactedService", default, skip_serializing_if = "Option::is_none")]
     pub impacted_service: Option<String>,
     #[doc = "List regions impacted by the service health event."]
-    #[serde(rename = "impactedRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "impactedRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub impacted_regions: Vec<ImpactedServiceRegion>,
 }
 impl Impact {
@@ -938,13 +1006,22 @@ pub struct ImpactedServiceRegion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<impacted_service_region::Status>,
     #[doc = "List subscription impacted by the service health event."]
-    #[serde(rename = "impactedSubscriptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "impactedSubscriptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub impacted_subscriptions: Vec<String>,
     #[doc = "It provides the Timestamp for when the last update for the service health event."]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_time: Option<time::OffsetDateTime>,
     #[doc = "List of updates for given service health event."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub updates: Vec<Update>,
 }
 impl ImpactedServiceRegion {
@@ -1230,7 +1307,11 @@ pub struct StatusActiveEvent {
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The list of emerging issues impacts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub impacts: Vec<EmergingIssueImpact>,
 }
 impl StatusActiveEvent {

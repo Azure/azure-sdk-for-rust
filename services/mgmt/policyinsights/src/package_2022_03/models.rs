@@ -42,7 +42,11 @@ impl AttestationEvidence {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttestationListResult {
     #[doc = "Array of attestation definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Attestation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -81,7 +85,11 @@ pub struct AttestationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comments: Option<String>,
     #[doc = "The evidence supporting the compliance state set in this attestation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub evidence: Vec<AttestationEvidence>,
     #[doc = "The status of the attestation."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -154,7 +162,12 @@ pub struct CheckManagementGroupRestrictionsRequest {
     #[serde(rename = "resourceDetails", default, skip_serializing_if = "Option::is_none")]
     pub resource_details: Option<CheckRestrictionsResourceDetails>,
     #[doc = "The list of fields and values that should be evaluated for potential restrictions."]
-    #[serde(rename = "pendingFields", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pendingFields",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pending_fields: Vec<PendingField>,
 }
 impl CheckManagementGroupRestrictionsRequest {
@@ -169,7 +182,12 @@ pub struct CheckRestrictionsRequest {
     #[serde(rename = "resourceDetails")]
     pub resource_details: CheckRestrictionsResourceDetails,
     #[doc = "The list of fields and values that should be evaluated for potential restrictions."]
-    #[serde(rename = "pendingFields", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pendingFields",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pending_fields: Vec<PendingField>,
 }
 impl CheckRestrictionsRequest {
@@ -206,7 +224,12 @@ impl CheckRestrictionsResourceDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckRestrictionsResult {
     #[doc = "The restrictions that will be placed on various fields in the resource by policy."]
-    #[serde(rename = "fieldRestrictions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fieldRestrictions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub field_restrictions: Vec<FieldRestrictions>,
     #[doc = "Evaluation results for the provided partial resource content."]
     #[serde(rename = "contentEvaluationResult", default, skip_serializing_if = "Option::is_none")]
@@ -223,7 +246,12 @@ pub mod check_restrictions_result {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ContentEvaluationResult {
         #[doc = "Policy evaluation results against the given resource content. This will indicate if the partial content that was provided will be denied as-is."]
-        #[serde(rename = "policyEvaluations", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "policyEvaluations",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub policy_evaluations: Vec<PolicyEvaluationResult>,
     }
     impl ContentEvaluationResult {
@@ -314,10 +342,19 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
     #[doc = "Additional scenario specific error details."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<TypedErrorInfo>,
 }
 impl ErrorDefinition {
@@ -383,7 +420,11 @@ pub struct FieldRestriction {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
     #[doc = "The values that policy either requires or denies for the field."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
     #[doc = "Resource identifiers for a policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -443,7 +484,11 @@ pub struct FieldRestrictions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
     #[doc = "The restrictions placed on that field by policy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restrictions: Vec<FieldRestriction>,
 }
 impl FieldRestrictions {
@@ -513,7 +558,11 @@ pub struct OperationsListResults {
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
     pub odata_count: Option<i32>,
     #[doc = "List of available operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl OperationsListResults {
@@ -527,7 +576,11 @@ pub struct PendingField {
     #[doc = "The name of the field. This can be a top-level property like 'name' or 'type' or an Azure Policy field alias."]
     pub field: String,
     #[doc = "The list of potential values for the field that should be evaluated against Azure Policy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl PendingField {
@@ -548,10 +601,20 @@ pub struct PolicyAssignmentSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<SummaryResults>,
     #[doc = "Policy definitions summary."]
-    #[serde(rename = "policyDefinitions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyDefinitions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_definitions: Vec<PolicyDefinitionSummary>,
     #[doc = "Policy definition group summary."]
-    #[serde(rename = "policyGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_groups: Vec<PolicyGroupSummary>,
 }
 impl PolicyAssignmentSummary {
@@ -569,7 +632,12 @@ pub struct PolicyDefinitionSummary {
     #[serde(rename = "policyDefinitionReferenceId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_reference_id: Option<String>,
     #[doc = "Policy definition group names."]
-    #[serde(rename = "policyDefinitionGroupNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyDefinitionGroupNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_definition_group_names: Vec<String>,
     #[doc = "Policy effect, i.e. policy definition action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -614,7 +682,12 @@ impl PolicyDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyEvaluationDetails {
     #[doc = "Details of the evaluated expressions."]
-    #[serde(rename = "evaluatedExpressions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "evaluatedExpressions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub evaluated_expressions: Vec<ExpressionEvaluationDetails>,
     #[doc = "Evaluation details of IfNotExists effect."]
     #[serde(rename = "ifNotExistsDetails", default, skip_serializing_if = "Option::is_none")]
@@ -737,7 +810,11 @@ pub struct PolicyEvent {
     #[serde(rename = "principalOid", default, skip_serializing_if = "Option::is_none")]
     pub principal_oid: Option<String>,
     #[doc = "Components events records populated only when URL contains $expand=components clause."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub components: Vec<ComponentEventDetails>,
 }
 impl PolicyEvent {
@@ -758,7 +835,11 @@ pub struct PolicyEventsQueryResults {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
     #[doc = "Query results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PolicyEvent>,
 }
 impl azure_core::Continuable for PolicyEventsQueryResults {
@@ -812,7 +893,11 @@ impl PolicyMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyMetadataCollection {
     #[doc = "Array of policy metadata definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SlimPolicyMetadata>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -985,10 +1070,19 @@ pub struct PolicyState {
     #[serde(rename = "policyEvaluationDetails", default, skip_serializing_if = "Option::is_none")]
     pub policy_evaluation_details: Option<PolicyEvaluationDetails>,
     #[doc = "Policy definition group names."]
-    #[serde(rename = "policyDefinitionGroupNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyDefinitionGroupNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_definition_group_names: Vec<String>,
     #[doc = "Components state compliance records populated only when URL contains $expand=components clause."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub components: Vec<ComponentStateDetails>,
     #[doc = "Evaluated policy definition version."]
     #[serde(rename = "policyDefinitionVersion", default, skip_serializing_if = "Option::is_none")]
@@ -1018,7 +1112,11 @@ pub struct PolicyStatesQueryResults {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
     #[doc = "Query results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PolicyState>,
 }
 impl azure_core::Continuable for PolicyStatesQueryResults {
@@ -1060,7 +1158,11 @@ impl PolicyTrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyTrackedResourcesQueryResults {
     #[doc = "Query results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PolicyTrackedResource>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1189,7 +1291,11 @@ impl RemediationDeploymentSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationDeploymentsListResult {
     #[doc = "Array of deployments for the remediation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RemediationDeployment>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1210,7 +1316,11 @@ impl RemediationDeploymentsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationFilters {
     #[doc = "The resource locations that will be remediated."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
 }
 impl RemediationFilters {
@@ -1222,7 +1332,11 @@ impl RemediationFilters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationListResult {
     #[doc = "Array of remediation definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Remediation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1388,7 +1502,11 @@ pub struct SummarizeResults {
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
     pub odata_count: Option<i32>,
     #[doc = "Summarize action results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Summary>,
 }
 impl SummarizeResults {
@@ -1409,7 +1527,12 @@ pub struct Summary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<SummaryResults>,
     #[doc = "Policy assignments summary."]
-    #[serde(rename = "policyAssignments", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyAssignments",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_assignments: Vec<PolicyAssignmentSummary>,
 }
 impl Summary {
@@ -1430,13 +1553,28 @@ pub struct SummaryResults {
     #[serde(rename = "nonCompliantPolicies", default, skip_serializing_if = "Option::is_none")]
     pub non_compliant_policies: Option<i32>,
     #[doc = "The resources summary at this level."]
-    #[serde(rename = "resourceDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_details: Vec<ComplianceDetail>,
     #[doc = "The policy artifact summary at this level. For query scope level, it represents policy assignment summary. For policy assignment level, it represents policy definitions summary."]
-    #[serde(rename = "policyDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_details: Vec<ComplianceDetail>,
     #[doc = "The policy definition group summary at this level."]
-    #[serde(rename = "policyGroupDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyGroupDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_group_details: Vec<ComplianceDetail>,
 }
 impl SummaryResults {

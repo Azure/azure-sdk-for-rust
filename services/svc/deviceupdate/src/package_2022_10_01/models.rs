@@ -71,7 +71,12 @@ pub struct Deployment {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "The device class subgroups the deployment is compatible with and subgroup deployments have been created for. This is not provided by the caller during CreateOrUpdateDeployment but is automatically determined by Device Update"]
-    #[serde(rename = "deviceClassSubgroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deviceClassSubgroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub device_class_subgroups: Vec<String>,
     #[doc = "Boolean flag indicating whether the deployment was canceled."]
     #[serde(rename = "isCanceled", default, skip_serializing_if = "Option::is_none")]
@@ -869,7 +874,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "An array of errors that led to the reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
     #[doc = "An object containing more specific information than the current object about the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -945,7 +954,11 @@ pub struct Group {
     #[serde(rename = "subgroupsWithOnLatestUpdateCount", default, skip_serializing_if = "Option::is_none")]
     pub subgroups_with_on_latest_update_count: Option<i64>,
     #[doc = "The active deployment Ids for the group"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub deployments: Vec<String>,
 }
 impl Group {
@@ -1170,7 +1183,11 @@ pub struct ImportUpdateInputItem {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "One or more update file properties like filename and source URL."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub files: Vec<FileImportMetadata>,
 }
 impl ImportUpdateInputItem {
@@ -1220,7 +1237,12 @@ pub struct InstallResult {
     #[serde(rename = "resultDetails", default, skip_serializing_if = "Option::is_none")]
     pub result_details: Option<String>,
     #[doc = "Array of step results"]
-    #[serde(rename = "stepResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "stepResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub step_results: Vec<StepResult>,
 }
 impl InstallResult {
@@ -1327,7 +1349,12 @@ pub struct LogCollectionOperationDetailedStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
     #[doc = "Status of the devices in the operation"]
-    #[serde(rename = "deviceStatus", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deviceStatus",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub device_status: Vec<LogCollectionOperationDeviceStatus>,
     #[doc = "Device diagnostics operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1530,7 +1557,11 @@ pub struct Step {
     #[serde(rename = "handlerProperties", default, skip_serializing_if = "Option::is_none")]
     pub handler_properties: Option<serde_json::Value>,
     #[doc = "Collection of file names to be passed to handler during execution. Required if step type is inline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub files: Vec<String>,
     #[doc = "Update identifier."]
     #[serde(rename = "updateId", default, skip_serializing_if = "Option::is_none")]
@@ -1664,7 +1695,12 @@ pub struct Update {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<Instructions>,
     #[doc = "List of update identities that reference this update."]
-    #[serde(rename = "referencedBy", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "referencedBy",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub referenced_by: Vec<UpdateId>,
     #[doc = "Update aggregate scan result (calculated from payload file scan results)."]
     #[serde(rename = "scanResult", default, skip_serializing_if = "Option::is_none")]
@@ -1748,7 +1784,12 @@ pub struct UpdateFile {
     #[serde(rename = "fileId")]
     pub file_id: String,
     #[doc = "Optional related files metadata used together DownloadHandler metadata to download payload file."]
-    #[serde(rename = "relatedFiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "relatedFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub related_files: Vec<UpdateFileBase>,
     #[doc = "Download handler for utilizing related files to download payload file."]
     #[serde(rename = "downloadHandler", default, skip_serializing_if = "Option::is_none")]

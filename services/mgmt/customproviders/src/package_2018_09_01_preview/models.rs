@@ -92,7 +92,11 @@ pub mod association {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssociationsList {
     #[doc = "The array of associations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Association>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -187,13 +191,26 @@ pub mod custom_rp_manifest {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "A list of actions that the custom resource provider implements."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub actions: Vec<CustomRpActionRouteDefinition>,
         #[doc = "A list of resource types that the custom resource provider implements."]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceTypes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_types: Vec<CustomRpResourceTypeRouteDefinition>,
         #[doc = "A list of validations to run on the custom resource provider's requests."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub validations: Vec<CustomRpValidations>,
         #[doc = "The provisioning state of the resource provider."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -387,7 +404,11 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
 }
 impl ErrorDefinition {
@@ -417,7 +438,11 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListByCustomRpManifest {
     #[doc = "The array of custom resource provider manifests."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomRpManifest>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -506,7 +531,11 @@ pub mod resource_provider_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -46,7 +46,11 @@ pub mod error_response {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
         #[doc = "Error details."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub details: Vec<ErrorDetails>,
     }
     impl Error {
@@ -71,7 +75,11 @@ impl HealthMonitor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorList {
     #[doc = "Array of health monitors of the virtual machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HealthMonitor>,
     #[doc = "Link to next page if the list is too long."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -144,7 +152,11 @@ impl HealthMonitorStateChange {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorStateChangeList {
     #[doc = "Array of health state changes within the specified time window."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HealthMonitorStateChange>,
     #[doc = "Link to next page if the list is too long."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -281,7 +293,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "Array of available REST API operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "Link to next page if the list is too long."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

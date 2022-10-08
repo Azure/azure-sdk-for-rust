@@ -25,7 +25,11 @@ impl CommonResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateGenericQuotaRequestParameters {
     #[doc = "Quota change requests."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CurrentQuotaLimitBase>,
 }
 impl CreateGenericQuotaRequestParameters {
@@ -94,7 +98,11 @@ impl OperationDisplay {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResponse>,
     #[doc = "URL to get the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -129,7 +137,11 @@ impl OperationResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimits {
     #[doc = "List of quota limits."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CurrentQuotaLimitBase>,
     #[doc = "The URI used to fetch the next page of quota limits. When there are no more pages, this is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -150,7 +162,11 @@ impl QuotaLimits {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimitsResponse {
     #[doc = "List of quota limits with the quota request status."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CurrentQuotaLimitBase>,
     #[doc = "The URI used to fetch the next page of quota limits. When there are no more pages, this is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -219,7 +235,11 @@ impl QuotaRequestDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestDetailsList {
     #[doc = "Quota request details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QuotaRequestDetails>,
     #[doc = "The URI for fetching the next page of quota limits. When there are no more pages, this is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -270,7 +290,11 @@ pub struct QuotaRequestProperties {
     #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_submit_time: Option<time::OffsetDateTime>,
     #[doc = "Quota request details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubRequest>,
 }
 impl QuotaRequestProperties {
@@ -418,7 +442,11 @@ impl QuotaTemplateDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaTemplatesDetails {
     #[doc = "Quota templates information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QuotaTemplateDetails>,
 }
 impl QuotaTemplatesDetails {
@@ -451,7 +479,11 @@ pub struct QuotaTypeInformationDimensionList {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[doc = "Quota type information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QuotaTypeDimensionInformation>,
 }
 impl QuotaTypeInformationDimensionList {
@@ -517,7 +549,11 @@ pub struct ResourceProviderTemplate {
     #[serde(rename = "resourceUsagesQuery", default, skip_serializing_if = "Option::is_none")]
     pub resource_usages_query: Option<ResourceQueryDetails>,
     #[doc = "Resource provider dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<ResourceProviderDimension>,
 }
 impl ResourceProviderTemplate {
@@ -529,7 +565,11 @@ impl ResourceProviderTemplate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderTemplates {
     #[doc = "The resource provider templates"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderTemplate>,
 }
 impl ResourceProviderTemplates {
@@ -673,7 +713,11 @@ pub struct ServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "List of error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ServiceErrorDetail>,
 }
 impl ServiceError {
@@ -787,7 +831,11 @@ impl QuotaRequestOneResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProvidersList {
     #[doc = "Resource provider information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderInformation>,
 }
 impl ResourceProvidersList {

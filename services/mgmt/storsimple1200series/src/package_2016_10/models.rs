@@ -269,7 +269,12 @@ pub struct AlertSettingsProperties {
     #[serde(rename = "alertNotificationCulture")]
     pub alert_notification_culture: String,
     #[doc = "List of email addresses (apart from admin/co-admin of subscription) to whom the alert emails need to be sent"]
-    #[serde(rename = "additionalRecipientEmailList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalRecipientEmailList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_recipient_email_list: Vec<String>,
 }
 impl AlertSettingsProperties {
@@ -844,13 +849,23 @@ pub struct DeviceProperties {
     #[serde(rename = "activationTime", default, with = "azure_core::date::rfc3339::option")]
     pub activation_time: Option<time::OffsetDateTime>,
     #[doc = "Operations that are allowed on the device based on its current state"]
-    #[serde(rename = "allowedDeviceOperations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedDeviceOperations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_device_operations: Vec<String>,
     #[doc = "Language culture setting on the device. For eg: \"en-US\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub culture: Option<String>,
     #[doc = "Device can be configured either as FileServer or IscsiServer"]
-    #[serde(rename = "deviceCapabilities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deviceCapabilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub device_capabilities: Vec<String>,
     #[doc = "Short description given for the device"]
     #[serde(rename = "deviceDescription", default, skip_serializing_if = "Option::is_none")]
@@ -976,7 +991,11 @@ pub struct Error {
     #[serde(rename = "errorCode")]
     pub error_code: String,
     pub message: Message,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<Item>,
 }
 impl azure_core::Continuable for Error {
@@ -997,7 +1016,12 @@ impl Error {
 #[doc = "The Failover request object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverRequest {
-    #[serde(rename = "accesspointIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "accesspointIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub accesspoint_ids: Vec<String>,
     #[serde(rename = "targetDeviceId", default, skip_serializing_if = "Option::is_none")]
     pub target_device_id: Option<String>,
@@ -1426,7 +1450,12 @@ pub mod job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobErrorDetails {
     #[doc = "The error details."]
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_details: Vec<JobErrorItem>,
     #[doc = "The code intended for programmatic access"]
     pub code: String,
@@ -1446,7 +1475,11 @@ impl JobErrorDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobErrorItem {
     #[doc = "The recommended actions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recommendations: Vec<String>,
     #[doc = "The code intended for programmatic access"]
     pub code: String,
@@ -1542,7 +1575,12 @@ pub struct JobProperties {
     #[serde(rename = "entityType", default, skip_serializing_if = "Option::is_none")]
     pub entity_type: Option<String>,
     #[doc = "The job stages."]
-    #[serde(rename = "jobStages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "jobStages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub job_stages: Vec<JobStage>,
     #[doc = "The device id in which the job is currently running"]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]

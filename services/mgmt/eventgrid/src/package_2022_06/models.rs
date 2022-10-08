@@ -122,7 +122,12 @@ pub struct AzureFunctionEventSubscriptionDestinationProperties {
     #[serde(rename = "preferredBatchSizeInKilobytes", default, skip_serializing_if = "Option::is_none")]
     pub preferred_batch_size_in_kilobytes: Option<i32>,
     #[doc = "Delivery attribute details."]
-    #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
 impl AzureFunctionEventSubscriptionDestinationProperties {
@@ -346,7 +351,11 @@ impl ChannelUpdateParametersProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChannelsListResult {
     #[doc = "A collection of Channels."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Channel>,
     #[doc = "A link for the next page of channels."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -494,7 +503,11 @@ impl DeadLetterWithResourceIdentity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeliveryAttributeListResult {
     #[doc = "A collection of DeliveryAttributeMapping"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeliveryAttributeMapping>,
 }
 impl DeliveryAttributeListResult {
@@ -601,7 +614,12 @@ impl Domain {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainProperties {
     #[doc = "List of private endpoint connections."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Provisioning state of the Event Grid Domain Resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -622,7 +640,12 @@ pub struct DomainProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<domain_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
-    #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundIpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
     #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the domain."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -922,7 +945,11 @@ pub mod domain_topic_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainTopicsListResult {
     #[doc = "A collection of Domain Topics."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DomainTopic>,
     #[doc = "A link for the next page of domain topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -946,7 +973,12 @@ pub struct DomainUpdateParameterProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<domain_update_parameter_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
-    #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundIpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
     #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the domain."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -1070,7 +1102,11 @@ impl DomainUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainsListResult {
     #[doc = "A collection of Domains."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Domain>,
     #[doc = "A link for the next page of domains."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1140,7 +1176,12 @@ pub struct EventHubEventSubscriptionDestinationProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Delivery attribute details."]
-    #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
 impl EventHubEventSubscriptionDestinationProperties {
@@ -1237,7 +1278,12 @@ pub struct EventSubscriptionFilter {
     #[serde(rename = "subjectEndsWith", default, skip_serializing_if = "Option::is_none")]
     pub subject_ends_with: Option<String>,
     #[doc = "A list of applicable event types that need to be part of the event subscription. If it is desired to subscribe to all default event types, set the IncludedEventTypes to null."]
-    #[serde(rename = "includedEventTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includedEventTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub included_event_types: Vec<String>,
     #[doc = "Specifies if the SubjectBeginsWith and SubjectEndsWith properties of the filter\r\nshould be compared in a case sensitive manner."]
     #[serde(rename = "isSubjectCaseSensitive", default, skip_serializing_if = "Option::is_none")]
@@ -1246,7 +1292,12 @@ pub struct EventSubscriptionFilter {
     #[serde(rename = "enableAdvancedFilteringOnArrays", default, skip_serializing_if = "Option::is_none")]
     pub enable_advanced_filtering_on_arrays: Option<bool>,
     #[doc = "An array of advanced filters that are used for filtering event subscriptions."]
-    #[serde(rename = "advancedFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "advancedFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub advanced_filters: Vec<AdvancedFilter>,
 }
 impl EventSubscriptionFilter {
@@ -1340,7 +1391,11 @@ pub struct EventSubscriptionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<EventSubscriptionFilter>,
     #[doc = "List of user defined labels."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "Expiration time of the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -1471,7 +1526,11 @@ pub struct EventSubscriptionUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<EventSubscriptionFilter>,
     #[doc = "List of user defined labels."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "Information about the expiration time for the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -1541,7 +1600,11 @@ pub mod event_subscription_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionsListResult {
     #[doc = "A collection of EventSubscriptions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EventSubscription>,
     #[doc = "A link for the next page of event subscriptions"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1650,7 +1713,11 @@ impl EventTypeProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventTypesListResult {
     #[doc = "A collection of event types"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EventType>,
 }
 impl azure_core::Continuable for EventTypesListResult {
@@ -1720,7 +1787,12 @@ pub struct HybridConnectionEventSubscriptionDestinationProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Delivery attribute details."]
-    #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
 impl HybridConnectionEventSubscriptionDestinationProperties {
@@ -2050,7 +2122,11 @@ pub struct NumberInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<f64>,
 }
 impl NumberInAdvancedFilter {
@@ -2067,7 +2143,11 @@ pub struct NumberInRangeAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<Vec<f64>>,
 }
 impl NumberInRangeAdvancedFilter {
@@ -2118,7 +2198,11 @@ pub struct NumberNotInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<f64>,
 }
 impl NumberNotInAdvancedFilter {
@@ -2135,7 +2219,11 @@ pub struct NumberNotInRangeAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<Vec<f64>>,
 }
 impl NumberNotInRangeAdvancedFilter {
@@ -2195,7 +2283,11 @@ impl OperationInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[doc = "A collection of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsListResult {
@@ -2234,7 +2326,12 @@ pub struct PartnerAuthorization {
     #[serde(rename = "defaultMaximumExpirationTimeInDays", default, skip_serializing_if = "Option::is_none")]
     pub default_maximum_expiration_time_in_days: Option<i32>,
     #[doc = "The list of authorized partners."]
-    #[serde(rename = "authorizedPartnersList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "authorizedPartnersList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorized_partners_list: Vec<Partner>,
 }
 impl PartnerAuthorization {
@@ -2359,7 +2456,11 @@ impl PartnerConfigurationUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerConfigurationsListResult {
     #[doc = "A collection of partner configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PartnerConfiguration>,
     #[doc = "A link for the next page of partner configurations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2418,7 +2519,12 @@ impl PartnerNamespace {
 #[doc = "Properties of the partner namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerNamespaceProperties {
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Provisioning state of the partner namespace."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2433,7 +2539,12 @@ pub struct PartnerNamespaceProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<partner_namespace_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
-    #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundIpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
     #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the partner namespace."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -2613,7 +2724,12 @@ pub struct PartnerNamespaceUpdateParameterProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<partner_namespace_update_parameter_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
-    #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundIpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
     #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the partner namespace."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -2688,7 +2804,11 @@ impl PartnerNamespaceUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerNamespacesListResult {
     #[doc = "A collection of partner namespaces."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PartnerNamespace>,
     #[doc = "A link for the next page of partner namespaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2805,7 +2925,11 @@ impl PartnerRegistrationUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerRegistrationsListResult {
     #[doc = "A collection of partner registrations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PartnerRegistration>,
     #[doc = "A link for the next page of partner registrations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3014,7 +3138,11 @@ impl PartnerTopicUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerTopicsListResult {
     #[doc = "A collection of partner topics."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PartnerTopic>,
     #[doc = "A link for the next page of partner topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3072,7 +3200,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "A collection of private endpoint connection resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "A link for the next page of private endpoint connection resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3096,7 +3228,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
     #[doc = "GroupIds from the private link service resource."]
-    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub group_ids: Vec<String>,
     #[doc = "ConnectionState information."]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
@@ -3184,9 +3321,19 @@ pub struct PrivateLinkResourceProperties {
     pub group_id: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -3198,7 +3345,11 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourcesListResult {
     #[doc = "A collection of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "A link for the next page of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3272,7 +3423,12 @@ pub struct ServiceBusQueueEventSubscriptionDestinationProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Delivery attribute details."]
-    #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
 impl ServiceBusQueueEventSubscriptionDestinationProperties {
@@ -3304,7 +3460,12 @@ pub struct ServiceBusTopicEventSubscriptionDestinationProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Delivery attribute details."]
-    #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
 impl ServiceBusTopicEventSubscriptionDestinationProperties {
@@ -3417,7 +3578,11 @@ pub struct StringBeginsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringBeginsWithAdvancedFilter {
@@ -3434,7 +3599,11 @@ pub struct StringContainsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringContainsAdvancedFilter {
@@ -3451,7 +3620,11 @@ pub struct StringEndsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringEndsWithAdvancedFilter {
@@ -3468,7 +3641,11 @@ pub struct StringInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringInAdvancedFilter {
@@ -3485,7 +3662,11 @@ pub struct StringNotBeginsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringNotBeginsWithAdvancedFilter {
@@ -3502,7 +3683,11 @@ pub struct StringNotContainsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringNotContainsAdvancedFilter {
@@ -3519,7 +3704,11 @@ pub struct StringNotEndsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringNotEndsWithAdvancedFilter {
@@ -3536,7 +3725,11 @@ pub struct StringNotInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[doc = "The set of filter values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl StringNotInAdvancedFilter {
@@ -3660,7 +3853,11 @@ impl SystemTopicUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemTopicsListResult {
     #[doc = "A collection of system Topics."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SystemTopic>,
     #[doc = "A link for the next page of topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3705,7 +3902,12 @@ impl Topic {
 #[doc = "Properties of the Topic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicProperties {
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Provisioning state of the topic."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3726,7 +3928,12 @@ pub struct TopicProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<topic_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
-    #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundIpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
     #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the topic."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -3972,13 +4179,23 @@ pub struct TopicTypeProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<topic_type_properties::ProvisioningState>,
     #[doc = "List of locations supported by this topic type."]
-    #[serde(rename = "supportedLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_locations: Vec<String>,
     #[doc = "Source resource format."]
     #[serde(rename = "sourceResourceFormat", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_format: Option<String>,
     #[doc = "Supported source scopes."]
-    #[serde(rename = "supportedScopesForSource", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedScopesForSource",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_scopes_for_source: Vec<String>,
 }
 impl TopicTypeProperties {
@@ -4075,7 +4292,11 @@ pub mod topic_type_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicTypesListResult {
     #[doc = "A collection of topic types"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TopicTypeInfo>,
 }
 impl azure_core::Continuable for TopicTypesListResult {
@@ -4096,7 +4317,12 @@ pub struct TopicUpdateParameterProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<topic_update_parameter_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
-    #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundIpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
     #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the topic."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -4214,7 +4440,11 @@ impl TopicUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicsListResult {
     #[doc = "A collection of Topics"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Topic>,
     #[doc = "A link for the next page of topics"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4359,7 +4589,11 @@ pub mod verified_partner_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VerifiedPartnersListResult {
     #[doc = "A collection of verified partners."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VerifiedPartner>,
     #[doc = "A link for the next page of verified partners if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4419,7 +4653,12 @@ pub struct WebHookEventSubscriptionDestinationProperties {
     )]
     pub azure_active_directory_application_id_or_uri: Option<String>,
     #[doc = "Delivery attribute details."]
-    #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
 impl WebHookEventSubscriptionDestinationProperties {

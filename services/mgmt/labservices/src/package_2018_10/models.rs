@@ -43,7 +43,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Inner errors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -468,7 +472,12 @@ pub struct EnvironmentSize {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<environment_size::Name>,
     #[doc = "Represents a set of compute sizes that can serve this given size type"]
-    #[serde(rename = "vmSizes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmSizes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_sizes: Vec<SizeInfo>,
     #[doc = "The pay-as-you-go dollar price per hour this size will cost. It does not include discounts and may not reflect the actual price the size will cost. This is the maximum price of all prices within this tier."]
     #[serde(rename = "maxPrice", default, skip_serializing_if = "Option::is_none")]
@@ -534,7 +543,12 @@ pub struct EnvironmentSizeFragment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<environment_size_fragment::Name>,
     #[doc = "Represents a set of compute sizes that can serve this given size type"]
-    #[serde(rename = "vmSizes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmSizes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_sizes: Vec<SizeInfoFragment>,
 }
 impl EnvironmentSizeFragment {
@@ -748,7 +762,12 @@ pub struct GetPersonalPreferencesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Array of favorite lab resource ids"]
-    #[serde(rename = "favoriteLabResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "favoriteLabResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub favorite_lab_resource_ids: Vec<String>,
 }
 impl GetPersonalPreferencesResponse {
@@ -760,7 +779,12 @@ impl GetPersonalPreferencesResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetRegionalAvailabilityResponse {
     #[doc = "Availability information for different size categories per region"]
-    #[serde(rename = "regionalAvailability", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "regionalAvailability",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub regional_availability: Vec<RegionalAvailability>,
 }
 impl GetRegionalAvailabilityResponse {
@@ -1096,7 +1120,11 @@ impl ListEnvironmentsPayload {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListEnvironmentsResponse {
     #[doc = "List of all the environments"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environments: Vec<EnvironmentDetails>,
 }
 impl ListEnvironmentsResponse {
@@ -1108,7 +1136,11 @@ impl ListEnvironmentsResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListLabsResponse {
     #[doc = "List of all the labs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labs: Vec<LabDetails>,
 }
 impl ListLabsResponse {
@@ -1160,7 +1192,11 @@ impl OperationBatchStatusPayload {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationBatchStatusResponse {
     #[doc = "Gets a collection of items that contain the operation url and status."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<OperationBatchStatusResponseItem>,
 }
 impl OperationBatchStatusResponse {
@@ -1335,7 +1371,11 @@ pub mod personal_preferences_operations_payload {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderOperationResult {
     #[doc = "List of operations supported by the resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationMetadata>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1426,7 +1466,12 @@ pub struct RegionalAvailability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
     #[doc = "List of all the size information for the region"]
-    #[serde(rename = "sizeAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sizeAvailabilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub size_availabilities: Vec<SizeAvailability>,
 }
 impl RegionalAvailability {
@@ -1734,7 +1779,11 @@ pub mod resource_settings_fragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationEnvironmentSetting {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EnvironmentSetting>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1755,7 +1804,11 @@ impl ResponseWithContinuationEnvironmentSetting {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationEnvironment {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Environment>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1776,7 +1829,11 @@ impl ResponseWithContinuationEnvironment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationGalleryImage {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GalleryImage>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1797,7 +1854,11 @@ impl ResponseWithContinuationGalleryImage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationLabAccount {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LabAccount>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1818,7 +1879,11 @@ impl ResponseWithContinuationLabAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationLab {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Lab>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1839,7 +1904,11 @@ impl ResponseWithContinuationLab {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationUser {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<User>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1917,7 +1986,12 @@ pub mod size_availability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SizeConfigurationProperties {
     #[doc = "Represents a list of size categories supported by this Lab Account (Small, Medium, Large)"]
-    #[serde(rename = "environmentSizes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentSizes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_sizes: Vec<EnvironmentSize>,
 }
 impl SizeConfigurationProperties {
@@ -1929,7 +2003,12 @@ impl SizeConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SizeConfigurationPropertiesFragment {
     #[doc = "Represents a list of size categories supported by this Lab Account (Small, Medium, Large)"]
-    #[serde(rename = "environmentSizes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentSizes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_sizes: Vec<EnvironmentSizeFragment>,
 }
 impl SizeConfigurationPropertiesFragment {

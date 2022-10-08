@@ -10,16 +10,36 @@ pub struct AgentConfiguration {
     #[serde(rename = "proxyUrl", default, skip_serializing_if = "Option::is_none")]
     pub proxy_url: Option<String>,
     #[doc = "Specifies the list of ports that the agent will be able to listen on."]
-    #[serde(rename = "incomingConnectionsPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "incomingConnectionsPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub incoming_connections_ports: Vec<String>,
     #[doc = "Array of extensions that are allowed to be installed or updated."]
-    #[serde(rename = "extensionsAllowList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extensionsAllowList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extensions_allow_list: Vec<ConfigurationExtension>,
     #[doc = "Array of extensions that are blocked (cannot be installed or updated)"]
-    #[serde(rename = "extensionsBlockList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extensionsBlockList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extensions_block_list: Vec<ConfigurationExtension>,
     #[doc = "List of service names which should not use the specified proxy server."]
-    #[serde(rename = "proxyBypass", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "proxyBypass",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub proxy_bypass: Vec<String>,
     #[doc = "Specifies whether the extension service is enabled or disabled."]
     #[serde(rename = "extensionsEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -164,10 +184,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -267,7 +296,12 @@ pub struct HybridComputePrivateLinkScopeProperties {
     #[serde(rename = "privateLinkScopeId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_scope_id: Option<String>,
     #[doc = "The collection of associated Private Endpoint Connections."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnectionDataModel>,
 }
 impl HybridComputePrivateLinkScopeProperties {
@@ -310,7 +344,11 @@ pub struct Machine {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineProperties>,
     #[doc = "The list of extensions affiliated to the machine"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<MachineExtension>,
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -543,7 +581,11 @@ impl MachineExtensionUpgrade {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionsListResult {
     #[doc = "The list of extensions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MachineExtension>,
     #[doc = "The uri to fetch the next page of machine extensions. Call ListNext() with this to fetch the next page of extensions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -608,7 +650,12 @@ pub struct MachineProperties {
     #[serde(rename = "lastStatusChange", default, with = "azure_core::date::rfc3339::option")]
     pub last_status_change: Option<time::OffsetDateTime>,
     #[doc = "Details about the error state."]
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_details: Vec<ErrorDetail>,
     #[doc = "The hybrid machine agent full version."]
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
@@ -799,7 +846,11 @@ pub mod os_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of compute operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationValue>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -994,7 +1045,11 @@ impl PrivateEndpointConnectionDataModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1024,7 +1079,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "List of group IDs."]
-    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub group_ids: Vec<String>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -1065,7 +1125,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1089,10 +1153,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "Required DNS zone names of the the private link resource."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -1109,7 +1183,12 @@ pub struct PrivateLinkScopeValidationDetails {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "List of Private Endpoint Connection details."]
-    #[serde(rename = "connectionDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectionDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connection_details: Vec<ConnectionDetail>,
 }
 impl PrivateLinkScopeValidationDetails {

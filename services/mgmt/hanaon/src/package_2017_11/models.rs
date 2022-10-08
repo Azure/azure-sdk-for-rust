@@ -239,7 +239,11 @@ pub mod hana_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HanaInstancesListResult {
     #[doc = "The list of SAP HANA on Azure instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HanaInstance>,
     #[doc = "The URL to get the next set of HANA instances."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -475,7 +479,12 @@ impl MonitoringDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
     #[doc = "Specifies the network interfaces for the HANA instance."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<IpAddress>,
     #[doc = "Specifies the circuit id for connecting to express route."]
     #[serde(rename = "circuitId", default, skip_serializing_if = "Option::is_none")]
@@ -529,7 +538,11 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of HANA operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationList {
@@ -598,10 +611,20 @@ pub struct StorageProfile {
     #[serde(rename = "nfsIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
     #[doc = "Specifies information about the operating system disk used by the hana instance."]
-    #[serde(rename = "osDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "osDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub os_disks: Vec<Disk>,
     #[doc = "Specifies information related to SAP system IDs for the hana instance."]
-    #[serde(rename = "hanaSids", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hanaSids",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hana_sids: Vec<SapSystemId>,
 }
 impl StorageProfile {

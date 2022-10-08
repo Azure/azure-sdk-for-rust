@@ -28,7 +28,11 @@ pub struct CostEstimate {
     #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
     pub currency_code: Option<String>,
     #[doc = "List of usage events"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<UsageEvent>,
     #[doc = "The estimated total."]
     #[serde(rename = "estimatedTotal", default, skip_serializing_if = "Option::is_none")]
@@ -111,7 +115,11 @@ pub struct JobDetails {
     #[serde(rename = "errorData", default, skip_serializing_if = "Option::is_none")]
     pub error_data: Option<ErrorData>,
     #[doc = "List of user-supplied tags associated with the job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
 }
 impl JobDetails {
@@ -188,7 +196,11 @@ pub mod job_details {
 #[doc = "List of job details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDetailsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobDetails>,
     #[doc = "Total records count number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -296,7 +308,11 @@ pub struct ProviderStatus {
     #[doc = "Provider availability."]
     #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
     pub current_availability: Option<provider_status::CurrentAvailability>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub targets: Vec<TargetStatus>,
 }
 impl ProviderStatus {
@@ -349,7 +365,11 @@ pub mod provider_status {
 #[doc = "Providers status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderStatusList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProviderStatus>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -476,7 +496,11 @@ pub mod quota {
 #[doc = "List of quotas."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Quota>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

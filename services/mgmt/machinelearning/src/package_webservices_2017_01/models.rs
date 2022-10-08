@@ -27,7 +27,11 @@ pub struct AssetItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "If the asset is a custom module, this holds the module's parameters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ModuleAssetParameter>,
 }
 impl AssetItem {
@@ -97,7 +101,11 @@ pub struct AsyncOperationErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "An array containing error information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<AsyncOperationErrorInfo>,
 }
 impl AsyncOperationErrorInfo {
@@ -203,7 +211,12 @@ pub struct ColumnSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<column_specification::Format>,
     #[doc = "If the data type is categorical, this provides the list of accepted categories."]
-    #[serde(rename = "enum", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enum",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enum_: Vec<serde_json::Value>,
     #[doc = "Flag indicating if the type supports null values or not."]
     #[serde(rename = "x-ms-isnullable", default, skip_serializing_if = "Option::is_none")]
@@ -467,7 +480,11 @@ pub struct GraphPackage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nodes: Option<serde_json::Value>,
     #[doc = "The list of edges making up the graph."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub edges: Vec<GraphEdge>,
     #[doc = "The collection of global parameters for the graph, given as a global parameter name to GraphParameter map. Each parameter here has a 1:1 match with the global parameters values map declared at the WebServiceProperties level."]
     #[serde(rename = "graphParameters", default, skip_serializing_if = "Option::is_none")]
@@ -647,7 +664,11 @@ pub struct ModeValueInfo {
     #[serde(rename = "interfaceString", default, skip_serializing_if = "Option::is_none")]
     pub interface_string: Option<String>,
     #[doc = "The definition of the parameter."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ModuleAssetParameter>,
 }
 impl ModeValueInfo {
@@ -713,7 +734,11 @@ impl OperationEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
@@ -786,7 +811,11 @@ pub mod output_port {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedWebServicesList {
     #[doc = "An array of web service objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WebService>,
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

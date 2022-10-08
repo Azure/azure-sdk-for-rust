@@ -149,7 +149,11 @@ impl AccountFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilterCollection {
     #[doc = "A collection of AccountFilter items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccountFilter>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -173,6 +177,7 @@ pub struct AkamaiAccessControl {
     #[serde(
         rename = "akamaiSignatureHeaderAuthenticationKeyList",
         default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub akamai_signature_header_authentication_key_list: Vec<AkamaiSignatureHeaderAuthenticationKey>,
@@ -239,7 +244,11 @@ impl Asset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetCollection {
     #[doc = "A collection of Asset items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Asset>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -260,7 +269,12 @@ impl AssetCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetContainerSas {
     #[doc = "The list of Asset container SAS URLs."]
-    #[serde(rename = "assetContainerSasUrls", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assetContainerSasUrls",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub asset_container_sas_urls: Vec<String>,
 }
 impl AssetContainerSas {
@@ -311,7 +325,11 @@ impl AssetFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilterCollection {
     #[doc = "A collection of AssetFilter items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AssetFilter>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -775,7 +793,12 @@ pub struct CommonEncryptionCbcs {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
     #[doc = "Representing which tracks should not be encrypted"]
-    #[serde(rename = "clearTracks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clearTracks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub clear_tracks: Vec<TrackSelection>,
     #[doc = "Class to specify properties of all content keys in Streaming Policy"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Option::is_none")]
@@ -796,7 +819,12 @@ pub struct CommonEncryptionCenc {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
     #[doc = "Representing which tracks should not be encrypted"]
-    #[serde(rename = "clearTracks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clearTracks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub clear_tracks: Vec<TrackSelection>,
     #[doc = "Class to specify properties of all content keys in Streaming Policy"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Option::is_none")]
@@ -844,7 +872,11 @@ impl ContentKeyPolicyClearKeyConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyCollection {
     #[doc = "A collection of ContentKeyPolicy items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ContentKeyPolicy>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1467,10 +1499,20 @@ pub struct ContentKeyPolicyTokenRestriction {
     #[serde(rename = "primaryVerificationKey")]
     pub primary_verification_key: ContentKeyPolicyRestrictionTokenKey,
     #[doc = "A list of alternative verification keys."]
-    #[serde(rename = "alternateVerificationKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "alternateVerificationKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub alternate_verification_keys: Vec<ContentKeyPolicyRestrictionTokenKey>,
     #[doc = "A list of required token claims."]
-    #[serde(rename = "requiredClaims", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredClaims",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_claims: Vec<ContentKeyPolicyTokenClaim>,
     #[doc = "The type of token."]
     #[serde(rename = "restrictionTokenType")]
@@ -1845,7 +1887,12 @@ pub struct EnvelopeEncryption {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
     #[doc = "Representing which tracks should not be encrypted"]
-    #[serde(rename = "clearTracks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clearTracks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub clear_tracks: Vec<TrackSelection>,
     #[doc = "Class to specify properties of all content keys in Streaming Policy"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Option::is_none")]
@@ -2144,7 +2191,11 @@ pub struct Filters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crop: Option<Rectangle>,
     #[doc = "The properties of overlays to be applied to the input video. These could be audio, image or video overlays."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub overlays: Vec<Overlay>,
 }
 impl Filters {
@@ -2381,7 +2432,11 @@ pub struct H264Video {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub complexity: Option<h264_video::Complexity>,
     #[doc = "The collection of output H.264 layers to be produced by the encoder."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<H264Layer>,
 }
 impl H264Video {
@@ -2517,7 +2572,11 @@ pub struct H265Video {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub complexity: Option<h265_video::Complexity>,
     #[doc = "The collection of output H.265 layers to be produced by the encoder."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<H265Layer>,
 }
 impl H265Video {
@@ -2624,7 +2683,11 @@ impl Hls {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAccessControl {
     #[doc = "The IP allow list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allow: Vec<IpRange>,
 }
 impl IpAccessControl {
@@ -2692,7 +2755,12 @@ pub struct InputDefinition {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
     #[doc = "The list of TrackDescriptors which define the metadata and selection of tracks in the input."]
-    #[serde(rename = "includedTracks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includedTracks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub included_tracks: Vec<TrackDescriptor>,
 }
 impl InputDefinition {
@@ -2741,7 +2809,11 @@ impl Job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollection {
     #[doc = "A collection of Job items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Job>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2774,7 +2846,11 @@ pub struct JobError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retry: Option<job_error::Retry>,
     #[doc = "An array of details about specific errors that led to this reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<JobErrorDetail>,
 }
 impl JobError {
@@ -2966,7 +3042,11 @@ pub struct JobInputClip {
     #[serde(flatten)]
     pub job_input: JobInput,
     #[doc = "List of files. Required for JobInputHttp. Maximum of 4000 characters each."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub files: Vec<String>,
     #[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2978,7 +3058,12 @@ pub struct JobInputClip {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[doc = "Defines a list of InputDefinitions. For each InputDefinition, it defines a list of track selections and related metadata."]
-    #[serde(rename = "inputDefinitions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inputDefinitions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub input_definitions: Vec<InputDefinition>,
 }
 impl JobInputClip {
@@ -3016,7 +3101,11 @@ pub struct JobInputSequence {
     #[serde(flatten)]
     pub job_input: JobInput,
     #[doc = "JobInputs that make up the timeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<JobInputClip>,
 }
 impl JobInputSequence {
@@ -3033,7 +3122,11 @@ pub struct JobInputs {
     #[serde(flatten)]
     pub job_input: JobInput,
     #[doc = "List of inputs to a Job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<JobInput>,
 }
 impl JobInputs {
@@ -3300,7 +3393,11 @@ pub struct JpgImage {
     #[serde(flatten)]
     pub image: Image,
     #[doc = "A collection of output JPEG image layers to be produced by the encoder."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<JpgLayer>,
     #[doc = "Sets the number of columns used in thumbnail sprite image.  The number of rows are automatically calculated and a VTT file is generated with the coordinate mappings for each thumbnail in the sprite. Note: this value should be a positive integer and a proper value is recommended so that the output image resolution will not go beyond JPEG maximum pixel resolution limit 65535x65535."]
     #[serde(rename = "spriteColumn", default, skip_serializing_if = "Option::is_none")]
@@ -3430,7 +3527,12 @@ pub mod list_container_sas_input {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContentKeysResponse {
     #[doc = "ContentKeys used by current Streaming Locator"]
-    #[serde(rename = "contentKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "contentKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub content_keys: Vec<StreamingLocatorContentKey>,
 }
 impl ListContentKeysResponse {
@@ -3453,10 +3555,20 @@ impl ListEdgePoliciesInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPathsResponse {
     #[doc = "Streaming Paths supported by current Streaming Locator"]
-    #[serde(rename = "streamingPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "streamingPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub streaming_paths: Vec<StreamingPath>,
     #[doc = "Download Paths supported by current Streaming Locator"]
-    #[serde(rename = "downloadPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "downloadPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub download_paths: Vec<String>,
 }
 impl ListPathsResponse {
@@ -3468,7 +3580,12 @@ impl ListPathsResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListStreamingLocatorsResponse {
     #[doc = "The list of Streaming Locators."]
-    #[serde(rename = "streamingLocators", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "streamingLocators",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub streaming_locators: Vec<AssetStreamingLocator>,
 }
 impl ListStreamingLocatorsResponse {
@@ -3642,7 +3759,11 @@ pub struct LiveEventInput {
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
     #[doc = "The input endpoints for the live event."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<LiveEventEndpoint>,
 }
 impl LiveEventInput {
@@ -3732,7 +3853,11 @@ impl LiveEventInputTrackSelection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventListResult {
     #[doc = "The result of the List Live Event operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LiveEvent>,
     #[doc = "The number of result."]
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
@@ -3768,7 +3893,11 @@ impl LiveEventOutputTranscriptionTrack {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreview {
     #[doc = "The endpoints for preview. Do not share the preview URL with the live event audience."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<LiveEventEndpoint>,
     #[doc = "The IP access control for the live event preview endpoint."]
     #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
@@ -3815,7 +3944,11 @@ pub struct LiveEventProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<LiveEventEncoding>,
     #[doc = "Live transcription settings for the live event. See https://go.microsoft.com/fwlink/?linkid=2133742 for more information about the live transcription feature."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transcriptions: Vec<LiveEventTranscription>,
     #[doc = "The provisioning state of the live event."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3833,7 +3966,12 @@ pub struct LiveEventProperties {
     #[serde(rename = "hostnamePrefix", default, skip_serializing_if = "Option::is_none")]
     pub hostname_prefix: Option<String>,
     #[doc = "The options to use for the LiveEvent. This value is specified at creation time and cannot be updated. The valid values for the array entry values are 'Default' and 'LowLatency'."]
-    #[serde(rename = "streamOptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "streamOptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub stream_options: Vec<String>,
     #[doc = "The creation time for the live event"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -3918,7 +4056,12 @@ pub struct LiveEventTranscription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
     #[doc = "Provides a mechanism to select the audio track in the input live feed, to which speech-to-text transcription is applied. This property is reserved for future use, any value set on this property will be ignored."]
-    #[serde(rename = "inputTrackSelection", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inputTrackSelection",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub input_track_selection: Vec<LiveEventInputTrackSelection>,
     #[doc = "Describes a transcription track in the output of a live event, generated using speech-to-text transcription. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(rename = "outputTranscriptionTrack", default, skip_serializing_if = "Option::is_none")]
@@ -3947,7 +4090,11 @@ impl LiveOutput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutputListResult {
     #[doc = "The result of the List LiveOutput operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LiveOutput>,
     #[doc = "The number of result."]
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
@@ -4096,7 +4243,11 @@ pub struct MediaFilterProperties {
     #[serde(rename = "firstQuality", default, skip_serializing_if = "Option::is_none")]
     pub first_quality: Option<FirstQuality>,
     #[doc = "The tracks selection conditions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tracks: Vec<FilterTrackSelection>,
 }
 impl MediaFilterProperties {
@@ -4132,7 +4283,11 @@ impl MediaService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceCollection {
     #[doc = "A collection of MediaService items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MediaService>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4217,7 +4372,12 @@ pub struct MediaServiceProperties {
     #[serde(rename = "mediaServiceId", default, skip_serializing_if = "Option::is_none")]
     pub media_service_id: Option<String>,
     #[doc = "The storage accounts for this resource."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<StorageAccount>,
     #[serde(rename = "storageAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub storage_authentication: Option<media_service_properties::StorageAuthentication>,
@@ -4308,10 +4468,19 @@ pub struct MetricSpecification {
     #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub lock_aggregation_type: Option<metric_specification::LockAggregationType>,
     #[doc = "Supported aggregation types."]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "The metric dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimension>,
 }
 impl MetricSpecification {
@@ -4456,7 +4625,12 @@ pub struct MultiBitrateFormat {
     #[serde(flatten)]
     pub format: Format,
     #[doc = "The list of output files to produce.  Each entry in the list is a set of audio and video layer labels to be muxed together ."]
-    #[serde(rename = "outputFiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outputFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub output_files: Vec<OutputFile>,
 }
 impl MultiBitrateFormat {
@@ -4492,7 +4666,11 @@ pub struct ODataError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ODataError>,
 }
 impl ODataError {
@@ -4529,7 +4707,11 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationCollection {
     #[doc = "A collection of Operation items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4633,7 +4815,11 @@ pub struct PngImage {
     #[serde(flatten)]
     pub image: Image,
     #[doc = "A collection of output PNG image layers to be produced by the encoder."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<PngLayer>,
 }
 impl PngImage {
@@ -4721,7 +4907,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl PrivateEndpointConnectionListResult {
@@ -4849,7 +5039,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
 }
 impl PrivateLinkResourceListResult {
@@ -4864,10 +5058,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -5221,10 +5425,20 @@ impl SelectVideoTrackById {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "List of log specifications."]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
     #[doc = "List of metric specifications."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
 }
 impl ServiceSpecification {
@@ -5317,7 +5531,12 @@ pub struct StorageEncryptedAssetDecryptionData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[doc = "Asset File encryption metadata."]
-    #[serde(rename = "assetFileEncryptionMetadata", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assetFileEncryptionMetadata",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub asset_file_encryption_metadata: Vec<AssetFileEncryptionMetadata>,
 }
 impl StorageEncryptedAssetDecryptionData {
@@ -5365,7 +5584,11 @@ impl StreamingEndpointAccessControl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointListResult {
     #[doc = "The result of the List StreamingEndpoint operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StreamingEndpoint>,
     #[doc = "The number of result."]
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
@@ -5404,7 +5627,12 @@ pub struct StreamingEndpointProperties {
     #[serde(rename = "maxCacheAge", default, skip_serializing_if = "Option::is_none")]
     pub max_cache_age: Option<i64>,
     #[doc = "The custom host names of the streaming endpoint"]
-    #[serde(rename = "customHostNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_host_names: Vec<String>,
     #[doc = "The streaming endpoint host name."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
@@ -5540,7 +5768,11 @@ impl StreamingLocator {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocatorCollection {
     #[doc = "A collection of StreamingLocator items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StreamingLocator>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5575,7 +5807,11 @@ pub struct StreamingLocatorContentKey {
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
     #[doc = "Tracks which use this Content Key"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tracks: Vec<TrackSelection>,
 }
 impl StreamingLocatorContentKey {
@@ -5657,13 +5893,22 @@ pub struct StreamingLocatorProperties {
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
     #[doc = "The ContentKeys used by this Streaming Locator."]
-    #[serde(rename = "contentKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "contentKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub content_keys: Vec<StreamingLocatorContentKey>,
     #[doc = "Alternative Media ID of this Streaming Locator"]
     #[serde(rename = "alternativeMediaId", default, skip_serializing_if = "Option::is_none")]
     pub alternative_media_id: Option<String>,
     #[doc = "A list of asset or account filters which apply to this streaming locator"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filters: Vec<String>,
 }
 impl StreamingLocatorProperties {
@@ -5692,7 +5937,11 @@ pub struct StreamingPath {
     #[serde(rename = "encryptionScheme")]
     pub encryption_scheme: streaming_path::EncryptionScheme,
     #[doc = "Streaming paths for each protocol and encryptionScheme pair"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<String>,
 }
 impl StreamingPath {
@@ -5810,7 +6059,11 @@ impl StreamingPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyCollection {
     #[doc = "A collection of StreamingPolicy items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StreamingPolicy>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5837,7 +6090,11 @@ pub struct StreamingPolicyContentKey {
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
     #[doc = "Tracks which use this content key"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tracks: Vec<TrackSelection>,
 }
 impl StreamingPolicyContentKey {
@@ -5852,7 +6109,12 @@ pub struct StreamingPolicyContentKeys {
     #[serde(rename = "defaultKey", default, skip_serializing_if = "Option::is_none")]
     pub default_key: Option<DefaultKey>,
     #[doc = "Representing tracks needs separate content key"]
-    #[serde(rename = "keyToTrackMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "keyToTrackMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub key_to_track_mappings: Vec<StreamingPolicyContentKey>,
 }
 impl StreamingPolicyContentKeys {
@@ -6058,7 +6320,12 @@ pub mod track_property_condition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackSelection {
     #[doc = "TrackSelections is a track property condition list which can specify track(s)"]
-    #[serde(rename = "trackSelections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trackSelections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub track_selections: Vec<TrackPropertyCondition>,
 }
 impl TrackSelection {
@@ -6107,7 +6374,11 @@ impl Transform {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransformCollection {
     #[doc = "A collection of Transform items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Transform>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]

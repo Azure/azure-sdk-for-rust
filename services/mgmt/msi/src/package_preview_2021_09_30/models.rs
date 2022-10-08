@@ -10,7 +10,11 @@ pub struct AssociatedResourcesListResult {
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<f64>,
     #[doc = "The collection of Azure resources returned by the resource action to get a list of assigned resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureResource>,
     #[doc = "The url to get the next page of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -85,7 +89,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -170,7 +178,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "A list of operations supported by Microsoft.ManagedIdentity Resource Provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The url to get the next page of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -285,7 +297,11 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentitiesListResult {
     #[doc = "The collection of userAssignedIdentities returned by the listing operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Identity>,
     #[doc = "The url to get the next page of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -270,7 +270,11 @@ pub struct FlaggedEnrolledAppProperties {
     pub last_modified_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<FlaggedEnrolledAppError>,
 }
 impl FlaggedEnrolledAppProperties {

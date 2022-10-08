@@ -93,10 +93,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -187,7 +196,12 @@ pub struct ImageProperties {
     #[serde(rename = "sharedGalleryId", default, skip_serializing_if = "Option::is_none")]
     pub shared_gallery_id: Option<Url>,
     #[doc = "The available regions of the image in the shared gallery."]
-    #[serde(rename = "availableRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_regions: Vec<String>,
     #[doc = "The operating system state."]
     #[serde(rename = "osState", default, skip_serializing_if = "Option::is_none")]
@@ -397,7 +411,12 @@ pub struct LabPlanUpdateProperties {
     #[serde(rename = "defaultNetworkProfile", default, skip_serializing_if = "Option::is_none")]
     pub default_network_profile: Option<LabPlanNetworkProfile>,
     #[doc = "The allowed regions for the lab creator to use when creating labs using this lab plan."]
-    #[serde(rename = "allowedRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_regions: Vec<String>,
     #[doc = "A URL."]
     #[serde(rename = "sharedGalleryId", default, skip_serializing_if = "Option::is_none")]
@@ -624,7 +643,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -694,7 +717,11 @@ pub mod operation_result {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedImages {
     #[doc = "The array page of virtual machine images."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Image>,
     #[doc = "The link to get the next page of image results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -715,7 +742,11 @@ impl PagedImages {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedLabPlans {
     #[doc = "The array page of lab plans."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LabPlan>,
     #[doc = "The link to get the next page of lab plan results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -736,7 +767,11 @@ impl PagedLabPlans {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedLabs {
     #[doc = "The array page of lab results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Lab>,
     #[doc = "The link to get the next page of image results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -757,7 +792,11 @@ impl PagedLabs {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedSchedules {
     #[doc = "The array page of schedule results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Schedule>,
     #[doc = "The link to get the next page of schedule results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -778,7 +817,11 @@ impl PagedSchedules {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedUsers {
     #[doc = "The array page of user results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<User>,
     #[doc = "The link to get the next page of image results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -799,7 +842,11 @@ impl PagedUsers {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedVirtualMachines {
     #[doc = "The array page of virtual machine results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualMachine>,
     #[doc = "The link to get the next page of virtual machine results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -839,7 +886,12 @@ pub struct RecurrencePattern {
     #[doc = "Schedule recurrence frequencies."]
     pub frequency: RecurrenceFrequency,
     #[doc = "The week days the schedule runs. Used for when the Frequency is set to Weekly."]
-    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "weekDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub week_days: Vec<WeekDay>,
     #[doc = "The interval to invoke the schedule on. For example, interval = 2 and RecurrenceFrequency.Daily will run every 2 days. When no interval is supplied, an interval of 1 is used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1107,7 +1159,11 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResourceUpdate {
     #[doc = "Resource tags."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
 }
 impl TrackedResourceUpdate {

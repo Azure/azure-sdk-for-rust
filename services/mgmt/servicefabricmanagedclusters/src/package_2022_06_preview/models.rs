@@ -82,7 +82,11 @@ impl ApplicationResource {
 #[doc = "The list of application resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationResourceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationResource>,
     #[doc = "URL to get the next set of application list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -115,7 +119,12 @@ pub struct ApplicationResourceProperties {
     #[serde(rename = "upgradePolicy", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_policy: Option<ApplicationUpgradePolicy>,
     #[doc = "List of user assigned identities for the application, each mapped to a friendly name."]
-    #[serde(rename = "managedIdentities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managedIdentities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub managed_identities: Vec<ApplicationUserAssignedIdentity>,
 }
 impl ApplicationResourceProperties {
@@ -140,7 +149,11 @@ impl ApplicationTypeResource {
 #[doc = "The list of application type names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationTypeResourceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationTypeResource>,
     #[doc = "URL to get the next set of application type list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -199,7 +212,11 @@ impl ApplicationTypeVersionResource {
 #[doc = "The list of application type version resources for the specified application type name resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationTypeVersionResourceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationTypeVersionResource>,
     #[doc = "URL to get the next set of application type version list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -954,7 +971,12 @@ impl LongRunningOperationResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedAzResiliencyStatus {
     #[doc = "List of Managed VM Sizes for Service Fabric Managed Clusters."]
-    #[serde(rename = "baseResourceStatus", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "baseResourceStatus",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub base_resource_status: Vec<ResourceAzStatus>,
     #[doc = "URL to get the next set of Managed VM Sizes if there are any."]
     #[serde(rename = "isClusterZoneResilient", default, skip_serializing_if = "Option::is_none")]
@@ -1050,7 +1072,11 @@ impl ManagedClusterCodeVersionResult {
 #[doc = "Managed Cluster list results"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedCluster>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1086,7 +1112,12 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "clusterState", default, skip_serializing_if = "Option::is_none")]
     pub cluster_state: Option<ClusterState>,
     #[doc = "List of thumbprints of the cluster certificates."]
-    #[serde(rename = "clusterCertificateThumbprints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clusterCertificateThumbprints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cluster_certificate_thumbprints: Vec<String>,
     #[doc = "The port used for client connections to the cluster."]
     #[serde(rename = "clientConnectionPort", default, skip_serializing_if = "Option::is_none")]
@@ -1101,22 +1132,41 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_password: Option<String>,
     #[doc = "Load balancing rules that are applied to the public load balancer of the cluster."]
-    #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancing_rules: Vec<LoadBalancingRule>,
     #[doc = "Setting this to true enables RDP access to the VM. The default NSG rule opens RDP port to Internet which can be overridden with custom Network Security Rules. The default value for this setting is false."]
     #[serde(rename = "allowRdpAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_rdp_access: Option<bool>,
     #[doc = "Custom Network Security Rules that are applied to the Virtual Network of the cluster."]
-    #[serde(rename = "networkSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_security_rules: Vec<NetworkSecurityRule>,
     #[doc = "Client certificates that are allowed to manage the cluster."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub clients: Vec<ClientCertificate>,
     #[doc = "The settings to enable AAD authentication on the cluster."]
     #[serde(rename = "azureActiveDirectory", default, skip_serializing_if = "Option::is_none")]
     pub azure_active_directory: Option<AzureActiveDirectory>,
     #[doc = "The list of custom fabric settings to configure the cluster."]
-    #[serde(rename = "fabricSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fabricSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fabric_settings: Vec<SettingsSectionDescription>,
     #[doc = "The provisioning state of the managed resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1131,7 +1181,12 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "clusterUpgradeCadence", default, skip_serializing_if = "Option::is_none")]
     pub cluster_upgrade_cadence: Option<ClusterUpgradeCadence>,
     #[doc = "List of add-on features to enable on the cluster."]
-    #[serde(rename = "addonFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addonFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub addon_features: Vec<ManagedClusterAddOnFeature>,
     #[doc = "Setting this to true enables automatic OS upgrade for the node types that are created using any platform OS image with version 'latest'. The default value for this setting is false."]
     #[serde(rename = "enableAutoOSUpgrade", default, skip_serializing_if = "Option::is_none")]
@@ -1149,7 +1204,12 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[doc = "The list of IP tags associated with the default public IP address of the cluster."]
-    #[serde(rename = "ipTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_tags: Vec<IpTag>,
     #[doc = "IPv6 address for the cluster if IPv6 is enabled."]
     #[serde(rename = "ipv6Address", default, skip_serializing_if = "Option::is_none")]
@@ -1158,10 +1218,20 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "enableServicePublicIP", default, skip_serializing_if = "Option::is_none")]
     pub enable_service_public_ip: Option<bool>,
     #[doc = "Auxiliary subnets for the cluster."]
-    #[serde(rename = "auxiliarySubnets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "auxiliarySubnets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub auxiliary_subnets: Vec<Subnet>,
     #[doc = "Service endpoints for subnets in the cluster."]
-    #[serde(rename = "serviceEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_endpoints: Vec<ServiceEndpoint>,
 }
 impl ManagedClusterProperties {
@@ -1363,7 +1433,11 @@ impl ManagedVmSize {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedVmSizesResult {
     #[doc = "List of Managed VM Sizes for Service Fabric Managed Clusters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedVmSize>,
     #[doc = "URL to get the next set of Managed VM Sizes if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1445,16 +1519,36 @@ pub struct NetworkSecurityRule {
     #[doc = "Network protocol this rule applies to."]
     pub protocol: network_security_rule::Protocol,
     #[doc = "The CIDR or source IP ranges."]
-    #[serde(rename = "sourceAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_address_prefixes: Vec<String>,
     #[doc = "The destination address prefixes. CIDR or destination IP ranges."]
-    #[serde(rename = "destinationAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_address_prefixes: Vec<String>,
     #[doc = "The source port ranges."]
-    #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_port_ranges: Vec<String>,
     #[doc = "The destination port ranges."]
-    #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_port_ranges: Vec<String>,
     #[doc = "The CIDR or source IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule, specifies where network traffic originates from."]
     #[serde(rename = "sourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -1689,7 +1783,11 @@ impl NodeTypeAvailableSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeTypeListResult {
     #[doc = "The list of node types."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NodeType>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1710,7 +1808,11 @@ impl NodeTypeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeTypeListSkuResult {
     #[doc = "The list of available node type SKUs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NodeTypeAvailableSku>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1773,10 +1875,20 @@ pub struct NodeTypeProperties {
     #[serde(rename = "vmImageVersion", default, skip_serializing_if = "Option::is_none")]
     pub vm_image_version: Option<String>,
     #[doc = "The secrets to install in the virtual machines."]
-    #[serde(rename = "vmSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_secrets: Vec<VaultSecretGroup>,
     #[doc = "Set of extensions that should be installed onto the virtual machines."]
-    #[serde(rename = "vmExtensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmExtensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_extensions: Vec<VmssExtension>,
     #[doc = "Identities for the virtual machine scale set under the node type."]
     #[serde(rename = "vmManagedIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1788,13 +1900,28 @@ pub struct NodeTypeProperties {
     #[serde(rename = "multiplePlacementGroups", default, skip_serializing_if = "Option::is_none")]
     pub multiple_placement_groups: Option<bool>,
     #[doc = "Indicates the node type uses its own frontend configurations instead of the default one for the cluster. This setting can only be specified for non-primary node types and can not be added or removed after the node type is created."]
-    #[serde(rename = "frontendConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_configurations: Vec<FrontendConfiguration>,
     #[doc = "The Network Security Rules for this node type. This setting can only be specified for node types that are configured with frontend configurations."]
-    #[serde(rename = "networkSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_security_rules: Vec<NetworkSecurityRule>,
     #[doc = "Additional managed data disks."]
-    #[serde(rename = "additionalDataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalDataDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_data_disks: Vec<VmssDataDisk>,
     #[doc = "Enable or disable the Host Encryption for the virtual machines on the node type. This will enable the encryption for all the disks including Resource/Temp disk at host itself. Default: The Encryption at host will be disabled unless this property is set to true for the resource."]
     #[serde(rename = "enableEncryptionAtHost", default, skip_serializing_if = "Option::is_none")]
@@ -1815,7 +1942,11 @@ pub struct NodeTypeProperties {
     #[serde(rename = "enableOverProvisioning", default, skip_serializing_if = "Option::is_none")]
     pub enable_over_provisioning: Option<bool>,
     #[doc = "Specifies the availability zones where the node type would span across. If the cluster is not spanning across availability zones, initiates az migration for the cluster."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "Indicates whether the node type will be Spot Virtual Machines. Azure will allocate the VMs if there is capacity available and the VMs can be evicted at any time."]
     #[serde(rename = "isSpotVM", default, skip_serializing_if = "Option::is_none")]
@@ -1993,7 +2124,11 @@ impl NodeTypeUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Service Fabric resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResult>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2443,7 +2578,11 @@ pub struct ServiceEndpoint {
     #[doc = "The type of the endpoint service."]
     pub service: String,
     #[doc = "A list of locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
 }
 impl ServiceEndpoint {
@@ -2719,7 +2858,11 @@ impl ServiceResource {
 #[doc = "The list of service resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceResourceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceResource>,
     #[doc = "URL to get the next set of service list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3349,7 +3492,12 @@ pub struct VmssExtensionProperties {
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
     #[doc = "Collection of extension names after which this extension needs to be provisioned."]
-    #[serde(rename = "provisionAfterExtensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "provisionAfterExtensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub provision_after_extensions: Vec<String>,
     #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3426,7 +3574,12 @@ impl VaultSecretGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmManagedIdentity {
     #[doc = "The list of user identities associated with the virtual machine scale set under the node type. Each entry will be an ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userAssignedIdentities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_assigned_identities: Vec<String>,
 }
 impl VmManagedIdentity {

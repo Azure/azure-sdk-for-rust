@@ -34,7 +34,11 @@ impl AddonHcxProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddonList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Addon>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -366,7 +370,11 @@ impl CloudLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudLinkList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CloudLink>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -468,7 +476,11 @@ impl Cluster {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Cluster>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -558,7 +570,11 @@ pub struct ClusterUpdateProperties {
     #[serde(rename = "clusterSize", default, skip_serializing_if = "Option::is_none")]
     pub cluster_size: Option<i32>,
     #[doc = "The hosts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hosts: Vec<String>,
 }
 impl ClusterUpdateProperties {
@@ -579,7 +595,11 @@ pub struct CommonClusterProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<i32>,
     #[doc = "The hosts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hosts: Vec<String>,
 }
 impl CommonClusterProperties {
@@ -605,7 +625,11 @@ impl Datastore {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatastoreList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Datastore>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1015,10 +1039,19 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponse>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorResponse {
@@ -1044,7 +1077,11 @@ impl ExpressRouteAuthorization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteAuthorizationList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteAuthorization>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1142,7 +1179,11 @@ impl GlobalReachConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalReachConnectionList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GlobalReachConnection>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1285,7 +1326,11 @@ impl HcxEnterpriseSite {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HcxEnterpriseSiteList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HcxEnterpriseSite>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1514,16 +1559,30 @@ pub struct MetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "Supported aggregation types"]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "Supported time grain types"]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
     #[doc = "Optional. If set to true, then zero will be returned for time duration where no metric is emitted/published."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
     #[doc = "Dimensions of the metric"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimension>,
     #[doc = "Whether or not the service is using regional MDM accounts."]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
@@ -1603,7 +1662,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1657,7 +1720,11 @@ impl PsCredentialExecutionParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlacementPoliciesList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PlacementPolicy>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1853,10 +1920,20 @@ pub struct PlacementPolicyUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<placement_policy_update_properties::State>,
     #[doc = "Virtual machine members list"]
-    #[serde(rename = "vmMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_members: Vec<String>,
     #[doc = "Host members list"]
-    #[serde(rename = "hostMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub host_members: Vec<String>,
 }
 impl PlacementPolicyUpdateProperties {
@@ -1990,7 +2067,11 @@ pub mod private_cloud_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateCloudList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateCloud>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2046,7 +2127,12 @@ pub struct PrivateCloudProperties {
     #[serde(rename = "nsxtCertificateThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub nsxt_certificate_thumbprint: Option<String>,
     #[doc = "Array of cloud link IDs from other clouds that connect to this one"]
-    #[serde(rename = "externalCloudLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "externalCloudLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub external_cloud_links: Vec<String>,
     #[doc = "An ExpressRoute Circuit"]
     #[serde(rename = "secondaryCircuit", default, skip_serializing_if = "Option::is_none")]
@@ -2150,7 +2236,12 @@ pub struct PrivateCloudUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub internet: Option<private_cloud_update_properties::Internet>,
     #[doc = "vCenter Single Sign On Identity Sources"]
-    #[serde(rename = "identitySources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "identitySources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub identity_sources: Vec<IdentitySource>,
     #[doc = "The properties describing private cloud availability zone distribution"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2325,7 +2416,11 @@ pub struct ScriptCmdletProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
     #[doc = "Parameters the script will accept"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ScriptParameter>,
 }
 impl ScriptCmdletProperties {
@@ -2337,7 +2432,11 @@ impl ScriptCmdletProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptCmdletsList {
     #[doc = "List of scripts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScriptCmdlet>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2431,10 +2530,19 @@ pub struct ScriptExecutionProperties {
     #[serde(rename = "scriptCmdletId", default, skip_serializing_if = "Option::is_none")]
     pub script_cmdlet_id: Option<String>,
     #[doc = "Parameters the script will accept"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ScriptExecutionParameter>,
     #[doc = "Parameters that will be hidden/not visible to ARM, such as passwords and credentials"]
-    #[serde(rename = "hiddenParameters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hiddenParameters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hidden_parameters: Vec<ScriptExecutionParameter>,
     #[doc = "Error message if the script was able to run, but if the script itself had errors or powershell threw an exception"]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
@@ -2457,19 +2565,35 @@ pub struct ScriptExecutionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<script_execution_properties::ProvisioningState>,
     #[doc = "Standard output stream from the powershell execution"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub output: Vec<String>,
     #[doc = "User-defined dictionary."]
     #[serde(rename = "namedOutputs", default, skip_serializing_if = "Option::is_none")]
     pub named_outputs: Option<serde_json::Value>,
     #[doc = "Standard information out stream from the powershell execution"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub information: Vec<String>,
     #[doc = "Standard warning out stream from the powershell execution"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub warnings: Vec<String>,
     #[doc = "Standard error output stream from the powershell execution"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<String>,
 }
 impl ScriptExecutionProperties {
@@ -2547,7 +2671,11 @@ pub mod script_execution_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptExecutionsList {
     #[doc = "List of scripts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScriptExecution>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2597,7 +2725,11 @@ impl ScriptPackageProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptPackagesList {
     #[doc = "List of script package resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScriptPackage>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2798,10 +2930,20 @@ impl ScriptStringExecutionParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "Specifications of the Log for Azure Monitoring"]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
     #[doc = "Specifications of the Metrics for Azure Monitoring"]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
 }
 impl ServiceSpecification {
@@ -2982,7 +3124,11 @@ impl Serialize for VirtualMachineRestrictMovementState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachinesList {
     #[doc = "The items to be displayed on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualMachine>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3074,7 +3220,11 @@ pub struct WorkloadNetworkDhcpEntity {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "NSX Segments consuming DHCP."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub segments: Vec<String>,
     #[doc = "The provisioning state"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3183,7 +3333,11 @@ pub mod workload_network_dhcp_entity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDhcpList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkDhcp>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3206,7 +3360,12 @@ pub struct WorkloadNetworkDhcpRelay {
     #[serde(flatten)]
     pub workload_network_dhcp_entity: WorkloadNetworkDhcpEntity,
     #[doc = "DHCP Relay Addresses. Max 3."]
-    #[serde(rename = "serverAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serverAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub server_addresses: Vec<String>,
 }
 impl WorkloadNetworkDhcpRelay {
@@ -3265,7 +3424,12 @@ pub struct WorkloadNetworkDnsServiceProperties {
     #[serde(rename = "defaultDnsZone", default, skip_serializing_if = "Option::is_none")]
     pub default_dns_zone: Option<String>,
     #[doc = "FQDN zones of the DNS Service."]
-    #[serde(rename = "fqdnZones", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fqdnZones",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdn_zones: Vec<String>,
     #[doc = "DNS Service log level."]
     #[serde(rename = "logLevel", default, skip_serializing_if = "Option::is_none")]
@@ -3422,7 +3586,11 @@ pub mod workload_network_dns_service_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDnsServicesList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkDnsService>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3460,10 +3628,19 @@ pub struct WorkloadNetworkDnsZoneProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Domain names of the DNS Zone."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub domain: Vec<String>,
     #[doc = "DNS Server IP array of the DNS Zone."]
-    #[serde(rename = "dnsServerIps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServerIps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_server_ips: Vec<String>,
     #[doc = "Source IP of the DNS Zone."]
     #[serde(rename = "sourceIp", default, skip_serializing_if = "Option::is_none")]
@@ -3533,7 +3710,11 @@ pub mod workload_network_dns_zone_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDnsZonesList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkDnsZone>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3568,7 +3749,11 @@ impl WorkloadNetworkGateway {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkGatewayList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkGateway>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3618,7 +3803,11 @@ impl WorkloadNetworkPortMirroring {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkPortMirroringList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkPortMirroring>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3877,7 +4066,11 @@ pub mod workload_network_public_ip_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkPublicIPsList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkPublicIp>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3933,7 +4126,12 @@ pub struct WorkloadNetworkSegmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<WorkloadNetworkSegmentSubnet>,
     #[doc = "Port Vif which segment is associated with."]
-    #[serde(rename = "portVif", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "portVif",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub port_vif: Vec<WorkloadNetworkSegmentPortVif>,
     #[doc = "Segment status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4039,7 +4237,12 @@ pub mod workload_network_segment_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkSegmentSubnet {
     #[doc = "DHCP Range assigned for subnet."]
-    #[serde(rename = "dhcpRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dhcpRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dhcp_ranges: Vec<String>,
     #[doc = "Gateway address."]
     #[serde(rename = "gatewayAddress", default, skip_serializing_if = "Option::is_none")]
@@ -4054,7 +4257,11 @@ impl WorkloadNetworkSegmentSubnet {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkSegmentsList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkSegment>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4092,7 +4299,11 @@ pub struct WorkloadNetworkVmGroupProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Virtual machine members of this group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub members: Vec<String>,
     #[doc = "VM Group status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4198,7 +4409,11 @@ pub mod workload_network_vm_group_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkVmGroupsList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkVmGroup>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4293,7 +4508,11 @@ pub mod workload_network_virtual_machine_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkVirtualMachinesList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadNetworkVirtualMachine>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

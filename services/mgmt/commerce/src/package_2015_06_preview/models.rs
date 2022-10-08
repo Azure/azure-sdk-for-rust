@@ -55,7 +55,12 @@ pub struct MeterInfo {
     #[serde(rename = "Unit", default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "Provides additional meter data. 'Third Party' indicates a meter with no discount. Blanks indicate First Party."]
-    #[serde(rename = "MeterTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "MeterTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub meter_tags: Vec<String>,
     #[doc = "The region in which the Azure service is available."]
     #[serde(rename = "MeterRegion", default, skip_serializing_if = "Option::is_none")]
@@ -84,7 +89,12 @@ pub struct MonetaryCommitment {
     #[serde(rename = "TieredDiscount", default, skip_serializing_if = "Option::is_none")]
     pub tiered_discount: Option<serde_json::Value>,
     #[doc = "An array of meter ids that are excluded from the given offer terms."]
-    #[serde(rename = "ExcludedMeterIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ExcludedMeterIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_meter_ids: Vec<String>,
 }
 impl MonetaryCommitment {
@@ -105,7 +115,12 @@ pub struct MonetaryCredit {
     #[serde(rename = "Credit", default, skip_serializing_if = "Option::is_none")]
     pub credit: Option<f64>,
     #[doc = "An array of meter ids that are excluded from the given offer terms."]
-    #[serde(rename = "ExcludedMeterIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ExcludedMeterIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_meter_ids: Vec<String>,
 }
 impl MonetaryCredit {
@@ -204,10 +219,20 @@ pub struct ResourceRateCardInfo {
     #[serde(rename = "IsTaxIncluded", default, skip_serializing_if = "Option::is_none")]
     pub is_tax_included: Option<bool>,
     #[doc = "A list of offer terms."]
-    #[serde(rename = "OfferTerms", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "OfferTerms",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub offer_terms: Vec<OfferTermInfo>,
     #[doc = "A list of meters."]
-    #[serde(rename = "Meters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Meters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub meters: Vec<MeterInfo>,
 }
 impl ResourceRateCardInfo {
@@ -240,7 +265,11 @@ impl UsageAggregation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageAggregationListResult {
     #[doc = "Gets or sets details for the requested aggregation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UsageAggregation>,
     #[doc = "Gets or sets the link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

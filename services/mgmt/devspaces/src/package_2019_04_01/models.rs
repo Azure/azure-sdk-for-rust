@@ -49,7 +49,12 @@ impl ControllerConnectionDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ControllerConnectionDetailsList {
     #[doc = "List of Azure Dev Spaces Controller connection details."]
-    #[serde(rename = "connectionDetailsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectionDetailsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connection_details_list: Vec<ControllerConnectionDetails>,
 }
 impl ControllerConnectionDetailsList {
@@ -60,7 +65,11 @@ impl ControllerConnectionDetailsList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ControllerList {
     #[doc = "List of Azure Dev Spaces Controllers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Controller>,
     #[doc = "The URI that can be used to request the next page for list of Azure Dev Spaces Controllers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -313,7 +322,11 @@ impl ResourceProviderOperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "Resource provider operations list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperationDefinition>,
     #[doc = "The URI that can be used to request the next page for list of Azure operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

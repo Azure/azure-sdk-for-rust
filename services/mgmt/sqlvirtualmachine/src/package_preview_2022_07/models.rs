@@ -19,7 +19,11 @@ impl AdditionalFeaturesServerConfigurations {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgConfiguration {
     #[doc = "Replica configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub replicas: Vec<AgReplica>,
 }
 impl AgConfiguration {
@@ -265,7 +269,12 @@ pub struct AutoBackupSettings {
     #[serde(rename = "fullBackupFrequency", default, skip_serializing_if = "Option::is_none")]
     pub full_backup_frequency: Option<auto_backup_settings::FullBackupFrequency>,
     #[doc = "Days of the week for the backups when FullBackupFrequency is set to Weekly."]
-    #[serde(rename = "daysOfWeek", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "daysOfWeek",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub days_of_week: Vec<String>,
     #[doc = "Start time of a given day during which full backups can take place. 0-23 hours."]
     #[serde(rename = "fullBackupStartTime", default, skip_serializing_if = "Option::is_none")]
@@ -416,7 +425,11 @@ impl AvailabilityGroupListener {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityGroupListenerListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailabilityGroupListener>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -443,10 +456,20 @@ pub struct AvailabilityGroupListenerProperties {
     #[serde(rename = "availabilityGroupName", default, skip_serializing_if = "Option::is_none")]
     pub availability_group_name: Option<String>,
     #[doc = "List of load balancer configurations for an availability group listener."]
-    #[serde(rename = "loadBalancerConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancerConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancer_configurations: Vec<LoadBalancerConfiguration>,
     #[doc = "List of multi subnet IP configurations for an AG listener."]
-    #[serde(rename = "multiSubnetIpConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "multiSubnetIpConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub multi_subnet_ip_configurations: Vec<MultiSubnetIpConfiguration>,
     #[doc = "Create a default availability group if it does not exist."]
     #[serde(
@@ -507,7 +530,12 @@ pub struct LoadBalancerConfiguration {
     #[serde(rename = "probePort", default, skip_serializing_if = "Option::is_none")]
     pub probe_port: Option<i32>,
     #[doc = "List of the SQL virtual machine instance resource id's that are enrolled into the availability group listener."]
-    #[serde(rename = "sqlVirtualMachineInstances", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sqlVirtualMachineInstances",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sql_virtual_machine_instances: Vec<String>,
 }
 impl LoadBalancerConfiguration {
@@ -621,7 +649,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -774,7 +806,11 @@ impl SqlInstanceSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlStorageSettings {
     #[doc = "Logical Unit Numbers for the disks."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub luns: Vec<i32>,
     #[doc = "SQL Server default file path"]
     #[serde(rename = "defaultFilePath", default, skip_serializing_if = "Option::is_none")]
@@ -810,7 +846,11 @@ pub struct SqlTempDbSettings {
     #[serde(rename = "persistFolderPath", default, skip_serializing_if = "Option::is_none")]
     pub persist_folder_path: Option<String>,
     #[doc = "Logical Unit Numbers for the disks."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub luns: Vec<i32>,
     #[doc = "SQL Server default file path"]
     #[serde(rename = "defaultFilePath", default, skip_serializing_if = "Option::is_none")]
@@ -1066,7 +1106,11 @@ impl SqlVirtualMachineGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlVirtualMachineGroupListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlVirtualMachineGroup>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1276,7 +1320,11 @@ impl SqlVirtualMachineGroupUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlVirtualMachineListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlVirtualMachine>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

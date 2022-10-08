@@ -21,7 +21,11 @@ impl AccessPolicyEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyEntityCollection {
     #[doc = "A collection of AccessPolicyEntity items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessPolicyEntity>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -372,7 +376,11 @@ impl EdgeModuleEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleEntityCollection {
     #[doc = "A collection of EdgeModuleEntity items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EdgeModuleEntity>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -631,10 +639,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -738,16 +755,32 @@ pub struct JwtAuthentication {
     #[serde(flatten)]
     pub authentication_base: AuthenticationBase,
     #[doc = "List of expected token issuers. Token issuer is valid if it matches at least one of the given values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub issuers: Vec<String>,
     #[doc = "List of expected token audiences. Token audience is valid if it matches at least one of the given values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub audiences: Vec<String>,
     #[doc = "List of additional token claims to be validated. Token must contains all claims and respective values for it to be valid."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub claims: Vec<TokenClaim>,
     #[doc = "List of keys which can be used to validate access tokens. Having multiple keys allow for seamless key rotation of the token signing key. Token signature must match exactly one key."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub keys: Vec<TokenKey>,
 }
 impl JwtAuthentication {
@@ -809,7 +842,11 @@ impl LivePipeline {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivePipelineCollection {
     #[doc = "A collection of LivePipeline items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LivePipeline>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -860,7 +897,11 @@ pub struct LivePipelineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<live_pipeline_properties::State>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDefinition>,
 }
 impl LivePipelineProperties {
@@ -934,7 +975,11 @@ pub struct LivePipelinePropertiesUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<live_pipeline_properties_update::State>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDefinition>,
 }
 impl LivePipelinePropertiesUpdate {
@@ -1058,10 +1103,19 @@ pub struct MetricSpecification {
     #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub lock_aggregation_type: Option<metric_specification::LockAggregationType>,
     #[doc = "Supported aggregation types."]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "The metric dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimension>,
     #[doc = "Indicates whether regional MDM account is enabled."]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
@@ -1073,7 +1127,12 @@ pub struct MetricSpecification {
     #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_namespace: Option<String>,
     #[doc = "The supported time grain types."]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
 }
 impl MetricSpecification {
@@ -1320,7 +1379,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationCollection {
     #[doc = "A collection of Operation items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl OperationCollection {
@@ -1468,7 +1531,11 @@ impl PipelineJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineJobCollection {
     #[doc = "A collection of PipelineJob items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PipelineJob>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1537,7 +1604,11 @@ pub struct PipelineJobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<PipelineJobError>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDefinition>,
 }
 impl PipelineJobProperties {
@@ -1615,7 +1686,11 @@ pub struct PipelineJobPropertiesUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<PipelineJobError>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDefinition>,
 }
 impl PipelineJobPropertiesUpdate {
@@ -1748,7 +1823,11 @@ pub mod pipeline_topology {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineTopologyCollection {
     #[doc = "A collection of PipelineTopology items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PipelineTopology>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1772,12 +1851,20 @@ pub struct PipelineTopologyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of the topology parameter declarations. Parameters declared here can be referenced throughout the topology nodes through the use of \"${PARAMETER_NAME}\" string pattern. Parameters can have optional default values and can later be defined in individual instances of the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDeclaration>,
     #[doc = "List of the topology source nodes. Source nodes enable external data to be ingested by the pipeline."]
     pub sources: Vec<SourceNodeBase>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub processors: Vec<ProcessorNodeBase>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
     pub sinks: Vec<SinkNodeBase>,
@@ -1800,16 +1887,32 @@ pub struct PipelineTopologyPropertiesUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of the topology parameter declarations. Parameters declared here can be referenced throughout the topology nodes through the use of \"${PARAMETER_NAME}\" string pattern. Parameters can have optional default values and can later be defined in individual instances of the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDeclaration>,
     #[doc = "List of the topology source nodes. Source nodes enable external data to be ingested by the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sources: Vec<SourceNodeBase>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub processors: Vec<ProcessorNodeBase>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sinks: Vec<SinkNodeBase>,
 }
 impl PipelineTopologyPropertiesUpdate {
@@ -1907,7 +2010,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl PrivateEndpointConnectionListResult {
@@ -2035,7 +2142,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
 }
 impl PrivateLinkResourceListResult {
@@ -2050,10 +2161,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -2298,10 +2419,20 @@ impl SecureIotDeviceRemoteTunnel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "List of log specifications."]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
     #[doc = "List of metric specifications."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
 }
 impl ServiceSpecification {
@@ -2636,7 +2767,11 @@ impl VideoAnalyzer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoAnalyzerCollection {
     #[doc = "A collection of VideoAnalyzer items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VideoAnalyzer>,
 }
 impl VideoAnalyzerCollection {
@@ -2735,13 +2870,22 @@ pub struct VideoAnalyzerProperties {
     #[serde(rename = "storageAccounts")]
     pub storage_accounts: Vec<StorageAccount>,
     #[doc = "The endpoints associated with this resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<Endpoint>,
     #[doc = "Defines how the Video Analyzer account is (optionally) encrypted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<AccountEncryption>,
     #[doc = "The IoT Hubs for this resource."]
-    #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "iotHubs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub iot_hubs: Vec<IotHub>,
     #[doc = "Whether or not public network access is allowed for resources under the Video Analyzer account."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
@@ -2753,7 +2897,12 @@ pub struct VideoAnalyzerProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<video_analyzer_properties::ProvisioningState>,
     #[doc = "Private Endpoint Connections created under Video Analyzer account."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 impl VideoAnalyzerProperties {
@@ -2853,16 +3002,30 @@ pub mod video_analyzer_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoAnalyzerPropertiesUpdate {
     #[doc = "The storage accounts for this resource."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<StorageAccount>,
     #[doc = "The endpoints associated with this resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<Endpoint>,
     #[doc = "Defines how the Video Analyzer account is (optionally) encrypted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<AccountEncryption>,
     #[doc = "The IoT Hubs for this resource."]
-    #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "iotHubs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub iot_hubs: Vec<IotHub>,
     #[doc = "Whether or not public network access is allowed for resources under the Video Analyzer account."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
@@ -2874,7 +3037,12 @@ pub struct VideoAnalyzerPropertiesUpdate {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<video_analyzer_properties_update::ProvisioningState>,
     #[doc = "Private Endpoint Connections created under Video Analyzer account."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 impl VideoAnalyzerPropertiesUpdate {
@@ -3103,7 +3271,11 @@ impl VideoEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoEntityCollection {
     #[doc = "A collection of VideoEntity items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VideoEntity>,
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]

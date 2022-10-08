@@ -176,7 +176,11 @@ impl CdnPeeringPrefix {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CdnPeeringPrefixListResult {
     #[doc = "The list of CDN peering prefixes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CdnPeeringPrefix>,
     #[doc = "The link to fetch the next page of CDN peering prefixes."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -250,7 +254,11 @@ impl ConnectionMonitorTest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorTestListResult {
     #[doc = "The list of [T]."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConnectionMonitorTest>,
     #[doc = "The link to fetch the next page of [T]."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -286,7 +294,11 @@ pub struct ConnectionMonitorTestProperties {
     #[serde(rename = "isTestSuccessful", default, skip_serializing_if = "Option::is_none")]
     pub is_test_successful: Option<bool>,
     #[doc = "The path representing the Connection Monitor test."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path: Vec<String>,
     #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -758,7 +770,12 @@ pub struct LogAnalyticsWorkspaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[doc = "The list of connected agents."]
-    #[serde(rename = "connectedAgents", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectedAgents",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connected_agents: Vec<String>,
 }
 impl LogAnalyticsWorkspaceProperties {
@@ -857,10 +874,19 @@ pub struct MetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "Supported time grain types for the metric."]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
     #[doc = "Dimensions of the metric."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimension>,
 }
 impl MetricSpecification {
@@ -914,7 +940,11 @@ impl OperationDisplayInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of peering API operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The link to fetch the next page of peering API operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -961,7 +991,11 @@ impl PeerAsn {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerAsnListResult {
     #[doc = "The list of peer ASNs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeerAsn>,
     #[doc = "The link to fetch the next page of peer ASNs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -985,7 +1019,12 @@ pub struct PeerAsnProperties {
     #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<i32>,
     #[doc = "The contact details of the peer."]
-    #[serde(rename = "peerContactDetail", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "peerContactDetail",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peer_contact_detail: Vec<ContactDetail>,
     #[doc = "The name of the peer."]
     #[serde(rename = "peerName", default, skip_serializing_if = "Option::is_none")]
@@ -1135,7 +1174,11 @@ impl PeeringBandwidthOffer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringListResult {
     #[doc = "The list of peerings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Peering>,
     #[doc = "The link to fetch the next page of peerings."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1213,7 +1256,11 @@ pub mod peering_location {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringLocationListResult {
     #[doc = "The list of peering locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringLocation>,
     #[doc = "The link to fetch the next page of peering locations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1258,10 +1305,20 @@ impl PeeringLocationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringLocationPropertiesDirect {
     #[doc = "The list of direct peering facilities at the peering location."]
-    #[serde(rename = "peeringFacilities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "peeringFacilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peering_facilities: Vec<DirectPeeringFacility>,
     #[doc = "The list of bandwidth offers available at the peering location."]
-    #[serde(rename = "bandwidthOffers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bandwidthOffers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bandwidth_offers: Vec<PeeringBandwidthOffer>,
 }
 impl PeeringLocationPropertiesDirect {
@@ -1273,7 +1330,12 @@ impl PeeringLocationPropertiesDirect {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringLocationPropertiesExchange {
     #[doc = "The list of exchange peering facilities at the peering location."]
-    #[serde(rename = "peeringFacilities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "peeringFacilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peering_facilities: Vec<ExchangePeeringFacility>,
 }
 impl PeeringLocationPropertiesExchange {
@@ -1350,7 +1412,11 @@ pub mod peering_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringPropertiesDirect {
     #[doc = "The set of connections that constitute a direct peering."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connections: Vec<DirectConnection>,
     #[doc = "The flag that indicates whether or not the peering is used for peering service."]
     #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
@@ -1421,7 +1487,11 @@ pub mod peering_properties_direct {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringPropertiesExchange {
     #[doc = "The set of connections that constitute an exchange peering."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connections: Vec<ExchangeConnection>,
     #[doc = "The sub resource."]
     #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
@@ -1466,7 +1536,11 @@ impl PeeringReceivedRoute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringReceivedRouteListResult {
     #[doc = "The list of received routes for the peering."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringReceivedRoute>,
     #[doc = "The link to fetch the next page of received routes for the peering."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1501,7 +1575,11 @@ impl PeeringRegisteredAsn {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringRegisteredAsnListResult {
     #[doc = "The list of peering registered ASNs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringRegisteredAsn>,
     #[doc = "The link to fetch the next page of peering registered ASNs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1598,7 +1676,11 @@ impl PeeringRegisteredPrefix {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringRegisteredPrefixListResult {
     #[doc = "The list of peering registered prefixes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringRegisteredPrefix>,
     #[doc = "The link to fetch the next page of peering registered prefixes."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1773,7 +1855,11 @@ impl PeeringServiceCountry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringServiceCountryListResult {
     #[doc = "The list of peering service countries."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringServiceCountry>,
     #[doc = "The link to fetch the next page of peering service countries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1794,7 +1880,11 @@ impl PeeringServiceCountryListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringServiceListResult {
     #[doc = "The list of peering services."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringService>,
     #[doc = "The link to fetch the next page of peering services."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1829,7 +1919,11 @@ impl PeeringServiceLocation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringServiceLocationListResult {
     #[doc = "The list of peering service locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringServiceLocation>,
     #[doc = "The link to fetch the next page of peering service locations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1906,7 +2000,11 @@ impl PeeringServicePrefixEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringServicePrefixListResult {
     #[doc = "The list of peering service prefixes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringServicePrefix>,
     #[doc = "The link to fetch the next page of peering service prefixes."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1939,7 +2037,11 @@ pub struct PeeringServicePrefixProperties {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
     #[doc = "The list of events for peering service prefix"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<PeeringServicePrefixEvent>,
     #[doc = "The peering service prefix key"]
     #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
@@ -2172,7 +2274,11 @@ impl PeeringServiceProvider {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeeringServiceProviderListResult {
     #[doc = "The list of peering service providers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeeringServiceProvider>,
     #[doc = "The link to fetch the next page of peering service providers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2196,7 +2302,12 @@ pub struct PeeringServiceProviderProperties {
     #[serde(rename = "serviceProviderName", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_name: Option<String>,
     #[doc = "The list of locations at which the service provider peers with Microsoft."]
-    #[serde(rename = "peeringLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "peeringLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peering_locations: Vec<String>,
 }
 impl PeeringServiceProviderProperties {
@@ -2387,7 +2498,12 @@ impl ResourceTags {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "Specifications of the Metrics for Azure Monitoring."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
 }
 impl ServiceSpecification {

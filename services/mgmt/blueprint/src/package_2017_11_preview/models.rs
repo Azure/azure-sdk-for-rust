@@ -68,7 +68,11 @@ pub mod artifact {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactList {
     #[doc = "List of Blueprint artifacts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Artifact>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -89,7 +93,12 @@ impl ArtifactList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactPropertiesBase {
     #[doc = "Artifacts which need to be deployed before the specified artifact."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
 }
 impl ArtifactPropertiesBase {
@@ -120,7 +129,11 @@ impl Assignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentList {
     #[doc = "List of Blueprint assignments."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Assignment>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -340,7 +353,11 @@ impl Blueprint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintList {
     #[doc = "List of Blueprint definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Blueprint>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -496,7 +513,12 @@ pub struct ParameterDefinition {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<serde_json::Value>,
     #[doc = "Array of allowed values for this parameter."]
-    #[serde(rename = "allowedValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_values: Vec<serde_json::Value>,
 }
 impl ParameterDefinition {
@@ -688,7 +710,11 @@ impl PublishedBlueprint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublishedBlueprintList {
     #[doc = "List of published Blueprints."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PublishedBlueprint>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -735,7 +761,12 @@ pub struct ResourceGroupDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ParameterDefinitionMetadata>,
     #[doc = "Artifacts which need to be deployed before this resource group."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
 }
 impl ResourceGroupDefinition {
@@ -817,7 +848,11 @@ pub mod resource_provider_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
 }
 impl ResourceProviderOperationList {

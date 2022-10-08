@@ -116,7 +116,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "More detailed error information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -411,7 +415,12 @@ pub mod rest_request_authentication {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestResponse {
     #[doc = "The HTTP status codes expected in a successful health check response. The response is expected to match one of the given status codes. If no expected status codes are provided, default expected status code is 200 OK."]
-    #[serde(rename = "successStatusCodes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "successStatusCodes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub success_status_codes: Vec<String>,
     #[doc = "The regular expressions to match the response content with."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -428,7 +437,11 @@ pub mod rest_response {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Regex {
         #[doc = "The list of regular expressions."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub matches: Vec<String>,
         #[doc = "Indicates whether any or all of the expressions should match with the response content."]
         #[serde(rename = "matchQuantifier", default, skip_serializing_if = "Option::is_none")]
@@ -521,7 +534,11 @@ pub struct RolloutProperties {
     #[serde(rename = "operationInfo", default, skip_serializing_if = "Option::is_none")]
     pub operation_info: Option<RolloutOperationInfo>,
     #[doc = "The detailed information on the services being deployed."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub services: Vec<Service>,
 }
 impl RolloutProperties {
@@ -589,10 +606,19 @@ pub struct RolloutStep {
     #[serde(rename = "operationInfo", default, skip_serializing_if = "Option::is_none")]
     pub operation_info: Option<StepOperationInfo>,
     #[doc = "Set of resource operations that were performed, if any, on an Azure resource."]
-    #[serde(rename = "resourceOperations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceOperations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_operations: Vec<ResourceOperation>,
     #[doc = "Supplementary informative messages during rollout."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub messages: Vec<Message>,
 }
 impl RolloutStep {
@@ -645,7 +671,12 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The detailed information about the units that make up the service."]
-    #[serde(rename = "serviceUnits", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceUnits",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_units: Vec<ServiceUnit>,
 }
 impl Service {
@@ -730,7 +761,11 @@ pub struct ServiceUnit {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Detailed step information, if present."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub steps: Vec<RolloutStep>,
 }
 impl ServiceUnit {
@@ -817,16 +852,31 @@ pub struct StepGroup {
     #[doc = "The name of the step group."]
     pub name: String,
     #[doc = "The list of step group names on which this step group depends on."]
-    #[serde(rename = "dependsOnStepGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOnStepGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on_step_groups: Vec<String>,
     #[doc = "The list of steps to be run before deploying the target."]
-    #[serde(rename = "preDeploymentSteps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "preDeploymentSteps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pre_deployment_steps: Vec<PrePostStep>,
     #[doc = "The resource Id of service unit to be deployed. The service unit should be from the service topology referenced in targetServiceTopologyId"]
     #[serde(rename = "deploymentTargetId")]
     pub deployment_target_id: String,
     #[doc = "The list of steps to be run after deploying the target."]
-    #[serde(rename = "postDeploymentSteps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "postDeploymentSteps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub post_deployment_steps: Vec<PrePostStep>,
 }
 impl StepGroup {

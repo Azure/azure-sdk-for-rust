@@ -174,7 +174,12 @@ impl BlobFlatListSegment {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobHierarchyListSegment {
-    #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "BlobPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_prefixes: Vec<BlobPrefix>,
     #[serde(rename = "BlobItems")]
     pub blob_items: Vec<BlobItemInternal>,
@@ -484,11 +489,26 @@ pub mod block_list {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockLookupList {
-    #[serde(rename = "Committed", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Committed",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub committed: Vec<String>,
-    #[serde(rename = "Uncommitted", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Uncommitted",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub uncommitted: Vec<String>,
-    #[serde(rename = "Latest", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Latest",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub latest: Vec<String>,
 }
 impl BlockLookupList {
@@ -1313,9 +1333,19 @@ impl ObjectReplicationMetadata {
 #[doc = "the list of pages"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageList {
-    #[serde(rename = "PageRange", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "PageRange",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub page_range: Vec<PageRange>,
-    #[serde(rename = "ClearRange", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ClearRange",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub clear_range: Vec<ClearRange>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,

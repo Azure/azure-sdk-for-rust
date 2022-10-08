@@ -20,7 +20,12 @@ impl AadProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadProfileResponse {
     #[doc = "The list of AAD group object IDs that will have admin role of the cluster."]
-    #[serde(rename = "adminGroupObjectIDs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "adminGroupObjectIDs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub admin_group_object_i_ds: Vec<String>,
     #[doc = "The client AAD application ID."]
     #[serde(rename = "clientAppID", default, skip_serializing_if = "Option::is_none")]
@@ -106,7 +111,12 @@ pub struct AgentPoolProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
     #[doc = "AvailabilityZones - The list of Availability zones to use for nodes. Datacenter racks modelled as zones"]
-    #[serde(rename = "availabilityZones", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availabilityZones",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub availability_zones: Vec<String>,
     #[doc = "The maximum number of nodes for auto-scaling"]
     #[serde(rename = "maxCount", default, skip_serializing_if = "Option::is_none")]
@@ -124,7 +134,12 @@ pub struct AgentPoolProfile {
     #[serde(rename = "nodeLabels", default, skip_serializing_if = "Option::is_none")]
     pub node_labels: Option<serde_json::Value>,
     #[doc = "NodeTaints - Taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule."]
-    #[serde(rename = "nodeTaints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nodeTaints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_taints: Vec<String>,
     #[doc = "OsType - OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux. Possible values include: 'Linux', 'Windows'"]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
@@ -403,7 +418,12 @@ pub mod cloud_provider_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct InfraNetworkProfile {
         #[doc = "Array of references to azure resource corresponding to the new HybridAKSNetwork object e.g. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HybridContainerService/virtualNetworks/{virtualNetworkName}"]
-        #[serde(rename = "vnetSubnetIds", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "vnetSubnetIds",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub vnet_subnet_ids: Vec<String>,
     }
     impl InfraNetworkProfile {
@@ -415,7 +435,12 @@ pub mod cloud_provider_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct InfraStorageProfile {
         #[doc = "Reference to azure resource corresponding to the new HybridAKSStorage object e.g. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HybridContainerService/storageSpaces/{storageSpaceName}"]
-        #[serde(rename = "storageSpaceIds", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "storageSpaceIds",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub storage_space_ids: Vec<String>,
     }
     impl InfraStorageProfile {
@@ -497,10 +522,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -559,7 +593,12 @@ pub mod linux_profile_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Ssh {
         #[doc = "PublicKeys - The list of SSH public keys used to authenticate with Linux-based VMs. Only expect one key specified."]
-        #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "publicKeys",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub public_keys: Vec<serde_json::Value>,
     }
     impl Ssh {
@@ -613,13 +652,23 @@ pub struct NetworkProfile {
     #[serde(rename = "podCidr", default, skip_serializing_if = "Option::is_none")]
     pub pod_cidr: Option<String>,
     #[doc = "The CIDR notation IP ranges from which to assign pod IPs. One IPv4 CIDR is expected for single-stack networking. Two CIDRs, one for each IP family (IPv4/IPv6), is expected for dual-stack networking."]
-    #[serde(rename = "podCidrs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "podCidrs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pod_cidrs: Vec<String>,
     #[doc = "ServiceCidr - A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges."]
     #[serde(rename = "serviceCidr", default, skip_serializing_if = "Option::is_none")]
     pub service_cidr: Option<String>,
     #[doc = "The CIDR notation IP ranges from which to assign service cluster IPs. One IPv4 CIDR is expected for single-stack networking. Two CIDRs, one for each IP family (IPv4/IPv6), is expected for dual-stack networking. They must not overlap with any Subnet IP ranges."]
-    #[serde(rename = "serviceCidrs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceCidrs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_cidrs: Vec<String>,
 }
 impl NetworkProfile {
@@ -758,7 +807,11 @@ pub struct OrchestratorVersionProfile {
     #[serde(rename = "orchestratorVersion", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_version: Option<String>,
     #[doc = "The list of available upgrade versions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub upgrades: Vec<OrchestratorProfile>,
 }
 impl OrchestratorVersionProfile {
@@ -770,7 +823,11 @@ impl OrchestratorVersionProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrchestratorVersionProfileListResult {
     #[doc = "Profile of the orchestrator versions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub orchestrators: Vec<OrchestratorVersionProfile>,
     #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -861,7 +918,11 @@ pub mod resource_provider_operation {
 #[doc = "Results of the request to list operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -901,7 +962,12 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmSkuListResult {
     #[doc = "Supported VM SKUs."]
-    #[serde(rename = "vmSKUs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmSKUs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_sk_us: Vec<String>,
     #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1052,7 +1118,11 @@ pub mod agent_pool {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AgentPool>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1224,7 +1294,12 @@ pub struct HttpProxyConfigResponse {
     #[serde(rename = "httpsProxy", default, skip_serializing_if = "Option::is_none")]
     pub https_proxy: Option<String>,
     #[doc = "The endpoints that should not go through proxy."]
-    #[serde(rename = "noProxy", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "noProxy",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub no_proxy: Vec<String>,
     #[doc = "Alternative CA cert to use for connecting to proxy servers."]
     #[serde(rename = "trustedCa", default, skip_serializing_if = "Option::is_none")]
@@ -1416,7 +1491,12 @@ pub struct ProvisionedClustersCommonProperties {
     #[serde(rename = "nodeResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub node_resource_group: Option<String>,
     #[doc = "The agent pools of the cluster."]
-    #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "agentPoolProfiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub agent_pool_profiles: Vec<NamedAgentPoolProfile>,
     #[doc = "CloudProviderProfile - The underlying cloud infra provider properties."]
     #[serde(rename = "cloudProviderProfile", default, skip_serializing_if = "Option::is_none")]
@@ -1658,7 +1738,11 @@ pub mod provisioned_clusters_response {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProvisionedClustersResponseListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProvisionedClustersResponse>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1729,7 +1813,11 @@ pub mod storage_spaces {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSpacesListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageSpaces>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -2066,7 +2154,11 @@ pub mod virtual_networks {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworksListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworks>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -2100,16 +2192,36 @@ pub struct VirtualNetworksProperties {
     #[serde(rename = "infraVnetProfile", default, skip_serializing_if = "Option::is_none")]
     pub infra_vnet_profile: Option<virtual_networks_properties::InfraVnetProfile>,
     #[doc = "Virtual IP Pool for Kubernetes"]
-    #[serde(rename = "vipPool", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vipPool",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vip_pool: Vec<serde_json::Value>,
     #[doc = "IP Pool for Virtual Machines"]
-    #[serde(rename = "vmipPool", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmipPool",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vmip_pool: Vec<serde_json::Value>,
     #[doc = "Address of the DHCP servers associated with the network"]
-    #[serde(rename = "dhcpServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dhcpServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dhcp_servers: Vec<String>,
     #[doc = "Address of the DNS servers associated with the network"]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
     #[doc = "Address of the Gateway associated with the network"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

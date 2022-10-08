@@ -56,7 +56,11 @@ pub struct Error {
     #[doc = "A human readable error message."]
     pub message: String,
     #[doc = "Error details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetails>,
 }
 impl Error {
@@ -244,7 +248,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Resource Graph operations supported by the Resource Graph resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -262,10 +270,19 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
     #[doc = "Azure subscriptions against which to execute the query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions: Vec<String>,
     #[doc = "Azure management groups against which to execute the query. Example: [ 'mg1', 'mg2' ]"]
-    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managementGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub management_groups: Vec<String>,
     #[doc = "The resources query."]
     pub query: String,
@@ -273,7 +290,11 @@ pub struct QueryRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<QueryRequestOptions>,
     #[doc = "An array of facet requests to be computed against the query result."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub facets: Vec<FacetRequest>,
 }
 impl QueryRequest {
@@ -360,7 +381,11 @@ pub struct QueryResponse {
     #[doc = "Query output in JObject array or Table format."]
     pub data: serde_json::Value,
     #[doc = "Query facets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub facets: Vec<Facet>,
 }
 impl QueryResponse {
@@ -390,7 +415,11 @@ pub mod query_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcesHistoryRequest {
     #[doc = "Azure subscriptions against which to execute the query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions: Vec<String>,
     #[doc = "The resources query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -399,7 +428,12 @@ pub struct ResourcesHistoryRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<ResourcesHistoryRequestOptions>,
     #[doc = "Azure management groups against which to execute the query. Example: [ 'mg1', 'mg2' ]"]
-    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managementGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub management_groups: Vec<String>,
 }
 impl ResourcesHistoryRequest {

@@ -13,13 +13,23 @@ pub struct AttributeMatcher {
     #[serde(rename = "attributeValueIncludes", default, skip_serializing_if = "Option::is_none")]
     pub attribute_value_includes: Option<String>,
     #[doc = "List of values for attribute"]
-    #[serde(rename = "attributeValueIncludedIn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "attributeValueIncludedIn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attribute_value_included_in: Vec<String>,
     #[doc = "Value excluded for attribute"]
     #[serde(rename = "attributeValueExcludes", default, skip_serializing_if = "Option::is_none")]
     pub attribute_value_excludes: Option<String>,
     #[doc = "List of values excluded for attribute"]
-    #[serde(rename = "attributeValueExcludedIn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "attributeValueExcludedIn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attribute_value_excluded_in: Vec<String>,
 }
 impl AttributeMatcher {
@@ -209,7 +219,11 @@ pub struct ErrorModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorModel>,
 }
 impl ErrorModel {
@@ -282,10 +296,20 @@ pub struct MetadataPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The DecisionRules of policy"]
-    #[serde(rename = "decisionRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "decisionRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub decision_rules: Vec<DecisionRule>,
     #[doc = "The AttributeRules of policy"]
-    #[serde(rename = "attributeRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "attributeRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attribute_rules: Vec<AttributeRule>,
     #[doc = "The collection reference for a policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -327,7 +327,11 @@ pub struct DataExportStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Errors encountered by the export or destination."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<DataExportError>,
     #[doc = "The timestamp of the last message that was sent to the export or destination."]
     #[serde(rename = "lastExportTime", default, with = "azure_core::date::rfc3339::option")]
@@ -435,7 +439,11 @@ pub struct Device {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
     #[doc = "List of organization IDs that the device is a part of."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Device {
@@ -552,7 +560,11 @@ pub struct DeviceGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "List of organization IDs of the device group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl DeviceGroup {
@@ -1016,7 +1028,11 @@ pub struct Job {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "List of organizations of the job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Job {

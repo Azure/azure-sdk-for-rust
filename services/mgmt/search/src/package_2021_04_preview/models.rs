@@ -187,7 +187,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Contains nested errors that are related to this error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -386,7 +390,11 @@ impl IpRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListQueryKeysResult {
     #[doc = "The query keys for the Azure Cognitive Search service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QueryKey>,
     #[doc = "Request URL that can be used to query next page of query keys. Returned when the total number of requested query keys exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -407,7 +415,12 @@ impl ListQueryKeysResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSet {
     #[doc = "A list of IP restriction rules that defines the inbound network(s) with allowing access to the search service endpoint. At the meantime, all other public IP networks are blocked by the firewall. These restriction rules are applied only when the 'publicNetworkAccess' of the search service is 'enabled'; otherwise, traffic over public interface is not allowed even with any public IP rules, and private endpoint connections would be the exclusive access method."]
-    #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_rules: Vec<IpRule>,
     #[doc = "Possible origins of inbound traffic that can bypass the rules defined in the 'ipRules' section."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -525,7 +538,11 @@ impl OperationAvailability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of operations by Azure Cognitive Search, some supported by the resource provider and others by data plane APIs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URL to get the next set of operation list results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -594,10 +611,18 @@ pub struct OperationMetricsSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "Dimensions for the metric specification."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<OperationMetricDimension>,
     #[doc = "Availabilities for the metric specification."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub availabilities: Vec<OperationAvailability>,
 }
 impl OperationMetricsSpecification {
@@ -621,10 +646,20 @@ impl OperationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationServiceSpecification {
     #[doc = "Specifications of metrics for this operation."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<OperationMetricsSpecification>,
     #[doc = "Specifications of logs for this operation."]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<OperationLogsSpecification>,
 }
 impl OperationServiceSpecification {
@@ -650,7 +685,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "The list of Private Endpoint connections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "Request URL that can be used to query next page of private endpoint connections. Returned when the total number of requested private endpoint connections exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -747,13 +786,28 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The list of required members of the private link resource."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The list of required DNS zone names of the private link resource."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
     #[doc = "The list of resources that are onboarded to private link service, that are supported by Azure Cognitive Search."]
-    #[serde(rename = "shareablePrivateLinkResourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "shareablePrivateLinkResourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub shareable_private_link_resource_types: Vec<ShareablePrivateLinkResourceType>,
 }
 impl PrivateLinkResourceProperties {
@@ -765,7 +819,11 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourcesResult {
     #[doc = "The list of supported Private Link Resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
 }
 impl azure_core::Continuable for PrivateLinkResourcesResult {
@@ -841,7 +899,11 @@ impl SearchService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceListResult {
     #[doc = "The list of Search services."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SearchService>,
     #[doc = "Request URL that can be used to query next page of search services. Returned when the total number of requested search services exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -886,7 +948,12 @@ pub struct SearchServiceProperties {
     #[serde(rename = "networkRuleSet", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_set: Option<NetworkRuleSet>,
     #[doc = "A list of data exfiltration scenarios that are explicitly disallowed for the search service. Currently, the only supported value is 'All' to disable all possible data export scenarios with more fine grained controls planned for the future."]
-    #[serde(rename = "disabledDataExfiltrationOptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disabledDataExfiltrationOptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disabled_data_exfiltration_options: Vec<DisabledDataExfiltrationOption>,
     #[doc = "Describes a policy that determines how resources within the search service are to be encrypted with Customer Managed Keys."]
     #[serde(rename = "encryptionWithCmk", default, skip_serializing_if = "Option::is_none")]
@@ -901,10 +968,20 @@ pub struct SearchServiceProperties {
     #[serde(rename = "semanticSearch", default, skip_serializing_if = "Option::is_none")]
     pub semantic_search: Option<SemanticSearch>,
     #[doc = "The list of private endpoint connections to the Azure Cognitive Search service."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "The list of shared private link resources managed by the Azure Cognitive Search service."]
-    #[serde(rename = "sharedPrivateLinkResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sharedPrivateLinkResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub shared_private_link_resources: Vec<SharedPrivateLinkResource>,
     #[doc = "A system generated property representing the service's etag that can be for optimistic concurrency control during updates."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
@@ -1122,7 +1199,11 @@ impl SharedPrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResourceListResult {
     #[doc = "The list of Shared Private Link Resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SharedPrivateLinkResource>,
     #[doc = "The URL to get the next set of shared private link resources, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

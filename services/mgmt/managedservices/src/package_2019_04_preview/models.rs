@@ -16,7 +16,12 @@ pub struct Authorization {
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
     #[doc = "The delegatedRoleDefinitionIds field is required when the roleDefinitionId refers to the User Access Administrator Role. It is the list of role definition ids which define all the permissions that the user in the authorization can assign to other security groups/service principals/users."]
-    #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "delegatedRoleDefinitionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delegated_role_definition_ids: Vec<String>,
 }
 impl Authorization {
@@ -37,7 +42,11 @@ pub struct ErrorDefinition {
     #[doc = "Error message indicating why the operation failed."]
     pub message: String,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
 }
 impl ErrorDefinition {
@@ -110,7 +119,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of Microsoft.ManagedServices operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl OperationList {
@@ -165,7 +178,11 @@ impl RegistrationAssignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignmentList {
     #[doc = "List of registration assignments."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RegistrationAssignment>,
     #[doc = "Link to next page of registration assignments."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -296,7 +313,11 @@ pub mod registration_assignment_properties {
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub description: Option<String>,
             #[doc = "Authorization tuple containing principal id of the user/security group or service principal and id of the build-in role."]
-            #[serde(default, skip_serializing_if = "Vec::is_empty")]
+            #[serde(
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
             pub authorizations: Vec<Authorization>,
             #[doc = "Name of the registration definition."]
             #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
@@ -412,7 +433,11 @@ impl RegistrationDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDefinitionList {
     #[doc = "List of registration definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RegistrationDefinition>,
     #[doc = "Link to next page of registration definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -355,7 +355,11 @@ pub struct Dashboard {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "The tiles displayed by the dashboard."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tiles: Vec<Tile>,
     #[doc = "Whether the dashboard is personal and can only be viewed by the current user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -367,7 +371,11 @@ pub struct Dashboard {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "The organization the dashboard belongs to. If not present, the dashboard is root-level or personal. only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Dashboard {
@@ -533,7 +541,11 @@ pub struct DataExportStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Errors encountered by the export or destination."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<DataExportError>,
     #[doc = "The timestamp of the last message that was sent to the export or destination."]
     #[serde(rename = "lastExportTime", default, with = "azure_core::date::rfc3339::option")]
@@ -655,7 +667,11 @@ pub struct Device {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
     #[doc = "List of organization IDs that the device is a part of, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Device {
@@ -795,7 +811,11 @@ pub struct DeviceGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "List of organization IDs of the device group, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl DeviceGroup {
@@ -1592,7 +1612,11 @@ pub struct Job {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Job {
@@ -2250,7 +2274,11 @@ pub struct ScheduledJob {
     #[doc = "Data related to the operation being performed by this job. All entries must be of the same type."]
     pub data: Vec<JobData>,
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
     #[doc = "The schedule definition of job."]
     pub schedule: JobSchedule,
@@ -2666,7 +2694,11 @@ impl TileCapability {
 #[doc = "Configuration specifying an array of capabilities to be displayed in the tile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TileCapabilityConfiguration {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<TileCapability>,
 }
 impl TileCapabilityConfiguration {

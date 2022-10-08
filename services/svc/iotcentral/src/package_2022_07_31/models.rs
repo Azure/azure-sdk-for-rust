@@ -189,7 +189,11 @@ pub struct Device {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
     #[doc = "List of organization IDs that the device is a part of, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Device {
@@ -308,7 +312,11 @@ pub struct DeviceGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "List of organization IDs of the device group, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl DeviceGroup {
@@ -743,7 +751,11 @@ pub struct Job {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Job {
@@ -1109,7 +1121,11 @@ pub struct ScheduledJob {
     #[doc = "Data related to the operation being performed by this job. All entries must be of the same type."]
     pub data: Vec<JobData>,
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
     #[doc = "The schedule definition of job."]
     pub schedule: JobSchedule,

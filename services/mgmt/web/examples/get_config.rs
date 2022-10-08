@@ -12,7 +12,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_web::Client::builder(credential).build();
 
-    let config = client.web_apps_client().get_configuration(resource_group_name, webapp_name, subscription_id).into_future().await?;
+    let config = client
+        .web_apps_client()
+        .get_configuration(resource_group_name, webapp_name, subscription_id)
+        .into_future()
+        .await?;
     println!("{:#?}", config);
     Ok(())
 }

@@ -11,7 +11,11 @@ pub struct ErrorResponseBody {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponseBody>,
 }
 impl ErrorResponseBody {
@@ -101,7 +105,11 @@ impl NginxCertificate {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NginxCertificateListResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NginxCertificate>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -172,7 +180,11 @@ impl NginxConfigurationFile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NginxConfigurationListResponse {
     #[doc = "Results of a list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NginxConfiguration>,
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -203,9 +215,18 @@ impl NginxConfigurationPackage {
 pub struct NginxConfigurationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub files: Vec<NginxConfigurationFile>,
-    #[serde(rename = "protectedFiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "protectedFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protected_files: Vec<NginxConfigurationFile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub package: Option<NginxConfigurationPackage>,
@@ -246,7 +267,11 @@ impl NginxDeployment {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NginxDeploymentListResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NginxDeployment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -318,9 +343,19 @@ impl NginxDeploymentUpdateProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NginxFrontendIpConfiguration {
-    #[serde(rename = "publicIPAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIPAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_ip_addresses: Vec<NginxPublicIpAddress>,
-    #[serde(rename = "privateIPAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateIPAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_ip_addresses: Vec<NginxPrivateIpAddress>,
 }
 impl NginxFrontendIpConfiguration {
@@ -457,7 +492,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Nginx.NginxPlus provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResult>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

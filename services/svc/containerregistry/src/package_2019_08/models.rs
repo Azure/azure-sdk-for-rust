@@ -36,7 +36,11 @@ impl AcrErrorInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrErrors {
     #[doc = "Array of detailed error"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<AcrErrorInfo>,
 }
 impl AcrErrors {
@@ -54,7 +58,11 @@ pub struct AcrManifests {
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
     #[doc = "List of manifests"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests: Vec<ManifestAttributesBase>,
 }
 impl AcrManifests {
@@ -115,10 +123,20 @@ impl Annotations {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedRepository {
     #[doc = "SHA of the deleted image"]
-    #[serde(rename = "manifestsDeleted", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "manifestsDeleted",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests_deleted: Vec<String>,
     #[doc = "Tag of the deleted image"]
-    #[serde(rename = "tagsDeleted", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tagsDeleted",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags_deleted: Vec<String>,
 }
 impl DeletedRepository {
@@ -139,7 +157,11 @@ pub struct Descriptor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
     #[doc = "Specifies a list of URIs from which this object may be downloaded."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub urls: Vec<String>,
     #[doc = "Additional information provided through arbitrary metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -289,7 +311,11 @@ pub struct ManifestAttributesBase {
     #[serde(rename = "configMediaType", default, skip_serializing_if = "Option::is_none")]
     pub config_media_type: Option<String>,
     #[doc = "List of tags"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
     #[doc = "Changeable attributes"]
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
@@ -304,7 +330,11 @@ impl ManifestAttributesBase {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestAttributesManifest {
     #[doc = "List of manifest attributes details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub references: Vec<ManifestAttributesManifestReferences>,
     #[doc = "Quarantine tag name"]
     #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
@@ -369,7 +399,11 @@ pub struct ManifestList {
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
     #[doc = "List of V2 image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests: Vec<ManifestListAttributes>,
 }
 impl ManifestList {
@@ -406,13 +440,21 @@ pub struct ManifestWrapper {
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
     #[doc = "(ManifestList, OCIIndex) List of V2 image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests: Vec<ManifestListAttributes>,
     #[doc = "Docker V2 image layer descriptor including config and layers"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<Descriptor>,
     #[doc = "(V2, OCI) List of V2 image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<Descriptor>,
     #[doc = "Additional information provided through arbitrary metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -427,13 +469,26 @@ pub struct ManifestWrapper {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     #[doc = "(V1) List of layer information"]
-    #[serde(rename = "fsLayers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fsLayers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fs_layers: Vec<FsLayer>,
     #[doc = "(V1) Image history"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub history: Vec<History>,
     #[doc = "(V1) Image signature"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub signatures: Vec<ImageSignature>,
 }
 impl ManifestWrapper {
@@ -447,7 +502,11 @@ pub struct OciIndex {
     #[serde(flatten)]
     pub manifest: Manifest,
     #[doc = "List of OCI image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests: Vec<ManifestListAttributes>,
     #[doc = "Additional information provided through arbitrary metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -467,7 +526,11 @@ pub struct OciManifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<Descriptor>,
     #[doc = "List of V2 image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<Descriptor>,
     #[doc = "Additional information provided through arbitrary metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -491,13 +554,22 @@ pub struct Platform {
     #[serde(rename = "os.version", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
     #[doc = "The optional os.features field specifies an array of strings, each listing a required OS feature (for example on Windows win32k"]
-    #[serde(rename = "os.features", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "os.features",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub os_features: Vec<String>,
     #[doc = "The optional variant field specifies a variant of the CPU, for example armv6l to specify a particular CPU variant of the ARM CPU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<String>,
     #[doc = "The optional features field specifies an array of strings, each listing a required CPU feature (for example sse4 or aes"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub features: Vec<String>,
 }
 impl Platform {
@@ -520,7 +592,11 @@ impl RefreshToken {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Repositories {
     #[doc = "Repository names"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub repositories: Vec<String>,
 }
 impl Repositories {
@@ -589,7 +665,11 @@ pub struct RepositoryTags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "List of tags"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
 }
 impl RepositoryTags {
@@ -683,7 +763,11 @@ pub struct TagList {
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
     #[doc = "List of tag attribute details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<TagAttributesBase>,
 }
 impl TagList {
@@ -706,13 +790,26 @@ pub struct V1Manifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     #[doc = "List of layer information"]
-    #[serde(rename = "fsLayers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fsLayers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fs_layers: Vec<FsLayer>,
     #[doc = "Image history"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub history: Vec<History>,
     #[doc = "Image signature"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub signatures: Vec<ImageSignature>,
 }
 impl V1Manifest {
@@ -732,7 +829,11 @@ pub struct V2Manifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<Descriptor>,
     #[doc = "List of V2 image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<Descriptor>,
 }
 impl V2Manifest {

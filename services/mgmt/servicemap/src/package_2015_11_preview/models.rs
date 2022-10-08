@@ -307,7 +307,11 @@ pub mod client_group_member {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub port: Option<PortReference>,
         #[doc = "Processes accepting on the above port that received connections from this client."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub processes: Vec<ProcessReference>,
     }
     impl Properties {
@@ -320,7 +324,11 @@ pub mod client_group_member {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientGroupMembersCollection {
     #[doc = "Collection of ClientGroupMember resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ClientGroupMember>,
     #[doc = "The URL to the next set of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -397,7 +405,11 @@ impl Connection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionCollection {
     #[doc = "Collection of Connection resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Connection>,
     #[doc = "The URL to the next set of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -715,7 +727,11 @@ pub mod machine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineCollection {
     #[doc = "Collection of Machine resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Machine>,
     #[doc = "The URL to the next set of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -781,7 +797,11 @@ pub mod machine_group {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub count: Option<i32>,
         #[doc = "References of the machines in this group. The hints within each reference do not represent the current value of the corresponding fields. They are a snapshot created during the last time the machine group was updated."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub machines: Vec<MachineReferenceWithHints>,
     }
     impl Properties {
@@ -850,7 +870,11 @@ pub mod machine_group {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineGroupCollection {
     #[doc = "Collection of Machine Group resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MachineGroup>,
     #[doc = "The URL to the next set of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1031,10 +1055,18 @@ impl Map {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapEdges {
     #[doc = "Network connections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connections: Vec<Connection>,
     #[doc = "Processes accepting on a port."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub acceptors: Vec<Acceptor>,
 }
 impl MapEdges {
@@ -1046,16 +1078,33 @@ impl MapEdges {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapNodes {
     #[doc = "Machine resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub machines: Vec<Machine>,
     #[doc = "Process resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub processes: Vec<Process>,
     #[doc = "Port resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ports: Vec<Port>,
     #[doc = "Client Group resources."]
-    #[serde(rename = "clientGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clientGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub client_groups: Vec<ClientGroup>,
 }
 impl MapNodes {
@@ -1143,19 +1192,44 @@ impl MultipleMachinesMapRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
     #[doc = "IPv4 interfaces."]
-    #[serde(rename = "ipv4Interfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipv4Interfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipv4_interfaces: Vec<Ipv4NetworkInterface>,
     #[doc = "IPv6 interfaces."]
-    #[serde(rename = "ipv6Interfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipv6Interfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipv6_interfaces: Vec<Ipv6NetworkInterface>,
     #[doc = "Default IPv4 gateways."]
-    #[serde(rename = "defaultIpv4Gateways", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultIpv4Gateways",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_ipv4_gateways: Vec<String>,
     #[doc = "MAC addresses of all active network interfaces."]
-    #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "macAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mac_addresses: Vec<String>,
     #[doc = "DNS names associated with the machine."]
-    #[serde(rename = "dnsNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_names: Vec<String>,
 }
 impl NetworkConfiguration {
@@ -1245,7 +1319,11 @@ pub mod port {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortCollection {
     #[doc = "Collection of Port resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Port>,
     #[doc = "The URL to the next set of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1423,7 +1501,11 @@ pub mod process {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProcessCollection {
     #[doc = "Collection of Process resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Process>,
     #[doc = "The URL to the next set of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1480,7 +1562,11 @@ pub struct ProcessDetails {
     #[serde(rename = "workingDirectory", default, skip_serializing_if = "Option::is_none")]
     pub working_directory: Option<String>,
     #[doc = "Collection of services hosted by this Process (Windows only)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub services: Vec<ProcessHostedService>,
     #[doc = "Process zone name (Linux only)."]
     #[serde(rename = "zoneName", default, skip_serializing_if = "Option::is_none")]

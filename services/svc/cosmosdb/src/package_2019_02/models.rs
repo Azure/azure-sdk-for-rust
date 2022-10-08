@@ -218,7 +218,11 @@ pub struct TableEntityQueryResponse {
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
     #[doc = "List of table entities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TableEntityProperties>,
 }
 impl TableEntityQueryResponse {
@@ -245,7 +249,11 @@ pub struct TableQueryResponse {
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
     #[doc = "List of tables."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TableResponseProperties>,
 }
 impl TableQueryResponse {

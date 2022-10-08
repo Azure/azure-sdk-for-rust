@@ -223,7 +223,11 @@ impl Serialize for ApplicationDefinitionArtifactName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationDefinitionListResult {
     #[doc = "The array of managed application definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -265,10 +269,18 @@ pub struct ApplicationDefinitionProperties {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
     #[doc = "The managed application provider authorizations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorizations: Vec<ApplicationAuthorization>,
     #[doc = "The collection of managed application artifacts. The portal will use the files specified as artifacts to construct the user experience of creating a managed application from a managed application definition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub artifacts: Vec<ApplicationDefinitionArtifact>,
     #[doc = "The managed application definition description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -283,7 +295,11 @@ pub struct ApplicationDefinitionProperties {
     #[serde(rename = "createUiDefinition", default, skip_serializing_if = "Option::is_none")]
     pub create_ui_definition: Option<serde_json::Value>,
     #[doc = "The managed application provider policies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policies: Vec<ApplicationPolicy>,
 }
 impl ApplicationDefinitionProperties {
@@ -312,7 +328,12 @@ pub struct ApplicationJitAccessPolicy {
     #[serde(rename = "jitApprovalMode", default, skip_serializing_if = "Option::is_none")]
     pub jit_approval_mode: Option<JitApprovalMode>,
     #[doc = "The JIT approvers"]
-    #[serde(rename = "jitApprovers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "jitApprovers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub jit_approvers: Vec<JitApproverDefinition>,
     #[doc = "The maximum duration JIT access is granted. This is an ISO8601 time period value."]
     #[serde(rename = "maximumJitAccessDuration", default, skip_serializing_if = "Option::is_none")]
@@ -332,7 +353,11 @@ impl ApplicationJitAccessPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationListResult {
     #[doc = "The array of managed applications."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Application>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -460,7 +485,11 @@ pub struct ApplicationProperties {
     #[serde(rename = "publisherTenantId", default, skip_serializing_if = "Option::is_none")]
     pub publisher_tenant_id: Option<String>,
     #[doc = "The  read-only authorizations property that is retrieved from the application package."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorizations: Vec<ApplicationAuthorization>,
     #[doc = "The application package contact information."]
     #[serde(rename = "customerSupport", default, skip_serializing_if = "Option::is_none")]
@@ -469,7 +498,11 @@ pub struct ApplicationProperties {
     #[serde(rename = "supportUrls", default, skip_serializing_if = "Option::is_none")]
     pub support_urls: Option<ApplicationPackageSupportUrls>,
     #[doc = "The collection of managed application artifacts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub artifacts: Vec<ApplicationArtifact>,
     #[doc = "The application client details to track the entity creating/updating the managed app resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -535,10 +568,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -752,7 +794,11 @@ impl JitRequestDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JitRequestDefinitionListResult {
     #[doc = "The array of Jit request definition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JitRequestDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -957,7 +1003,12 @@ pub struct ListTokenRequest {
     #[serde(rename = "authorizationAudience", default, skip_serializing_if = "Option::is_none")]
     pub authorization_audience: Option<String>,
     #[doc = "The user assigned identities."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userAssignedIdentities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_assigned_identities: Vec<UserAssignedIdentity>,
 }
 impl ListTokenRequest {
@@ -999,7 +1050,11 @@ impl ManagedIdentityToken {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIdentityTokenResult {
     #[doc = "The array of managed identity tokens."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedIdentityToken>,
 }
 impl ManagedIdentityTokenResult {
@@ -1047,7 +1102,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

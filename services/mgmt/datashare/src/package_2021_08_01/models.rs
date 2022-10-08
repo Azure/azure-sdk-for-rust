@@ -1967,7 +1967,11 @@ pub struct DataShareErrorInfo {
     #[doc = "Code of the error"]
     pub code: String,
     #[doc = "Nested details of the error model"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<DataShareErrorInfo>,
     #[doc = "Message of the error"]
     pub message: String,
@@ -2949,7 +2953,11 @@ pub struct OperationMetaMetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "properties for dimension"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<DimensionProperties>,
     #[doc = "description of the metric"]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
@@ -2973,10 +2981,20 @@ pub struct OperationMetaMetricSpecification {
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
     #[doc = "supported aggregation types"]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "supported time grain types"]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
     #[doc = "units for the metric"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3003,10 +3021,20 @@ impl OperationMetaPropertyInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaServiceSpecification {
     #[doc = "log specifications for the operation"]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
     #[doc = "metric specifications for the operation"]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
 }
 impl OperationMetaServiceSpecification {
@@ -5246,22 +5274,52 @@ pub mod system_data {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableLevelSharingProperties {
     #[doc = "External tables to be excluded in the data set"]
-    #[serde(rename = "externalTablesToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "externalTablesToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub external_tables_to_exclude: Vec<String>,
     #[doc = "External tables to be included in the data set"]
-    #[serde(rename = "externalTablesToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "externalTablesToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub external_tables_to_include: Vec<String>,
     #[doc = "Materialized views to be excluded in the data set"]
-    #[serde(rename = "materializedViewsToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "materializedViewsToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub materialized_views_to_exclude: Vec<String>,
     #[doc = "Materialized views to be included in the data set"]
-    #[serde(rename = "materializedViewsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "materializedViewsToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub materialized_views_to_include: Vec<String>,
     #[doc = "Tables to be excluded in the data set"]
-    #[serde(rename = "tablesToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tablesToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tables_to_exclude: Vec<String>,
     #[doc = "Tables to be included in the data set"]
-    #[serde(rename = "tablesToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tablesToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tables_to_include: Vec<String>,
 }
 impl TableLevelSharingProperties {

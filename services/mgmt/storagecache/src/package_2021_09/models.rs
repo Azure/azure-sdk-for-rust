@@ -68,7 +68,12 @@ pub mod api_operation {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ServiceSpecification {
             #[doc = "Details about operations related to metrics."]
-            #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+            #[serde(
+                rename = "metricSpecifications",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
             pub metric_specifications: Vec<MetricSpecification>,
         }
         impl ServiceSpecification {
@@ -85,7 +90,11 @@ pub struct ApiOperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of Resource Provider operations supported by the Microsoft.StorageCache resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApiOperation>,
 }
 impl azure_core::Continuable for ApiOperationListResult {
@@ -204,7 +213,12 @@ pub mod cache {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub health: Option<CacheHealth>,
         #[doc = "Array of IP addresses that can be used by clients mounting this Cache."]
-        #[serde(rename = "mountAddresses", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "mountAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub mount_addresses: Vec<String>,
         #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -427,7 +441,11 @@ pub struct CacheHealth {
     #[serde(rename = "statusDescription", default, skip_serializing_if = "Option::is_none")]
     pub status_description: Option<String>,
     #[doc = "Outstanding conditions that need to be investigated and resolved."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub conditions: Vec<Condition>,
 }
 impl CacheHealth {
@@ -529,10 +547,20 @@ pub struct CacheNetworkSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mtu: Option<i32>,
     #[doc = "Array of additional IP addresses used by this Cache."]
-    #[serde(rename = "utilityAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "utilityAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub utility_addresses: Vec<String>,
     #[doc = "DNS servers for the cache to use.  It will be set from the network configuration if no value is provided."]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
     #[doc = "DNS search domain"]
     #[serde(rename = "dnsSearchDomain", default, skip_serializing_if = "Option::is_none")]
@@ -550,7 +578,12 @@ impl CacheNetworkSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheSecuritySettings {
     #[doc = "NFS access policies defined for this cache."]
-    #[serde(rename = "accessPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "accessPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub access_policies: Vec<NfsAccessPolicy>,
 }
 impl CacheSecuritySettings {
@@ -781,7 +814,11 @@ pub struct CachesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of Caches."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Cache>,
 }
 impl azure_core::Continuable for CachesListResult {
@@ -832,7 +869,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
     #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -946,13 +987,22 @@ pub struct MetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "Support metric aggregation type."]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "Type of metrics."]
     #[serde(rename = "metricClass", default, skip_serializing_if = "Option::is_none")]
     pub metric_class: Option<String>,
     #[doc = "Dimensions of the metric"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimension>,
 }
 impl MetricSpecification {
@@ -1145,19 +1195,36 @@ pub struct ResourceSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[doc = "A list of capabilities of this SKU, such as throughput or ops/sec."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<ResourceSkuCapabilities>,
     #[doc = "The set of locations where the SKU is available. This is the supported and registered Azure Geo Regions (e.g., West US, East US, Southeast Asia, etc.)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "The set of locations where the SKU is available."]
-    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "locationInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub location_info: Vec<ResourceSkuLocationInfo>,
     #[doc = "The name of this SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The restrictions preventing this SKU from being used. This is empty if there are no restrictions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restrictions: Vec<Restriction>,
 }
 impl ResourceSku {
@@ -1187,7 +1254,11 @@ pub struct ResourceSkuLocationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Zones if any."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl ResourceSkuLocationInfo {
@@ -1202,7 +1273,11 @@ pub struct ResourceSkusResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of SKUs available for the subscription."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceSku>,
 }
 impl azure_core::Continuable for ResourceSkusResult {
@@ -1223,7 +1298,11 @@ pub struct Restriction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The value of restrictions. If the restriction type is set to location, then this would be the different locations where the SKU is restricted."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
     #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". \"QuotaId\" is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. \"NotAvailableForSubscription\" is related to capacity at the datacenter."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
@@ -1292,7 +1371,11 @@ impl StorageTarget {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTargetProperties {
     #[doc = "List of Cache namespace junctions to target for namespace associations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub junctions: Vec<NamespaceJunction>,
     #[doc = "Type of the Storage Target."]
     #[serde(rename = "targetType")]
@@ -1495,7 +1578,11 @@ pub struct StorageTargetsResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of Storage Targets defined for the Cache."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageTarget>,
 }
 impl azure_core::Continuable for StorageTargetsResult {
@@ -1570,7 +1657,11 @@ pub struct UsageModelsResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of usage models available for the subscription."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UsageModel>,
 }
 impl azure_core::Continuable for UsageModelsResult {

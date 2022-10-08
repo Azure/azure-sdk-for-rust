@@ -149,7 +149,11 @@ pub mod cognitive_services_account_create_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountEnumerateSkusResult {
     #[doc = "Gets the list of Cognitive Services accounts and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CognitiveServicesResourceAndSku>,
 }
 impl CognitiveServicesAccountEnumerateSkusResult {
@@ -176,7 +180,11 @@ impl CognitiveServicesAccountKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountListResult {
     #[doc = "Gets the list of Cognitive Services accounts and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CognitiveServicesAccount>,
 }
 impl azure_core::Continuable for CognitiveServicesAccountListResult {

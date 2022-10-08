@@ -52,7 +52,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -198,7 +202,11 @@ impl OpenShiftClusterCredentials {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftClusterList {
     #[doc = "The list of OpenShift clusters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OpenShiftCluster>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -237,13 +245,23 @@ pub struct OpenShiftClusterProperties {
     #[serde(rename = "masterProfile", default, skip_serializing_if = "Option::is_none")]
     pub master_profile: Option<MasterProfile>,
     #[doc = "The cluster worker profiles."]
-    #[serde(rename = "workerProfiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "workerProfiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub worker_profiles: Vec<WorkerProfile>,
     #[doc = "APIServerProfile represents an API server profile."]
     #[serde(rename = "apiserverProfile", default, skip_serializing_if = "Option::is_none")]
     pub apiserver_profile: Option<ApiServerProfile>,
     #[doc = "The cluster ingress profiles."]
-    #[serde(rename = "ingressProfiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ingressProfiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ingress_profiles: Vec<IngressProfile>,
 }
 impl OpenShiftClusterProperties {
@@ -288,7 +306,11 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of operations supported by the resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -7,7 +7,11 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplyArtifactsRequest {
     #[doc = "The list of artifacts to apply."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub artifacts: Vec<ArtifactInstallProperties>,
 }
 impl ApplyArtifactsRequest {
@@ -80,7 +84,11 @@ pub struct ArtifactInstallProperties {
     #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
     pub artifact_id: Option<String>,
     #[doc = "The parameters of the artifact."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ArtifactParameterProperties>,
 }
 impl ArtifactInstallProperties {
@@ -290,7 +298,11 @@ pub struct CloudErrorBody {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -354,7 +366,12 @@ impl CostInsight {
 pub struct CostInsightProperties {
     #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
     pub currency_code: Option<String>,
-    #[serde(rename = "vmCosts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmCosts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_costs: Vec<VmCostProperties>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -432,7 +449,11 @@ pub struct CostProperties {
     #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
     pub currency_code: Option<String>,
     #[doc = "The per-day costs items of the cost."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub costs: Vec<CostPerDayProperties>,
 }
 impl CostProperties {
@@ -608,7 +629,11 @@ impl EvaluatePoliciesProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EvaluatePoliciesRequest {
     #[doc = "Policies to evaluate."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policies: Vec<EvaluatePoliciesProperties>,
 }
 impl EvaluatePoliciesRequest {
@@ -620,7 +645,11 @@ impl EvaluatePoliciesRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EvaluatePoliciesResponse {
     #[doc = "Results of evaluating a policy set."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub results: Vec<PolicySetResult>,
 }
 impl EvaluatePoliciesResponse {
@@ -782,7 +811,11 @@ pub struct GenerateArmTemplateRequest {
     #[serde(rename = "virtualMachineName", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_name: Option<String>,
     #[doc = "The parameters of the ARM template."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterInfo>,
     #[doc = "The location of the virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -866,7 +899,12 @@ pub struct LabProperties {
     #[serde(rename = "artifactsStorageAccount", default, skip_serializing_if = "Option::is_none")]
     pub artifacts_storage_account: Option<String>,
     #[doc = "The storage accounts of the lab."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<String>,
     #[doc = "The name of the key vault of the lab."]
     #[serde(rename = "vaultName", default, skip_serializing_if = "Option::is_none")]
@@ -1020,7 +1058,11 @@ pub struct LabVirtualMachineProperties {
     #[serde(rename = "disallowPublicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub disallow_public_ip_address: Option<bool>,
     #[doc = "The artifacts to be installed on the virtual machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub artifacts: Vec<ArtifactInstallProperties>,
     #[doc = "Properties of an artifact deployment."]
     #[serde(rename = "artifactDeploymentStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1294,7 +1336,12 @@ pub struct PolicySetResult {
     #[serde(rename = "hasError", default, skip_serializing_if = "Option::is_none")]
     pub has_error: Option<bool>,
     #[doc = "The list of policy violations."]
-    #[serde(rename = "policyViolations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyViolations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_violations: Vec<PolicyViolation>,
 }
 impl PolicySetResult {
@@ -1321,7 +1368,11 @@ impl PolicyViolation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationArtifactSource {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ArtifactSource>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1342,7 +1393,11 @@ impl ResponseWithContinuationArtifactSource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationArtifact {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Artifact>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1363,7 +1418,11 @@ impl ResponseWithContinuationArtifact {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationCostInsight {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CostInsight>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1384,7 +1443,11 @@ impl ResponseWithContinuationCostInsight {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationCost {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Cost>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1405,7 +1468,11 @@ impl ResponseWithContinuationCost {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationCustomImage {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomImage>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1426,7 +1493,11 @@ impl ResponseWithContinuationCustomImage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationFormula {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Formula>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1447,7 +1518,11 @@ impl ResponseWithContinuationFormula {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationGalleryImage {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GalleryImage>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1468,7 +1543,11 @@ impl ResponseWithContinuationGalleryImage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationLabVhd {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LabVhd>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1489,7 +1568,11 @@ impl ResponseWithContinuationLabVhd {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationLabVirtualMachine {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LabVirtualMachine>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1510,7 +1593,11 @@ impl ResponseWithContinuationLabVirtualMachine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationLab {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Lab>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1531,7 +1618,11 @@ impl ResponseWithContinuationLab {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationPolicy {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Policy>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1552,7 +1643,11 @@ impl ResponseWithContinuationPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationSchedule {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Schedule>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1573,7 +1668,11 @@ impl ResponseWithContinuationSchedule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseWithContinuationVirtualNetwork {
     #[doc = "Results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetwork>,
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1999,7 +2098,12 @@ impl VirtualNetwork {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkProperties {
     #[doc = "The allowed subnets of the virtual network."]
-    #[serde(rename = "allowedSubnets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedSubnets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_subnets: Vec<Subnet>,
     #[doc = "The description of the virtual network."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2008,7 +2112,12 @@ pub struct VirtualNetworkProperties {
     #[serde(rename = "externalProviderResourceId", default, skip_serializing_if = "Option::is_none")]
     pub external_provider_resource_id: Option<String>,
     #[doc = "The subnet overrides of the virtual network."]
-    #[serde(rename = "subnetOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subnetOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnet_overrides: Vec<SubnetOverride>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2023,7 +2132,11 @@ impl VirtualNetworkProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WeekDetails {
     #[doc = "The days of the week."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub weekdays: Vec<String>,
     #[doc = "The time of the day."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

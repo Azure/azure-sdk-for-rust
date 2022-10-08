@@ -46,7 +46,11 @@ impl ManagedPrivateEndpointConnectionState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedPrivateEndpointListResponse {
     #[doc = "List of managed private endpoints"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedPrivateEndpoint>,
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

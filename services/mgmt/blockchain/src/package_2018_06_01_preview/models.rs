@@ -22,7 +22,11 @@ impl ApiKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiKeyCollection {
     #[doc = "Gets or sets the collection of API key."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub keys: Vec<ApiKey>,
 }
 impl ApiKeyCollection {
@@ -51,7 +55,11 @@ impl BlockchainMember {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockchainMemberCollection {
     #[doc = "Gets or sets the collection of blockchain members."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BlockchainMember>,
     #[doc = "Gets or sets the URL, that the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -123,7 +131,12 @@ pub struct BlockchainMemberProperties {
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
     #[doc = "Gets or sets firewall rules"]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<FirewallRule>,
 }
 impl BlockchainMemberProperties {
@@ -312,7 +325,11 @@ pub mod consortium {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsortiumCollection {
     #[doc = "Gets or sets the collection of consortiums."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Consortium>,
 }
 impl ConsortiumCollection {
@@ -354,7 +371,11 @@ impl ConsortiumMember {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsortiumMemberCollection {
     #[doc = "Gets or sets the collection of consortiums."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConsortiumMember>,
     #[doc = "Gets or sets the URL, that the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -525,7 +546,11 @@ impl ResourceProviderOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationCollection {
     #[doc = "Gets or sets the collection of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
     #[doc = "Gets or sets the URL, that the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -570,7 +595,11 @@ pub struct ResourceTypeSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[doc = "Gets or sets the Skus"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub skus: Vec<SkuSetting>,
 }
 impl ResourceTypeSku {
@@ -582,7 +611,11 @@ impl ResourceTypeSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeSkuCollection {
     #[doc = "Gets or sets the collection of resource type Sku."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceTypeSku>,
 }
 impl ResourceTypeSkuCollection {
@@ -615,10 +648,19 @@ pub struct SkuSetting {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
     #[doc = "Gets or sets the locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "Gets or sets the required features."]
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
 }
 impl SkuSetting {
@@ -664,7 +706,11 @@ impl TransactionNode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransactionNodeCollection {
     #[doc = "Gets or sets the collection of transaction nodes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TransactionNode>,
     #[doc = "Gets or sets the URL, that the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -700,7 +746,12 @@ pub struct TransactionNodeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[doc = "Gets or sets the firewall rules."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<FirewallRule>,
 }
 impl TransactionNodeProperties {
@@ -761,7 +812,12 @@ pub struct TransactionNodePropertiesUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[doc = "Gets or sets the firewall rules."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<FirewallRule>,
 }
 impl TransactionNodePropertiesUpdate {

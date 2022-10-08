@@ -294,7 +294,11 @@ pub struct AcsChatThreadCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "The list of properties of participants who are part of the thread"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
 }
 impl AcsChatThreadCreatedEventData {
@@ -314,7 +318,11 @@ pub struct AcsChatThreadCreatedWithUserEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "The list of properties of participants who are part of the thread"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
 }
 impl AcsChatThreadCreatedWithUserEventData {
@@ -622,7 +630,12 @@ pub mod acs_recording_file_status_updated_event_data {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsRecordingStorageInfoProperties {
     #[doc = "List of details of recording chunks information"]
-    #[serde(rename = "recordingChunks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "recordingChunks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recording_chunks: Vec<AcsRecordingChunkInfoProperties>,
 }
 impl AcsRecordingStorageInfoProperties {
@@ -660,7 +673,12 @@ pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(rename = "deliveryStatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub delivery_status_details: Option<String>,
     #[doc = "List of details of delivery attempts made"]
-    #[serde(rename = "deliveryAttempts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deliveryAttempts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delivery_attempts: Vec<AcsSmsDeliveryAttemptProperties>,
     #[doc = "The time at which the SMS delivery report was received"]
     #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
@@ -2737,13 +2755,27 @@ impl MapsGeofenceEnteredEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsGeofenceEventProperties {
     #[doc = "Lists of the geometry ID of the geofence which is expired relative to the user time in the request."]
-    #[serde(rename = "expiredGeofenceGeometryId", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "expiredGeofenceGeometryId",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub expired_geofence_geometry_id: Vec<String>,
     #[doc = "Lists the fence geometries that either fully contain the coordinate position or have an overlap with the searchBuffer around the fence."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub geometries: Vec<MapsGeofenceGeometry>,
     #[doc = "Lists of the geometry ID of the geofence which is in invalid period relative to the user time in the request."]
-    #[serde(rename = "invalidPeriodGeofenceGeometryId", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "invalidPeriodGeofenceGeometryId",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub invalid_period_geofence_geometry_id: Vec<String>,
     #[doc = "True if at least one event is published to the Azure Maps event subscriber, false if no event is published to the Azure Maps event subscriber."]
     #[serde(rename = "isEventPublished", default, skip_serializing_if = "Option::is_none")]
@@ -2809,7 +2841,11 @@ pub struct MediaJobCanceledEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[doc = "Gets the Job outputs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<MediaJobOutput>,
 }
 impl MediaJobCanceledEventData {
@@ -2844,7 +2880,11 @@ pub struct MediaJobError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retry: Option<media_job_error::Retry>,
     #[doc = "An array of details about specific errors that led to this reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<MediaJobErrorDetail>,
 }
 impl MediaJobError {
@@ -2906,7 +2946,11 @@ pub struct MediaJobErroredEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[doc = "Gets the Job outputs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<MediaJobOutput>,
 }
 impl MediaJobErroredEventData {
@@ -2920,7 +2964,11 @@ pub struct MediaJobFinishedEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[doc = "Gets the Job outputs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<MediaJobOutput>,
 }
 impl MediaJobFinishedEventData {

@@ -34,7 +34,12 @@ pub struct AzureMetricsBaseData {
     #[doc = "Gets or sets the Metric namespace"]
     pub namespace: String,
     #[doc = "Gets or sets the list of dimension names (optional)"]
-    #[serde(rename = "dimNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dimNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dim_names: Vec<String>,
     #[doc = "Gets or sets the list of time series data for the metric (one per unique dimension combination)"]
     pub series: Vec<AzureTimeSeriesData>,
@@ -86,7 +91,12 @@ impl AzureMetricsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureTimeSeriesData {
     #[doc = "Gets or sets dimension values"]
-    #[serde(rename = "dimValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dimValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dim_values: Vec<String>,
     #[doc = "Gets or sets Min value"]
     pub min: f64,

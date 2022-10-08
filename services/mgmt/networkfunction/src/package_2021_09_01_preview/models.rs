@@ -24,7 +24,11 @@ impl AzureTrafficCollector {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureTrafficCollectorListResult {
     #[doc = "A list of Traffic Collector resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureTrafficCollector>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -45,7 +49,12 @@ impl AzureTrafficCollectorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureTrafficCollectorPropertiesFormat {
     #[doc = "Collector Policies for Azure Traffic Collector."]
-    #[serde(rename = "collectorPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "collectorPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub collector_policies: Vec<CollectorPolicy>,
     #[doc = "Resource reference properties."]
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
@@ -90,7 +99,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -122,7 +135,11 @@ impl CollectorPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectorPolicyListResult {
     #[doc = "A list of collection policies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CollectorPolicy>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -146,7 +163,12 @@ pub struct CollectorPolicyPropertiesFormat {
     #[serde(rename = "ingestionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_policy: Option<IngestionPolicyPropertiesFormat>,
     #[doc = "Emission policies."]
-    #[serde(rename = "emissionPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "emissionPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub emission_policies: Vec<EmissionPoliciesPropertiesFormat>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -164,7 +186,12 @@ pub struct EmissionPoliciesPropertiesFormat {
     #[serde(rename = "emissionType", default, skip_serializing_if = "Option::is_none")]
     pub emission_type: Option<emission_policies_properties_format::EmissionType>,
     #[doc = "Emission policy destinations."]
-    #[serde(rename = "emissionDestinations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "emissionDestinations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub emission_destinations: Vec<EmissionPolicyDestination>,
 }
 impl EmissionPoliciesPropertiesFormat {
@@ -268,7 +295,12 @@ pub struct IngestionPolicyPropertiesFormat {
     #[serde(rename = "ingestionType", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_type: Option<ingestion_policy_properties_format::IngestionType>,
     #[doc = "Ingestion Sources."]
-    #[serde(rename = "ingestionSources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ingestionSources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ingestion_sources: Vec<IngestionSourcesPropertiesFormat>,
 }
 impl IngestionPolicyPropertiesFormat {
@@ -417,7 +449,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Azure Traffic Collector resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

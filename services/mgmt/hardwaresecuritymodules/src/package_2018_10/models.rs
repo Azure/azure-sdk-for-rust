@@ -50,7 +50,11 @@ impl DedicatedHsmError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedHsmListResult {
     #[doc = "The list of dedicated HSMs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DedicatedHsm>,
     #[doc = "The URL to get the next set of dedicated hsms."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -111,7 +115,11 @@ pub mod dedicated_hsm_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedHsmOperationListResult {
     #[doc = "List of Dedicated HSM Resource Provider operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DedicatedHsmOperation>,
 }
 impl azure_core::Continuable for DedicatedHsmOperationListResult {
@@ -246,7 +254,12 @@ pub struct NetworkProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ApiEntityReference>,
     #[doc = "Specifies the list of resource Ids for the network interfaces associated with the dedicated HSM."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
 }
 impl NetworkProfile {
@@ -272,7 +285,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "The Dedicated Hsm zones."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -295,7 +312,11 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListResult {
     #[doc = "The list of dedicated HSM resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Resource>,
     #[doc = "The URL to get the next set of dedicated HSM resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

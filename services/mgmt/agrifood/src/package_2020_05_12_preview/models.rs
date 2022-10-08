@@ -83,16 +83,31 @@ pub struct DetailedInformation {
     #[serde(rename = "apiName", default, skip_serializing_if = "Option::is_none")]
     pub api_name: Option<String>,
     #[doc = "List of customParameters."]
-    #[serde(rename = "customParameters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customParameters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_parameters: Vec<String>,
     #[doc = "List of platformParameters."]
-    #[serde(rename = "platformParameters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "platformParameters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub platform_parameters: Vec<String>,
     #[doc = "Unit systems info for the data provider."]
     #[serde(rename = "unitsSupported", default, skip_serializing_if = "Option::is_none")]
     pub units_supported: Option<UnitSystemsInfo>,
     #[doc = "List of apiInputParameters."]
-    #[serde(rename = "apiInputParameters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "apiInputParameters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub api_input_parameters: Vec<String>,
 }
 impl DetailedInformation {
@@ -128,10 +143,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -181,7 +205,11 @@ impl Extension {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionListResponse {
     #[doc = "List of requested objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Extension>,
     #[doc = "Continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -264,7 +292,11 @@ impl FarmBeatsExtension {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsExtensionListResponse {
     #[doc = "List of requested objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FarmBeatsExtension>,
     #[doc = "Continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -312,7 +344,12 @@ pub struct FarmBeatsExtensionProperties {
     #[serde(rename = "extensionApiDocsLink", default, skip_serializing_if = "Option::is_none")]
     pub extension_api_docs_link: Option<String>,
     #[doc = "Detailed information which shows summary of requested data.\r\nUsed in descriptive get extension metadata call.\r\nInformation for weather category per api included are apisSupported,\r\ncustomParameters, PlatformParameters and Units supported."]
-    #[serde(rename = "detailedInformation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "detailedInformation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub detailed_information: Vec<DetailedInformation>,
 }
 impl FarmBeatsExtensionProperties {
@@ -324,7 +361,11 @@ impl FarmBeatsExtensionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsListResponse {
     #[doc = "List of requested objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FarmBeats>,
     #[doc = "Continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -540,7 +581,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

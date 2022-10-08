@@ -538,7 +538,11 @@ impl LivePipelineActivateRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivePipelineCollection {
     #[doc = "List of live pipelines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LivePipeline>,
     #[doc = "A continuation token to be used in subsequent calls when enumerating through the collection. This is returned when the collection results won't fit in a single response."]
     #[serde(rename = "@continuationToken", default, skip_serializing_if = "Option::is_none")]
@@ -609,7 +613,11 @@ pub struct LivePipelineProperties {
     #[serde(rename = "topologyName", default, skip_serializing_if = "Option::is_none")]
     pub topology_name: Option<String>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDefinition>,
     #[doc = "Current pipeline state (read-only)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -874,7 +882,12 @@ pub struct NodeInput {
     #[serde(rename = "nodeName")]
     pub node_name: String,
     #[doc = "Allows for the selection of specific data streams (eg. video only) from another node."]
-    #[serde(rename = "outputSelectors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outputSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub output_selectors: Vec<OutputSelector>,
 }
 impl NodeInput {
@@ -1174,7 +1187,11 @@ impl PipelineTopology {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineTopologyCollection {
     #[doc = "List of pipeline topologies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PipelineTopology>,
     #[doc = "A continuation token to be used in subsequent calls when enumerating through the collection. This is returned when the collection results won't fit in a single response."]
     #[serde(rename = "@continuationToken", default, skip_serializing_if = "Option::is_none")]
@@ -1229,16 +1246,32 @@ pub struct PipelineTopologyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of the topology parameter declarations. Parameters declared here can be referenced throughout the topology nodes through the use of \"${PARAMETER_NAME}\" string pattern. Parameters can have optional default values and can later be defined in individual instances of the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<ParameterDeclaration>,
     #[doc = "List of the topology source nodes. Source nodes enable external data to be ingested by the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sources: Vec<SourceNodeBase>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub processors: Vec<ProcessorNodeBase>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sinks: Vec<SinkNodeBase>,
 }
 impl PipelineTopologyProperties {
@@ -1603,7 +1636,11 @@ pub struct SpatialAnalysisPersonCountZoneEvents {
     #[doc = "Describes the named polygon."]
     pub zone: NamedPolygonBase,
     #[doc = "The event configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<SpatialAnalysisPersonCountEvent>,
 }
 impl SpatialAnalysisPersonCountZoneEvents {
@@ -1700,7 +1737,11 @@ pub struct SpatialAnalysisPersonDistanceZoneEvents {
     #[doc = "Describes the named polygon."]
     pub zone: NamedPolygonBase,
     #[doc = "The event configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<SpatialAnalysisPersonDistanceEvent>,
 }
 impl SpatialAnalysisPersonDistanceZoneEvents {
@@ -1724,7 +1765,11 @@ pub struct SpatialAnalysisPersonLineCrossingLineEvents {
     #[doc = "Base class for named lines."]
     pub line: NamedLineBase,
     #[doc = "The event configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<SpatialAnalysisPersonLineCrossingEvent>,
 }
 impl SpatialAnalysisPersonLineCrossingLineEvents {
@@ -1831,7 +1876,11 @@ pub struct SpatialAnalysisPersonZoneCrossingZoneEvents {
     #[doc = "Describes the named polygon."]
     pub zone: NamedPolygonBase,
     #[doc = "The event configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<SpatialAnalysisPersonZoneCrossingEvent>,
 }
 impl SpatialAnalysisPersonZoneCrossingZoneEvents {

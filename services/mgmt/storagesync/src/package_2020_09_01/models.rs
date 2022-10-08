@@ -83,7 +83,11 @@ impl CloudEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointArray {
     #[doc = "Collection of CloudEndpoint."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CloudEndpoint>,
 }
 impl azure_core::Continuable for CloudEndpointArray {
@@ -392,7 +396,11 @@ pub struct CloudTieringFilesNotTiering {
     #[serde(rename = "totalFileCount", default, skip_serializing_if = "Option::is_none")]
     pub total_file_count: Option<i64>,
     #[doc = "Array of tiering errors"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<FilesNotTieringError>,
 }
 impl CloudTieringFilesNotTiering {
@@ -793,7 +801,11 @@ pub struct OperationEntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
@@ -838,13 +850,22 @@ pub struct OperationResourceMetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "Supported aggregation types for the metric."]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "Fill gaps in the metric with zero."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
     #[doc = "Dimensions for the metric specification."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<OperationResourceMetricSpecificationDimension>,
 }
 impl OperationResourceMetricSpecification {
@@ -874,7 +895,12 @@ impl OperationResourceMetricSpecificationDimension {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResourceServiceSpecification {
     #[doc = "List of metric specifications."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<OperationResourceMetricSpecification>,
 }
 impl OperationResourceServiceSpecification {
@@ -956,7 +982,12 @@ pub struct PostRestoreRequest {
     #[serde(rename = "failedFileList", default, skip_serializing_if = "Option::is_none")]
     pub failed_file_list: Option<String>,
     #[doc = "Post Restore restore file spec array."]
-    #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "restoreFileSpec",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restore_file_spec: Vec<RestoreFileSpec>,
 }
 impl PostRestoreRequest {
@@ -989,7 +1020,12 @@ pub struct PreRestoreRequest {
     #[serde(rename = "backupMetadataPropertyBag", default, skip_serializing_if = "Option::is_none")]
     pub backup_metadata_property_bag: Option<String>,
     #[doc = "Pre Restore restore file spec array."]
-    #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "restoreFileSpec",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restore_file_spec: Vec<RestoreFileSpec>,
     #[doc = "Pre Restore pause wait for sync drain time period in seconds."]
     #[serde(
@@ -1034,7 +1070,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
@@ -1168,7 +1208,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
 }
 impl PrivateLinkResourceListResult {
@@ -1183,10 +1227,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -1345,7 +1399,11 @@ impl Serialize for RegisteredServerAgentVersionStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisteredServerArray {
     #[doc = "Collection of Registered Server."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RegisteredServer>,
 }
 impl azure_core::Continuable for RegisteredServerArray {
@@ -1516,7 +1574,11 @@ pub struct ResourcesMoveInfo {
     #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group: Option<String>,
     #[doc = "Collection of Resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<ResourceId>,
 }
 impl ResourcesMoveInfo {
@@ -1557,7 +1619,11 @@ impl ServerEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointArray {
     #[doc = "Collection of ServerEndpoint."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerEndpoint>,
 }
 impl azure_core::Continuable for ServerEndpointArray {
@@ -1887,7 +1953,12 @@ pub struct ServerEndpointRecallStatus {
     #[serde(rename = "totalRecallErrorsCount", default, skip_serializing_if = "Option::is_none")]
     pub total_recall_errors_count: Option<i64>,
     #[doc = "Array of recall errors"]
-    #[serde(rename = "recallErrors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "recallErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recall_errors: Vec<ServerEndpointRecallError>,
 }
 impl ServerEndpointRecallStatus {
@@ -2032,7 +2103,12 @@ pub struct ServerEndpointSyncSessionStatus {
     #[serde(rename = "transientFilesNotSyncingCount", default, skip_serializing_if = "Option::is_none")]
     pub transient_files_not_syncing_count: Option<i64>,
     #[doc = "Array of per-item errors coming from the last sync session."]
-    #[serde(rename = "filesNotSyncingErrors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filesNotSyncingErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub files_not_syncing_errors: Vec<ServerEndpointFilesNotSyncingError>,
     #[doc = "Sync mode for the server endpoint."]
     #[serde(rename = "lastSyncMode", default, skip_serializing_if = "Option::is_none")]
@@ -2247,7 +2323,11 @@ impl StorageSyncService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncServiceArray {
     #[doc = "Collection of StorageSyncServices."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageSyncService>,
 }
 impl azure_core::Continuable for StorageSyncServiceArray {
@@ -2316,7 +2396,12 @@ pub struct StorageSyncServiceProperties {
     #[serde(rename = "lastOperationName", default, skip_serializing_if = "Option::is_none")]
     pub last_operation_name: Option<String>,
     #[doc = "List of private endpoint connection associated with the specified storage sync service"]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 impl StorageSyncServiceProperties {
@@ -2441,7 +2526,11 @@ impl SyncGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupArray {
     #[doc = "Collection of SyncGroup."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SyncGroup>,
 }
 impl azure_core::Continuable for SyncGroupArray {
@@ -2530,7 +2619,11 @@ pub struct TriggerChangeDetectionParameters {
     #[serde(rename = "changeDetectionMode", default, skip_serializing_if = "Option::is_none")]
     pub change_detection_mode: Option<trigger_change_detection_parameters::ChangeDetectionMode>,
     #[doc = "Array of relative paths on the Azure File share to be included in the change detection. Can be files and directories."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<String>,
 }
 impl TriggerChangeDetectionParameters {
@@ -2608,7 +2701,11 @@ impl Workflow {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowArray {
     #[doc = "Collection of workflow items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workflow>,
 }
 impl azure_core::Continuable for WorkflowArray {

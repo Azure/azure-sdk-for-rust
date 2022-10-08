@@ -130,7 +130,11 @@ pub struct AutoScaleRunError {
     pub code: String,
     #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<AutoScaleRunError>,
 }
 impl AutoScaleRunError {
@@ -385,7 +389,11 @@ impl BatchAccountKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountListResult {
     #[doc = "The collection of Batch accounts returned by the listing operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BatchAccount>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -421,7 +429,12 @@ pub struct BatchAccountProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "List of private endpoint connections associated with the Batch account"]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Contains information about the auto-storage account associated with a Batch account."]
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
@@ -436,7 +449,12 @@ pub struct BatchAccountProperties {
     #[serde(rename = "lowPriorityCoreQuota", default, skip_serializing_if = "Option::is_none")]
     pub low_priority_core_quota: Option<i32>,
     #[doc = "A list of the dedicated core quota per Virtual Machine family for the Batch account. For accounts with PoolAllocationMode set to UserSubscription, quota is managed on the subscription so this value is not returned."]
-    #[serde(rename = "dedicatedCoreQuotaPerVMFamily", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dedicatedCoreQuotaPerVMFamily",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dedicated_core_quota_per_vm_family: Vec<VirtualMachineFamilyCoreQuota>,
     #[doc = "Batch is transitioning its core quota system for dedicated cores to be enforced per Virtual Machine family. During this transitional phase, the dedicated core quota per Virtual Machine family may not yet be enforced. If this flag is false, dedicated core quota is enforced via the old dedicatedCoreQuota property on the account and does not consider Virtual Machine family. If this flag is true, dedicated core quota is enforced via the dedicatedCoreQuotaPerVMFamily property on the account, and the old dedicatedCoreQuota does not apply."]
     #[serde(rename = "dedicatedCoreQuotaPerVMFamilyEnforced", default, skip_serializing_if = "Option::is_none")]
@@ -688,7 +706,11 @@ pub struct CertificateReference {
     #[doc = "This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). Common store names include: My, Root, CA, Trust, Disallowed, TrustedPeople, TrustedPublisher, AuthRoot, AddressBook, but any custom store name can also be used. The default value is My."]
     #[serde(rename = "storeName", default, skip_serializing_if = "Option::is_none")]
     pub store_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub visibility: Vec<String>,
 }
 impl CertificateReference {
@@ -791,7 +813,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -828,10 +854,20 @@ pub struct ContainerConfiguration {
     #[serde(rename = "type")]
     pub type_: container_configuration::Type,
     #[doc = "This is the full image reference, as would be specified to \"docker pull\". An image will be sourced from the default Docker registry unless the image is fully qualified with an alternative registry."]
-    #[serde(rename = "containerImageNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containerImageNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub container_image_names: Vec<String>,
     #[doc = "If any images must be downloaded from a private registry which requires credentials, then those credentials must be provided here."]
-    #[serde(rename = "containerRegistries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containerRegistries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub container_registries: Vec<ContainerRegistry>,
 }
 impl ContainerConfiguration {
@@ -900,7 +936,11 @@ pub struct DeleteCertificateError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<DeleteCertificateError>,
 }
 impl DeleteCertificateError {
@@ -929,7 +969,11 @@ impl DeploymentConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionConfiguration {
     #[doc = "On Linux pool, only \"TemporaryDisk\" is supported; on Windows pool, \"OsDisk\" and \"TemporaryDisk\" must be specified."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub targets: Vec<String>,
 }
 impl DiskEncryptionConfiguration {
@@ -1043,7 +1087,12 @@ pub struct InboundNatPool {
     #[serde(rename = "frontendPortRangeEnd")]
     pub frontend_port_range_end: i32,
     #[doc = "The maximum number of rules that can be specified across all the endpoints on a Batch pool is 25. If no network security group rules are specified, a default rule will be created to allow inbound access to the specified backendPort. If the maximum number of network security group rules is exceeded the request fails with HTTP status code 400."]
-    #[serde(rename = "networkSecurityGroupRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkSecurityGroupRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_security_group_rules: Vec<NetworkSecurityGroupRule>,
 }
 impl InboundNatPool {
@@ -1120,7 +1169,11 @@ impl LinuxUserConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplicationPackagesResult {
     #[doc = "The list of application packages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationPackage>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1141,7 +1194,11 @@ impl ListApplicationPackagesResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplicationsResult {
     #[doc = "The list of applications."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Application>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1162,7 +1219,11 @@ impl ListApplicationsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListCertificatesResult {
     #[doc = "The collection of returned certificates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Certificate>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1183,7 +1244,11 @@ impl ListCertificatesResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPoolsResult {
     #[doc = "The collection of returned pools."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Pool>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1204,7 +1269,11 @@ impl ListPoolsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPrivateEndpointConnectionsResult {
     #[doc = "The collection of returned private endpoint connection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1225,7 +1294,11 @@ impl ListPrivateEndpointConnectionsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPrivateLinkResourcesResult {
     #[doc = "The collection of returned private link resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1314,7 +1387,12 @@ pub struct NetworkSecurityGroupRule {
     #[serde(rename = "sourceAddressPrefix")]
     pub source_address_prefix: String,
     #[doc = "Valid values are '*' (for all ports 0 - 65535) or arrays of ports or port ranges (i.e. 100-200). The ports should in the range of 0 to 65535 and the port ranges or ports can't overlap. If any other values are provided the request fails with HTTP status code 400. Default value will be *."]
-    #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_port_ranges: Vec<String>,
 }
 impl NetworkSecurityGroupRule {
@@ -1374,7 +1452,11 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1465,28 +1547,56 @@ pub struct PoolProperties {
     pub task_slots_per_node: Option<i32>,
     #[serde(rename = "taskSchedulingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub task_scheduling_policy: Option<TaskSchedulingPolicy>,
-    #[serde(rename = "userAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_accounts: Vec<UserAccount>,
     #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metadata: Vec<MetadataItem>,
     #[doc = "In some cases the start task may be re-run even though the node was not rebooted. Due to this, start tasks should be idempotent and exit gracefully if the setup they're performing has already been done. Special care should be taken to avoid start tasks which create breakaway process or install/launch services from the start task working directory, as this will block Batch from being able to re-run the start task."]
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
     #[doc = "For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub certificates: Vec<CertificateReference>,
     #[doc = "Changes to application package references affect all new compute nodes joining the pool, but do not affect compute nodes that are already in the pool until they are rebooted or reimaged. There is a maximum of 10 application package references on any given pool."]
-    #[serde(rename = "applicationPackages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationPackages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_packages: Vec<ApplicationPackageReference>,
     #[doc = "The list of application licenses must be a subset of available Batch service application licenses. If a license is requested which is not supported, pool creation will fail."]
-    #[serde(rename = "applicationLicenses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationLicenses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_licenses: Vec<String>,
     #[doc = "Describes either the current operation (if the pool AllocationState is Resizing) or the previously completed operation (if the AllocationState is Steady)."]
     #[serde(rename = "resizeOperationStatus", default, skip_serializing_if = "Option::is_none")]
     pub resize_operation_status: Option<ResizeOperationStatus>,
     #[doc = "This supports Azure Files, NFS, CIFS/SMB, and Blobfuse."]
-    #[serde(rename = "mountConfiguration", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "mountConfiguration",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mount_configuration: Vec<MountConfiguration>,
 }
 impl PoolProperties {
@@ -1585,9 +1695,19 @@ pub struct PrivateLinkResourceProperties {
     #[doc = "The group id is used to establish the private link connection."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -1647,7 +1767,12 @@ pub struct PublicIpAddressConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provision: Option<IpAddressProvisioningType>,
     #[doc = "The number of IPs specified here limits the maximum size of the Pool - 100 dedicated nodes or 100 low-priority nodes can be allocated for each public IP. For example, a pool needing 250 dedicated VMs would need at least 3 public IPs specified. Each element of this collection is of the form: /subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.Network/publicIPAddresses/{ip}."]
-    #[serde(rename = "ipAddressIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddressIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_address_ids: Vec<String>,
 }
 impl PublicIpAddressConfiguration {
@@ -1672,7 +1797,11 @@ pub struct ResizeError {
     pub code: String,
     #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ResizeError>,
 }
 impl ResizeError {
@@ -1699,7 +1828,11 @@ pub struct ResizeOperationStatus {
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "This property is set only if an error occurred during the last pool resize, and only when the pool allocationState is Steady."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<ResizeError>,
 }
 impl ResizeOperationStatus {
@@ -1776,9 +1909,19 @@ pub struct StartTask {
     #[doc = "The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux. Required if any other properties of the startTask are specified."]
     #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
     pub command_line: Option<String>,
-    #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_files: Vec<ResourceFile>,
-    #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_settings: Vec<EnvironmentSetting>,
     #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1899,7 +2042,12 @@ pub struct VirtualMachineConfiguration {
     #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub windows_configuration: Option<WindowsConfiguration>,
     #[doc = "This property must be specified if the compute nodes in the pool need to have empty data disks attached to them."]
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_disks: Vec<DataDisk>,
     #[doc = "This only applies to images that contain the Windows operating system, and should only be used when you hold valid on-premises licenses for the nodes which will be deployed. If omitted, no on-premises licensing discount is applied. Values are:\n\n Windows_Server - The on-premises license is for Windows Server.\n Windows_Client - The on-premises license is for Windows Client.\n"]
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]

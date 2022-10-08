@@ -128,7 +128,11 @@ pub struct Device {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
     #[doc = "List of organization IDs that the device is a part of, only one organization support today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl Device {
@@ -247,7 +251,11 @@ pub struct DeviceGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "List of organization IDs of the device group, only one organization support today, multiple organizations will be supported soon."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub organizations: Vec<String>,
 }
 impl DeviceGroup {

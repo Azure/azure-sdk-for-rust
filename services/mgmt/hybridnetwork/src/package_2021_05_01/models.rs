@@ -115,7 +115,11 @@ impl Device {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceListResult {
     #[doc = "A list of devices."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Device>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -145,7 +149,12 @@ pub struct DevicePropertiesFormat {
     #[serde(rename = "deviceType")]
     pub device_type: device_properties_format::DeviceType,
     #[doc = "The list of network functions deployed on the device."]
-    #[serde(rename = "networkFunctions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkFunctions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_functions: Vec<SubResource>,
 }
 impl DevicePropertiesFormat {
@@ -279,10 +288,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -381,7 +399,11 @@ impl NetworkFunction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionListResult {
     #[doc = "A list of network function resources in a subscription or resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkFunction>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -436,7 +458,12 @@ pub struct NetworkFunctionPropertiesFormat {
     )]
     pub network_function_container_configurations: Option<serde_json::Value>,
     #[doc = "The network function configurations from the user."]
-    #[serde(rename = "networkFunctionUserConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkFunctionUserConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_function_user_configurations: Vec<NetworkFunctionUserConfiguration>,
 }
 impl NetworkFunctionPropertiesFormat {
@@ -466,7 +493,12 @@ pub struct NetworkFunctionRoleConfiguration {
     #[serde(rename = "userDataParameters", default, skip_serializing_if = "Option::is_none")]
     pub user_data_parameters: Option<UserDataParameters>,
     #[doc = "The network interface configurations."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "Specifies the storage settings for the virtual machine disks."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
@@ -637,7 +669,11 @@ pub mod network_function_role_configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionRoleInstanceListResult {
     #[doc = "A list of role instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleInstance>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -661,7 +697,11 @@ pub struct NetworkFunctionSkuDetails {
     #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
     #[doc = "The network function sku role details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkFunctionSkuRoleDetails>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -682,7 +722,11 @@ impl NetworkFunctionSkuDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionSkuListResult {
     #[doc = "The network function vendor sku overview properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuOverview>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -712,7 +756,12 @@ pub struct NetworkFunctionSkuRoleDetails {
     #[serde(rename = "userDataParameters", default, skip_serializing_if = "Option::is_none")]
     pub user_data_parameters: Option<UserDataParameters>,
     #[doc = "The network interface configuration."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
 }
 impl NetworkFunctionSkuRoleDetails {
@@ -724,7 +773,12 @@ impl NetworkFunctionSkuRoleDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionTemplate {
     #[doc = "An array of network function role definitions."]
-    #[serde(rename = "networkFunctionRoleConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkFunctionRoleConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_function_role_configurations: Vec<NetworkFunctionRoleConfiguration>,
 }
 impl NetworkFunctionTemplate {
@@ -742,7 +796,12 @@ pub struct NetworkFunctionUserConfiguration {
     #[serde(rename = "userDataParameters", default, skip_serializing_if = "Option::is_none")]
     pub user_data_parameters: Option<UserDataParameters>,
     #[doc = "The network interface configuration."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "Specifies the operating system settings for the role instance."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
@@ -793,7 +852,12 @@ pub struct NetworkFunctionVendorConfiguration {
     #[serde(rename = "userDataParameters", default, skip_serializing_if = "Option::is_none")]
     pub user_data_parameters: Option<UserDataParameters>,
     #[doc = "The network interface configurations."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
 }
 impl NetworkFunctionVendorConfiguration {
@@ -805,7 +869,11 @@ impl NetworkFunctionVendorConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionVendorListResult {
     #[doc = "A list of available network function vendors and skus."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkFunctionVendor>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -832,7 +900,12 @@ pub struct NetworkInterface {
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
     #[doc = "A list of IP configurations of the network interface."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
     #[doc = "The type of the VM switch."]
     #[serde(rename = "vmSwitchType", default, skip_serializing_if = "Option::is_none")]
@@ -906,7 +979,12 @@ pub struct NetworkInterfaceIpConfiguration {
     #[serde(rename = "ipVersion", default, skip_serializing_if = "Option::is_none")]
     pub ip_version: Option<network_interface_ip_configuration::IpVersion>,
     #[doc = "The list of DNS servers IP addresses."]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
 }
 impl NetworkInterfaceIpConfiguration {
@@ -1036,7 +1114,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "A list of Microsoft.HybridNetwork operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1177,7 +1259,11 @@ impl PreviewSubscriptionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreviewSubscriptionsList {
     #[doc = "A list of preview subscriptions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PreviewSubscription>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1416,7 +1502,12 @@ impl Serialize for SkuType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SshConfiguration {
     #[doc = "The list of SSH public keys used to authenticate with linux based VMs."]
-    #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_keys: Vec<SshPublicKey>,
 }
 impl SshConfiguration {
@@ -1449,7 +1540,12 @@ pub struct StorageProfile {
     #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
     pub os_disk: Option<OsDisk>,
     #[doc = "Specifies the parameters that are used to add a data disk to a virtual machine."]
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_disks: Vec<DataDisk>,
 }
 impl StorageProfile {
@@ -1541,7 +1637,12 @@ pub struct VendorDetails {
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
     #[doc = "The network function sku list."]
-    #[serde(rename = "skuList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "skuList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sku_list: Vec<SkuOverview>,
 }
 impl VendorDetails {
@@ -1553,7 +1654,11 @@ impl VendorDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorListResult {
     #[doc = "A list of vendors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Vendor>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1591,7 +1696,11 @@ impl VendorNetworkFunction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorNetworkFunctionListResult {
     #[doc = "A list of vendor network functions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VendorNetworkFunction>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1624,7 +1733,12 @@ pub struct VendorNetworkFunctionPropertiesFormat {
     #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
     #[doc = "An array of network function vendor configurations."]
-    #[serde(rename = "networkFunctionVendorConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkFunctionVendorConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_function_vendor_configurations: Vec<NetworkFunctionVendorConfiguration>,
 }
 impl VendorNetworkFunctionPropertiesFormat {
@@ -1639,7 +1753,11 @@ pub struct VendorPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A list of IDs of the vendor skus offered by the vendor."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub skus: Vec<SubResource>,
 }
 impl VendorPropertiesFormat {
@@ -1715,7 +1833,11 @@ impl VendorSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorSkuListResult {
     #[doc = "A list of vendor skus offered by the vendor."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VendorSku>,
     #[doc = "The URI to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

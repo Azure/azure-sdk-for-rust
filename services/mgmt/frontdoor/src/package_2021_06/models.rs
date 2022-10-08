@@ -252,7 +252,11 @@ impl BackendPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendPoolListResult {
     #[doc = "List of Backend Pools within a Front Door."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BackendPool>,
     #[doc = "URL to get the next set of BackendPool objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -280,7 +284,11 @@ impl BackendPoolProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendPoolUpdateParameters {
     #[doc = "The set of backends for this pool"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backends: Vec<Backend>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "loadBalancingSettings", default, skip_serializing_if = "Option::is_none")]
@@ -797,7 +805,11 @@ pub mod custom_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRuleList {
     #[doc = "List of rules"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<CustomRule>,
 }
 impl CustomRuleList {
@@ -828,7 +840,11 @@ pub struct Error {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetails>,
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<String>,
@@ -894,7 +910,11 @@ impl Experiment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExperimentList {
     #[doc = "List of Experiments within a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Experiment>,
     #[doc = "URL to get the next set of Experiment objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1190,7 +1210,11 @@ pub mod front_door_certificate_source_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontDoorListResult {
     #[doc = "List of Front Doors within a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FrontDoor>,
     #[doc = "URL to get the next set of Front Door objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1224,7 +1248,12 @@ pub struct FrontDoorProperties {
     #[serde(rename = "frontdoorId", default, skip_serializing_if = "Option::is_none")]
     pub frontdoor_id: Option<String>,
     #[doc = "Rules Engine Configurations available to routing rules."]
-    #[serde(rename = "rulesEngines", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "rulesEngines",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules_engines: Vec<RulesEngine>,
     #[doc = "Key-Value pair representing additional properties for frontdoor."]
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1242,19 +1271,44 @@ pub struct FrontDoorUpdateParameters {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "Routing rules associated with this Front Door."]
-    #[serde(rename = "routingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "routingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routing_rules: Vec<RoutingRule>,
     #[doc = "Load balancing settings associated with this Front Door instance."]
-    #[serde(rename = "loadBalancingSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancingSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancing_settings: Vec<LoadBalancingSettingsModel>,
     #[doc = "Health probe settings associated with this Front Door instance."]
-    #[serde(rename = "healthProbeSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "healthProbeSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub health_probe_settings: Vec<HealthProbeSettingsModel>,
     #[doc = "Backend pools available to routing rules."]
-    #[serde(rename = "backendPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_pools: Vec<BackendPool>,
     #[doc = "Frontend endpoints available to routing rules."]
-    #[serde(rename = "frontendEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_endpoints: Vec<FrontendEndpoint>,
     #[doc = "Settings that apply to all backend pools."]
     #[serde(rename = "backendPoolsSettings", default, skip_serializing_if = "Option::is_none")]
@@ -1560,7 +1614,11 @@ pub mod frontend_endpoint_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendEndpointsListResult {
     #[doc = "List of Frontend endpoints within a Front Door."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FrontendEndpoint>,
     #[doc = "URL to get the next set of frontend endpoints if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1645,7 +1703,11 @@ pub mod header_action {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthProbeSettingsListResult {
     #[doc = "List of HealthProbeSettings within a Front Door."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HealthProbeSettingsModel>,
     #[doc = "URL to get the next set of HealthProbeSettings objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1948,7 +2010,12 @@ pub struct LatencyScorecardProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
     #[doc = "The latency metrics of the Latency Scorecard"]
-    #[serde(rename = "latencyMetrics", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "latencyMetrics",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub latency_metrics: Vec<LatencyMetric>,
 }
 impl LatencyScorecardProperties {
@@ -1960,7 +2027,11 @@ impl LatencyScorecardProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancingSettingsListResult {
     #[doc = "List of Backend Pools within a Front Door."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LoadBalancingSettingsModel>,
     #[doc = "URL to get the next set of LoadBalancingSettings objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2204,7 +2275,11 @@ pub struct ManagedRuleGroupDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of rules within the managed rule group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<ManagedRuleDefinition>,
 }
 impl ManagedRuleGroupDefinition {
@@ -2219,10 +2294,18 @@ pub struct ManagedRuleGroupOverride {
     #[serde(rename = "ruleGroupName")]
     pub rule_group_name: String,
     #[doc = "Describes the exclusions that are applied to all rules in the group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclusions: Vec<ManagedRuleExclusion>,
     #[doc = "List of rules that will be disabled. If none specified, all rules in the group will be disabled."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<ManagedRuleOverride>,
 }
 impl ManagedRuleGroupOverride {
@@ -2247,7 +2330,11 @@ pub struct ManagedRuleOverride {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ActionType>,
     #[doc = "Describes the exclusions that are applied to this specific rule."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclusions: Vec<ManagedRuleExclusion>,
 }
 impl ManagedRuleOverride {
@@ -2273,10 +2360,19 @@ pub struct ManagedRuleSet {
     #[serde(rename = "ruleSetAction", default, skip_serializing_if = "Option::is_none")]
     pub rule_set_action: Option<ManagedRuleSetActionType>,
     #[doc = "Describes the exclusions that are applied to all rules in the set."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclusions: Vec<ManagedRuleExclusion>,
     #[doc = "Defines the rule group overrides to apply to the rule set."]
-    #[serde(rename = "ruleGroupOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ruleGroupOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rule_group_overrides: Vec<ManagedRuleGroupOverride>,
 }
 impl ManagedRuleSet {
@@ -2347,7 +2443,11 @@ impl ManagedRuleSetDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedRuleSetDefinitionList {
     #[doc = "List of managed rule set definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedRuleSetDefinition>,
     #[doc = "URL to retrieve next set of managed rule set definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2380,7 +2480,12 @@ pub struct ManagedRuleSetDefinitionProperties {
     #[serde(rename = "ruleSetVersion", default, skip_serializing_if = "Option::is_none")]
     pub rule_set_version: Option<String>,
     #[doc = "Rule groups of the managed rule set."]
-    #[serde(rename = "ruleGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ruleGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rule_groups: Vec<ManagedRuleGroupDefinition>,
 }
 impl ManagedRuleSetDefinitionProperties {
@@ -2392,7 +2497,12 @@ impl ManagedRuleSetDefinitionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedRuleSetList {
     #[doc = "List of rule sets."]
-    #[serde(rename = "managedRuleSets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managedRuleSets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub managed_rule_sets: Vec<ManagedRuleSet>,
 }
 impl ManagedRuleSetList {
@@ -2418,7 +2528,11 @@ pub struct MatchCondition {
     #[serde(rename = "matchValue")]
     pub match_value: Vec<String>,
     #[doc = "List of transforms."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transforms: Vec<TransformType>,
 }
 impl MatchCondition {
@@ -2752,7 +2866,11 @@ impl PreconfiguredEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreconfiguredEndpointList {
     #[doc = "List of PreconfiguredEndpoints supported by NetworkExperiment."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PreconfiguredEndpoint>,
     #[doc = "URL to get the next set of PreconfiguredEndpoints if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2861,7 +2979,11 @@ impl Profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileList {
     #[doc = "List of Profiles within a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Profile>,
     #[doc = "URL to get the next set of Profile objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3259,7 +3381,11 @@ impl RoutingRuleLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutingRuleListResult {
     #[doc = "List of Routing Rules within a Front Door."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoutingRule>,
     #[doc = "URL to get the next set of RoutingRule objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3287,13 +3413,28 @@ impl RoutingRuleProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutingRuleUpdateParameters {
     #[doc = "Frontend endpoints associated with this rule"]
-    #[serde(rename = "frontendEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_endpoints: Vec<SubResource>,
     #[doc = "Protocol schemes to match for this rule"]
-    #[serde(rename = "acceptedProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "acceptedProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub accepted_protocols: Vec<String>,
     #[doc = "The route patterns of the rule."]
-    #[serde(rename = "patternsToMatch", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "patternsToMatch",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub patterns_to_match: Vec<String>,
     #[doc = "Whether to enable use of this rule. Permitted values are 'Enabled' or 'Disabled'"]
     #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
@@ -3390,10 +3531,20 @@ impl RulesEngine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RulesEngineAction {
     #[doc = "A list of header actions to apply from the request from AFD to the origin."]
-    #[serde(rename = "requestHeaderActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestHeaderActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_header_actions: Vec<HeaderAction>,
     #[doc = "A list of header actions to apply from the response from AFD to the client."]
-    #[serde(rename = "responseHeaderActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "responseHeaderActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub response_header_actions: Vec<HeaderAction>,
     #[doc = "Base class for all types of Route."]
     #[serde(rename = "routeConfigurationOverride", default, skip_serializing_if = "Option::is_none")]
@@ -3408,7 +3559,11 @@ impl RulesEngineAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RulesEngineListResult {
     #[doc = "List of rulesEngines within a Front Door."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RulesEngine>,
     #[doc = "URL to get the next set of RulesEngine objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3444,7 +3599,11 @@ pub struct RulesEngineMatchCondition {
     #[serde(rename = "rulesEngineMatchValue")]
     pub rules_engine_match_value: Vec<String>,
     #[doc = "List of transforms"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transforms: Vec<Transform>,
 }
 impl RulesEngineMatchCondition {
@@ -3604,7 +3763,12 @@ pub struct RulesEngineRule {
     #[doc = "One or more actions that will execute, modifying the request and/or response."]
     pub action: RulesEngineAction,
     #[doc = "A list of match conditions that must meet in order for the actions of this rule to run. Having no match conditions means the actions will always run."]
-    #[serde(rename = "matchConditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "matchConditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub match_conditions: Vec<RulesEngineMatchCondition>,
     #[doc = "If this rule is a match should the rules engine continue running the remaining rules or stop. If not present, defaults to Continue."]
     #[serde(rename = "matchProcessingBehavior", default, skip_serializing_if = "Option::is_none")]
@@ -3665,7 +3829,11 @@ pub mod rules_engine_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RulesEngineUpdateParameters {
     #[doc = "A list of rules that define a particular Rules Engine Configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<RulesEngineRule>,
 }
 impl RulesEngineUpdateParameters {
@@ -3817,7 +3985,12 @@ pub struct TimeseriesProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
     #[doc = "The set of data points for the timeseries"]
-    #[serde(rename = "timeseriesData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "timeseriesData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub timeseries_data: Vec<TimeseriesDataPoint>,
 }
 impl TimeseriesProperties {
@@ -4005,7 +4178,11 @@ impl WebApplicationFirewallPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebApplicationFirewallPolicyList {
     #[doc = "List of WebApplicationFirewallPolicies within a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WebApplicationFirewallPolicy>,
     #[doc = "URL to get the next set of WebApplicationFirewallPolicy objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4035,13 +4212,28 @@ pub struct WebApplicationFirewallPolicyProperties {
     #[serde(rename = "managedRules", default, skip_serializing_if = "Option::is_none")]
     pub managed_rules: Option<ManagedRuleSetList>,
     #[doc = "Describes Frontend Endpoints associated with this Web Application Firewall policy."]
-    #[serde(rename = "frontendEndpointLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendEndpointLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_endpoint_links: Vec<FrontendEndpointLink>,
     #[doc = "Describes Routing Rules associated with this Web Application Firewall policy."]
-    #[serde(rename = "routingRuleLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "routingRuleLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routing_rule_links: Vec<RoutingRuleLink>,
     #[doc = "Describes Security Policy associated with this Web Application Firewall policy."]
-    #[serde(rename = "securityPolicyLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "securityPolicyLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub security_policy_links: Vec<SecurityPolicyLink>,
     #[doc = "Provisioning state of the policy."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

@@ -31,10 +31,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -189,7 +198,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -277,7 +290,11 @@ pub struct ActionStatus {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The array of targets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub targets: Vec<ExperimentExecutionActionTargetDetailsProperties>,
 }
 impl ActionStatus {
@@ -311,7 +328,11 @@ pub struct BranchStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The array of actions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<ActionStatus>,
 }
 impl BranchStatus {
@@ -340,7 +361,11 @@ impl Capability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilityListResult {
     #[doc = "List of Capability resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Capability>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -405,7 +430,11 @@ impl CapabilityType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilityTypeListResult {
     #[doc = "List of Capability Type resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CapabilityType>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -573,7 +602,11 @@ impl ExperimentExecutionDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExperimentExecutionDetailsListResult {
     #[doc = "List of Experiment execution details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExperimentExecutionDetails>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -629,7 +662,11 @@ pub mod experiment_execution_details_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RunInformation {
         #[doc = "The steps of the experiment run."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub steps: Vec<StepStatus>,
     }
     impl RunInformation {
@@ -642,7 +679,11 @@ pub mod experiment_execution_details_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExperimentListResult {
     #[doc = "List of Experiment resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Experiment>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -719,7 +760,11 @@ impl ExperimentStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExperimentStatusListResult {
     #[doc = "List of Experiment statuses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExperimentStatus>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -838,7 +883,11 @@ pub struct StepStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The array of branches."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub branches: Vec<BranchStatus>,
 }
 impl StepStatus {
@@ -986,7 +1035,11 @@ impl Target {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetListResult {
     #[doc = "List of Target resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Target>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1061,7 +1114,11 @@ impl TargetType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetTypeListResult {
     #[doc = "List of Target Type resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TargetType>,
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1091,7 +1148,12 @@ pub struct TargetTypeProperties {
     #[serde(rename = "propertiesSchema", default, skip_serializing_if = "Option::is_none")]
     pub properties_schema: Option<Url>,
     #[doc = "List of resource types this Target Type can extend."]
-    #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_types: Vec<String>,
 }
 impl TargetTypeProperties {

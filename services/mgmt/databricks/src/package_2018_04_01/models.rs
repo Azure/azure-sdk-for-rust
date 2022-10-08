@@ -7,7 +7,12 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressSpace {
     #[doc = "A list of address blocks reserved for this virtual network in CIDR notation."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
 }
 impl AddressSpace {
@@ -127,7 +132,11 @@ pub struct ErrorInfo {
     #[doc = "A human readable error message."]
     pub message: String,
     #[doc = "error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "Inner error details if they exist."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -217,7 +226,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Resource Provider operations supported by the Resource Provider resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -411,7 +424,11 @@ impl VirtualNetworkPeering {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPeeringList {
     #[doc = "List of virtual network peerings on workspace."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkPeering>,
     #[doc = "URL to get the next set of virtual network peering list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -721,7 +738,11 @@ impl WorkspaceEncryptionParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
     #[doc = "The array of workspaces."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workspace>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -754,7 +775,11 @@ pub struct WorkspaceProperties {
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_uri: Option<String>,
     #[doc = "The workspace provider authorizations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorizations: Vec<WorkspaceProviderAuthorization>,
     #[doc = "Provides details of the entity that created/updated the workspace."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]

@@ -7,7 +7,11 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
     #[doc = "The Api error details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ApiErrorBase>,
     #[doc = "Inner error details."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
@@ -167,7 +171,11 @@ pub mod image_template_last_run_status {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageTemplateListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ImageTemplate>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -259,10 +267,19 @@ pub struct ImageTemplatePowerShellCustomizer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
     #[doc = "Array of PowerShell commands to execute"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inline: Vec<String>,
     #[doc = "Valid exit codes for the PowerShell script. [Default: 0]"]
-    #[serde(rename = "validExitCodes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "validExitCodes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub valid_exit_codes: Vec<i64>,
 }
 impl ImageTemplatePowerShellCustomizer {
@@ -279,7 +296,11 @@ impl ImageTemplatePowerShellCustomizer {
 pub struct ImageTemplateProperties {
     pub source: ImageTemplateSource,
     #[doc = "Specifies the properties used to describe the customization steps of the image, like Image source etc"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub customize: Vec<ImageTemplateCustomizer>,
     #[doc = "The distribution targets where the image output needs to go to."]
     pub distribute: Vec<ImageTemplateDistributor>,
@@ -357,7 +378,11 @@ pub struct ImageTemplateShellCustomizer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
     #[doc = "Array of shell commands to execute"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inline: Vec<String>,
 }
 impl ImageTemplateShellCustomizer {
@@ -459,7 +484,11 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -564,7 +593,11 @@ impl RunOutput {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunOutputCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RunOutput>,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -5,7 +5,11 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplyClause {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transformations: Vec<TransformationNode>,
 }
 impl ApplyClause {
@@ -50,7 +54,12 @@ pub struct AssessmentDetails {
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
     #[doc = "Gets or sets the list of IP addresses of the machine. IP addresses could be IP V4 or IP V6."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "Gets or sets the FQDN of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -59,7 +68,12 @@ pub struct AssessmentDetails {
     #[serde(rename = "biosId", default, skip_serializing_if = "Option::is_none")]
     pub bios_id: Option<String>,
     #[doc = "Gets or sets the list of MAC addresses of the machine."]
-    #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "macAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mac_addresses: Vec<String>,
     #[doc = "Gets or sets the ISV specific extended information."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -146,7 +160,11 @@ impl DatabaseAssessmentDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseCollection {
     #[doc = "Gets or sets the databases."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Database>,
     #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -182,7 +200,11 @@ impl DatabaseInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceCollection {
     #[doc = "Gets or sets the database instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DatabaseInstance>,
     #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -239,7 +261,12 @@ impl DatabaseInstanceDiscoveryDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceProperties {
     #[doc = "Gets or sets the assessment details of the database instance published by various sources."]
-    #[serde(rename = "discoveryData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "discoveryData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub discovery_data: Vec<DatabaseInstanceDiscoveryDetails>,
     #[doc = "Gets or sets the database instances summary per solution. The key of dictionary is the solution name and value is the corresponding database instance summary object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -300,7 +327,12 @@ impl DatabaseProjectSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProperties {
     #[doc = "Gets or sets the assessment details of the database published by various sources."]
-    #[serde(rename = "assessmentData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assessmentData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub assessment_data: Vec<DatabaseAssessmentDetails>,
     #[doc = "Gets or sets the time of the last modification of the database."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -385,7 +417,12 @@ pub struct DiscoveryDetails {
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
     #[doc = "Gets or sets the list of IP addresses of the machine. IP addresses could be IP V4 or IP V6."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "Gets or sets the FQDN of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -394,7 +431,12 @@ pub struct DiscoveryDetails {
     #[serde(rename = "biosId", default, skip_serializing_if = "Option::is_none")]
     pub bios_id: Option<String>,
     #[doc = "Gets or sets the list of MAC addresses of the machine."]
-    #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "macAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mac_addresses: Vec<String>,
     #[doc = "Gets or sets the ISV specific extended information."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -421,7 +463,11 @@ impl EdmReferentialConstraintPropertyPair {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventCollection {
     #[doc = "Gets or sets the machines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MigrateEvent>,
     #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -478,7 +524,11 @@ impl IEdmDirectValueAnnotationsManager {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmEntityContainer {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub elements: Vec<IEdmEntityContainerElement>,
     #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_entity_container::SchemaElementKind>,
@@ -573,13 +623,33 @@ pub mod i_edm_expression {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmModel {
-    #[serde(rename = "schemaElements", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "schemaElements",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schema_elements: Vec<IEdmSchemaElement>,
-    #[serde(rename = "vocabularyAnnotations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vocabularyAnnotations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vocabulary_annotations: Vec<IEdmVocabularyAnnotation>,
-    #[serde(rename = "referencedModels", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "referencedModels",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub referenced_models: Vec<IEdmModel>,
-    #[serde(rename = "declaredNamespaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "declaredNamespaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub declared_namespaces: Vec<String>,
     #[serde(rename = "directValueAnnotationsManager", default, skip_serializing_if = "Option::is_none")]
     pub direct_value_annotations_manager: Option<IEdmDirectValueAnnotationsManager>,
@@ -645,7 +715,12 @@ impl IEdmNavigationPropertyBinding {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmNavigationSource {
-    #[serde(rename = "navigationPropertyBindings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "navigationPropertyBindings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub navigation_property_bindings: Vec<IEdmNavigationPropertyBinding>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<IEdmPathExpression>,
@@ -661,7 +736,12 @@ impl IEdmNavigationSource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmPathExpression {
-    #[serde(rename = "pathSegments", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pathSegments",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path_segments: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
@@ -732,7 +812,12 @@ pub mod i_edm_property {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmReferentialConstraint {
-    #[serde(rename = "propertyPairs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "propertyPairs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub property_pairs: Vec<EdmReferentialConstraintPropertyPair>,
 }
 impl IEdmReferentialConstraint {
@@ -801,7 +886,12 @@ pub struct IEdmStructuredType {
     pub is_open: Option<bool>,
     #[serde(rename = "baseType", default, skip_serializing_if = "Option::is_none")]
     pub base_type: Box<Option<IEdmStructuredType>>,
-    #[serde(rename = "declaredProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "declaredProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub declared_properties: Vec<IEdmProperty>,
     #[serde(rename = "typeKind", default, skip_serializing_if = "Option::is_none")]
     pub type_kind: Option<i_edm_structured_type::TypeKind>,
@@ -952,7 +1042,11 @@ impl Machine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineCollection {
     #[doc = "Gets or sets the machines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Machine>,
     #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -981,13 +1075,28 @@ impl MachineMigrateEventProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineProperties {
     #[doc = "Gets or sets the discovery details of the machine published by various sources."]
-    #[serde(rename = "discoveryData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "discoveryData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub discovery_data: Vec<DiscoveryDetails>,
     #[doc = "Gets or sets the assessment details of the machine published by various sources."]
-    #[serde(rename = "assessmentData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assessmentData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub assessment_data: Vec<AssessmentDetails>,
     #[doc = "Gets or sets the migration details of the machine published by various sources."]
-    #[serde(rename = "migrationData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "migrationData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub migration_data: Vec<MigrationDetails>,
     #[doc = "Gets or sets the time of the last modification of the machine."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1097,7 +1206,12 @@ pub mod migrate_project {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateProjectProperties {
     #[doc = "Gets or sets the list of tools registered with the migrate project."]
-    #[serde(rename = "registeredTools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "registeredTools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub registered_tools: Vec<String>,
     #[doc = "Gets the summary of the migrate project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1210,7 +1324,12 @@ pub struct MigrationDetails {
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
     #[doc = "Gets or sets the list of IP addresses of the machine. IP addresses could be IP V4 or IP V6."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "Gets or sets the FQDN of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1219,7 +1338,12 @@ pub struct MigrationDetails {
     #[serde(rename = "biosId", default, skip_serializing_if = "Option::is_none")]
     pub bios_id: Option<String>,
     #[doc = "Gets or sets the list of MAC addresses of the machine."]
-    #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "macAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mac_addresses: Vec<String>,
     #[doc = "Gets or sets the ISV specific extended information."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -1236,11 +1360,19 @@ pub struct ODataPath {
     pub edm_type: Option<IEdmType>,
     #[serde(rename = "navigationSource", default, skip_serializing_if = "Option::is_none")]
     pub navigation_source: Option<IEdmNavigationSource>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub segments: Vec<ODataPathSegment>,
     #[serde(rename = "pathTemplate", default, skip_serializing_if = "Option::is_none")]
     pub path_template: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path: Vec<ODataPathSegment>,
 }
 impl ODataPath {
@@ -1359,7 +1491,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultList {
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationResultList {
@@ -1498,7 +1634,12 @@ impl RegistrationResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SelectExpandClause {
-    #[serde(rename = "selectedItems", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "selectedItems",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub selected_items: Vec<SelectItem>,
     #[serde(rename = "allSelected", default, skip_serializing_if = "Option::is_none")]
     pub all_selected: Option<bool>,
@@ -1774,7 +1915,11 @@ impl SolutionSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionsCollection {
     #[doc = "Gets or sets the list of solutions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Solution>,
     #[doc = "Gets or sets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

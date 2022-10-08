@@ -140,7 +140,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -173,7 +177,11 @@ pub struct SubscriptionCreationParameters {
     #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub management_group_id: Option<String>,
     #[doc = "The list of principals that should be granted Owner access on the subscription. Principals should be of type User, Service Principal or Security Group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub owners: Vec<AdPrincipal>,
     #[doc = "The offer type of the subscription. For example, MS-AZR-0017P (EnterpriseAgreement) and MS-AZR-0148P (EnterpriseAgreement devTest) are available. Only valid when creating a subscription in a enrollment account scope."]
     #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]

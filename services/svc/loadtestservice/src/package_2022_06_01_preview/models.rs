@@ -89,13 +89,26 @@ impl ClientMetricsFilters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClientMetricsRequestModel {
     #[doc = "List of request samplers, maximum supported samplers for queries are 20. In case of empty, it will return metrics for maximum 20 samplers"]
-    #[serde(rename = "requestSamplers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestSamplers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_samplers: Vec<String>,
     #[doc = "List of errors, maximum supported errors for queries are 20. In case of empty, by default will return metrics for maximum 20 errors"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<String>,
     #[doc = "List of percentiles values for response time, supported values 50,90,99,95. Default value is 50th percentile."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub percentiles: Vec<String>,
     #[doc = "For test duration less than 10 minutes group by time interval can be any one of 5s,10s,1m,5m.\\n\\nFor test duration greater than 10 minutes, group by time interval can be any one of 1m,5m,1h. Default value is 1m."]
     #[serde(rename = "groupByInterval", default, skip_serializing_if = "Option::is_none")]
@@ -176,7 +189,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Additional details and inner errors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
 }
 impl Error {
@@ -242,10 +259,20 @@ impl FileUrlList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[doc = "List of request sampler for the test run, for which client metrics can be filtered."]
-    #[serde(rename = "requestSamplerValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestSamplerValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_sampler_values: Vec<String>,
     #[doc = "List of errors occurred for the test run, for which client metrics can be filtered."]
-    #[serde(rename = "errorFiltersValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorFiltersValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_filters_values: Vec<String>,
 }
 impl Filters {
@@ -269,7 +296,12 @@ pub struct InputTestArtifacts {
     #[serde(rename = "inputArtifactsZipFileurl", default, skip_serializing_if = "Option::is_none")]
     pub input_artifacts_zip_fileurl: Option<FileUrl>,
     #[doc = "The input artifacts file { name : url } map for the test run."]
-    #[serde(rename = "additionalUrls", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalUrls",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_urls: Vec<FileUrl>,
 }
 impl InputTestArtifacts {
@@ -474,7 +506,11 @@ impl ServerMetricsModel {
 #[doc = "Supported azure resource types for App Component like Microsoft.LoadTestService/loadtests, Microsoft.ClassicCompute, Microsoft.ClassicStorage etc. (Refer for full list of available resource types in azure : https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types, some of them we are supporting for server side metrics configuration)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedResourceType {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<String>,
 }
 impl SupportedResourceType {

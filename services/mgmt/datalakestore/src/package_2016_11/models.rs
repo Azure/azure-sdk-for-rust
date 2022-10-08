@@ -131,10 +131,20 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(rename = "encryptionState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_state: Option<create_data_lake_store_account_properties::EncryptionState>,
     #[doc = "The list of firewall rules associated with this Data Lake Store account."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<CreateFirewallRuleWithAccountParameters>,
     #[doc = "The list of virtual network rules associated with this Data Lake Store account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<CreateVirtualNetworkRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this Data Lake Store account."]
     #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
@@ -143,7 +153,12 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<create_data_lake_store_account_properties::FirewallAllowAzureIps>,
     #[doc = "The list of trusted identity providers associated with this Data Lake Store account."]
-    #[serde(rename = "trustedIdProviders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedIdProviders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_id_providers: Vec<CreateTrustedIdProviderWithAccountParameters>,
     #[doc = "The current state of the trusted identity provider feature for this Data Lake Store account."]
     #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
@@ -350,7 +365,11 @@ impl DataLakeStoreAccountBasic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataLakeStoreAccountBasic>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -385,10 +404,20 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "encryptionProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_provisioning_state: Option<data_lake_store_account_properties::EncryptionProvisioningState>,
     #[doc = "The list of firewall rules associated with this Data Lake Store account."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<FirewallRule>,
     #[doc = "The list of virtual network rules associated with this Data Lake Store account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "The current state of the IP address firewall for this Data Lake Store account."]
     #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
@@ -397,7 +426,12 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<data_lake_store_account_properties::FirewallAllowAzureIps>,
     #[doc = "The list of trusted identity providers associated with this Data Lake Store account."]
-    #[serde(rename = "trustedIdProviders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedIdProviders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_id_providers: Vec<TrustedIdProvider>,
     #[doc = "The current state of the trusted identity provider feature for this Data Lake Store account."]
     #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
@@ -607,7 +641,11 @@ impl FirewallRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallRule>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -767,7 +805,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -838,7 +880,11 @@ impl TrustedIdProvider {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrustedIdProviderListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TrustedIdProvider>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -892,10 +938,20 @@ pub struct UpdateDataLakeStoreAccountProperties {
     #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<UpdateEncryptionConfig>,
     #[doc = "The list of firewall rules associated with this Data Lake Store account."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<UpdateFirewallRuleWithAccountParameters>,
     #[doc = "The list of virtual network rules associated with this Data Lake Store account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<UpdateVirtualNetworkRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this Data Lake Store account. Disabling the firewall does not remove existing rules, they will just be ignored until the firewall is re-enabled."]
     #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
@@ -904,7 +960,12 @@ pub struct UpdateDataLakeStoreAccountProperties {
     #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<update_data_lake_store_account_properties::FirewallAllowAzureIps>,
     #[doc = "The list of trusted identity providers associated with this Data Lake Store account."]
-    #[serde(rename = "trustedIdProviders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedIdProviders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_id_providers: Vec<UpdateTrustedIdProviderWithAccountParameters>,
     #[doc = "The current state of the trusted identity provider feature for this Data Lake Store account. Disabling trusted identity provider functionality does not remove the providers, they will just be ignored until this feature is re-enabled."]
     #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
@@ -1138,7 +1199,11 @@ pub mod usage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
     #[doc = "Gets or sets the list of Storage Resource Usages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResult {
@@ -1185,7 +1250,11 @@ impl VirtualNetworkRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkRuleListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkRule>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

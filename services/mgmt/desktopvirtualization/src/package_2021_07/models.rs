@@ -39,7 +39,11 @@ impl ApplicationGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGroupList {
     #[doc = "List of ApplicationGroup definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationGroup>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -174,7 +178,11 @@ pub mod application_group_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationList {
     #[doc = "List of Application definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Application>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -520,7 +528,11 @@ impl Desktop {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DesktopList {
     #[doc = "List of Desktop definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Desktop>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -603,7 +615,11 @@ impl ExpandMsixImage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpandMsixImageList {
     #[doc = "List of MSIX package properties from give MSIX Image."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpandMsixImage>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -651,7 +667,12 @@ pub struct ExpandMsixImageProperties {
     #[serde(rename = "isActive", default, skip_serializing_if = "Option::is_none")]
     pub is_active: Option<bool>,
     #[doc = "List of package dependencies. "]
-    #[serde(rename = "packageDependencies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageDependencies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_dependencies: Vec<MsixPackageDependencies>,
     #[doc = "Package Version found in the appxmanifest.xml. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -660,7 +681,12 @@ pub struct ExpandMsixImageProperties {
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "List of package applications. "]
-    #[serde(rename = "packageApplications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageApplications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_applications: Vec<MsixPackageApplications>,
 }
 impl ExpandMsixImageProperties {
@@ -688,7 +714,11 @@ impl HostPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostPoolList {
     #[doc = "List of HostPool definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HostPool>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -978,7 +1008,12 @@ pub struct HostPoolProperties {
     #[serde(rename = "vmTemplate", default, skip_serializing_if = "Option::is_none")]
     pub vm_template: Option<String>,
     #[doc = "List of applicationGroup links."]
-    #[serde(rename = "applicationGroupReferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationGroupReferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_group_references: Vec<String>,
     #[doc = "URL to customer ADFS server for signing WVD SSO certificates."]
     #[serde(rename = "ssoadfsAuthority", default, skip_serializing_if = "Option::is_none")]
@@ -1311,7 +1346,11 @@ impl MsixPackage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MsixPackageList {
     #[doc = "List of MSIX Package definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MsixPackage>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1385,7 +1424,12 @@ pub struct MsixPackageProperties {
     #[serde(rename = "isActive", default, skip_serializing_if = "Option::is_none")]
     pub is_active: Option<bool>,
     #[doc = "List of package dependencies. "]
-    #[serde(rename = "packageDependencies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageDependencies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_dependencies: Vec<MsixPackageDependencies>,
     #[doc = "Package Version found in the appxmanifest.xml. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1394,7 +1438,12 @@ pub struct MsixPackageProperties {
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "List of package applications. "]
-    #[serde(rename = "packageApplications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageApplications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_applications: Vec<MsixPackageApplications>,
 }
 impl MsixPackageProperties {
@@ -1773,7 +1822,11 @@ pub mod resource_provider_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
 }
 impl ResourceProviderOperationList {
@@ -1814,7 +1867,11 @@ impl ScalingPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScalingPlanList {
     #[doc = "List of scaling plan definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScalingPlan>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1865,10 +1922,19 @@ pub struct ScalingPlanPatchProperties {
     #[serde(rename = "exclusionTag", default, skip_serializing_if = "Option::is_none")]
     pub exclusion_tag: Option<String>,
     #[doc = "List of ScalingSchedule definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schedules: Vec<ScalingSchedule>,
     #[doc = "List of ScalingHostPoolReference definitions."]
-    #[serde(rename = "hostPoolReferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostPoolReferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub host_pool_references: Vec<ScalingHostPoolReference>,
 }
 impl ScalingPlanPatchProperties {
@@ -1941,10 +2007,19 @@ pub struct ScalingPlanProperties {
     #[serde(rename = "exclusionTag", default, skip_serializing_if = "Option::is_none")]
     pub exclusion_tag: Option<String>,
     #[doc = "List of ScalingSchedule definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schedules: Vec<ScalingSchedule>,
     #[doc = "List of ScalingHostPoolReference definitions."]
-    #[serde(rename = "hostPoolReferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostPoolReferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub host_pool_references: Vec<ScalingHostPoolReference>,
 }
 impl ScalingPlanProperties {
@@ -2002,7 +2077,12 @@ pub struct ScalingSchedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Set of days of the week on which this schedule is active."]
-    #[serde(rename = "daysOfWeek", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "daysOfWeek",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub days_of_week: Vec<String>,
     #[doc = "Starting time for ramp up period."]
     #[serde(rename = "rampUpStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2265,7 +2345,12 @@ impl SendMessage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "Specifications of the Log for Azure Monitoring"]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
 }
 impl ServiceSpecification {
@@ -2428,7 +2513,11 @@ pub mod session_host_health_check_report {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SessionHostList {
     #[doc = "List of SessionHost definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SessionHost>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2523,7 +2612,12 @@ pub struct SessionHostProperties {
     #[serde(rename = "updateErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub update_error_message: Option<String>,
     #[doc = "List of SessionHostHealthCheckReports"]
-    #[serde(rename = "sessionHostHealthCheckResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sessionHostHealthCheckResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub session_host_health_check_results: Vec<SessionHostHealthCheckReport>,
 }
 impl SessionHostProperties {
@@ -2693,7 +2787,11 @@ impl StartMenuItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartMenuItemList {
     #[doc = "List of StartMenuItem definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StartMenuItem>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2752,7 +2850,11 @@ impl UserSession {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserSessionList {
     #[doc = "List of UserSession definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UserSession>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2899,7 +3001,11 @@ impl Workspace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceList {
     #[doc = "List of Workspace definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workspace>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2941,7 +3047,12 @@ pub struct WorkspacePatchProperties {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "List of applicationGroup links."]
-    #[serde(rename = "applicationGroupReferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationGroupReferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_group_references: Vec<String>,
 }
 impl WorkspacePatchProperties {
@@ -2962,7 +3073,12 @@ pub struct WorkspaceProperties {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "List of applicationGroup resource Ids."]
-    #[serde(rename = "applicationGroupReferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationGroupReferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_group_references: Vec<String>,
     #[doc = "Is cloud pc resource."]
     #[serde(rename = "cloudPcResource", default, skip_serializing_if = "Option::is_none")]

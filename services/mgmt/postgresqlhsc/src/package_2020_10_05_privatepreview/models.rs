@@ -88,7 +88,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -120,7 +124,11 @@ impl FirewallRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
     #[doc = "The list of firewall rules in a server group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallRule>,
 }
 impl azure_core::Continuable for FirewallRuleListResult {
@@ -311,7 +319,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "Collection of available operation details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -417,7 +429,11 @@ impl Role {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleListResult {
     #[doc = "The list of roles in a server group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Role>,
 }
 impl azure_core::Continuable for RoleListResult {
@@ -463,7 +479,11 @@ impl ServerConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerConfigurationListResult {
     #[doc = "The list of server configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerConfiguration>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -599,7 +619,11 @@ impl ServerGroupConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerGroupConfigurationListResult {
     #[doc = "The list of server group configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerGroupConfiguration>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -708,7 +732,11 @@ impl ServerGroupForUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerGroupListResult {
     #[doc = "The list of server groups"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerGroup>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -783,7 +811,12 @@ pub struct ServerGroupProperties {
     #[serde(rename = "privateDnsZoneArguments", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_arguments: Option<server_group_properties::PrivateDnsZoneArguments>,
     #[doc = "The array of read replica server groups."]
-    #[serde(rename = "readReplicas", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "readReplicas",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub read_replicas: Vec<String>,
     #[doc = "The source server group id for read replica server groups."]
     #[serde(rename = "sourceServerGroup", default, skip_serializing_if = "Option::is_none")]
@@ -969,7 +1002,11 @@ impl ServerGroupServer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerGroupServerListResult {
     #[doc = "The list of servers in a server group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerGroupServer>,
 }
 impl azure_core::Continuable for ServerGroupServerListResult {
@@ -1199,7 +1236,12 @@ pub struct ServerRoleGroup {
     #[serde(rename = "serverCount", default, skip_serializing_if = "Option::is_none")]
     pub server_count: Option<i32>,
     #[doc = "The list of server names in the server role group."]
-    #[serde(rename = "serverNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serverNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub server_names: Vec<ServerNameItem>,
 }
 impl ServerRoleGroup {

@@ -85,10 +85,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -135,7 +144,11 @@ impl FluidRelayContainer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluidRelayContainerList {
     #[doc = "A sequence of FluidRelay containers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FluidRelayContainer>,
     #[doc = "A link to the next page of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -216,10 +229,20 @@ pub mod fluid_relay_container_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluidRelayEndpoints {
     #[doc = "The Fluid Relay Orderer endpoints."]
-    #[serde(rename = "ordererEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ordererEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub orderer_endpoints: Vec<String>,
     #[doc = "The Fluid Relay storage endpoints."]
-    #[serde(rename = "storageEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_endpoints: Vec<String>,
 }
 impl FluidRelayEndpoints {
@@ -441,7 +464,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of FluidRelay operations supported by the Microsoft.FluidRelay provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResult>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

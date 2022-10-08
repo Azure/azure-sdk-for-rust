@@ -58,7 +58,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -114,7 +118,11 @@ impl PrivateZone {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateZoneListResult {
     #[doc = "Information about the Private DNS zones."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateZone>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -270,7 +278,11 @@ impl RecordSet {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSetListResult {
     #[doc = "Information about the record sets in the response."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RecordSet>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -303,28 +315,58 @@ pub struct RecordSetProperties {
     #[serde(rename = "isAutoRegistered", default, skip_serializing_if = "Option::is_none")]
     pub is_auto_registered: Option<bool>,
     #[doc = "The list of A records in the record set."]
-    #[serde(rename = "aRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "aRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub a_records: Vec<ARecord>,
     #[doc = "The list of AAAA records in the record set."]
-    #[serde(rename = "aaaaRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "aaaaRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub aaaa_records: Vec<AaaaRecord>,
     #[doc = "A CNAME record."]
     #[serde(rename = "cnameRecord", default, skip_serializing_if = "Option::is_none")]
     pub cname_record: Option<CnameRecord>,
     #[doc = "The list of MX records in the record set."]
-    #[serde(rename = "mxRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "mxRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mx_records: Vec<MxRecord>,
     #[doc = "The list of PTR records in the record set."]
-    #[serde(rename = "ptrRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ptrRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ptr_records: Vec<PtrRecord>,
     #[doc = "An SOA record."]
     #[serde(rename = "soaRecord", default, skip_serializing_if = "Option::is_none")]
     pub soa_record: Option<SoaRecord>,
     #[doc = "The list of SRV records in the record set."]
-    #[serde(rename = "srvRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "srvRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub srv_records: Vec<SrvRecord>,
     #[doc = "The list of TXT records in the record set."]
-    #[serde(rename = "txtRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "txtRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub txt_records: Vec<TxtRecord>,
 }
 impl RecordSetProperties {
@@ -434,7 +476,11 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TxtRecord {
     #[doc = "The text value of this TXT record."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<String>,
 }
 impl TxtRecord {
@@ -463,7 +509,11 @@ impl VirtualNetworkLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkLinkListResult {
     #[doc = "Information about the virtual network links to the Private DNS zones."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkLink>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

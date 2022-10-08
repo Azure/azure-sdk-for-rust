@@ -129,7 +129,11 @@ pub struct AlertProcessingRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of alert processing rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AlertProcessingRule>,
 }
 impl azure_core::Continuable for AlertProcessingRulesList {
@@ -153,7 +157,11 @@ pub struct Condition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<condition::Operator>,
     #[doc = "List of values to match for a given condition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl Condition {
@@ -517,7 +525,11 @@ pub struct Schedule {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
     #[doc = "List of recurrences."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recurrences: Vec<Recurrence>,
 }
 impl Schedule {
@@ -641,7 +653,11 @@ pub struct AlertModificationProperties {
     #[serde(rename = "alertId", default, skip_serializing_if = "Option::is_none")]
     pub alert_id: Option<String>,
     #[doc = "Modification details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub modifications: Vec<AlertModificationItem>,
 }
 impl AlertModificationProperties {
@@ -674,7 +690,11 @@ pub struct AlertsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of alerts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Alert>,
 }
 impl azure_core::Continuable for AlertsList {
@@ -777,7 +797,11 @@ pub struct AlertsSummaryGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub groupedby: Option<String>,
     #[doc = "List of the items"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<AlertsSummaryGroupItem>,
 }
 impl AlertsSummaryGroup {
@@ -798,7 +822,11 @@ pub struct AlertsSummaryGroupItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub groupedby: Option<String>,
     #[doc = "List of the items"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<AlertsSummaryGroupItem>,
 }
 impl AlertsSummaryGroupItem {
@@ -845,7 +873,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponseBody>,
 }
 impl ErrorResponseBody {
@@ -1303,7 +1335,11 @@ pub struct SmartGroupModificationProperties {
     #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_id: Option<String>,
     #[doc = "Modification details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub modifications: Vec<SmartGroupModificationItem>,
     #[doc = "URL to fetch the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1336,25 +1372,59 @@ pub struct SmartGroupProperties {
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
     #[doc = "Summary of target resources in the smart group"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<SmartGroupAggregatedProperty>,
     #[doc = "Summary of target resource types in the smart group"]
-    #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_types: Vec<SmartGroupAggregatedProperty>,
     #[doc = "Summary of target resource groups in the smart group"]
-    #[serde(rename = "resourceGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_groups: Vec<SmartGroupAggregatedProperty>,
     #[doc = "Summary of monitorServices in the smart group"]
-    #[serde(rename = "monitorServices", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monitorServices",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monitor_services: Vec<SmartGroupAggregatedProperty>,
     #[doc = "Summary of monitorConditions in the smart group"]
-    #[serde(rename = "monitorConditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monitorConditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monitor_conditions: Vec<SmartGroupAggregatedProperty>,
     #[doc = "Summary of alertStates in the smart group"]
-    #[serde(rename = "alertStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "alertStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub alert_states: Vec<SmartGroupAggregatedProperty>,
     #[doc = "Summary of alertSeverities in the smart group"]
-    #[serde(rename = "alertSeverities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "alertSeverities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub alert_severities: Vec<SmartGroupAggregatedProperty>,
     #[doc = "The URI to fetch the next page of alerts. Call ListNext() with this URI to fetch the next page alerts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1457,7 +1527,11 @@ pub struct SmartGroupsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of alerts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SmartGroup>,
 }
 impl azure_core::Continuable for SmartGroupsList {

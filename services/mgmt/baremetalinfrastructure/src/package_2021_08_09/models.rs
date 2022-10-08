@@ -168,7 +168,11 @@ pub mod azure_bare_metal_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBareMetalInstancesListResult {
     #[doc = "The list of Azure BareMetal instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureBareMetalInstance>,
     #[doc = "The URL to get the next set of AzureBareMetal instances."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -234,7 +238,11 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
 }
 impl ErrorDefinition {
@@ -452,7 +460,12 @@ impl IpAddress {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
     #[doc = "Specifies the network interfaces for the AzureBareMetal instance."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<IpAddress>,
     #[doc = "Specifies the circuit id for connecting to express route."]
     #[serde(rename = "circuitId", default, skip_serializing_if = "Option::is_none")]
@@ -506,7 +519,11 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of AzureBareMetal operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationList {
@@ -557,7 +574,12 @@ pub struct StorageProfile {
     #[serde(rename = "nfsIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
     #[doc = "Specifies information about the operating system disk used by baremetal instance."]
-    #[serde(rename = "osDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "osDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub os_disks: Vec<Disk>,
 }
 impl StorageProfile {

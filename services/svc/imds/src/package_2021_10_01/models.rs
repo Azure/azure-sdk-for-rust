@@ -59,7 +59,12 @@ pub struct Compute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PlanProperties>,
     #[doc = "This is information about the SSH certificate"]
-    #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_keys: Vec<PublicKeysProperties>,
     #[doc = "This is the fault domain the VM resides in."]
     #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
@@ -101,7 +106,12 @@ pub struct Compute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<String>,
     #[doc = "This is the list of tags for your VM formatted as a JSON array for easier programmatic parsing."]
-    #[serde(rename = "tagsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tagsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags_list: Vec<TagsProperties>,
     #[doc = "The set of data specified when the VM was created for use during or after provisioning (Base64 encoded)"]
     #[serde(rename = "userData", default, skip_serializing_if = "Option::is_none")]
@@ -467,7 +477,11 @@ impl ManagedDisk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[doc = "This contains data about the network interface."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub interface: Vec<NetworkInterface>,
 }
 impl Network {
@@ -499,10 +513,19 @@ pub mod network_interface {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Ipv4 {
         #[doc = "This is the IP address"]
-        #[serde(rename = "ipAddress", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "ipAddress",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub ip_address: Vec<Ipv4Properties>,
         #[doc = "This is the subnet"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub subnet: Vec<SubnetProperties>,
     }
     impl Ipv4 {
@@ -514,7 +537,12 @@ pub mod network_interface {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Ipv6 {
         #[doc = "This is the IP address"]
-        #[serde(rename = "ipAddress", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "ipAddress",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub ip_address: Vec<Ipv6Properties>,
     }
     impl Ipv6 {
@@ -641,7 +669,12 @@ pub struct StorageProfile {
     #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
     pub os_disk: Option<OsDisk>,
     #[doc = "Data disk information"]
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_disks: Vec<DataDisk>,
     #[doc = "This contains data for the size of local temp disk of the VM, if it exists."]
     #[serde(rename = "resourceDisk", default, skip_serializing_if = "Option::is_none")]

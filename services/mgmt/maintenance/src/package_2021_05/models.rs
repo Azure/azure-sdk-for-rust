@@ -132,7 +132,11 @@ impl ErrorDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplyUpdate {
     #[doc = "The list of apply updates"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplyUpdate>,
 }
 impl azure_core::Continuable for ListApplyUpdate {
@@ -150,7 +154,11 @@ impl ListApplyUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConfigurationAssignmentsResult {
     #[doc = "The list of configuration Assignments"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfigurationAssignment>,
 }
 impl azure_core::Continuable for ListConfigurationAssignmentsResult {
@@ -168,7 +176,11 @@ impl ListConfigurationAssignmentsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListMaintenanceConfigurationsResult {
     #[doc = "The list of maintenance Configurations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MaintenanceConfiguration>,
 }
 impl azure_core::Continuable for ListMaintenanceConfigurationsResult {
@@ -186,7 +198,11 @@ impl ListMaintenanceConfigurationsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListUpdatesResult {
     #[doc = "The pending updates"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Update>,
 }
 impl azure_core::Continuable for ListUpdatesResult {
@@ -423,7 +439,11 @@ impl OperationInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[doc = "A collection of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsListResult {

@@ -34,7 +34,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -315,7 +319,11 @@ impl DomainService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainServiceListResult {
     #[doc = "the list of domain services."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DomainService>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -351,7 +359,12 @@ pub struct DomainServiceProperties {
     #[serde(rename = "syncOwner", default, skip_serializing_if = "Option::is_none")]
     pub sync_owner: Option<String>,
     #[doc = "List of ReplicaSets"]
-    #[serde(rename = "replicaSets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "replicaSets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub replica_sets: Vec<ReplicaSet>,
     #[doc = "Secure LDAP Settings"]
     #[serde(rename = "ldapsSettings", default, skip_serializing_if = "Option::is_none")]
@@ -658,7 +671,12 @@ pub struct NotificationSettings {
     #[serde(rename = "notifyDcAdmins", default, skip_serializing_if = "Option::is_none")]
     pub notify_dc_admins: Option<notification_settings::NotifyDcAdmins>,
     #[doc = "The list of additional recipients"]
-    #[serde(rename = "additionalRecipients", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalRecipients",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_recipients: Vec<String>,
 }
 impl NotificationSettings {
@@ -786,7 +804,11 @@ impl OperationEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationEntity>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -821,7 +843,11 @@ impl OuContainer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OuContainerListResult {
     #[doc = "The list of OuContainer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OuContainer>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -854,7 +880,11 @@ pub struct OuContainerProperties {
     #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
     pub container_id: Option<String>,
     #[doc = "The list of container accounts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub accounts: Vec<ContainerAccount>,
     #[doc = "Status of OuContainer instance"]
     #[serde(rename = "serviceStatus", default, skip_serializing_if = "Option::is_none")]
@@ -887,7 +917,12 @@ pub struct ReplicaSet {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[doc = "List of Domain Controller IP Address"]
-    #[serde(rename = "domainControllerIpAddress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "domainControllerIpAddress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub domain_controller_ip_address: Vec<String>,
     #[doc = "External access ip address."]
     #[serde(rename = "externalAccessIpAddress", default, skip_serializing_if = "Option::is_none")]
@@ -899,10 +934,20 @@ pub struct ReplicaSet {
     #[serde(rename = "healthLastEvaluated", default, with = "azure_core::date::rfc1123::option")]
     pub health_last_evaluated: Option<time::OffsetDateTime>,
     #[doc = "List of Domain Health Monitors"]
-    #[serde(rename = "healthMonitors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "healthMonitors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub health_monitors: Vec<HealthMonitor>,
     #[doc = "List of Domain Health Alerts"]
-    #[serde(rename = "healthAlerts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "healthAlerts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub health_alerts: Vec<HealthAlert>,
 }
 impl ReplicaSet {
@@ -941,7 +986,11 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceForestSettings {
     #[doc = "List of settings for Resource Forest"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub settings: Vec<ForestTrust>,
     #[doc = "Resource Forest"]
     #[serde(rename = "resourceForest", default, skip_serializing_if = "Option::is_none")]

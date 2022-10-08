@@ -108,7 +108,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -199,7 +203,12 @@ pub struct InputDescriptor {
     #[serde(rename = "type")]
     pub type_: input_descriptor::Type,
     #[doc = "List of possible values for the input parameter."]
-    #[serde(rename = "possibleValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "possibleValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub possible_values: Vec<InputValue>,
 }
 impl InputDescriptor {
@@ -316,7 +325,11 @@ impl OperationDisplayValue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by Microsoft.DevOps resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URL to get the next set of operations, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -367,7 +380,11 @@ impl Pipeline {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineListResult {
     #[doc = "List of pipelines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Pipeline>,
     #[doc = "URL to get the next set of Pipelines, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -431,7 +448,11 @@ pub struct PipelineTemplateDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of input parameters required by the template to create a pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<InputDescriptor>,
 }
 impl PipelineTemplateDefinition {
@@ -447,7 +468,11 @@ impl PipelineTemplateDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineTemplateDefinitionListResult {
     #[doc = "List of pipeline template definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PipelineTemplateDefinition>,
     #[doc = "The URL to get the next set of pipeline template definitions, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

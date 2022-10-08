@@ -7,7 +7,11 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AnalysisResultListResult {
     #[doc = "The list of Analysis Results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AnalysisResultSingletonResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -115,7 +119,11 @@ pub mod analysis_result_singleton_resource_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOsListResult {
     #[doc = "The list of available OSs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailableOsResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -182,7 +190,12 @@ pub struct CpuRegressionResultSingletonResourceProperties {
     #[serde(flatten)]
     pub analysis_result_singleton_resource_properties: AnalysisResultSingletonResourceProperties,
     #[doc = "The result array data."]
-    #[serde(rename = "cpuRegressionResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cpuRegressionResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cpu_regression_results: Vec<RegressionResult>,
 }
 impl CpuRegressionResultSingletonResourceProperties {
@@ -199,7 +212,12 @@ pub struct CpuUtilizationResultSingletonResourceProperties {
     #[serde(flatten)]
     pub analysis_result_singleton_resource_properties: AnalysisResultSingletonResourceProperties,
     #[doc = "The result array data."]
-    #[serde(rename = "cpuUtilizationResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cpuUtilizationResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cpu_utilization_results: Vec<UtilizationResult>,
 }
 impl CpuUtilizationResultSingletonResourceProperties {
@@ -404,7 +422,11 @@ pub mod command {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerEventListResult {
     #[doc = "The list of Test Base Customer Events."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomerEventResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -456,7 +478,12 @@ impl CustomerEventResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DistributionGroupListReceiverValue {
     #[doc = "The list of distribution groups."]
-    #[serde(rename = "distributionGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "distributionGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub distribution_groups: Vec<String>,
 }
 impl DistributionGroupListReceiverValue {
@@ -483,7 +510,11 @@ impl DownloadUrlResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailEventListResult {
     #[doc = "The list of email events."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EmailEventResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -548,7 +579,11 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
 }
 impl ErrorDefinition {
@@ -578,7 +613,11 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FavoriteProcessListResult {
     #[doc = "The list of favorite processes for a package."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FavoriteProcessResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -643,7 +682,11 @@ impl FileUploadUrlResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlightingRingListResult {
     #[doc = "The list of flighting rings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FlightingRingResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -775,7 +818,12 @@ pub struct MemoryRegressionResultSingletonResourceProperties {
     #[serde(flatten)]
     pub analysis_result_singleton_resource_properties: AnalysisResultSingletonResourceProperties,
     #[doc = "The result array data."]
-    #[serde(rename = "memoryRegressionResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "memoryRegressionResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub memory_regression_results: Vec<RegressionResult>,
 }
 impl MemoryRegressionResultSingletonResourceProperties {
@@ -792,7 +840,12 @@ pub struct MemoryUtilizationResultSingletonResourceProperties {
     #[serde(flatten)]
     pub analysis_result_singleton_resource_properties: AnalysisResultSingletonResourceProperties,
     #[doc = "The result array data."]
-    #[serde(rename = "memoryUtilizationResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "memoryUtilizationResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub memory_utilization_results: Vec<UtilizationResult>,
 }
 impl MemoryUtilizationResultSingletonResourceProperties {
@@ -840,7 +893,11 @@ impl NotificationReceiverValue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsUpdateListResult {
     #[doc = "The list of OS Updates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OsUpdateResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1002,7 +1059,12 @@ pub struct OsUpdatesTestSummary {
     #[serde(rename = "testRunTime", default, skip_serializing_if = "Option::is_none")]
     pub test_run_time: Option<String>,
     #[doc = "Detailed summary for each OS update"]
-    #[serde(rename = "osUpdateTestSummaries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "osUpdateTestSummaries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub os_update_test_summaries: Vec<OsUpdateTestSummary>,
 }
 impl OsUpdatesTestSummary {
@@ -1062,7 +1124,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Test Base resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1115,7 +1181,11 @@ impl PackageCheckNameAvailabilityParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PackageListResult {
     #[doc = "The list of Test Base Packages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PackageResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1144,7 +1214,12 @@ pub struct PackageProperties {
     #[doc = "Application version"]
     pub version: String,
     #[doc = "OOB, functional or both. Mapped to the data in 'tests' property."]
-    #[serde(rename = "testTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "testTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub test_types: Vec<TestType>,
     #[doc = "Specifies the target OSs of specific OS Update types."]
     #[serde(rename = "targetOSList")]
@@ -1165,7 +1240,12 @@ pub struct PackageProperties {
     #[serde(rename = "blobPath")]
     pub blob_path: String,
     #[doc = "The validation results. There's validation on package when it's created or updated."]
-    #[serde(rename = "validationResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "validationResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub validation_results: Vec<PackageValidationResult>,
     #[doc = "The detailed test information."]
     pub tests: Vec<Test>,
@@ -1274,7 +1354,12 @@ impl PackageResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PackageUpdateParameterProperties {
     #[doc = "Specifies the target OSs of specific OS Update types."]
-    #[serde(rename = "targetOSList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetOSList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_os_list: Vec<TargetOsInfo>,
     #[doc = "The flighting ring for feature update."]
     #[serde(rename = "flightingRing", default, skip_serializing_if = "Option::is_none")]
@@ -1286,7 +1371,11 @@ pub struct PackageUpdateParameterProperties {
     #[serde(rename = "blobPath", default, skip_serializing_if = "Option::is_none")]
     pub blob_path: Option<String>,
     #[doc = "The detailed test information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tests: Vec<Test>,
 }
 impl PackageUpdateParameterProperties {
@@ -1319,7 +1408,11 @@ pub struct PackageValidationResult {
     #[serde(rename = "isValid", default, skip_serializing_if = "Option::is_none")]
     pub is_valid: Option<bool>,
     #[doc = "Error information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<String>,
 }
 impl PackageValidationResult {
@@ -1464,7 +1557,12 @@ pub struct ReliabilityResultSingletonResourceProperties {
     #[serde(flatten)]
     pub analysis_result_singleton_resource_properties: AnalysisResultSingletonResourceProperties,
     #[doc = "The result array data."]
-    #[serde(rename = "reliabilityResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reliabilityResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reliability_results: Vec<ReliabilityResult>,
 }
 impl ReliabilityResultSingletonResourceProperties {
@@ -1523,7 +1621,12 @@ pub struct ScriptExecutionResultSingletonResourceProperties {
     #[serde(flatten)]
     pub analysis_result_singleton_resource_properties: AnalysisResultSingletonResourceProperties,
     #[doc = "The result array data."]
-    #[serde(rename = "scriptExecutionResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "scriptExecutionResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub script_execution_results: Vec<ScriptExecutionResult>,
 }
 impl ScriptExecutionResultSingletonResourceProperties {
@@ -1769,7 +1872,12 @@ pub struct TestAnalysisResult {
     #[serde(rename = "testAnalysisStatus", default, skip_serializing_if = "Option::is_none")]
     pub test_analysis_status: Option<test_analysis_result::TestAnalysisStatus>,
     #[doc = "The array of identified failures."]
-    #[serde(rename = "identifiedFailures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "identifiedFailures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub identified_failures: Vec<IdentifiedFailure>,
 }
 impl TestAnalysisResult {
@@ -1842,7 +1950,11 @@ impl TestAnalysisResultSingletonResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestBaseAccountListResult {
     #[doc = "The list of Test Base Accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestBaseAccountResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1912,10 +2024,18 @@ pub struct TestBaseAccountSku {
     #[doc = "The tier of this particular SKU."]
     pub tier: test_base_account_sku::Tier,
     #[doc = "The capabilities of a SKU."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<TestBaseAccountSkuCapability>,
     #[doc = "The locations that the SKU is available."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
 }
 impl TestBaseAccountSku {
@@ -1984,7 +2104,11 @@ impl TestBaseAccountSkuCapability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestBaseAccountSkuListResult {
     #[doc = "The list of Test Base Account SKUs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestBaseAccountSku>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2056,7 +2180,11 @@ impl TestBaseAccountUsageData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestBaseAccountUsageDataList {
     #[doc = "The list of Test Base Account usage data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestBaseAccountUsageData>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2250,7 +2378,11 @@ pub mod test_result_analysis_summary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestResultListResult {
     #[doc = "The list of Test Results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestResultResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2328,7 +2460,12 @@ pub struct TestResultProperties {
     #[serde(rename = "packageVersion", default, skip_serializing_if = "Option::is_none")]
     pub package_version: Option<String>,
     #[doc = "List of analysis summaries."]
-    #[serde(rename = "analysisSummaries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "analysisSummaries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub analysis_summaries: Vec<TestResultAnalysisSummary>,
 }
 impl TestResultProperties {
@@ -2406,7 +2543,11 @@ impl Serialize for TestStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestSummaryListResult {
     #[doc = "The list of Test Summaries."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestSummaryResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2520,7 +2661,11 @@ impl Serialize for TestType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestTypeListResult {
     #[doc = "The list of test types."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestTypeResource>,
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2594,7 +2739,12 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserObjectReceiverValue {
     #[doc = "user object ids."]
-    #[serde(rename = "userObjectIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userObjectIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_object_ids: Vec<String>,
 }
 impl UserObjectReceiverValue {
@@ -2645,7 +2795,11 @@ pub struct UtilizationResult {
     #[serde(rename = "lowerBound", default, skip_serializing_if = "Option::is_none")]
     pub lower_bound: Option<UtilizationBound>,
     #[doc = "Utilization data"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub utilization: Vec<UtilizationEntry>,
 }
 impl UtilizationResult {

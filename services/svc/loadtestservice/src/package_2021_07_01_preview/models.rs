@@ -146,7 +146,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Additional details and inner errors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponseBody>,
 }
 impl ErrorResponseBody {
@@ -178,7 +182,11 @@ impl FileUrl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrlList {
     #[doc = "List of file urls"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FileUrl>,
 }
 impl FileUrlList {
@@ -221,10 +229,20 @@ impl FileValidateResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[doc = "List of request sampler for the test run, for which client metrics can be filtered"]
-    #[serde(rename = "requestSamplerValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestSamplerValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_sampler_values: Vec<String>,
     #[doc = "List of errors occurred for the test run, for which client metrics can be filtered"]
-    #[serde(rename = "errorFiltersValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorFiltersValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_filters_values: Vec<String>,
 }
 impl Filters {
@@ -245,7 +263,12 @@ pub struct InputTestArtifacts {
     #[serde(rename = "inputArtifactsZipFileurl", default, skip_serializing_if = "Option::is_none")]
     pub input_artifacts_zip_fileurl: Option<FileUrl>,
     #[doc = "[ReadOnly]The input artifacts file { name : url } map for the test run"]
-    #[serde(rename = "additionalUrls", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalUrls",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_urls: Vec<FileUrl>,
 }
 impl InputTestArtifacts {
@@ -444,7 +467,11 @@ impl ServerMetricsModel {
 #[doc = "Supported azure resource types for app component like Microsoft.LoadTestService/loadtests, Microsoft.ClassicCompute, Microsoft.ClassicStorage etc. (Refer for full list of available resource types in azure : https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types, some of them we are supporting for server side metrics configuration)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedResourceType {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<String>,
 }
 impl SupportedResourceType {
@@ -521,7 +548,11 @@ impl TestModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestModelResourceList {
     #[doc = "List of Resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestModel>,
     #[doc = "Continuation token for list of resources in case of paginated results, if applicable"]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
@@ -613,7 +644,11 @@ impl TestRunModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunModelResourceList {
     #[doc = "List of Resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TestRunModel>,
     #[doc = "Continuation token for list of resources in case of paginated results, if applicable"]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]

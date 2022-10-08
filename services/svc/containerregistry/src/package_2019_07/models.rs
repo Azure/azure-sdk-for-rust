@@ -36,7 +36,11 @@ impl AcrErrorInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrErrors {
     #[doc = "Array of detailed error"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<AcrErrorInfo>,
 }
 impl AcrErrors {
@@ -90,7 +94,11 @@ pub struct AcrManifestAttributesBase {
     #[serde(rename = "configMediaType", default, skip_serializing_if = "Option::is_none")]
     pub config_media_type: Option<String>,
     #[doc = "List of tags"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
@@ -110,7 +118,11 @@ pub struct AcrManifests {
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
     #[doc = "List of manifests"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests: Vec<AcrManifestAttributesBase>,
 }
 impl AcrManifests {
@@ -128,7 +140,11 @@ pub struct AcrRepositoryTags {
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
     #[doc = "List of tag attribute details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<AcrTagAttributesBase>,
 }
 impl AcrRepositoryTags {
@@ -204,10 +220,20 @@ impl ChangeableAttributes {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedRepository {
     #[doc = "SHA of the deleted image"]
-    #[serde(rename = "manifestsDeleted", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "manifestsDeleted",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifests_deleted: Vec<String>,
     #[doc = "Tag of the deleted image"]
-    #[serde(rename = "tagsDeleted", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tagsDeleted",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags_deleted: Vec<String>,
 }
 impl DeletedRepository {
@@ -309,7 +335,11 @@ pub struct Manifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<V2Descriptor>,
     #[doc = "List of V2 image layer information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub layers: Vec<V2Descriptor>,
     #[doc = "CPU architecture"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -321,13 +351,26 @@ pub struct Manifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     #[doc = "List of layer information"]
-    #[serde(rename = "fsLayers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fsLayers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fs_layers: Vec<FsLayer>,
     #[doc = "Image history"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub history: Vec<History>,
     #[doc = "Image signature"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub signatures: Vec<ImageSignature>,
 }
 impl Manifest {
@@ -339,7 +382,11 @@ impl Manifest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestAttributesManifest {
     #[doc = "List of manifest attributes details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub references: Vec<ManifestAttributesManifestReferences>,
     #[doc = "Quarantine tag name"]
     #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
@@ -410,7 +457,11 @@ impl RefreshToken {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Repositories {
     #[doc = "Repository names"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub repositories: Vec<String>,
 }
 impl Repositories {
@@ -454,7 +505,11 @@ pub struct RepositoryTags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "List of tags"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
 }
 impl RepositoryTags {

@@ -120,7 +120,12 @@ pub mod available_operation_display_property_service_specification_metrics_item 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperationDisplayPropertyServiceSpecificationMetricsList {
     #[doc = "Metric specifications of operation"]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<AvailableOperationDisplayPropertyServiceSpecificationMetricsItem>,
 }
 impl AvailableOperationDisplayPropertyServiceSpecificationMetricsList {
@@ -135,7 +140,11 @@ pub struct AvailableOperationsListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Returns a list of available operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailableOperation>,
 }
 impl azure_core::Continuable for AvailableOperationsListResponse {
@@ -174,7 +183,11 @@ pub struct CsrpErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[doc = "Error's details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CsrpErrorBody>,
     #[doc = "Error's message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -255,7 +268,11 @@ pub mod customization_ip_address {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomizationIpSettings {
     #[doc = "The list of gateways"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub gateway: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<CustomizationIpAddress>,
@@ -333,7 +350,11 @@ pub struct CustomizationPoliciesListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of the customization policies"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomizationPolicy>,
 }
 impl azure_core::Continuable for CustomizationPoliciesListResponse {
@@ -411,7 +432,12 @@ pub struct CustomizationSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<CustomizationIdentity>,
     #[doc = "Network interface settings"]
-    #[serde(rename = "nicSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nicSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nic_settings: Vec<CustomizationNicSetting>,
 }
 impl CustomizationSpecification {
@@ -463,7 +489,11 @@ pub struct DedicatedCloudNodeListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the DedicatedCloudNode list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DedicatedCloudNode>,
 }
 impl azure_core::Continuable for DedicatedCloudNodeListResponse {
@@ -594,7 +624,11 @@ pub struct DedicatedCloudServiceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the DedicatedCloudService list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DedicatedCloudService>,
 }
 impl azure_core::Continuable for DedicatedCloudServiceListResponse {
@@ -653,7 +687,12 @@ pub mod dedicated_cloud_service_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestOsCustomization {
     #[doc = "List of dns servers to use"]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<Ipv4Address>,
     #[doc = "Virtual Machine hostname"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
@@ -680,10 +719,19 @@ pub struct GuestOsnicCustomization {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub allocation: Option<guest_osnic_customization::Allocation>,
     #[doc = "List of dns servers to use"]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<Ipv4Address>,
     #[doc = "Gateway addresses assigned to nic"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub gateway: Vec<Ipv4Address>,
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<Ipv4Address>,
@@ -805,7 +853,11 @@ pub struct PrivateCloudList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "the list of private clouds"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateCloud>,
 }
 impl azure_core::Continuable for PrivateCloudList {
@@ -838,7 +890,12 @@ pub struct PrivateCloudProperties {
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "Array of DNS servers"]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
     #[doc = "Expiration date of PC"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -856,7 +913,12 @@ pub struct PrivateCloudProperties {
     #[serde(rename = "privateCloudId", default, skip_serializing_if = "Option::is_none")]
     pub private_cloud_id: Option<String>,
     #[doc = "The list of Resource Pools"]
-    #[serde(rename = "resourcePools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourcePools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_pools: Vec<ResourcePool>,
     #[doc = "Private Cloud state, e.g. \"operational\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -886,10 +948,20 @@ pub struct PrivateCloudProperties {
     #[serde(rename = "vcenterRefid", default, skip_serializing_if = "Option::is_none")]
     pub vcenter_refid: Option<String>,
     #[doc = "The list of Virtual Machine Templates"]
-    #[serde(rename = "virtualMachineTemplates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualMachineTemplates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_machine_templates: Vec<VirtualMachineTemplate>,
     #[doc = "The list of Virtual Networks"]
-    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_networks: Vec<VirtualNetwork>,
     #[doc = "Is Vrops enabled/disabled"]
     #[serde(rename = "vrOpsEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -952,7 +1024,11 @@ pub struct ResourcePoolsListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the Resource pools list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourcePool>,
 }
 impl azure_core::Continuable for ResourcePoolsListResponse {
@@ -1043,7 +1119,11 @@ pub struct SkuAvailabilityListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the DedicatedPlacementGroupSkuAvailability list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuAvailability>,
 }
 impl azure_core::Continuable for SkuAvailabilityListResponse {
@@ -1123,7 +1203,11 @@ pub struct UsageListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of usages"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResponse {
@@ -1256,7 +1340,11 @@ pub struct VirtualMachineListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the VirtualMachine list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualMachine>,
 }
 impl azure_core::Continuable for VirtualMachineListResponse {
@@ -1277,13 +1365,21 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "amountOfRam")]
     pub amount_of_ram: i64,
     #[doc = "The list of Virtual Disks' Controllers"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub controllers: Vec<VirtualDiskController>,
     #[doc = "Guest OS Customization properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub customization: Option<GuestOsCustomization>,
     #[doc = "The list of Virtual Disks"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<VirtualDisk>,
     #[doc = "The DNS name of Virtual Machine in VCenter"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1301,7 +1397,11 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "guestOSType", default, skip_serializing_if = "Option::is_none")]
     pub guest_os_type: Option<virtual_machine_properties::GuestOsType>,
     #[doc = "The list of Virtual NICs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nics: Vec<VirtualNic>,
     #[doc = "The number of CPU cores"]
     #[serde(rename = "numberOfCores")]
@@ -1331,7 +1431,12 @@ pub struct VirtualMachineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[doc = "The list of Virtual VSphere Networks"]
-    #[serde(rename = "vSphereNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vSphereNetworks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub v_sphere_networks: Vec<String>,
     #[doc = "The internal id of Virtual Machine in VCenter"]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
@@ -1455,7 +1560,11 @@ pub struct VirtualMachineTemplateListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the VM template list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualMachineTemplate>,
 }
 impl azure_core::Continuable for VirtualMachineTemplateListResponse {
@@ -1476,13 +1585,21 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "amountOfRam", default, skip_serializing_if = "Option::is_none")]
     pub amount_of_ram: Option<i64>,
     #[doc = "The list of Virtual Disk Controllers"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub controllers: Vec<VirtualDiskController>,
     #[doc = "The description of Virtual Machine Template"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The list of Virtual Disks"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<VirtualDisk>,
     #[doc = "Expose Guest OS or not"]
     #[serde(rename = "exposeToGuestVM", default, skip_serializing_if = "Option::is_none")]
@@ -1494,7 +1611,11 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "guestOSType", default, skip_serializing_if = "Option::is_none")]
     pub guest_os_type: Option<String>,
     #[doc = "The list of Virtual NICs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nics: Vec<VirtualNic>,
     #[doc = "The number of CPU cores"]
     #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
@@ -1506,10 +1627,20 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "privateCloudId")]
     pub private_cloud_id: String,
     #[doc = "The list of VSphere networks"]
-    #[serde(rename = "vSphereNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vSphereNetworks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub v_sphere_networks: Vec<String>,
     #[doc = "The tags from VSphere"]
-    #[serde(rename = "vSphereTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vSphereTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub v_sphere_tags: Vec<String>,
     #[doc = "The VMware tools version"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1575,7 +1706,11 @@ pub struct VirtualNetworkListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Results of the VirtualNetwork list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetwork>,
 }
 impl azure_core::Continuable for VirtualNetworkListResponse {
@@ -1608,7 +1743,12 @@ pub struct VirtualNic {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub customization: Option<GuestOsnicCustomization>,
     #[doc = "NIC ip address"]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "NIC MAC address"]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]

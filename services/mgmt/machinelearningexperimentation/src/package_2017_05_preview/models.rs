@@ -24,7 +24,11 @@ impl Account {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountListResult {
     #[doc = "The list of machine learning team accounts. Since this list may be incomplete, the nextLink field should be used to request the next list of machine learning team accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Account>,
     #[doc = "The URI that can be used to request the next list of machine learning team accounts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -201,7 +205,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of AML team account operations supported by the AML team account resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -236,7 +244,11 @@ impl Project {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectListResult {
     #[doc = "The list of projects. Since this list may be incomplete, the nextLink field should be used to request the next list of projects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Project>,
     #[doc = "The URI that can be used to request the next list of projects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -408,7 +420,11 @@ impl Workspace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
     #[doc = "The list of machine learning team account workspaces. Since this list may be incomplete, the nextLink field should be used to request the next list of machine learning team accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workspace>,
     #[doc = "The URI that can be used to request the next list of machine learning workspaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
