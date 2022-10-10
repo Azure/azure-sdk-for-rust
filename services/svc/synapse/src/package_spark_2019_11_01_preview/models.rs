@@ -39,7 +39,7 @@ pub struct SparkBatchJob {
     #[serde(
         rename = "errorInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_info: Vec<SparkServiceError>,
@@ -60,7 +60,7 @@ pub struct SparkBatchJob {
     #[doc = "The log lines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log: Vec<String>,
@@ -180,7 +180,7 @@ pub struct SparkBatchJobCollection {
     #[doc = "Batch list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sessions: Vec<SparkBatchJob>,
@@ -206,32 +206,32 @@ pub struct SparkBatchJobOptions {
     pub class_name: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub args: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub jars: Vec<String>,
     #[serde(
         rename = "pyFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub py_files: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub archives: Vec<String>,
@@ -314,32 +314,32 @@ pub struct SparkRequest {
     pub class_name: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub args: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub jars: Vec<String>,
     #[serde(
         rename = "pyFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub py_files: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub archives: Vec<String>,
@@ -573,7 +573,7 @@ pub struct SparkSession {
     #[serde(
         rename = "errorInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_info: Vec<SparkServiceError>,
@@ -588,7 +588,7 @@ pub struct SparkSession {
     pub state: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log: Vec<String>,
@@ -702,7 +702,7 @@ pub struct SparkSessionCollection {
     pub total: i32,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sessions: Vec<SparkSession>,
@@ -729,32 +729,32 @@ pub struct SparkSessionOptions {
     pub class_name: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub args: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub jars: Vec<String>,
     #[serde(
         rename = "pyFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub py_files: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub archives: Vec<String>,
@@ -859,7 +859,7 @@ pub struct SparkStatementCollection {
     pub total_statements: i32,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub statements: Vec<SparkStatement>,
@@ -944,7 +944,7 @@ pub struct SparkStatementOutput {
     pub evalue: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub traceback: Vec<String>,

@@ -33,7 +33,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -41,7 +41,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -200,7 +200,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -292,7 +292,7 @@ pub struct ActionStatus {
     #[doc = "The array of targets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub targets: Vec<ExperimentExecutionActionTargetDetailsProperties>,
@@ -330,7 +330,7 @@ pub struct BranchStatus {
     #[doc = "The array of actions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<ActionStatus>,
@@ -363,7 +363,7 @@ pub struct CapabilityListResult {
     #[doc = "List of Capability resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Capability>,
@@ -432,7 +432,7 @@ pub struct CapabilityTypeListResult {
     #[doc = "List of Capability Type resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CapabilityType>,
@@ -583,7 +583,7 @@ pub struct ExperimentExecutionDetailsListResult {
     #[doc = "List of Experiment execution details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ExperimentExecutionDetails>,
@@ -643,7 +643,7 @@ pub mod experiment_execution_details_properties {
         #[doc = "The steps of the experiment run."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub steps: Vec<StepStatus>,
@@ -660,7 +660,7 @@ pub struct ExperimentListResult {
     #[doc = "List of Experiment resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Experiment>,
@@ -741,7 +741,7 @@ pub struct ExperimentStatusListResult {
     #[doc = "List of Experiment statuses."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ExperimentStatus>,
@@ -864,7 +864,7 @@ pub struct StepStatus {
     #[doc = "The array of branches."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub branches: Vec<BranchStatus>,
@@ -1016,7 +1016,7 @@ pub struct TargetListResult {
     #[doc = "List of Target resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Target>,
@@ -1095,7 +1095,7 @@ pub struct TargetTypeListResult {
     #[doc = "List of Target Type resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TargetType>,
@@ -1130,7 +1130,7 @@ pub struct TargetTypeProperties {
     #[serde(
         rename = "resourceTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_types: Vec<String>,

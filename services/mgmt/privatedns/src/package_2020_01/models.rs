@@ -60,7 +60,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -120,7 +120,7 @@ pub struct PrivateZoneListResult {
     #[doc = "Information about the Private DNS zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateZone>,
@@ -283,7 +283,7 @@ pub struct RecordSetListResult {
     #[doc = "Information about the record sets in the response."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecordSet>,
@@ -321,7 +321,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "aRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub a_records: Vec<ARecord>,
@@ -329,7 +329,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "aaaaRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aaaa_records: Vec<AaaaRecord>,
@@ -340,7 +340,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "mxRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mx_records: Vec<MxRecord>,
@@ -348,7 +348,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "ptrRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ptr_records: Vec<PtrRecord>,
@@ -359,7 +359,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "srvRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub srv_records: Vec<SrvRecord>,
@@ -367,7 +367,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "txtRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub txt_records: Vec<TxtRecord>,
@@ -481,7 +481,7 @@ pub struct TxtRecord {
     #[doc = "The text value of this TXT record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -514,7 +514,7 @@ pub struct VirtualNetworkLinkListResult {
     #[doc = "Information about the virtual network links to the Private DNS zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworkLink>,

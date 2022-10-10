@@ -63,7 +63,7 @@ pub struct CreateJobParameters {
     #[serde(
         rename = "logFilePatterns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_file_patterns: Vec<String>,
@@ -213,7 +213,7 @@ pub struct JobDataPath {
     #[doc = "the list of paths to all of the job data."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub paths: Vec<String>,
@@ -293,7 +293,7 @@ pub struct JobInfoListResult {
     #[doc = "the list of JobInfo items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobInformationBasic>,
@@ -321,7 +321,7 @@ pub struct JobInformation {
     #[serde(
         rename = "errorMessage",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_message: Vec<JobErrorDetails>,
@@ -329,7 +329,7 @@ pub struct JobInformation {
     #[serde(
         rename = "stateAuditRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub state_audit_records: Vec<JobStateAuditRecord>,
@@ -391,7 +391,7 @@ pub struct JobInformationBasic {
     #[serde(
         rename = "logFilePatterns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_file_patterns: Vec<String>,
@@ -549,14 +549,14 @@ pub struct JobPipelineInformation {
     #[doc = "the list of run identifiers representing each run of this pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub runs: Vec<JobPipelineRunInformation>,
     #[doc = "the list of recurrence identifiers representing each recurrence in this pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recurrences: Vec<String>,
@@ -572,7 +572,7 @@ pub struct JobPipelineInformationListResult {
     #[doc = "the list of job pipeline information items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobPipelineInformation>,
@@ -669,7 +669,7 @@ pub struct JobRecurrenceInformationListResult {
     #[doc = "the list of job recurrence information items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobRecurrenceInformation>,
@@ -786,7 +786,7 @@ pub struct JobStatistics {
     #[doc = "the list of stages for the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub stages: Vec<JobStatisticsVertexStage>,
@@ -873,7 +873,7 @@ pub struct USqlJobProperties {
     #[doc = "the list of resources that are required by the job"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<JobResource>,
@@ -886,7 +886,7 @@ pub struct USqlJobProperties {
     #[doc = "the diagnostics for the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub diagnostics: Vec<Diagnostics>,

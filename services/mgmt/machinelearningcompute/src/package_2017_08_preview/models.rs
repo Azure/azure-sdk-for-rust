@@ -19,7 +19,7 @@ pub struct AcsClusterProperties {
     #[serde(
         rename = "systemServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub system_services: Vec<SystemService>,
@@ -367,7 +367,7 @@ pub struct AvailableOperations {
     #[doc = "An array of available operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceOperation>,
@@ -503,7 +503,7 @@ pub struct ErrorResponse {
     #[doc = "An array of error detail objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -625,7 +625,7 @@ pub struct OperationalizationClusterProperties {
     #[serde(
         rename = "provisioningErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provisioning_errors: Vec<ErrorResponseWrapper>,
@@ -771,7 +771,7 @@ pub struct PaginatedOperationalizationClustersList {
     #[doc = "An array of cluster objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationalizationCluster>,

@@ -120,7 +120,7 @@ pub struct DataPartitionsList {
     #[serde(
         rename = "dataPartitionNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_partition_names: Vec<DataPartitionNames>,
@@ -137,7 +137,7 @@ pub struct DataPartitionsListResult {
     #[serde(
         rename = "dataPartitionInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_partition_info: Vec<DataPartitionProperties>,
@@ -190,7 +190,7 @@ pub struct EnergyServiceList {
     #[doc = "The list of oep resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EnergyService>,
@@ -217,7 +217,7 @@ pub struct EnergyServiceProperties {
     #[serde(
         rename = "dataPartitionNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_partition_names: Vec<DataPartitionNames>,
@@ -306,7 +306,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -314,7 +314,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -473,7 +473,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

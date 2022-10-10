@@ -86,7 +86,7 @@ pub struct AwsOrganizationalDataMaster {
     #[serde(
         rename = "excludedAccountIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_account_ids: Vec<String>,
@@ -162,7 +162,7 @@ pub struct CloudErrorBody {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -170,7 +170,7 @@ pub struct CloudErrorBody {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -341,7 +341,7 @@ pub struct GcpOrganizationalDataOrganization {
     #[serde(
         rename = "excludedProjectNumbers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_project_numbers: Vec<String>,
@@ -469,7 +469,7 @@ pub struct OperationList {
     #[doc = "List of Security operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -535,7 +535,7 @@ pub struct SecurityConnectorProperties {
     #[doc = "A collection of offerings for the security connector."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub offerings: Vec<CloudOffering>,

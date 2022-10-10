@@ -7,7 +7,7 @@ use std::str::FromStr;
 pub struct AppliedReservationList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -121,7 +121,7 @@ pub struct AvailableScopeRequestProperties {
     #[doc = "Scopes to be checked for availability"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<String>,
@@ -174,7 +174,7 @@ pub struct CalculatePriceResponseProperties {
     #[serde(
         rename = "paymentSchedule",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub payment_schedule: Vec<PaymentDetail>,
@@ -230,26 +230,26 @@ pub struct Catalog {
     #[doc = "Available reservation terms for this resource"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub terms: Vec<ReservationTerm>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
     #[serde(
         rename = "skuProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sku_properties: Vec<SkuProperty>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<SkuRestriction>,
@@ -517,7 +517,7 @@ pub struct MergeProperties {
     #[doc = "Format of the resource id should be /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sources: Vec<String>,
@@ -571,7 +571,7 @@ impl OperationDisplay {
 pub struct OperationList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResponse>,
@@ -901,7 +901,7 @@ impl Serialize for ReservationBillingPlan {
 pub struct ReservationList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReservationResponse>,
@@ -929,7 +929,7 @@ pub struct ReservationMergeProperties {
     #[serde(
         rename = "mergeSources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub merge_sources: Vec<String>,
@@ -952,7 +952,7 @@ pub struct ReservationOrderBillingPlanInformation {
     pub next_payment_due_date: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transactions: Vec<PaymentDetail>,
@@ -966,7 +966,7 @@ impl ReservationOrderBillingPlanInformation {
 pub struct ReservationOrderList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReservationOrderResponse>,
@@ -1019,7 +1019,7 @@ pub struct ReservationOrderProperties {
     pub plan_information: Option<ReservationOrderBillingPlanInformation>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reservations: Vec<ReservationResponse>,
@@ -1163,7 +1163,7 @@ pub struct ReservationSplitProperties {
     #[serde(
         rename = "splitDestinations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub split_destinations: Vec<String>,
@@ -1398,7 +1398,7 @@ pub struct SkuRestriction {
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -1416,7 +1416,7 @@ pub struct SplitProperties {
     #[doc = "List of the quantities in the new reservations to create."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub quantities: Vec<i64>,
@@ -1443,7 +1443,7 @@ impl SplitRequest {
 pub struct SubscriptionScopeProperties {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<ScopeProperties>,

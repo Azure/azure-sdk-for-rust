@@ -61,7 +61,7 @@ pub struct AgentPoolAvailableVersionsProperties {
     #[serde(
         rename = "agentPoolVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub agent_pool_versions: Vec<serde_json::Value>,
@@ -77,7 +77,7 @@ pub struct AgentPoolListResult {
     #[doc = "The list of agent pools."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AgentPool>,
@@ -207,7 +207,7 @@ pub struct AgentPoolUpgradeProfileProperties {
     #[doc = "List of orchestrator types and versions available for upgrade."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub upgrades: Vec<serde_json::Value>,
@@ -286,7 +286,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -440,7 +440,7 @@ pub struct ContainerServiceNetworkProfile {
     #[serde(
         rename = "podCidrs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pod_cidrs: Vec<String>,
@@ -448,7 +448,7 @@ pub struct ContainerServiceNetworkProfile {
     #[serde(
         rename = "serviceCidrs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_cidrs: Vec<String>,
@@ -456,7 +456,7 @@ pub struct ContainerServiceNetworkProfile {
     #[serde(
         rename = "ipFamilies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_families: Vec<String>,
@@ -1187,7 +1187,7 @@ pub struct CredentialResults {
     #[doc = "Base64-encoded Kubernetes configuration file."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub kubeconfigs: Vec<CredentialResult>,
@@ -1207,7 +1207,7 @@ pub struct EndpointDependency {
     #[serde(
         rename = "endpointDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoint_details: Vec<EndpointDetail>,
@@ -1362,7 +1362,7 @@ pub struct KubeletConfig {
     #[serde(
         rename = "allowedUnsafeSysctls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_unsafe_sysctls: Vec<String>,
@@ -1505,7 +1505,7 @@ pub struct MaintenanceConfigurationListResult {
     #[doc = "The list of maintenance configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MaintenanceConfiguration>,
@@ -1531,7 +1531,7 @@ pub struct MaintenanceConfigurationProperties {
     #[serde(
         rename = "timeInWeek",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub time_in_week: Vec<TimeInWeek>,
@@ -1539,7 +1539,7 @@ pub struct MaintenanceConfigurationProperties {
     #[serde(
         rename = "notAllowedTime",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub not_allowed_time: Vec<TimeSpan>,
@@ -1591,7 +1591,7 @@ pub struct ManagedClusterAadProfile {
     #[serde(
         rename = "adminGroupObjectIDs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub admin_group_object_i_ds: Vec<String>,
@@ -1620,7 +1620,7 @@ pub struct ManagedClusterApiServerAccessProfile {
     #[serde(
         rename = "authorizedIPRanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorized_ip_ranges: Vec<String>,
@@ -1781,7 +1781,7 @@ pub struct ManagedClusterAgentPoolProfileProperties {
     #[serde(
         rename = "availabilityZones",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availability_zones: Vec<String>,
@@ -1813,7 +1813,7 @@ pub struct ManagedClusterAgentPoolProfileProperties {
     #[serde(
         rename = "nodeTaints",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub node_taints: Vec<String>,
@@ -1929,7 +1929,7 @@ pub struct ManagedClusterHttpProxyConfig {
     #[serde(
         rename = "noProxy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub no_proxy: Vec<String>,
@@ -1937,7 +1937,7 @@ pub struct ManagedClusterHttpProxyConfig {
     #[serde(
         rename = "effectiveNoProxy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub effective_no_proxy: Vec<String>,
@@ -2014,7 +2014,7 @@ pub struct ManagedClusterListResult {
     #[doc = "The list of managed clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ManagedCluster>,
@@ -2049,7 +2049,7 @@ pub struct ManagedClusterLoadBalancerProfile {
     #[serde(
         rename = "effectiveOutboundIPs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub effective_outbound_i_ps: Vec<ResourceReference>,
@@ -2092,7 +2092,7 @@ pub mod managed_cluster_load_balancer_profile {
         #[serde(
             rename = "publicIPPrefixes",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub public_ip_prefixes: Vec<ResourceReference>,
@@ -2109,7 +2109,7 @@ pub mod managed_cluster_load_balancer_profile {
         #[serde(
             rename = "publicIPs",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub public_i_ps: Vec<ResourceReference>,
@@ -2142,7 +2142,7 @@ pub struct ManagedClusterNatGatewayProfile {
     #[serde(
         rename = "effectiveOutboundIPs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub effective_outbound_i_ps: Vec<ResourceReference>,
@@ -2288,7 +2288,7 @@ pub struct ManagedClusterPodIdentityProfile {
     #[serde(
         rename = "userAssignedIdentities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_assigned_identities: Vec<ManagedClusterPodIdentity>,
@@ -2296,7 +2296,7 @@ pub struct ManagedClusterPodIdentityProfile {
     #[serde(
         rename = "userAssignedIdentityExceptions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_assigned_identity_exceptions: Vec<ManagedClusterPodIdentityException>,
@@ -2333,7 +2333,7 @@ pub struct ManagedClusterPodIdentityProvisioningErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ManagedClusterPodIdentityProvisioningErrorBody>,
@@ -2358,7 +2358,7 @@ pub struct ManagedClusterPoolUpgradeProfile {
     #[doc = "List of orchestrator types and versions available for upgrade."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub upgrades: Vec<serde_json::Value>,
@@ -2413,7 +2413,7 @@ pub struct ManagedClusterProperties {
     #[serde(
         rename = "agentPoolProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub agent_pool_profiles: Vec<ManagedClusterAgentPoolProfile>,
@@ -2472,7 +2472,7 @@ pub struct ManagedClusterProperties {
     #[serde(
         rename = "privateLinkResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_link_resources: Vec<PrivateLinkResource>,
@@ -2842,7 +2842,7 @@ pub struct ManagedClusterSnapshotListResult {
     #[doc = "The list of managed cluster snapshots."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ManagedClusterSnapshot>,
@@ -3419,7 +3419,7 @@ pub struct OperationListResult {
     #[doc = "The list of operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationValue>,
@@ -3483,7 +3483,7 @@ pub struct OutboundEnvironmentEndpoint {
     #[doc = "The endpoints that AKS agent nodes connect to"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<EndpointDependency>,
@@ -3604,7 +3604,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -3699,7 +3699,7 @@ pub struct PrivateLinkResource {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -3718,7 +3718,7 @@ pub struct PrivateLinkResourcesListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -4001,7 +4001,7 @@ pub struct SnapshotListResult {
     #[doc = "The list of snapshots."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Snapshot>,
@@ -4229,7 +4229,7 @@ pub struct TimeInWeek {
     #[serde(
         rename = "hourSlots",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hour_slots: Vec<HourInDay>,
@@ -4286,7 +4286,7 @@ pub struct TrustedAccessRole {
     #[doc = "List of rules for the role. This maps to 'rules' property of [Kubernetes Cluster Role](https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/cluster-role-v1/#ClusterRole)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rules: Vec<TrustedAccessRoleRule>,
@@ -4318,7 +4318,7 @@ pub struct TrustedAccessRoleBindingListResult {
     #[doc = "Role binding list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TrustedAccessRoleBinding>,
@@ -4408,7 +4408,7 @@ pub struct TrustedAccessRoleListResult {
     #[doc = "Role list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TrustedAccessRole>,
@@ -4433,7 +4433,7 @@ pub struct TrustedAccessRoleRule {
     #[doc = "List of allowed verbs"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub verbs: Vec<String>,
@@ -4441,14 +4441,14 @@ pub struct TrustedAccessRoleRule {
     #[serde(
         rename = "apiGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub api_groups: Vec<String>,
     #[doc = "List of allowed resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<String>,
@@ -4456,7 +4456,7 @@ pub struct TrustedAccessRoleRule {
     #[serde(
         rename = "resourceNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_names: Vec<String>,
@@ -4464,7 +4464,7 @@ pub struct TrustedAccessRoleRule {
     #[serde(
         rename = "nonResourceURLs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub non_resource_ur_ls: Vec<String>,

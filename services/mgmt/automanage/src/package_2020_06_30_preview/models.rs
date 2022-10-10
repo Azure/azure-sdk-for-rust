@@ -53,7 +53,7 @@ pub struct AccountList {
     #[doc = "Result of the list Account operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Account>,
@@ -157,7 +157,7 @@ pub struct ConfigurationProfileAssignmentList {
     #[doc = "Result of the list configuration profile assignment operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfigurationProfileAssignment>,
@@ -449,7 +449,7 @@ pub struct ConfigurationProfilePreferenceList {
     #[doc = "Result of the list ConfigurationProfilePreference operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfigurationProfilePreference>,
@@ -545,7 +545,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -553,7 +553,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -644,7 +644,7 @@ pub struct OperationList {
     #[doc = "List of Automanage operations supported by the Automanage resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

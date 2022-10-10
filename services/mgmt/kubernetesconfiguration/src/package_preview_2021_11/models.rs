@@ -193,7 +193,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -201,7 +201,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -281,7 +281,7 @@ pub mod extension {
         #[doc = "Status from this extension."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub statuses: Vec<ExtensionStatus>,
@@ -427,7 +427,7 @@ pub struct ExtensionTypeList {
     #[doc = "The list of Extension Types"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ExtensionType>,
@@ -453,7 +453,7 @@ pub struct ExtensionTypeProperties {
     #[serde(
         rename = "releaseTrains",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub release_trains: Vec<String>,
@@ -486,7 +486,7 @@ pub struct ExtensionVersionList {
     #[doc = "Versions available for this Extension Type"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub versions: Vec<serde_json::Value>,
@@ -514,7 +514,7 @@ pub struct ExtensionsList {
     #[doc = "List of Extensions within a Kubernetes cluster."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Extension>,
@@ -628,7 +628,7 @@ pub mod flux_configuration {
         #[doc = "Statuses of the Flux Kubernetes resources created by the fluxConfiguration or created by the managed objects provisioned by the fluxConfiguration."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub statuses: Vec<ObjectStatusDefinition>,
@@ -702,7 +702,7 @@ pub struct FluxConfigurationsList {
     #[doc = "List of Flux Configurations within a Kubernetes cluster."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FluxConfiguration>,
@@ -828,7 +828,7 @@ pub struct KustomizationDefinition {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<DependsOnDefinition>,
@@ -964,7 +964,7 @@ pub struct ObjectStatusDefinition {
     #[serde(
         rename = "statusConditions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub status_conditions: Vec<ObjectStatusConditionDefinition>,
@@ -982,7 +982,7 @@ pub struct OperationStatusList {
     #[doc = "List of async operations in progress, in the cluster."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationStatusResult>,
@@ -1255,7 +1255,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,
@@ -1477,7 +1477,7 @@ pub struct SourceControlConfigurationList {
     #[doc = "List of Source Control Configurations within a Kubernetes cluster."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SourceControlConfiguration>,

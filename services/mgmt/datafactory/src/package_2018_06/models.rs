@@ -36,7 +36,7 @@ pub struct Activity {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<ActivityDependency>,
@@ -44,7 +44,7 @@ pub struct Activity {
     #[serde(
         rename = "userProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_properties: Vec<UserProperty>,
@@ -1571,7 +1571,7 @@ pub struct AzureBlobFsSink {
     #[doc = "Specify the custom metadata to be added to sink data. Type: array of objects (or Expression with resultType array of objects)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metadata: Vec<MetadataItem>,
@@ -4267,7 +4267,7 @@ pub struct BlobSink {
     #[doc = "Specify the custom metadata to be added to sink data. Type: array of objects (or Expression with resultType array of objects)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metadata: Vec<MetadataItem>,
@@ -4600,7 +4600,7 @@ pub struct CloudErrorBody {
     #[doc = "Array with additional error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudError>,
@@ -5064,14 +5064,14 @@ pub struct CopyActivity {
     #[doc = "List of inputs for the activity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inputs: Vec<DatasetReference>,
     #[doc = "List of outputs for the activity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<DatasetReference>,
@@ -5139,14 +5139,14 @@ pub struct CopyActivityTypeProperties {
     #[serde(
         rename = "preserveRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub preserve_rules: Vec<serde_json::Value>,
     #[doc = "Preserve rules."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub preserve: Vec<serde_json::Value>,
@@ -5779,7 +5779,7 @@ pub struct Credential {
     #[doc = "List of tags that can be used for describing the Credential."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -5886,14 +5886,14 @@ pub struct CustomActivityReferenceObject {
     #[serde(
         rename = "linkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub linked_services: Vec<LinkedServiceReference>,
     #[doc = "Dataset references."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datasets: Vec<DatasetReference>,
@@ -6052,7 +6052,7 @@ pub struct DwCopyCommandSettings {
     #[serde(
         rename = "defaultValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub default_values: Vec<DwCopyCommandDefaultValue>,
@@ -6077,7 +6077,7 @@ pub struct DataFlow {
     #[doc = "List of tags that can be used for describing the data flow."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -6122,7 +6122,7 @@ pub struct DataFlowDebugCommandPayload {
     #[doc = "Array of column names."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub columns: Vec<String>,
@@ -6231,14 +6231,14 @@ pub struct DataFlowDebugPackage {
     #[serde(
         rename = "dataFlows",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_flows: Vec<DataFlowDebugResource>,
     #[doc = "List of datasets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datasets: Vec<DatasetDebugResource>,
@@ -6246,7 +6246,7 @@ pub struct DataFlowDebugPackage {
     #[serde(
         rename = "linkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub linked_services: Vec<LinkedServiceDebugResource>,
@@ -6271,7 +6271,7 @@ pub mod data_flow_debug_package {
         #[serde(
             rename = "sourceSettings",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub source_settings: Vec<DataFlowSourceSetting>,
@@ -6616,7 +6616,7 @@ pub struct DatabricksNotebookActivityTypeProperties {
     #[doc = "A list of libraries to be installed on the cluster that will execute the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub libraries: Vec<serde_json::Value>,
@@ -6656,14 +6656,14 @@ pub struct DatabricksSparkJarActivityTypeProperties {
     #[doc = "Parameters that will be passed to the main method."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<serde_json::Value>,
     #[doc = "A list of libraries to be installed on the cluster that will execute the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub libraries: Vec<serde_json::Value>,
@@ -6703,14 +6703,14 @@ pub struct DatabricksSparkPythonActivityTypeProperties {
     #[doc = "Command line parameters that will be passed to the Python file."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<serde_json::Value>,
     #[doc = "A list of libraries to be installed on the cluster that will execute the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub libraries: Vec<serde_json::Value>,
@@ -6748,7 +6748,7 @@ pub struct Dataset {
     #[doc = "List of tags that can be used for describing the Dataset."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -8503,7 +8503,7 @@ pub struct ExecutePowerQueryActivityTypeProperties {
     #[doc = "List of mapping for Power Query mashup query to sink dataset(s)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub queries: Vec<PowerQuerySinkMapping>,
@@ -9354,21 +9354,21 @@ pub struct FlowletTypeProperties {
     #[doc = "List of sources in Flowlet."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sources: Vec<DataFlowSource>,
     #[doc = "List of sinks in Flowlet."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sinks: Vec<DataFlowSink>,
     #[doc = "List of transformations in Flowlet."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transformations: Vec<Transformation>,
@@ -9379,7 +9379,7 @@ pub struct FlowletTypeProperties {
     #[serde(
         rename = "scriptLines",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub script_lines: Vec<String>,
@@ -9662,7 +9662,7 @@ pub struct GetMetadataActivityTypeProperties {
     #[serde(
         rename = "fieldList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub field_list: Vec<serde_json::Value>,
@@ -10608,14 +10608,14 @@ pub struct HdInsightHiveActivityTypeProperties {
     #[serde(
         rename = "storageLinkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_linked_services: Vec<LinkedServiceReference>,
     #[doc = "User specified arguments to HDInsightActivity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub arguments: Vec<serde_json::Value>,
@@ -10634,7 +10634,7 @@ pub struct HdInsightHiveActivityTypeProperties {
     #[doc = "User specified arguments under hivevar namespace."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub variables: Vec<serde_json::Value>,
@@ -10730,14 +10730,14 @@ pub struct HdInsightMapReduceActivityTypeProperties {
     #[serde(
         rename = "storageLinkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_linked_services: Vec<LinkedServiceReference>,
     #[doc = "User specified arguments to HDInsightActivity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub arguments: Vec<serde_json::Value>,
@@ -10757,7 +10757,7 @@ pub struct HdInsightMapReduceActivityTypeProperties {
     #[serde(
         rename = "jarLibs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub jar_libs: Vec<serde_json::Value>,
@@ -10843,7 +10843,7 @@ pub struct HdInsightOnDemandLinkedServiceTypeProperties {
     #[serde(
         rename = "additionalLinkedServiceNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_linked_service_names: Vec<LinkedServiceReference>,
@@ -10896,7 +10896,7 @@ pub struct HdInsightOnDemandLinkedServiceTypeProperties {
     #[serde(
         rename = "scriptActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub script_actions: Vec<ScriptAction>,
@@ -10982,7 +10982,7 @@ pub struct HdInsightPigActivityTypeProperties {
     #[serde(
         rename = "storageLinkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_linked_services: Vec<LinkedServiceReference>,
@@ -11036,7 +11036,7 @@ pub struct HdInsightSparkActivityTypeProperties {
     #[doc = "The user-specified arguments to HDInsightSparkActivity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub arguments: Vec<serde_json::Value>,
@@ -11094,14 +11094,14 @@ pub struct HdInsightStreamingActivityTypeProperties {
     #[serde(
         rename = "storageLinkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_linked_services: Vec<LinkedServiceReference>,
     #[doc = "User specified arguments to HDInsightActivity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub arguments: Vec<serde_json::Value>,
@@ -11129,7 +11129,7 @@ pub struct HdInsightStreamingActivityTypeProperties {
     #[serde(
         rename = "commandEnvironment",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub command_environment: Vec<serde_json::Value>,
@@ -11946,7 +11946,7 @@ pub struct IfConditionActivityTypeProperties {
     #[serde(
         rename = "ifTrueActivities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub if_true_activities: Vec<Activity>,
@@ -11954,7 +11954,7 @@ pub struct IfConditionActivityTypeProperties {
     #[serde(
         rename = "ifFalseActivities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub if_false_activities: Vec<Activity>,
@@ -12533,7 +12533,7 @@ pub struct IntegrationRuntimeMonitoringData {
     #[doc = "Integration runtime node monitoring data."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nodes: Vec<IntegrationRuntimeNodeMonitoringData>,
@@ -12597,7 +12597,7 @@ pub struct IntegrationRuntimeOutboundNetworkDependenciesCategoryEndpoint {
     #[doc = "The endpoints for outbound network dependency."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<IntegrationRuntimeOutboundNetworkDependenciesEndpoint>,
@@ -12617,7 +12617,7 @@ pub struct IntegrationRuntimeOutboundNetworkDependenciesEndpoint {
     #[serde(
         rename = "endpointDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoint_details: Vec<IntegrationRuntimeOutboundNetworkDependenciesEndpointDetails>,
@@ -12645,7 +12645,7 @@ pub struct IntegrationRuntimeOutboundNetworkDependenciesEndpointsResponse {
     #[doc = "The list of outbound network dependency endpoints."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IntegrationRuntimeOutboundNetworkDependenciesCategoryEndpoint>,
@@ -12846,7 +12846,7 @@ pub struct IntegrationRuntimeSsisProperties {
     #[serde(
         rename = "expressCustomSetupProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub express_custom_setup_properties: Vec<CustomSetupBase>,
@@ -12854,7 +12854,7 @@ pub struct IntegrationRuntimeSsisProperties {
     #[serde(
         rename = "packageStores",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_stores: Vec<PackageStore>,
@@ -13097,7 +13097,7 @@ pub struct IntegrationRuntimeVNetProperties {
     #[serde(
         rename = "publicIPs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_i_ps: Vec<String>,
@@ -13551,7 +13551,7 @@ pub struct LinkedService {
     #[doc = "List of tags that can be used for describing the linked service."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -13903,7 +13903,7 @@ pub struct ManagedIntegrationRuntimeError {
     #[doc = "Managed integration runtime error parameters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<String>,
@@ -13928,7 +13928,7 @@ pub struct ManagedIntegrationRuntimeNode {
     #[doc = "The errors that occurred on this integration runtime node."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ManagedIntegrationRuntimeError>,
@@ -14000,7 +14000,7 @@ pub struct ManagedIntegrationRuntimeOperationResult {
     #[doc = "Managed integration runtime error parameters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<String>,
@@ -14042,7 +14042,7 @@ pub struct ManagedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The list of nodes for managed integration runtime."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nodes: Vec<ManagedIntegrationRuntimeNode>,
@@ -14050,7 +14050,7 @@ pub struct ManagedIntegrationRuntimeStatusTypeProperties {
     #[serde(
         rename = "otherErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub other_errors: Vec<ManagedIntegrationRuntimeError>,
@@ -14090,7 +14090,7 @@ pub struct ManagedPrivateEndpoint {
     #[doc = "Fully qualified domain names"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub fqdns: Vec<String>,
@@ -14255,21 +14255,21 @@ pub struct MappingDataFlowTypeProperties {
     #[doc = "List of sources in data flow."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sources: Vec<DataFlowSource>,
     #[doc = "List of sinks in data flow."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sinks: Vec<DataFlowSink>,
     #[doc = "List of transformations in data flow."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transformations: Vec<Transformation>,
@@ -14280,7 +14280,7 @@ pub struct MappingDataFlowTypeProperties {
     #[serde(
         rename = "scriptLines",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub script_lines: Vec<String>,
@@ -14980,7 +14980,7 @@ pub struct MultiplePipelineTrigger {
     #[doc = "Pipelines that need to be started."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pipelines: Vec<TriggerPipelineReference>,
@@ -15799,7 +15799,7 @@ pub struct OperationListResponse {
     #[doc = "List of Data Factory operations supported by the Data Factory resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -15899,14 +15899,14 @@ pub struct OperationMetricSpecification {
     #[doc = "Defines how often data for metrics becomes available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availabilities: Vec<OperationMetricAvailability>,
     #[doc = "Defines the metric dimension."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<OperationMetricDimension>,
@@ -15935,7 +15935,7 @@ pub struct OperationServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<OperationLogSpecification>,
@@ -15943,7 +15943,7 @@ pub struct OperationServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<OperationMetricSpecification>,
@@ -16966,7 +16966,7 @@ pub struct Pipeline {
     #[doc = "List of activities in pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub activities: Vec<Activity>,
@@ -16982,7 +16982,7 @@ pub struct Pipeline {
     #[doc = "List of tags that can be used for describing the Pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -17373,7 +17373,7 @@ pub struct PowerQuerySinkMapping {
     #[serde(
         rename = "dataflowSinks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dataflow_sinks: Vec<PowerQuerySink>,
@@ -17406,7 +17406,7 @@ pub struct PowerQueryTypeProperties {
     #[doc = "List of sources in Power Query."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sources: Vec<PowerQuerySource>,
@@ -17718,7 +17718,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -17726,7 +17726,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -17764,7 +17764,7 @@ pub struct QueryDataFlowDebugSessionsResponse {
     #[doc = "Array with all active debug sessions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataFlowDebugSessionInfo>,
@@ -17961,14 +17961,14 @@ pub struct RecurrenceSchedule {
     #[doc = "The minutes."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub minutes: Vec<i32>,
     #[doc = "The hours."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hours: Vec<i32>,
@@ -17976,7 +17976,7 @@ pub struct RecurrenceSchedule {
     #[serde(
         rename = "weekDays",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub week_days: Vec<String>,
@@ -17984,7 +17984,7 @@ pub struct RecurrenceSchedule {
     #[serde(
         rename = "monthDays",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub month_days: Vec<i32>,
@@ -17992,7 +17992,7 @@ pub struct RecurrenceSchedule {
     #[serde(
         rename = "monthlyOccurrences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
@@ -18572,7 +18572,7 @@ pub struct RunFilterParameters {
     #[doc = "List of filters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filters: Vec<RunQueryFilter>,
@@ -18580,7 +18580,7 @@ pub struct RunFilterParameters {
     #[serde(
         rename = "orderBy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub order_by: Vec<RunQueryOrderBy>,
@@ -19070,7 +19070,7 @@ pub struct SsisPackageLocationTypeProperties {
     #[serde(
         rename = "childPackages",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub child_packages: Vec<SsisChildPackage>,
@@ -20803,7 +20803,7 @@ pub struct ScriptActivityScriptBlock {
     #[doc = "Array of script parameters. Type: array."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ScriptActivityParameter>,
@@ -20863,7 +20863,7 @@ pub struct ScriptActivityTypeProperties {
     #[doc = "Array of script blocks. Type: array."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scripts: Vec<ScriptActivityScriptBlock>,
@@ -21189,7 +21189,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The list of nodes for this integration runtime."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nodes: Vec<SelfHostedIntegrationRuntimeNode>,
@@ -21209,7 +21209,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(
         rename = "serviceUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_urls: Vec<String>,
@@ -21222,7 +21222,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The list of linked integration runtimes that are created to share with this integration runtime."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub links: Vec<LinkedIntegrationRuntime>,
@@ -23144,7 +23144,7 @@ pub struct SsisEnvironment {
     #[doc = "Variable in environment"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub variables: Vec<SsisVariable>,
@@ -23222,7 +23222,7 @@ pub struct SsisObjectMetadataListResponse {
     #[doc = "List of SSIS object metadata."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SsisObjectMetadata>,
@@ -23314,7 +23314,7 @@ pub struct SsisPackage {
     #[doc = "Parameters in package"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<SsisParameter>,
@@ -23390,14 +23390,14 @@ pub struct SsisProject {
     #[serde(
         rename = "environmentRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environment_refs: Vec<SsisEnvironmentReference>,
     #[doc = "Parameters in project"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<SsisParameter>,
@@ -23633,7 +23633,7 @@ pub struct SwitchActivityTypeProperties {
     #[doc = "List of cases that correspond to expected values of the 'on' property. This is an optional property and if not provided, the activity will execute activities provided in defaultActivities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cases: Vec<SwitchCase>,
@@ -23641,7 +23641,7 @@ pub struct SwitchActivityTypeProperties {
     #[serde(
         rename = "defaultActivities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub default_activities: Vec<Activity>,
@@ -23664,7 +23664,7 @@ pub struct SwitchCase {
     #[doc = "List of activities to execute for satisfied case condition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub activities: Vec<Activity>,
@@ -23929,7 +23929,7 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[doc = "User specified arguments to SynapseSparkJobDefinitionActivity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub args: Vec<serde_json::Value>,
@@ -23942,7 +23942,7 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[doc = "Additional files used for reference in the main definition file, which will override the 'files' of the spark job definition you provide."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<serde_json::Value>,
@@ -24525,7 +24525,7 @@ pub struct Trigger {
     #[doc = "List of tags that can be used for describing the trigger."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -24978,7 +24978,7 @@ pub mod tumbling_window_trigger {
         #[serde(
             rename = "dependsOn",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub depends_on: Vec<DependencyReference>,
@@ -25538,7 +25538,7 @@ pub struct WebActivityTypeProperties {
     #[doc = "List of datasets passed to web endpoint."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datasets: Vec<DatasetReference>,
@@ -25546,7 +25546,7 @@ pub struct WebActivityTypeProperties {
     #[serde(
         rename = "linkedServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub linked_services: Vec<LinkedServiceReference>,

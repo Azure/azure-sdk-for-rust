@@ -105,7 +105,7 @@ pub struct LocationListResult {
     #[doc = "An array of locations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Location>,
@@ -227,7 +227,7 @@ pub struct OperationListResult {
     #[doc = "List of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -309,7 +309,7 @@ pub struct SubscriptionListResult {
     #[doc = "An array of subscriptions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Subscription>,
@@ -364,7 +364,7 @@ pub struct SubscriptionOperationListResult {
     #[doc = "A list of pending SubscriptionOperations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionOperation>,
@@ -423,7 +423,7 @@ pub struct TenantListResult {
     #[doc = "An array of tenants."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TenantIdDescription>,

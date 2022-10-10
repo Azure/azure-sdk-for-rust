@@ -51,7 +51,7 @@ pub struct CloudErrorBody {
     #[doc = "Error details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -136,14 +136,14 @@ pub struct EndpointProperties {
     #[serde(
         rename = "geoMapping",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub geo_mapping: Vec<String>,
     #[doc = "The list of subnets, IP addresses, and/or address ranges mapped to this endpoint when using the 'Subnet' traffic routing method. An empty list will match all ranges not covered by other endpoints."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subnets: Vec<serde_json::Value>,
@@ -151,7 +151,7 @@ pub struct EndpointProperties {
     #[serde(
         rename = "customHeaders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_headers: Vec<serde_json::Value>,
@@ -299,7 +299,7 @@ pub struct HeatMapProperties {
     #[doc = "The endpoints used in this HeatMap calculation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<HeatMapEndpoint>,
@@ -307,7 +307,7 @@ pub struct HeatMapProperties {
     #[serde(
         rename = "trafficFlows",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub traffic_flows: Vec<TrafficFlow>,
@@ -345,7 +345,7 @@ pub struct MonitorConfig {
     #[serde(
         rename = "customHeaders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_headers: Vec<serde_json::Value>,
@@ -353,7 +353,7 @@ pub struct MonitorConfig {
     #[serde(
         rename = "expectedStatusCodeRanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub expected_status_code_ranges: Vec<serde_json::Value>,
@@ -471,7 +471,7 @@ pub struct ProfileListResult {
     #[doc = "Gets the list of Traffic manager profiles."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Profile>,
@@ -505,7 +505,7 @@ pub struct ProfileProperties {
     #[doc = "The list of endpoints in the Traffic Manager profile."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<Endpoint>,
@@ -688,7 +688,7 @@ pub struct Region {
     #[doc = "The list of Regions grouped under this Region in the Geographic Hierarchy."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub regions: Vec<Region>,
@@ -749,7 +749,7 @@ pub struct TrafficFlow {
     #[serde(
         rename = "queryExperiences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub query_experiences: Vec<QueryExperience>,

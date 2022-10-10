@@ -36,7 +36,7 @@ pub struct ApiKeyListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApiKey>,
@@ -140,7 +140,7 @@ pub struct ConfigurationStoreListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfigurationStore>,
@@ -178,7 +178,7 @@ pub struct ConfigurationStoreProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnectionReference>,
@@ -349,7 +349,7 @@ pub struct ErrorDetails {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -404,7 +404,7 @@ pub struct KeyValueListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<KeyValue>,
@@ -531,7 +531,7 @@ pub struct MetricSpecification {
     #[doc = "Dimensions of the metric"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -610,7 +610,7 @@ pub struct OperationDefinitionListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationDefinition>,
@@ -680,7 +680,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -817,7 +817,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -846,7 +846,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -854,7 +854,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1077,7 +1077,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<LogSpecification>,
@@ -1085,7 +1085,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<MetricSpecification>,

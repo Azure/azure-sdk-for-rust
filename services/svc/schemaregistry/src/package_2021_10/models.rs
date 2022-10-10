@@ -24,7 +24,7 @@ pub struct ErrorDetail {
     #[doc = "Error message details to help user understand/debug failure."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -46,7 +46,7 @@ pub struct SchemaGroups {
     #[serde(
         rename = "schemaGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schema_groups: Vec<SchemaGroup>,
@@ -76,7 +76,7 @@ pub struct SchemaVersions {
     #[serde(
         rename = "schemaVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schema_versions: Vec<SchemaVersion>,

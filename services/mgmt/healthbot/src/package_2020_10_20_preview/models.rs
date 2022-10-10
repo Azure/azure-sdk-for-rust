@@ -9,7 +9,7 @@ pub struct AvailableOperations {
     #[doc = "Collection of available operation details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationDetail>,
@@ -37,7 +37,7 @@ pub struct BotResponseList {
     #[doc = "Gets the list of healthcare bot results and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HealthBot>,
@@ -120,7 +120,7 @@ pub mod error {
         #[doc = "The error details."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<Error>,
@@ -128,7 +128,7 @@ pub mod error {
         #[serde(
             rename = "additionalInfo",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub additional_info: Vec<ErrorAdditionalInfo>,

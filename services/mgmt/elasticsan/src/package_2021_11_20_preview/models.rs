@@ -95,7 +95,7 @@ pub struct ElasticSanProperties {
     #[serde(
         rename = "availabilityZones",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availability_zones: Vec<AvailabilityZone>,
@@ -276,7 +276,7 @@ pub struct ErrorResponse {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponse>,
@@ -284,7 +284,7 @@ pub struct ErrorResponse {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -325,7 +325,7 @@ pub struct NetworkRuleSet {
     #[serde(
         rename = "virtualNetworkRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
@@ -498,7 +498,7 @@ pub struct SkuInformation {
     #[doc = "The set of locations that the SKU is available. This will be supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -506,14 +506,14 @@ pub struct SkuInformation {
     #[serde(
         rename = "locationInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub location_info: Vec<SkuLocationInfo>,
     #[doc = "The capability information in the specified SKU."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<SkuCapability>,
@@ -536,7 +536,7 @@ pub struct SkuInformationList {
     #[doc = "List of ResourceType Sku"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuInformation>,
@@ -561,7 +561,7 @@ pub struct SkuLocationInfo {
     #[doc = "The zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,

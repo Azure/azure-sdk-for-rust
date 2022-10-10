@@ -37,7 +37,7 @@ pub struct ApplicationProperties {
     #[doc = "Describes the services in the application. This property is used to create or modify services of the application. On get only the name of the service is returned. The service description can be obtained by querying for the service resource."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub services: Vec<ServiceResourceDescription>,
@@ -51,7 +51,7 @@ pub struct ApplicationProperties {
     #[serde(
         rename = "serviceNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_names: Vec<String>,
@@ -95,7 +95,7 @@ pub struct ApplicationResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApplicationResourceDescription>,
@@ -566,7 +566,7 @@ pub struct ContainerCodePackageProperties {
     #[doc = "Command array to execute within the container in exec form."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub commands: Vec<String>,
@@ -574,28 +574,28 @@ pub struct ContainerCodePackageProperties {
     #[serde(
         rename = "environmentVariables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environment_variables: Vec<EnvironmentVariable>,
     #[doc = "The settings to set in this container. The setting file path can be fetched from environment variable \"Fabric_SettingPath\". The path for Windows container is \"C:\\\\secrets\". The path for Linux container is \"/var/secrets\"."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub settings: Vec<Setting>,
     #[doc = "The labels to set in this container."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<ContainerLabel>,
     #[doc = "The endpoints exposed by this container."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<EndpointProperties>,
@@ -605,14 +605,14 @@ pub struct ContainerCodePackageProperties {
     #[serde(
         rename = "volumeRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_refs: Vec<VolumeReference>,
     #[doc = "Volumes to be attached to the container. The lifetime of these volumes is scoped to the application's lifetime."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volumes: Vec<ApplicationScopedVolume>,
@@ -623,7 +623,7 @@ pub struct ContainerCodePackageProperties {
     #[serde(
         rename = "reliableCollectionsRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reliable_collections_refs: Vec<ReliableCollectionsRef>,
@@ -694,7 +694,7 @@ pub struct ContainerInstanceView {
     #[doc = "The events of this container instance."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<ContainerEvent>,
@@ -759,7 +759,7 @@ pub struct DiagnosticsDescription {
     #[doc = "List of supported sinks that can be referenced."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sinks: Vec<DiagnosticsSinkProperties>,
@@ -770,7 +770,7 @@ pub struct DiagnosticsDescription {
     #[serde(
         rename = "defaultSinkRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub default_sink_refs: Vec<String>,
@@ -790,7 +790,7 @@ pub struct DiagnosticsRef {
     #[serde(
         rename = "sinkRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sink_refs: Vec<String>,
@@ -925,7 +925,7 @@ pub struct ErrorErrorModel {
     #[doc = "List of error message details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetailsModel>,
@@ -994,14 +994,14 @@ pub struct GatewayProperties {
     #[doc = "Configuration for tcp connectivity for this gateway."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tcp: Vec<TcpConfig>,
     #[doc = "Configuration for http connectivity for this gateway."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub http: Vec<HttpConfig>,
@@ -1051,7 +1051,7 @@ pub struct GatewayResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GatewayResourceDescription>,
@@ -1301,7 +1301,7 @@ pub struct HttpRouteMatchRule {
     #[doc = "headers and their values to match in request."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<HttpRouteMatchHeader>,
@@ -1425,7 +1425,7 @@ pub struct NetworkRef {
     #[serde(
         rename = "endpointRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoint_refs: Vec<EndpointRef>,
@@ -1457,7 +1457,7 @@ pub struct NetworkResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkResourceDescription>,
@@ -1560,7 +1560,7 @@ pub struct OperationListResult {
     #[doc = "List of Service Fabric operations supported by the Microsoft.ServiceFabric resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResult>,
@@ -1804,7 +1804,7 @@ pub struct SecretResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SecretResourceDescription>,
@@ -1914,7 +1914,7 @@ pub struct SecretValueResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SecretValueResourceDescription>,
@@ -1959,7 +1959,7 @@ pub struct ServiceProperties {
     #[serde(
         rename = "autoScalingPolicies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub auto_scaling_policies: Vec<AutoScalingPolicy>,
@@ -2004,7 +2004,7 @@ pub struct ServiceReplicaDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServiceReplicaDescription>,
@@ -2036,7 +2036,7 @@ pub struct ServiceReplicaProperties {
     #[serde(
         rename = "networkRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_refs: Vec<NetworkRef>,
@@ -2076,7 +2076,7 @@ pub struct ServiceResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServiceResourceDescription>,
@@ -2294,7 +2294,7 @@ pub struct VolumeResourceDescriptionList {
     #[doc = "One page of the list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VolumeResourceDescription>,

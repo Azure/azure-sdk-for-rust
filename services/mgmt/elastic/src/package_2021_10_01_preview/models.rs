@@ -184,7 +184,7 @@ pub struct ElasticMonitorResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ElasticMonitorResource>,
@@ -257,7 +257,7 @@ pub struct ErrorResponseBody {
     #[doc = "Error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponseBody>,
@@ -297,7 +297,7 @@ pub struct ExternalUserInfo {
     #[doc = "Roles to be assigned for  created or updated user"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub roles: Vec<String>,
@@ -395,7 +395,7 @@ pub struct LogRules {
     #[serde(
         rename = "filteringTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filtering_tags: Vec<FilteringTag>,
@@ -493,7 +493,7 @@ pub struct MonitoredResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitoredResource>,
@@ -579,7 +579,7 @@ pub struct MonitoringTagRulesListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitoringTagRules>,
@@ -640,7 +640,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Elastic provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResult>,
@@ -881,7 +881,7 @@ pub struct UpgradableVersionsList {
     #[serde(
         rename = "upgradableVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub upgradable_versions: Vec<String>,
@@ -936,7 +936,7 @@ pub struct VmHostListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VmResources>,

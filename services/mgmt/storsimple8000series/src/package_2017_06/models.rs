@@ -190,7 +190,7 @@ pub struct AlertNotificationProperties {
     #[serde(
         rename = "additionalRecipientEmailList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_recipient_email_list: Vec<String>,
@@ -1257,7 +1257,7 @@ pub struct DnsSettings {
     #[serde(
         rename = "secondaryDnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub secondary_dns_servers: Vec<String>,
@@ -1265,7 +1265,7 @@ pub struct DnsSettings {
     #[serde(
         rename = "secondaryIpv6DnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub secondary_ipv6_dns_servers: Vec<String>,
@@ -1659,7 +1659,7 @@ pub struct FailoverRequest {
     #[serde(
         rename = "volumeContainers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_containers: Vec<String>,
@@ -1676,7 +1676,7 @@ pub struct FailoverSet {
     #[serde(
         rename = "volumeContainers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_containers: Vec<VolumeContainerFailoverMetadata>,
@@ -1710,7 +1710,7 @@ pub struct FailoverSetsList {
     #[doc = "The list of failover sets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FailoverSet>,
@@ -1792,7 +1792,7 @@ pub struct FailoverTargetsList {
     #[doc = "The list of all the failover targets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FailoverTarget>,
@@ -2007,7 +2007,7 @@ pub struct JobErrorDetails {
     #[serde(
         rename = "errorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_details: Vec<JobErrorItem>,
@@ -2031,7 +2031,7 @@ pub struct JobErrorItem {
     #[doc = "The recommended actions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recommendations: Vec<String>,
@@ -2106,7 +2106,7 @@ pub struct JobProperties {
     #[serde(
         rename = "jobStages",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub job_stages: Vec<JobStage>,
@@ -2221,7 +2221,7 @@ pub struct ListFailoverTargetsRequest {
     #[serde(
         rename = "volumeContainers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_containers: Vec<String>,
@@ -2450,14 +2450,14 @@ pub struct MetricDefinition {
     #[serde(
         rename = "metricAvailabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_availabilities: Vec<MetricAvailablity>,
     #[doc = "The available metric dimensions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -2502,7 +2502,7 @@ pub struct MetricDefinitionList {
     #[doc = "The list of metric definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MetricDefinition>,
@@ -2572,7 +2572,7 @@ pub struct MetricList {
     #[doc = "The value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Metrics>,
@@ -2639,7 +2639,7 @@ pub struct Metrics {
     #[doc = "The metric dimensions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -2652,7 +2652,7 @@ pub struct Metrics {
     #[doc = "The list of the metric data."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<MetricData>,
@@ -3013,7 +3013,7 @@ pub struct ScheduleRecurrence {
     #[serde(
         rename = "weeklyDaysList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub weekly_days_list: Vec<String>,
@@ -3045,7 +3045,7 @@ pub struct SecondaryDnsSettings {
     #[serde(
         rename = "secondaryDnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub secondary_dns_servers: Vec<String>,
@@ -3278,7 +3278,7 @@ pub struct TargetEligibilityResult {
     #[doc = "The list of error messages, if a device does not qualify as a failover target device."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub messages: Vec<TargetEligibilityErrorMessage>,
@@ -3341,7 +3341,7 @@ pub struct TimeSettingsProperties {
     #[serde(
         rename = "secondaryTimeServer",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub secondary_time_server: Vec<String>,
@@ -3458,7 +3458,7 @@ pub struct VolumeContainerFailoverMetadata {
     #[doc = "The list of metadata of volumes inside the volume container, which contains valid cloud snapshots."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volumes: Vec<VolumeFailoverMetadata>,
@@ -3630,7 +3630,7 @@ pub struct VolumeProperties {
     #[serde(
         rename = "backupPolicyIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_policy_ids: Vec<String>,

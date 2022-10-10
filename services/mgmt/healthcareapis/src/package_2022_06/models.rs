@@ -23,21 +23,21 @@ pub struct CorsConfiguration {
     #[doc = "The origins to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub origins: Vec<CorsConfigurationOriginEntry>,
     #[doc = "The headers to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<CorsConfigurationHeaderEntry>,
     #[doc = "The methods to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub methods: Vec<CorsConfigurationMethodEntry>,
@@ -85,7 +85,7 @@ pub struct DicomServiceAuthenticationConfiguration {
     #[doc = "The audiences for the service"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub audiences: Vec<DicomAudience>,
@@ -104,7 +104,7 @@ pub struct DicomServiceCollection {
     #[doc = "The list of Dicom Services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DicomService>,
@@ -152,7 +152,7 @@ pub struct DicomServiceProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -339,7 +339,7 @@ pub struct FhirServiceAcrConfiguration {
     #[serde(
         rename = "loginServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub login_servers: Vec<String>,
@@ -347,7 +347,7 @@ pub struct FhirServiceAcrConfiguration {
     #[serde(
         rename = "ociArtifacts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub oci_artifacts: Vec<ServiceOciArtifactEntry>,
@@ -384,7 +384,7 @@ pub struct FhirServiceCollection {
     #[doc = "The list of Fhir Services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FhirService>,
@@ -406,21 +406,21 @@ pub struct FhirServiceCorsConfiguration {
     #[doc = "The origins to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub origins: Vec<CorsConfigurationOriginEntry>,
     #[doc = "The headers to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<CorsConfigurationHeaderEntry>,
     #[doc = "The methods to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub methods: Vec<CorsConfigurationMethodEntry>,
@@ -504,7 +504,7 @@ pub struct FhirServiceProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -554,7 +554,7 @@ pub struct IotConnectorCollection {
     #[doc = "The list of IoT Connectors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IotConnector>,
@@ -660,7 +660,7 @@ pub struct IotFhirDestinationCollection {
     #[doc = "The list of IoT Connector FHIR destinations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IotFhirDestination>,
@@ -760,7 +760,7 @@ pub struct ListOperations {
     #[doc = "Collection of available operation details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationDetail>,
@@ -854,7 +854,7 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedAggregationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_aggregation_types: Vec<String>,
@@ -862,7 +862,7 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedTimeGrainTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_time_grain_types: Vec<String>,
@@ -875,7 +875,7 @@ pub struct MetricSpecification {
     #[doc = "Dimensions of the metric"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -1117,7 +1117,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -1133,7 +1133,7 @@ pub struct PrivateEndpointConnectionListResultDescription {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnectionDescription>,
@@ -1285,7 +1285,7 @@ pub struct PrivateLinkResourceListResultDescription {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResourceDescription>,
@@ -1311,7 +1311,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1319,7 +1319,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1568,7 +1568,7 @@ pub struct ServiceAcrConfigurationInfo {
     #[serde(
         rename = "loginServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub login_servers: Vec<String>,
@@ -1576,7 +1576,7 @@ pub struct ServiceAcrConfigurationInfo {
     #[serde(
         rename = "ociArtifacts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub oci_artifacts: Vec<ServiceOciArtifactEntry>,
@@ -1611,21 +1611,21 @@ pub struct ServiceCorsConfigurationInfo {
     #[doc = "The origins to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub origins: Vec<ServiceCorsConfigurationOriginEntry>,
     #[doc = "The headers to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<ServiceCorsConfigurationHeaderEntry>,
     #[doc = "The methods to be allowed via CORS."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub methods: Vec<ServiceCorsConfigurationMethodEntry>,
@@ -1799,7 +1799,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<LogSpecification>,
@@ -1807,7 +1807,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<MetricSpecification>,
@@ -1847,7 +1847,7 @@ pub struct ServicesDescriptionListResult {
     #[doc = "A list of service description objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServicesDescription>,
@@ -1930,7 +1930,7 @@ pub struct ServicesProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -2217,7 +2217,7 @@ pub mod workspace {
         #[serde(
             rename = "privateEndpointConnections",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -2240,7 +2240,7 @@ pub struct WorkspaceList {
     #[doc = "Collection of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Workspace>,

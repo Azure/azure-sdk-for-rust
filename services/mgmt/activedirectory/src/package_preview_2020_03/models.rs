@@ -51,7 +51,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -99,7 +99,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -128,7 +128,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -155,7 +155,7 @@ pub struct PrivateLinkPolicy {
     #[doc = "The list of tenantIds."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tenants: Vec<String>,
@@ -183,7 +183,7 @@ pub struct PrivateLinkPolicyListResult {
     #[doc = "Array of private link policies"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkPolicy>,

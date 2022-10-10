@@ -44,7 +44,7 @@ pub struct AccountListResult {
     #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Account>,
@@ -95,7 +95,7 @@ pub struct AccountModelListResult {
     #[doc = "Gets the list of Cognitive Services accounts Model and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccountModel>,
@@ -126,7 +126,7 @@ pub struct AccountProperties {
     #[doc = "Gets the capabilities of the cognitive services account. Each item indicates the capability of a specific feature. The values are read-only and for reference only."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<SkuCapability>,
@@ -152,7 +152,7 @@ pub struct AccountProperties {
     #[serde(
         rename = "userOwnedStorage",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_owned_storage: Vec<UserOwnedStorage>,
@@ -160,7 +160,7 @@ pub struct AccountProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -186,7 +186,7 @@ pub struct AccountProperties {
     #[serde(
         rename = "allowedFqdnList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_fqdn_list: Vec<String>,
@@ -317,7 +317,7 @@ pub struct AccountSkuListResult {
     #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccountSku>,
@@ -406,7 +406,7 @@ pub struct CallRateLimit {
     pub renewal_period: Option<f64>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rules: Vec<ThrottlingRule>,
@@ -522,7 +522,7 @@ pub struct CommitmentPlanListResult {
     #[doc = "Gets the list of Cognitive Services accounts CommitmentPlan and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CommitmentPlan>,
@@ -622,7 +622,7 @@ pub struct CommitmentTierListResult {
     #[doc = "Gets the list of Cognitive Services accounts CommitmentTier and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CommitmentTier>,
@@ -667,7 +667,7 @@ pub struct DeploymentListResult {
     #[doc = "Gets the list of Cognitive Services accounts Deployment and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Deployment>,
@@ -941,7 +941,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -949,7 +949,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -1121,7 +1121,7 @@ pub struct NetworkRuleSet {
     #[serde(
         rename = "ipRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_rules: Vec<IpRule>,
@@ -1129,7 +1129,7 @@ pub struct NetworkRuleSet {
     #[serde(
         rename = "virtualNetworkRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
@@ -1310,7 +1310,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1367,7 +1367,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -1393,7 +1393,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -1508,7 +1508,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -1528,7 +1528,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1536,7 +1536,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1586,7 +1586,7 @@ pub struct QuotaLimit {
     pub renewal_period: Option<f64>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rules: Vec<ThrottlingRule>,
@@ -1665,14 +1665,14 @@ pub struct ResourceSku {
     #[doc = "The set of locations that the SKU is available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
     #[doc = "The restrictions because of which SKU cannot be used. This is empty if there are no restrictions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<ResourceSkuRestrictions>,
@@ -1707,14 +1707,14 @@ pub struct ResourceSkuRestrictionInfo {
     #[doc = "Locations where the SKU is restricted"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
     #[doc = "List of availability zones where the SKU is restricted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1733,7 +1733,7 @@ pub struct ResourceSkuRestrictions {
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -1902,7 +1902,7 @@ pub struct SkuAvailabilityListResult {
     #[doc = "Check SKU availability result list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuAvailability>,
@@ -1961,7 +1961,7 @@ pub struct ThrottlingRule {
     #[serde(
         rename = "matchPatterns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_patterns: Vec<RequestMatchPattern>,
@@ -2098,7 +2098,7 @@ pub struct UsageListResult {
     #[doc = "The list of usages for Cognitive Service account."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Usage>,

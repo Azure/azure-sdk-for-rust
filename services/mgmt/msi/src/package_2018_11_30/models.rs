@@ -36,7 +36,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -125,7 +125,7 @@ pub struct OperationListResult {
     #[doc = "A list of operations supported by Microsoft.ManagedIdentity Resource Provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -244,7 +244,7 @@ pub struct UserAssignedIdentitiesListResult {
     #[doc = "The collection of userAssignedIdentities returned by the listing operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Identity>,

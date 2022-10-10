@@ -56,7 +56,7 @@ pub struct AgreementTermsList {
     #[doc = "The value of the array."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OldAgreementTerms>,
@@ -228,7 +228,7 @@ pub struct OperationListResult {
     #[doc = "List of Microsoft.MarketplaceOrdering operations supported by the Microsoft.MarketplaceOrdering resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

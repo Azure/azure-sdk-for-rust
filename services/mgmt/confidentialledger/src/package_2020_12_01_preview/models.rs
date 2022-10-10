@@ -60,7 +60,7 @@ pub struct ConfidentialLedgerList {
     #[doc = "List of Confidential Ledgers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfidentialLedger>,
@@ -148,7 +148,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -156,7 +156,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -212,7 +212,7 @@ pub struct LedgerProperties {
     #[serde(
         rename = "aadBasedSecurityPrincipals",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aad_based_security_principals: Vec<AadBasedSecurityPrincipal>,
@@ -220,7 +220,7 @@ pub struct LedgerProperties {
     #[serde(
         rename = "certBasedSecurityPrincipals",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cert_based_security_principals: Vec<CertBasedSecurityPrincipal>,
@@ -394,7 +394,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "Resource provider operations list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperationDefinition>,

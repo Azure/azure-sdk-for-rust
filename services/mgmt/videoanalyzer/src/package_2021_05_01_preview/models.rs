@@ -26,7 +26,7 @@ pub struct AccessPolicyEntityCollection {
     #[doc = "A collection of AccessPolicyEntity items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessPolicyEntity>,
@@ -334,7 +334,7 @@ pub struct EdgeModuleEntityCollection {
     #[doc = "A collection of EdgeModuleEntity items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EdgeModuleEntity>,
@@ -463,7 +463,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -471,7 +471,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -507,28 +507,28 @@ pub struct JwtAuthentication {
     #[doc = "List of expected token issuers. Token issuer is valid if it matches at least one of the given values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub issuers: Vec<String>,
     #[doc = "List of expected token audiences. Token audience is valid if it matches at least one of the given values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub audiences: Vec<String>,
     #[doc = "List of additional token claims to be validated. Token must contains all claims and respective values for it to be valid."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub claims: Vec<TokenClaim>,
     #[doc = "List of keys which can be used to validate access tokens. Having multiple keys allow for seamless key rotation of the token signing key. Token signature must match exactly one key."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub keys: Vec<TokenKey>,
@@ -635,14 +635,14 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedAggregationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "The metric dimensions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -659,7 +659,7 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedTimeGrainTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_time_grain_types: Vec<String>,
@@ -866,7 +866,7 @@ pub struct OperationCollection {
     #[doc = "A collection of Operation items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1019,7 +1019,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<LogSpecification>,
@@ -1027,7 +1027,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<MetricSpecification>,
@@ -1167,7 +1167,7 @@ pub struct VideoAnalyzerCollection {
     #[doc = "A collection of VideoAnalyzer items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VideoAnalyzer>,
@@ -1214,14 +1214,14 @@ pub struct VideoAnalyzerPropertiesUpdate {
     #[serde(
         rename = "storageAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_accounts: Vec<StorageAccount>,
     #[doc = "The list of endpoints associated with this resource."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<Endpoint>,
@@ -1275,7 +1275,7 @@ pub struct VideoEntityCollection {
     #[doc = "A collection of VideoEntity items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VideoEntity>,

@@ -26,7 +26,7 @@ pub struct AccountListResult {
     #[doc = "The list of machine learning team accounts. Since this list may be incomplete, the nextLink field should be used to request the next list of machine learning team accounts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Account>,
@@ -207,7 +207,7 @@ pub struct OperationListResult {
     #[doc = "List of AML team account operations supported by the AML team account resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -246,7 +246,7 @@ pub struct ProjectListResult {
     #[doc = "The list of projects. Since this list may be incomplete, the nextLink field should be used to request the next list of projects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Project>,
@@ -422,7 +422,7 @@ pub struct WorkspaceListResult {
     #[doc = "The list of machine learning team account workspaces. Since this list may be incomplete, the nextLink field should be used to request the next list of machine learning team accounts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Workspace>,

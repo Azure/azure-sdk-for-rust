@@ -96,7 +96,7 @@ pub struct CreateManagementGroupChildInfo {
     #[doc = "The list of children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<CreateManagementGroupChildInfo>,
@@ -142,7 +142,7 @@ pub struct CreateManagementGroupProperties {
     #[doc = "The list of children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<CreateManagementGroupChildInfo>,
@@ -260,7 +260,7 @@ pub struct DescendantListResult {
     #[doc = "The list of descendants."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DescendantInfo>,
@@ -324,7 +324,7 @@ pub struct EntityHierarchyItemProperties {
     #[doc = "The list of children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<EntityHierarchyItem>,
@@ -385,7 +385,7 @@ pub struct EntityInfoProperties {
     #[serde(
         rename = "parentDisplayNameChain",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parent_display_name_chain: Vec<String>,
@@ -393,7 +393,7 @@ pub struct EntityInfoProperties {
     #[serde(
         rename = "parentNameChain",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parent_name_chain: Vec<String>,
@@ -409,7 +409,7 @@ pub struct EntityListResult {
     #[doc = "The list of entities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EntityInfo>,
@@ -527,7 +527,7 @@ pub struct HierarchySettingsList {
     #[doc = "The list of hierarchy settings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HierarchySettingsInfo>,
@@ -564,7 +564,7 @@ pub struct ListSubscriptionUnderManagementGroup {
     #[doc = "The list of subscriptions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionUnderManagementGroup>,
@@ -622,7 +622,7 @@ pub struct ManagementGroupChildInfo {
     #[doc = "The list of children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<ManagementGroupChildInfo>,
@@ -658,7 +658,7 @@ pub struct ManagementGroupDetails {
     #[doc = "The path from the root to the current group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub path: Vec<ManagementGroupPathElement>,
@@ -666,7 +666,7 @@ pub struct ManagementGroupDetails {
     #[serde(
         rename = "managementGroupAncestors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub management_group_ancestors: Vec<String>,
@@ -674,7 +674,7 @@ pub struct ManagementGroupDetails {
     #[serde(
         rename = "managementGroupAncestorsChain",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub management_group_ancestors_chain: Vec<ManagementGroupPathElement>,
@@ -726,7 +726,7 @@ pub struct ManagementGroupListResult {
     #[doc = "The list of management groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ManagementGroupInfo>,
@@ -775,7 +775,7 @@ pub struct ManagementGroupProperties {
     #[doc = "The list of children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<ManagementGroupChildInfo>,
@@ -827,7 +827,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Management resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

@@ -47,7 +47,7 @@ pub struct ClusterJobListResult {
     #[doc = "A list of streaming jobs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ClusterJob>,
@@ -72,7 +72,7 @@ pub struct ClusterListResult {
     #[doc = "A list of clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Cluster>,
@@ -244,7 +244,7 @@ pub mod error {
         #[doc = "Error details."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<ErrorDetails>,
@@ -349,7 +349,7 @@ pub struct PrivateEndpointListResult {
     #[doc = "A list of private endpoints."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpoint>,
@@ -378,7 +378,7 @@ pub struct PrivateEndpointProperties {
     #[serde(
         rename = "manualPrivateLinkServiceConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub manual_private_link_service_connections: Vec<PrivateLinkServiceConnection>,
@@ -428,7 +428,7 @@ pub struct PrivateLinkServiceConnectionProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,

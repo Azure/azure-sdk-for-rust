@@ -81,7 +81,7 @@ pub struct AccessControl {
     #[serde(
         rename = "ipAllowList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_allow_list: Vec<String>,
@@ -217,7 +217,7 @@ pub struct AccountFilterCollection {
     #[doc = "A collection of AccountFilter items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccountFilter>,
@@ -243,7 +243,7 @@ pub struct AkamaiAccessControl {
     #[serde(
         rename = "akamaiSignatureHeaderAuthenticationKeyList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub akamai_signature_header_authentication_key_list: Vec<AkamaiSignatureHeaderAuthenticationKey>,
@@ -357,7 +357,7 @@ pub struct AssetCollection {
     #[doc = "A collection of Asset items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Asset>,
@@ -383,7 +383,7 @@ pub struct AssetContainerSas {
     #[serde(
         rename = "assetContainerSasUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub asset_container_sas_urls: Vec<String>,
@@ -438,7 +438,7 @@ pub struct AssetFilterCollection {
     #[doc = "A collection of AssetFilter items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AssetFilter>,
@@ -585,7 +585,7 @@ pub struct AssetTrackCollection {
     #[doc = "A collection of AssetTrack items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AssetTrack>,
@@ -1110,7 +1110,7 @@ pub struct CommonEncryptionCbcs {
     #[serde(
         rename = "clearTracks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub clear_tracks: Vec<TrackSelection>,
@@ -1136,7 +1136,7 @@ pub struct CommonEncryptionCenc {
     #[serde(
         rename = "clearTracks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub clear_tracks: Vec<TrackSelection>,
@@ -1188,7 +1188,7 @@ pub struct ContentKeyPolicyCollection {
     #[doc = "A collection of ContentKeyPolicy items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ContentKeyPolicy>,
@@ -1816,7 +1816,7 @@ pub struct ContentKeyPolicyTokenRestriction {
     #[serde(
         rename = "alternateVerificationKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alternate_verification_keys: Vec<ContentKeyPolicyRestrictionTokenKey>,
@@ -1824,7 +1824,7 @@ pub struct ContentKeyPolicyTokenRestriction {
     #[serde(
         rename = "requiredClaims",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_claims: Vec<ContentKeyPolicyTokenClaim>,
@@ -2204,7 +2204,7 @@ pub struct EnvelopeEncryption {
     #[serde(
         rename = "clearTracks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub clear_tracks: Vec<TrackSelection>,
@@ -2250,7 +2250,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -2258,7 +2258,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -2573,7 +2573,7 @@ pub struct Filters {
     #[doc = "The properties of overlays to be applied to the input video. These could be audio, image or video overlays."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub overlays: Vec<Overlay>,
@@ -2815,7 +2815,7 @@ pub struct H264Video {
     #[doc = "The collection of output H.264 layers to be produced by the encoder."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub layers: Vec<H264Layer>,
@@ -3010,7 +3010,7 @@ pub struct H265Video {
     #[doc = "The collection of output H.265 layers to be produced by the encoder."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub layers: Vec<H265Layer>,
@@ -3139,7 +3139,7 @@ pub struct IpAccessControl {
     #[doc = "The IP allow list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allow: Vec<IpRange>,
@@ -3212,7 +3212,7 @@ pub struct InputDefinition {
     #[serde(
         rename = "includedTracks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub included_tracks: Vec<TrackDescriptor>,
@@ -3265,7 +3265,7 @@ pub struct JobCollection {
     #[doc = "A collection of Job items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Job>,
@@ -3302,7 +3302,7 @@ pub struct JobError {
     #[doc = "An array of details about specific errors that led to this reported error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<JobErrorDetail>,
@@ -3498,7 +3498,7 @@ pub struct JobInputClip {
     #[doc = "List of files. Required for JobInputHttp. Maximum of 4000 characters each. Query strings will not be returned in service responses to prevent sensitive data exposure."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<String>,
@@ -3515,7 +3515,7 @@ pub struct JobInputClip {
     #[serde(
         rename = "inputDefinitions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub input_definitions: Vec<InputDefinition>,
@@ -3557,7 +3557,7 @@ pub struct JobInputSequence {
     #[doc = "JobInputs that make up the timeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inputs: Vec<JobInputClip>,
@@ -3578,7 +3578,7 @@ pub struct JobInputs {
     #[doc = "List of inputs to a Job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inputs: Vec<JobInput>,
@@ -3853,7 +3853,7 @@ pub struct JpgImage {
     #[doc = "A collection of output JPEG image layers to be produced by the encoder."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub layers: Vec<JpgLayer>,
@@ -3990,7 +3990,7 @@ pub struct ListContentKeysResponse {
     #[serde(
         rename = "contentKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub content_keys: Vec<StreamingLocatorContentKey>,
@@ -4018,7 +4018,7 @@ pub struct ListPathsResponse {
     #[serde(
         rename = "streamingPaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub streaming_paths: Vec<StreamingPath>,
@@ -4026,7 +4026,7 @@ pub struct ListPathsResponse {
     #[serde(
         rename = "downloadPaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub download_paths: Vec<String>,
@@ -4043,7 +4043,7 @@ pub struct ListStreamingLocatorsResponse {
     #[serde(
         rename = "streamingLocators",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub streaming_locators: Vec<AssetStreamingLocator>,
@@ -4225,7 +4225,7 @@ pub struct LiveEventInput {
     #[doc = "The input endpoints for the live event."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<LiveEventEndpoint>,
@@ -4319,7 +4319,7 @@ pub struct LiveEventListResult {
     #[doc = "The result of the List Live Event operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LiveEvent>,
@@ -4359,7 +4359,7 @@ pub struct LiveEventPreview {
     #[doc = "The endpoints for preview. Do not share the preview URL with the live event audience."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<LiveEventEndpoint>,
@@ -4410,7 +4410,7 @@ pub struct LiveEventProperties {
     #[doc = "Live transcription settings for the live event. See https://go.microsoft.com/fwlink/?linkid=2133742 for more information about the live transcription feature."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transcriptions: Vec<LiveEventTranscription>,
@@ -4433,7 +4433,7 @@ pub struct LiveEventProperties {
     #[serde(
         rename = "streamOptions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub stream_options: Vec<String>,
@@ -4523,7 +4523,7 @@ pub struct LiveEventTranscription {
     #[serde(
         rename = "inputTrackSelection",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub input_track_selection: Vec<LiveEventInputTrackSelection>,
@@ -4559,7 +4559,7 @@ pub struct LiveOutputListResult {
     #[doc = "The result of the List LiveOutput operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LiveOutput>,
@@ -4707,7 +4707,7 @@ pub struct MediaFilterProperties {
     #[doc = "The tracks selection conditions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tracks: Vec<FilterTrackSelection>,
@@ -4747,7 +4747,7 @@ pub struct MediaServiceCollection {
     #[doc = "A collection of MediaService items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MediaService>,
@@ -4833,7 +4833,7 @@ pub struct MediaServiceProperties {
     #[serde(
         rename = "storageAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_accounts: Vec<StorageAccount>,
@@ -4853,7 +4853,7 @@ pub struct MediaServiceProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -5038,14 +5038,14 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedAggregationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "The metric dimensions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -5062,7 +5062,7 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedTimeGrainTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_time_grain_types: Vec<String>,
@@ -5212,7 +5212,7 @@ pub struct MultiBitrateFormat {
     #[serde(
         rename = "outputFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output_files: Vec<OutputFile>,
@@ -5314,7 +5314,7 @@ pub struct OperationCollection {
     #[doc = "A collection of Operation items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -5413,7 +5413,7 @@ pub struct PngImage {
     #[doc = "A collection of output PNG image layers to be produced by the encoder."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub layers: Vec<PngLayer>,
@@ -5617,7 +5617,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -5749,7 +5749,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -5769,7 +5769,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -5777,7 +5777,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -6141,7 +6141,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<LogSpecification>,
@@ -6149,7 +6149,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<MetricSpecification>,
@@ -6257,7 +6257,7 @@ pub struct StorageEncryptedAssetDecryptionData {
     #[serde(
         rename = "assetFileEncryptionMetadata",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub asset_file_encryption_metadata: Vec<AssetFileEncryptionMetadata>,
@@ -6313,7 +6313,7 @@ pub struct StreamingEndpointListResult {
     #[doc = "The result of the List StreamingEndpoint operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StreamingEndpoint>,
@@ -6357,7 +6357,7 @@ pub struct StreamingEndpointProperties {
     #[serde(
         rename = "customHostNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_host_names: Vec<String>,
@@ -6467,7 +6467,7 @@ pub struct StreamingEndpointSkuInfoListResult {
     #[doc = "The result of the List StreamingEndpoint skus."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ArmStreamingEndpointSkuInfo>,
@@ -6512,7 +6512,7 @@ pub struct StreamingLocatorCollection {
     #[doc = "A collection of StreamingLocator items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StreamingLocator>,
@@ -6551,7 +6551,7 @@ pub struct StreamingLocatorContentKey {
     #[doc = "Tracks which use this Content Key"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tracks: Vec<TrackSelection>,
@@ -6638,7 +6638,7 @@ pub struct StreamingLocatorProperties {
     #[serde(
         rename = "contentKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub content_keys: Vec<StreamingLocatorContentKey>,
@@ -6648,7 +6648,7 @@ pub struct StreamingLocatorProperties {
     #[doc = "A list of asset or account filters which apply to this streaming locator"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filters: Vec<String>,
@@ -6681,7 +6681,7 @@ pub struct StreamingPath {
     #[doc = "Streaming paths for each protocol and encryptionScheme pair"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub paths: Vec<String>,
@@ -6803,7 +6803,7 @@ pub struct StreamingPolicyCollection {
     #[doc = "A collection of StreamingPolicy items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StreamingPolicy>,
@@ -6834,7 +6834,7 @@ pub struct StreamingPolicyContentKey {
     #[doc = "Tracks which use this content key"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tracks: Vec<TrackSelection>,
@@ -6854,7 +6854,7 @@ pub struct StreamingPolicyContentKeys {
     #[serde(
         rename = "keyToTrackMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_to_track_mappings: Vec<StreamingPolicyContentKey>,
@@ -7150,7 +7150,7 @@ pub struct TrackSelection {
     #[serde(
         rename = "trackSelections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub track_selections: Vec<TrackPropertyCondition>,
@@ -7203,7 +7203,7 @@ pub struct TransformCollection {
     #[doc = "A collection of Transform items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Transform>,

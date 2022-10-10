@@ -23,7 +23,7 @@ pub struct AccountResourceListResult {
     #[doc = "Array of resource details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccountResource>,
@@ -137,7 +137,7 @@ pub struct ExtensionResourceListResult {
     #[doc = "Array of extension resource details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ExtensionResource>,
@@ -213,7 +213,7 @@ pub struct OperationListResult {
     #[doc = "A list of operations supported by a resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -264,7 +264,7 @@ pub struct ProjectResourceListResult {
     #[doc = "List of project resource details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProjectResource>,

@@ -9,7 +9,7 @@ pub struct AccessInformationCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessInformationContract>,
@@ -154,7 +154,7 @@ pub struct AdditionalLocation {
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -162,7 +162,7 @@ pub struct AdditionalLocation {
     #[serde(
         rename = "publicIPAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_ip_addresses: Vec<String>,
@@ -170,7 +170,7 @@ pub struct AdditionalLocation {
     #[serde(
         rename = "privateIPAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_ip_addresses: Vec<String>,
@@ -260,7 +260,7 @@ pub struct ApiCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApiContract>,
@@ -333,7 +333,7 @@ pub struct ApiContractProperties {
     #[doc = "Describes on which protocols the operations in this API can be invoked."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protocols: Vec<String>,
@@ -371,7 +371,7 @@ pub struct ApiContractUpdateProperties {
     #[doc = "Describes on which protocols the operations in this API can be invoked."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protocols: Vec<String>,
@@ -878,7 +878,7 @@ pub struct ApiManagementServiceBaseProperties {
     #[serde(
         rename = "hostnameConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hostname_configurations: Vec<HostnameConfiguration>,
@@ -886,7 +886,7 @@ pub struct ApiManagementServiceBaseProperties {
     #[serde(
         rename = "publicIPAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_ip_addresses: Vec<String>,
@@ -894,7 +894,7 @@ pub struct ApiManagementServiceBaseProperties {
     #[serde(
         rename = "privateIPAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_ip_addresses: Vec<String>,
@@ -911,7 +911,7 @@ pub struct ApiManagementServiceBaseProperties {
     #[serde(
         rename = "additionalLocations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_locations: Vec<AdditionalLocation>,
@@ -921,7 +921,7 @@ pub struct ApiManagementServiceBaseProperties {
     #[doc = "List of Certificates that need to be installed in the API Management service. Max supported certificates that can be installed is 10."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub certificates: Vec<CertificateConfiguration>,
@@ -944,7 +944,7 @@ pub struct ApiManagementServiceBaseProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<RemotePrivateEndpointConnectionWrapper>,
@@ -1284,7 +1284,7 @@ pub struct ApiManagementServiceResource {
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1384,7 +1384,7 @@ pub struct ApiManagementServiceUpdateParameters {
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1438,7 +1438,7 @@ pub struct ApiManagementSku {
     #[doc = "The set of locations that the SKU is available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -1446,7 +1446,7 @@ pub struct ApiManagementSku {
     #[serde(
         rename = "locationInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub location_info: Vec<ApiManagementSkuLocationInfo>,
@@ -1454,28 +1454,28 @@ pub struct ApiManagementSku {
     #[serde(
         rename = "apiVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub api_versions: Vec<String>,
     #[doc = "Metadata for retrieving price info."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub costs: Vec<ApiManagementSkuCosts>,
     #[doc = "A name value pair to describe the capability."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<ApiManagementSkuCapabilities>,
     #[doc = "The restrictions because of which SKU cannot be used. This is empty if there are no restrictions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<ApiManagementSkuRestrictions>,
@@ -1557,7 +1557,7 @@ pub struct ApiManagementSkuLocationInfo {
     #[doc = "List of availability zones where the SKU is supported."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1565,7 +1565,7 @@ pub struct ApiManagementSkuLocationInfo {
     #[serde(
         rename = "zoneDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zone_details: Vec<ApiManagementSkuZoneDetails>,
@@ -1580,14 +1580,14 @@ pub struct ApiManagementSkuRestrictionInfo {
     #[doc = "Locations where the SKU is restricted"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
     #[doc = "List of availability zones where the SKU is restricted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1606,7 +1606,7 @@ pub struct ApiManagementSkuRestrictions {
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -1642,14 +1642,14 @@ pub struct ApiManagementSkuZoneDetails {
     #[doc = "The set of zones that the SKU is available in with the specified capabilities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub name: Vec<String>,
     #[doc = "A list of capabilities that are available for the SKU in the specified list of zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<ApiManagementSkuCapabilities>,
@@ -1685,7 +1685,7 @@ pub struct ApiReleaseCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApiReleaseContract>,
@@ -1748,7 +1748,7 @@ pub struct ApiRevisionCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApiRevisionContract>,
@@ -1844,7 +1844,7 @@ pub struct ApiTagResourceContractProperties {
     #[doc = "Describes on which protocols the operations in this API can be invoked."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protocols: Vec<String>,
@@ -1884,7 +1884,7 @@ pub struct ApiVersionSetCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApiVersionSetContract>,
@@ -2200,7 +2200,7 @@ pub struct AuthorizationServerCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AuthorizationServerContract>,
@@ -2246,7 +2246,7 @@ pub struct AuthorizationServerContractBaseProperties {
     #[serde(
         rename = "authorizationMethods",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorization_methods: Vec<String>,
@@ -2254,7 +2254,7 @@ pub struct AuthorizationServerContractBaseProperties {
     #[serde(
         rename = "clientAuthenticationMethod",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub client_authentication_method: Vec<String>,
@@ -2262,7 +2262,7 @@ pub struct AuthorizationServerContractBaseProperties {
     #[serde(
         rename = "tokenBodyParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub token_body_parameters: Vec<TokenBodyParameterContract>,
@@ -2279,7 +2279,7 @@ pub struct AuthorizationServerContractBaseProperties {
     #[serde(
         rename = "bearerTokenSendingMethods",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub bearer_token_sending_methods: Vec<String>,
@@ -2388,7 +2388,7 @@ pub struct AuthorizationServerUpdateContractProperties {
     #[serde(
         rename = "grantTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub grant_types: Vec<String>,
@@ -2453,7 +2453,7 @@ pub struct BackendCollection {
     #[doc = "Backend values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BackendContract>,
@@ -2557,14 +2557,14 @@ pub struct BackendCredentialsContract {
     #[serde(
         rename = "certificateIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub certificate_ids: Vec<String>,
     #[doc = "List of Client Certificate Thumbprints. Will be ignored if certificatesIds are provided."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub certificate: Vec<String>,
@@ -2661,7 +2661,7 @@ pub struct BackendServiceFabricClusterProperties {
     #[serde(
         rename = "serverCertificateThumbprints",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub server_certificate_thumbprints: Vec<String>,
@@ -2669,7 +2669,7 @@ pub struct BackendServiceFabricClusterProperties {
     #[serde(
         rename = "serverX509Names",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub server_x509_names: Vec<X509CertificateName>,
@@ -2831,7 +2831,7 @@ pub struct CacheCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CacheContract>,
@@ -2932,7 +2932,7 @@ pub struct CertificateCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CertificateContract>,
@@ -3247,14 +3247,14 @@ pub mod connectivity_check_request {
             #[serde(
                 rename = "validStatusCodes",
                 default,
-                deserialize_with = "azure_core::util::deserialize_null_default",
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
                 skip_serializing_if = "Vec::is_empty"
             )]
             pub valid_status_codes: Vec<i64>,
             #[doc = "List of headers to be included in the request."]
             #[serde(
                 default,
-                deserialize_with = "azure_core::util::deserialize_null_default",
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
                 skip_serializing_if = "Vec::is_empty"
             )]
             pub headers: Vec<HttpHeader>,
@@ -3314,7 +3314,7 @@ pub struct ConnectivityCheckResponse {
     #[doc = "List of hops between the source and the destination."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hops: Vec<ConnectivityHop>,
@@ -3405,14 +3405,14 @@ pub struct ConnectivityHop {
     #[serde(
         rename = "nextHopIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub next_hop_ids: Vec<String>,
     #[doc = "List of issues."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub issues: Vec<ConnectivityIssue>,
@@ -3437,7 +3437,7 @@ pub struct ConnectivityIssue {
     #[doc = "Provides additional context on the issue."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub context: Vec<IssueContext>,
@@ -3671,7 +3671,7 @@ pub struct ContentItemCollection {
     #[doc = "Collection of content items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ContentItemContract>,
@@ -3716,7 +3716,7 @@ pub struct ContentTypeCollection {
     #[doc = "Collection of content types."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ContentTypeContract>,
@@ -3777,14 +3777,14 @@ pub struct DataMasking {
     #[serde(
         rename = "queryParams",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub query_params: Vec<DataMaskingEntity>,
     #[doc = "Masking settings for headers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<DataMaskingEntity>,
@@ -3887,7 +3887,7 @@ pub struct DeletedServicesCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DeletedServiceContract>,
@@ -3938,7 +3938,7 @@ pub struct DiagnosticCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DiagnosticContract>,
@@ -4188,7 +4188,7 @@ pub struct EmailTemplateCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EmailTemplateContract>,
@@ -4243,7 +4243,7 @@ pub struct EmailTemplateContractProperties {
     #[doc = "Email Template Parameter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<EmailTemplateParametersContractProperties>,
@@ -4296,7 +4296,7 @@ pub struct EmailTemplateUpdateParameterProperties {
     #[doc = "Email Template Parameter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<EmailTemplateParametersContractProperties>,
@@ -4328,7 +4328,7 @@ pub struct EndpointDependency {
     #[serde(
         rename = "endpointDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoint_details: Vec<EndpointDetail>,
@@ -4401,7 +4401,7 @@ pub struct ErrorResponseBody {
     #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorFieldContract>,
@@ -4417,7 +4417,7 @@ pub struct GatewayCertificateAuthorityCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GatewayCertificateAuthorityContract>,
@@ -4468,7 +4468,7 @@ pub struct GatewayCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GatewayContract>,
@@ -4525,7 +4525,7 @@ pub struct GatewayHostnameConfigurationCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GatewayHostnameConfigurationContract>,
@@ -4684,7 +4684,7 @@ pub struct GlobalSchemaCollection {
     #[doc = "Global Schema Contract value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GlobalSchemaContract>,
@@ -4802,7 +4802,7 @@ pub struct GroupCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GroupContract>,
@@ -5177,7 +5177,7 @@ pub struct HttpMessageDiagnostic {
     #[doc = "Array of HTTP Headers to log."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<String>,
@@ -5205,7 +5205,7 @@ pub struct IdentityProviderBaseParameters {
     #[serde(
         rename = "allowedTenants",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_tenants: Vec<String>,
@@ -5363,7 +5363,7 @@ pub struct IdentityProviderList {
     #[doc = "Identity Provider configuration values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IdentityProviderContract>,
@@ -5420,7 +5420,7 @@ pub struct IssueAttachmentCollection {
     #[doc = "Issue Attachment values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IssueAttachmentContract>,
@@ -5482,7 +5482,7 @@ pub struct IssueCollection {
     #[doc = "Issue values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IssueContract>,
@@ -5510,7 +5510,7 @@ pub struct IssueCommentCollection {
     #[doc = "Issue Comment values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IssueCommentContract>,
@@ -5766,7 +5766,7 @@ pub struct LoggerCollection {
     #[doc = "Logger values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LoggerContract>,
@@ -5961,7 +5961,7 @@ pub struct NamedValueCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NamedValueContract>,
@@ -6067,7 +6067,7 @@ pub struct NamedValueEntityBaseParameters {
     #[doc = "Optional tags that when provided can be used to filter the NamedValue list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<String>,
@@ -6163,7 +6163,7 @@ pub struct NotificationCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NotificationContract>,
@@ -6245,7 +6245,7 @@ pub struct OpenIdAuthenticationSettingsContract {
     #[serde(
         rename = "bearerTokenSendingMethods",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub bearer_token_sending_methods: Vec<BearerTokenSendingMethodsContract>,
@@ -6261,7 +6261,7 @@ pub struct OpenIdConnectProviderCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OpenidConnectProviderContract>,
@@ -6414,7 +6414,7 @@ pub struct OperationCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationContract>,
@@ -6481,7 +6481,7 @@ pub struct OperationEntityBaseContract {
     #[serde(
         rename = "templateParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub template_parameters: Vec<ParameterContract>,
@@ -6494,7 +6494,7 @@ pub struct OperationEntityBaseContract {
     #[doc = "Array of Operation responses."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub responses: Vec<ResponseContract>,
@@ -6513,7 +6513,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -6571,7 +6571,7 @@ pub struct OperationResultContractProperties {
     #[serde(
         rename = "actionLog",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub action_log: Vec<OperationResultLogItemContract>,
@@ -6684,7 +6684,7 @@ pub struct OutboundEnvironmentEndpoint {
     #[doc = "The endpoints that the Api Management Service reaches the service at."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<EndpointDependency>,
@@ -6728,7 +6728,7 @@ pub struct ParameterContract {
     #[doc = "Parameter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -6807,7 +6807,7 @@ pub struct PolicyCollection {
     #[doc = "Policy Contract value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicyContract>,
@@ -6910,7 +6910,7 @@ pub struct PolicyDescriptionCollection {
     #[doc = "Descriptions of APIM policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicyDescriptionContract>,
@@ -6958,7 +6958,7 @@ pub struct PolicyFragmentCollection {
     #[doc = "Policy fragment contract value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicyFragmentContract>,
@@ -7062,7 +7062,7 @@ pub struct PortalConfigCollection {
     #[doc = "The developer portal configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PortalConfigContract>,
@@ -7096,7 +7096,7 @@ pub struct PortalConfigCorsProperties {
     #[serde(
         rename = "allowedOrigins",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_origins: Vec<String>,
@@ -7116,7 +7116,7 @@ pub struct PortalConfigCspProperties {
     #[serde(
         rename = "reportUri",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub report_uri: Vec<String>,
@@ -7124,7 +7124,7 @@ pub struct PortalConfigCspProperties {
     #[serde(
         rename = "allowedSources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_sources: Vec<String>,
@@ -7309,7 +7309,7 @@ pub struct PortalRevisionCollection {
     #[doc = "Collection of portal revisions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PortalRevisionContract>,
@@ -7433,7 +7433,7 @@ pub struct PortalSettingsCollection {
     #[doc = "Descriptions of APIM policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PortalSettingsContract>,
@@ -7574,7 +7574,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -7699,7 +7699,7 @@ pub struct PrivateEndpointConnectionWrapperProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -7773,7 +7773,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -7793,7 +7793,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -7801,7 +7801,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -7835,7 +7835,7 @@ pub struct ProductCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProductContract>,
@@ -7978,7 +7978,7 @@ pub struct QuotaCounterCollection {
     #[doc = "Quota counter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<QuotaCounterContract>,
@@ -8074,7 +8074,7 @@ pub struct RecipientEmailCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecipientEmailContract>,
@@ -8122,7 +8122,7 @@ pub struct RecipientUserCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecipientUserContract>,
@@ -8170,14 +8170,14 @@ pub struct RecipientsContractProperties {
     #[doc = "List of Emails subscribed for the notification."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub emails: Vec<String>,
     #[doc = "List of Users subscribed for the notification."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub users: Vec<String>,
@@ -8211,7 +8211,7 @@ pub struct RegionListResult {
     #[doc = "Lists of Regions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RegionContract>,
@@ -8272,7 +8272,7 @@ pub struct ReportCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReportRecordContract>,
@@ -8397,7 +8397,7 @@ pub struct RepresentationContract {
     #[serde(
         rename = "formParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub form_parameters: Vec<ParameterContract>,
@@ -8426,21 +8426,21 @@ pub struct RequestContract {
     #[serde(
         rename = "queryParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub query_parameters: Vec<ParameterContract>,
     #[doc = "Collection of operation request headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<ParameterContract>,
     #[doc = "Collection of operation request representations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub representations: Vec<RepresentationContract>,
@@ -8456,7 +8456,7 @@ pub struct RequestReportCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RequestReportRecordContract>,
@@ -8562,7 +8562,7 @@ pub struct ResourceCollection {
     #[doc = "A collection of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<serde_json::Value>,
@@ -8779,14 +8779,14 @@ pub struct ResponseContract {
     #[doc = "Collection of operation response representations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub representations: Vec<RepresentationContract>,
     #[doc = "Collection of operation response headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub headers: Vec<ParameterContract>,
@@ -8887,7 +8887,7 @@ pub struct SchemaCollection {
     #[doc = "API Schema Contract value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SchemaContract>,
@@ -8965,7 +8965,7 @@ pub struct SubscriptionCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionContract>,
@@ -9263,7 +9263,7 @@ pub struct TagCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TagContract>,
@@ -9347,7 +9347,7 @@ pub struct TagDescriptionCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TagDescriptionContract>,
@@ -9418,7 +9418,7 @@ pub struct TagResourceCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TagResourceContract>,
@@ -9533,7 +9533,7 @@ pub struct TenantSettingsCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TenantSettingsContract>,
@@ -9615,7 +9615,7 @@ pub struct UserCollection {
     #[doc = "Page values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UserContract>,
@@ -9671,7 +9671,7 @@ pub struct UserContractProperties {
     #[doc = "Collection of groups user is part of."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub groups: Vec<GroupContractProperties>,
@@ -9822,7 +9822,7 @@ pub struct UserEntityBaseParameters {
     #[doc = "Collection of user identities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub identities: Vec<UserIdentityContract>,
@@ -9891,7 +9891,7 @@ pub struct UserIdentityCollection {
     #[doc = "User Identity values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UserIdentityContract>,

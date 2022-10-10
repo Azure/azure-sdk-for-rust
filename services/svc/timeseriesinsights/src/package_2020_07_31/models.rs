@@ -21,7 +21,7 @@ pub struct AggregateSeries {
     #[serde(
         rename = "projectedVariables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub projected_variables: Vec<String>,
@@ -95,7 +95,7 @@ pub struct CategoricalVariable {
     pub interpolation: Option<Interpolation>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub categories: Vec<TimeSeriesAggregateCategory>,
@@ -150,7 +150,7 @@ pub struct EventSchema {
     #[doc = "A set of property definitions. When environment has no data, the returned array is empty."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub properties: Vec<EventProperty>,
@@ -188,7 +188,7 @@ pub struct GetEvents {
     #[serde(
         rename = "projectedProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub projected_properties: Vec<EventProperty>,
@@ -215,7 +215,7 @@ pub struct GetHierarchiesPage {
     #[doc = "Partial list of time series hierarchies returned in a single request. Can be empty if server was unable to fill the page in this request, or there is no more objects when continuation token is null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hierarchies: Vec<TimeSeriesHierarchy>,
@@ -233,7 +233,7 @@ pub struct GetInstancesPage {
     #[doc = "Partial list of time series instances returned in a single request. Can be empty if server was unable to fill the page in this request, or there is no more objects when continuation token is null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub instances: Vec<TimeSeriesInstance>,
@@ -259,7 +259,7 @@ pub struct GetSeries {
     #[serde(
         rename = "projectedVariables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub projected_variables: Vec<String>,
@@ -290,7 +290,7 @@ pub struct GetTypesPage {
     #[doc = "Partial list of time series types returned in a single request. Can be empty if server was unable to fill the page with more types in this request, or there is no more types when continuation token is null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub types: Vec<TimeSeriesType>,
@@ -309,7 +309,7 @@ pub struct HierarchiesBatchRequest {
     #[doc = "\"put\" should be set while creating or updating hierarchies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub put: Vec<TimeSeriesHierarchy>,
@@ -328,21 +328,21 @@ pub struct HierarchiesBatchResponse {
     #[doc = "List of hierarchy or error objects corresponding by position to the \"get\" array in the request. Hierarchy object is set when operation is successful and error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub get: Vec<TimeSeriesHierarchyOrError>,
     #[doc = "List of hierarchy or error object corresponding by position to the \"put\" array in the request. Hierarchy object is set when operation is successful and error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub put: Vec<TimeSeriesHierarchyOrError>,
     #[doc = "List of error objects corresponding by position to the \"delete\" array in the request - null when the operation is successful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delete: Vec<TsiErrorBody>,
@@ -411,14 +411,14 @@ pub struct HierarchiesRequestBatchGetDelete {
     #[serde(
         rename = "hierarchyIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hierarchy_ids: Vec<String>,
     #[doc = "List of hierarchy names."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub names: Vec<String>,
@@ -514,7 +514,7 @@ pub struct InstanceHit {
     #[serde(
         rename = "hierarchyIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hierarchy_ids: Vec<String>,
@@ -536,7 +536,7 @@ pub mod instance_hit {
         #[serde(
             rename = "timeSeriesId",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub time_series_id: Vec<String>,
@@ -553,7 +553,7 @@ pub mod instance_hit {
         #[serde(
             rename = "hierarchyIds",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub hierarchy_ids: Vec<String>,
@@ -561,7 +561,7 @@ pub mod instance_hit {
         #[serde(
             rename = "hierarchyNames",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub hierarchy_names: Vec<String>,
@@ -569,7 +569,7 @@ pub mod instance_hit {
         #[serde(
             rename = "instanceFieldNames",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub instance_field_names: Vec<String>,
@@ -577,7 +577,7 @@ pub mod instance_hit {
         #[serde(
             rename = "instanceFieldValues",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub instance_field_values: Vec<String>,
@@ -612,14 +612,14 @@ pub struct InstancesBatchRequest {
     #[doc = "Time series instances to be created or updated."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub put: Vec<TimeSeriesInstance>,
     #[doc = "Time series instance to be updated. If instance does not exist, an error is returned."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub update: Vec<TimeSeriesInstance>,
@@ -638,28 +638,28 @@ pub struct InstancesBatchResponse {
     #[doc = "List of instance or error objects corresponding by position to the \"get\" array in the request. Instance object is set when operation is successful and error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub get: Vec<InstanceOrError>,
     #[doc = "List of error objects corresponding by position to the \"put\" array in the request. Error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub put: Vec<InstanceOrError>,
     #[doc = "List of error objects corresponding by position to the \"update\" array in the request. Instance object is set when operation is successful and error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub update: Vec<InstanceOrError>,
     #[doc = "List of error objects corresponding by position to the \"delete\" array in the request. Null means the instance has been deleted, or did not exist. Error object is set when operation is unsuccessful (e.g. when there are events associated with this time series instance)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delete: Vec<TsiErrorBody>,
@@ -676,14 +676,14 @@ pub struct InstancesRequestBatchGetOrDelete {
     #[serde(
         rename = "timeSeriesIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub time_series_ids: Vec<TimeSeriesId>,
     #[doc = "List of names of the time series instances to return or delete."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub names: Vec<String>,
@@ -781,7 +781,7 @@ pub struct InstancesSuggestResponse {
     #[doc = "List of instance suggestions for searching time series models."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub suggestions: Vec<InstancesSearchStringSuggestion>,
@@ -957,7 +957,7 @@ pub struct PropertyValues {
     #[doc = "Values of a single property corresponding to the timestamps. May contain nulls. Type of values matches the type of property."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<serde_json::Value>,
@@ -993,14 +993,14 @@ pub struct QueryResultPage {
     #[doc = "The timestamps of the values of the time series. If an aggregation over intervals is used, timestamps represent the start of corresponding intervals. If events are retrieved, timestamps are values of timestamp $ts property of events. Can be null if server was unable to fill the page in this request, or can be empty if there are no more objects when continuation token is null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub timestamps: Vec<time::OffsetDateTime>,
     #[doc = "Collection of time series properties and values for each of the timestamps.  Can be null if server was unable to fill the page in this request, or can be empty if there are no more objects when continuation token is null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub properties: Vec<PropertyValues>,
@@ -1019,7 +1019,7 @@ pub struct SearchHierarchyNodesResponse {
     #[doc = "The list of hierarchy nodes which contains the instances matching the query based on the input. May be empty."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hits: Vec<HierarchyHit>,
@@ -1083,7 +1083,7 @@ pub struct SearchInstancesRequest {
     #[doc = "Filter on hierarchy path of time series instances. Path is represented as array of string path segments. First element should be hierarchy name. Example: [\"Location\", \"California\"]. Optional, case sensitive, never empty and can be null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub path: Vec<String>,
@@ -1110,7 +1110,7 @@ pub struct SearchInstancesResponse {
     #[doc = "The list of instances matching the query based on the input. May be empty."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hits: Vec<InstanceHit>,
@@ -1190,7 +1190,7 @@ pub mod time_series_hierarchy {
         #[serde(
             rename = "instanceFieldNames",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub instance_field_names: Vec<String>,
@@ -1290,7 +1290,7 @@ pub struct TimeSeriesInstance {
     #[serde(
         rename = "hierarchyIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hierarchy_ids: Vec<String>,
@@ -1397,7 +1397,7 @@ pub struct TsiErrorBody {
     #[doc = "Contains additional error information. May be null."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<TsiErrorDetails>,
@@ -1442,7 +1442,7 @@ pub struct TypesBatchRequest {
     #[doc = "Definition of what time series types to update or create."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub put: Vec<TimeSeriesType>,
@@ -1461,21 +1461,21 @@ pub struct TypesBatchResponse {
     #[doc = "List of types or error objects corresponding by position to the \"get\" array in the request. Type object is set when operation is successful and error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub get: Vec<TimeSeriesTypeOrError>,
     #[doc = "List of types or error objects corresponding by position to the \"put\" array in the request. Type object is set when operation is successful and error object is set when operation is unsuccessful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub put: Vec<TimeSeriesTypeOrError>,
     #[doc = "List of error objects corresponding by position to the \"delete\" array in the request - null when the operation is successful."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delete: Vec<TsiErrorBody>,
@@ -1492,14 +1492,14 @@ pub struct TypesRequestBatchGetOrDelete {
     #[serde(
         rename = "typeIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub type_ids: Vec<String>,
     #[doc = "List of names of time series types to return or delete."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub names: Vec<String>,

@@ -41,7 +41,7 @@ pub struct Error {
     #[doc = "Error details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetails>,
@@ -233,7 +233,7 @@ pub struct OperationListResult {
     #[doc = "List of Resource Graph operations supported by the Resource Graph resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -255,7 +255,7 @@ pub struct QueryRequest {
     #[doc = "Azure subscriptions against which to execute the query."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subscriptions: Vec<String>,
@@ -263,7 +263,7 @@ pub struct QueryRequest {
     #[serde(
         rename = "managementGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub management_groups: Vec<String>,
@@ -275,7 +275,7 @@ pub struct QueryRequest {
     #[doc = "An array of facet requests to be computed against the query result."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub facets: Vec<FacetRequest>,
@@ -350,7 +350,7 @@ pub struct QueryResponse {
     #[doc = "Query facets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub facets: Vec<Facet>,

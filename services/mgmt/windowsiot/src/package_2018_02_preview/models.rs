@@ -37,7 +37,7 @@ pub struct DeviceServiceDescriptionListResult {
     #[doc = "The array of DeviceService objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DeviceService>,
@@ -176,7 +176,7 @@ pub struct OperationListResult {
     #[doc = "List of Windows IoT Device Service operations supported by the Microsoft.WindowsIoT resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,

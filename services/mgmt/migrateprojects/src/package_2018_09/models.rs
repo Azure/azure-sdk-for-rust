@@ -7,7 +7,7 @@ use std::str::FromStr;
 pub struct ApplyClause {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transformations: Vec<TransformationNode>,
@@ -57,7 +57,7 @@ pub struct AssessmentDetails {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -71,7 +71,7 @@ pub struct AssessmentDetails {
     #[serde(
         rename = "macAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mac_addresses: Vec<String>,
@@ -162,7 +162,7 @@ pub struct DatabaseCollection {
     #[doc = "Gets or sets the databases."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Database>,
@@ -202,7 +202,7 @@ pub struct DatabaseInstanceCollection {
     #[doc = "Gets or sets the database instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatabaseInstance>,
@@ -264,7 +264,7 @@ pub struct DatabaseInstanceProperties {
     #[serde(
         rename = "discoveryData",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub discovery_data: Vec<DatabaseInstanceDiscoveryDetails>,
@@ -330,7 +330,7 @@ pub struct DatabaseProperties {
     #[serde(
         rename = "assessmentData",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub assessment_data: Vec<DatabaseAssessmentDetails>,
@@ -420,7 +420,7 @@ pub struct DiscoveryDetails {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -434,7 +434,7 @@ pub struct DiscoveryDetails {
     #[serde(
         rename = "macAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mac_addresses: Vec<String>,
@@ -465,7 +465,7 @@ pub struct EventCollection {
     #[doc = "Gets or sets the machines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MigrateEvent>,
@@ -526,7 +526,7 @@ impl IEdmDirectValueAnnotationsManager {
 pub struct IEdmEntityContainer {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub elements: Vec<IEdmEntityContainerElement>,
@@ -626,28 +626,28 @@ pub struct IEdmModel {
     #[serde(
         rename = "schemaElements",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schema_elements: Vec<IEdmSchemaElement>,
     #[serde(
         rename = "vocabularyAnnotations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vocabulary_annotations: Vec<IEdmVocabularyAnnotation>,
     #[serde(
         rename = "referencedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub referenced_models: Vec<IEdmModel>,
     #[serde(
         rename = "declaredNamespaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub declared_namespaces: Vec<String>,
@@ -718,7 +718,7 @@ pub struct IEdmNavigationSource {
     #[serde(
         rename = "navigationPropertyBindings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub navigation_property_bindings: Vec<IEdmNavigationPropertyBinding>,
@@ -739,7 +739,7 @@ pub struct IEdmPathExpression {
     #[serde(
         rename = "pathSegments",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub path_segments: Vec<String>,
@@ -815,7 +815,7 @@ pub struct IEdmReferentialConstraint {
     #[serde(
         rename = "propertyPairs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_pairs: Vec<EdmReferentialConstraintPropertyPair>,
@@ -889,7 +889,7 @@ pub struct IEdmStructuredType {
     #[serde(
         rename = "declaredProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub declared_properties: Vec<IEdmProperty>,
@@ -1044,7 +1044,7 @@ pub struct MachineCollection {
     #[doc = "Gets or sets the machines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Machine>,
@@ -1078,7 +1078,7 @@ pub struct MachineProperties {
     #[serde(
         rename = "discoveryData",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub discovery_data: Vec<DiscoveryDetails>,
@@ -1086,7 +1086,7 @@ pub struct MachineProperties {
     #[serde(
         rename = "assessmentData",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub assessment_data: Vec<AssessmentDetails>,
@@ -1094,7 +1094,7 @@ pub struct MachineProperties {
     #[serde(
         rename = "migrationData",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub migration_data: Vec<MigrationDetails>,
@@ -1209,7 +1209,7 @@ pub struct MigrateProjectProperties {
     #[serde(
         rename = "registeredTools",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub registered_tools: Vec<String>,
@@ -1327,7 +1327,7 @@ pub struct MigrationDetails {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -1341,7 +1341,7 @@ pub struct MigrationDetails {
     #[serde(
         rename = "macAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mac_addresses: Vec<String>,
@@ -1362,7 +1362,7 @@ pub struct ODataPath {
     pub navigation_source: Option<IEdmNavigationSource>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub segments: Vec<ODataPathSegment>,
@@ -1370,7 +1370,7 @@ pub struct ODataPath {
     pub path_template: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub path: Vec<ODataPathSegment>,
@@ -1493,7 +1493,7 @@ pub struct OperationResultList {
     #[doc = "List of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1637,7 +1637,7 @@ pub struct SelectExpandClause {
     #[serde(
         rename = "selectedItems",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selected_items: Vec<SelectItem>,
@@ -1917,7 +1917,7 @@ pub struct SolutionsCollection {
     #[doc = "Gets or sets the list of solutions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Solution>,

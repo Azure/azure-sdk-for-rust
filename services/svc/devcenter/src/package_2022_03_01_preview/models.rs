@@ -146,7 +146,7 @@ pub struct CatalogItemAction {
     #[doc = "Input parameters passed to the action"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<CatalogItemParameter>,
@@ -212,7 +212,7 @@ pub struct CatalogItemParameter {
     #[doc = "An array of allowed values"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed: Vec<serde_json::Value>,
@@ -252,14 +252,14 @@ pub struct CatalogItemVersion {
     #[doc = "Input parameters passed to actions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<CatalogItemParameter>,
     #[doc = "Custom actions for the catalog item."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<CatalogItemAction>,
@@ -328,7 +328,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,

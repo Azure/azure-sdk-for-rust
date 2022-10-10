@@ -272,7 +272,7 @@ pub struct FlaggedEnrolledAppProperties {
     pub platform: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<FlaggedEnrolledAppError>,

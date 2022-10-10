@@ -193,7 +193,7 @@ pub struct ActionRulesList {
     #[doc = "List of action rules"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ActionRule>,
@@ -490,7 +490,7 @@ pub struct AlertRulesList {
     #[doc = "List of Smart Detector alert rules."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AlertRule>,
@@ -542,7 +542,7 @@ pub struct Condition {
     #[doc = "list of values to match for a given condition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -647,7 +647,7 @@ pub struct Detector {
     #[serde(
         rename = "supportedResourceTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_resource_types: Vec<String>,
@@ -655,7 +655,7 @@ pub struct Detector {
     #[serde(
         rename = "imagePaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub image_paths: Vec<String>,
@@ -828,7 +828,7 @@ pub struct Scope {
     #[doc = "list of ARM IDs of the given scope type which will be the target of the given action rule."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -1001,7 +1001,7 @@ pub struct SuppressionSchedule {
     #[serde(
         rename = "recurrenceValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recurrence_values: Vec<i64>,
@@ -1126,7 +1126,7 @@ pub struct AlertModificationProperties {
     #[doc = "Modification details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub modifications: Vec<AlertModificationItem>,
@@ -1163,7 +1163,7 @@ pub struct AlertsList {
     #[doc = "List of alerts"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Alert>,
@@ -1270,7 +1270,7 @@ pub struct AlertsSummaryGroup {
     #[doc = "List of the items"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<AlertsSummaryGroupItem>,
@@ -1295,7 +1295,7 @@ pub struct AlertsSummaryGroupItem {
     #[doc = "List of the items"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<AlertsSummaryGroupItem>,
@@ -1346,7 +1346,7 @@ pub struct ErrorResponseBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponseBody>,
@@ -1808,7 +1808,7 @@ pub struct SmartGroupModificationProperties {
     #[doc = "Modification details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub modifications: Vec<SmartGroupModificationItem>,
@@ -1845,7 +1845,7 @@ pub struct SmartGroupProperties {
     #[doc = "Summary of target resources in the smart group"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<SmartGroupAggregatedProperty>,
@@ -1853,7 +1853,7 @@ pub struct SmartGroupProperties {
     #[serde(
         rename = "resourceTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_types: Vec<SmartGroupAggregatedProperty>,
@@ -1861,7 +1861,7 @@ pub struct SmartGroupProperties {
     #[serde(
         rename = "resourceGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_groups: Vec<SmartGroupAggregatedProperty>,
@@ -1869,7 +1869,7 @@ pub struct SmartGroupProperties {
     #[serde(
         rename = "monitorServices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub monitor_services: Vec<SmartGroupAggregatedProperty>,
@@ -1877,7 +1877,7 @@ pub struct SmartGroupProperties {
     #[serde(
         rename = "monitorConditions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub monitor_conditions: Vec<SmartGroupAggregatedProperty>,
@@ -1885,7 +1885,7 @@ pub struct SmartGroupProperties {
     #[serde(
         rename = "alertStates",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alert_states: Vec<SmartGroupAggregatedProperty>,
@@ -1893,7 +1893,7 @@ pub struct SmartGroupProperties {
     #[serde(
         rename = "alertSeverities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alert_severities: Vec<SmartGroupAggregatedProperty>,
@@ -2000,7 +2000,7 @@ pub struct SmartGroupsList {
     #[doc = "List of alerts"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SmartGroup>,

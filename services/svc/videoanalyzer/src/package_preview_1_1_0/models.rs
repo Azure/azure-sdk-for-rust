@@ -66,14 +66,14 @@ pub struct DiscoveredOnvifDevice {
     #[doc = "An array of hostnames for the ONVIF discovered devices that are in the same subnet as the IoT Edge device."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<String>,
     #[doc = "An array of media profile endpoints that the ONVIF discovered device supports."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<String>,
@@ -89,7 +89,7 @@ pub struct DiscoveredOnvifDeviceCollection {
     #[doc = "An array of ONVIF devices that have been discovered in the same subnet as the IoT Edge device."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DiscoveredOnvifDevice>,
@@ -662,7 +662,7 @@ pub struct LivePipelineCollection {
     #[doc = "List of live pipelines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LivePipeline>,
@@ -737,7 +737,7 @@ pub struct LivePipelineProperties {
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ParameterDefinition>,
@@ -1094,7 +1094,7 @@ pub struct NodeInput {
     #[serde(
         rename = "outputSelectors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output_selectors: Vec<OutputSelector>,
@@ -1185,7 +1185,7 @@ pub struct OnvifDevice {
     #[serde(
         rename = "mediaProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub media_profiles: Vec<MediaProfile>,
@@ -1235,7 +1235,7 @@ pub struct OnvifDns {
     #[serde(
         rename = "ipv4Address",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv4_address: Vec<String>,
@@ -1243,7 +1243,7 @@ pub struct OnvifDns {
     #[serde(
         rename = "ipv6Address",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv6_address: Vec<String>,
@@ -1555,7 +1555,7 @@ pub struct PipelineTopologyCollection {
     #[doc = "List of pipeline topologies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PipelineTopology>,
@@ -1614,28 +1614,28 @@ pub struct PipelineTopologyProperties {
     #[doc = "List of the topology parameter declarations. Parameters declared here can be referenced throughout the topology nodes through the use of \"${PARAMETER_NAME}\" string pattern. Parameters can have optional default values and can later be defined in individual instances of the pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ParameterDeclaration>,
     #[doc = "List of the topology source nodes. Source nodes enable external data to be ingested by the pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sources: Vec<SourceNodeBase>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub processors: Vec<ProcessorNodeBase>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sinks: Vec<SinkNodeBase>,
@@ -1742,7 +1742,7 @@ pub struct RemoteDeviceAdapterCollection {
     #[doc = "An array of remote device adapters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RemoteDeviceAdapter>,
@@ -2167,7 +2167,7 @@ pub struct SpatialAnalysisPersonCountZoneEvents {
     #[doc = "The event configuration."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SpatialAnalysisPersonCountEvent>,
@@ -2268,7 +2268,7 @@ pub struct SpatialAnalysisPersonDistanceZoneEvents {
     #[doc = "The event configuration."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SpatialAnalysisPersonDistanceEvent>,
@@ -2296,7 +2296,7 @@ pub struct SpatialAnalysisPersonLineCrossingLineEvents {
     #[doc = "The event configuration."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SpatialAnalysisPersonLineCrossingEvent>,
@@ -2407,7 +2407,7 @@ pub struct SpatialAnalysisPersonZoneCrossingZoneEvents {
     #[doc = "The event configuration."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SpatialAnalysisPersonZoneCrossingEvent>,

@@ -30,7 +30,7 @@ pub struct CostEstimate {
     #[doc = "List of usage events"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<UsageEvent>,
@@ -117,7 +117,7 @@ pub struct JobDetails {
     #[doc = "List of user-supplied tags associated with the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<String>,
@@ -198,7 +198,7 @@ pub mod job_details {
 pub struct JobDetailsList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobDetails>,
@@ -310,7 +310,7 @@ pub struct ProviderStatus {
     pub current_availability: Option<provider_status::CurrentAvailability>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub targets: Vec<TargetStatus>,
@@ -367,7 +367,7 @@ pub mod provider_status {
 pub struct ProviderStatusList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProviderStatus>,
@@ -498,7 +498,7 @@ pub mod quota {
 pub struct QuotaList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Quota>,

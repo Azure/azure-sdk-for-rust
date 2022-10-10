@@ -134,7 +134,7 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(
         rename = "firewallRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub firewall_rules: Vec<CreateFirewallRuleWithAccountParameters>,
@@ -142,7 +142,7 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(
         rename = "virtualNetworkRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_network_rules: Vec<CreateVirtualNetworkRuleWithAccountParameters>,
@@ -156,7 +156,7 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(
         rename = "trustedIdProviders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub trusted_id_providers: Vec<CreateTrustedIdProviderWithAccountParameters>,
@@ -367,7 +367,7 @@ pub struct DataLakeStoreAccountListResult {
     #[doc = "The results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataLakeStoreAccountBasic>,
@@ -407,7 +407,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(
         rename = "firewallRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub firewall_rules: Vec<FirewallRule>,
@@ -415,7 +415,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(
         rename = "virtualNetworkRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
@@ -429,7 +429,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(
         rename = "trustedIdProviders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub trusted_id_providers: Vec<TrustedIdProvider>,
@@ -643,7 +643,7 @@ pub struct FirewallRuleListResult {
     #[doc = "The results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FirewallRule>,
@@ -807,7 +807,7 @@ pub struct OperationListResult {
     #[doc = "The results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -882,7 +882,7 @@ pub struct TrustedIdProviderListResult {
     #[doc = "The results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TrustedIdProvider>,
@@ -941,7 +941,7 @@ pub struct UpdateDataLakeStoreAccountProperties {
     #[serde(
         rename = "firewallRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub firewall_rules: Vec<UpdateFirewallRuleWithAccountParameters>,
@@ -949,7 +949,7 @@ pub struct UpdateDataLakeStoreAccountProperties {
     #[serde(
         rename = "virtualNetworkRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_network_rules: Vec<UpdateVirtualNetworkRuleWithAccountParameters>,
@@ -963,7 +963,7 @@ pub struct UpdateDataLakeStoreAccountProperties {
     #[serde(
         rename = "trustedIdProviders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub trusted_id_providers: Vec<UpdateTrustedIdProviderWithAccountParameters>,
@@ -1201,7 +1201,7 @@ pub struct UsageListResult {
     #[doc = "Gets or sets the list of Storage Resource Usages."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Usage>,
@@ -1252,7 +1252,7 @@ pub struct VirtualNetworkRuleListResult {
     #[doc = "The results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworkRule>,

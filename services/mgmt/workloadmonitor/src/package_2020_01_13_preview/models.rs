@@ -48,7 +48,7 @@ pub mod error_response {
         #[doc = "Error details."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<ErrorDetails>,
@@ -77,7 +77,7 @@ pub struct HealthMonitorList {
     #[doc = "Array of health monitors of the virtual machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HealthMonitor>,
@@ -154,7 +154,7 @@ pub struct HealthMonitorStateChangeList {
     #[doc = "Array of health state changes within the specified time window."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HealthMonitorStateChange>,
@@ -295,7 +295,7 @@ pub struct OperationList {
     #[doc = "Array of available REST API operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

@@ -113,7 +113,7 @@ pub struct BotProperties {
     #[serde(
         rename = "configuredChannels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub configured_channels: Vec<String>,
@@ -121,7 +121,7 @@ pub struct BotProperties {
     #[serde(
         rename = "enabledChannels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enabled_channels: Vec<String>,
@@ -138,7 +138,7 @@ pub struct BotProperties {
     #[serde(
         rename = "luisAppIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub luis_app_ids: Vec<String>,
@@ -179,7 +179,7 @@ pub struct BotProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -330,7 +330,7 @@ pub struct BotResponseList {
     #[doc = "Gets the list of bot service results and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Bot>,
@@ -381,7 +381,7 @@ pub struct ChannelResponseList {
     #[doc = "Gets the list of bot service channel results and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BotChannel>,
@@ -409,7 +409,7 @@ pub struct ChannelSettings {
     #[doc = "The list of sites"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sites: Vec<Site>,
@@ -538,7 +538,7 @@ pub struct ConnectionSettingProperties {
     #[doc = "Service Provider Parameters associated with the Connection Setting"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ConnectionSettingParameter>,
@@ -560,7 +560,7 @@ pub struct ConnectionSettingResponseList {
     #[doc = "Gets the list of bot service connection settings and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConnectionSetting>,
@@ -596,7 +596,7 @@ pub struct DirectLineChannelProperties {
     #[doc = "The list of Direct Line sites"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sites: Vec<DirectLineSite>,
@@ -643,7 +643,7 @@ pub struct DirectLineSite {
     #[serde(
         rename = "trustedOrigins",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub trusted_origins: Vec<String>,
@@ -802,7 +802,7 @@ pub struct FacebookChannelProperties {
     #[doc = "The list of Facebook pages"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pages: Vec<FacebookPage>,
@@ -1145,7 +1145,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,
@@ -1260,7 +1260,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -1416,7 +1416,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -1436,7 +1436,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1444,7 +1444,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1502,7 +1502,7 @@ pub struct Resource {
     #[doc = "Entity zones"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1605,7 +1605,7 @@ pub struct ServiceProviderProperties {
     #[doc = "The list of parameters for the Service Provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ServiceProviderParameter>,
@@ -1624,7 +1624,7 @@ pub struct ServiceProviderResponseList {
     #[doc = "Gets the list of bot service providers and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServiceProvider>,
@@ -2008,7 +2008,7 @@ pub struct WebChatChannelProperties {
     #[doc = "The list of Web Chat sites"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sites: Vec<WebChatSite>,

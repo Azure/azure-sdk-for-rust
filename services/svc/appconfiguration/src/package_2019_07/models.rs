@@ -49,7 +49,7 @@ pub struct KeyListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub items: Vec<Key>,
@@ -98,7 +98,7 @@ pub struct KeyValueListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub items: Vec<KeyValue>,
@@ -133,7 +133,7 @@ pub struct LabelListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub items: Vec<Label>,

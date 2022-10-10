@@ -151,7 +151,7 @@ pub struct CognitiveServicesAccountEnumerateSkusResult {
     #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CognitiveServicesResourceAndSku>,
@@ -182,7 +182,7 @@ pub struct CognitiveServicesAccountListResult {
     #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CognitiveServicesAccount>,

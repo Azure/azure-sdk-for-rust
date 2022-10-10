@@ -56,7 +56,7 @@ pub struct Error {
     #[doc = "Error details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetails>,
@@ -248,7 +248,7 @@ pub struct OperationListResult {
     #[doc = "List of Resource Graph operations supported by the Resource Graph resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -270,7 +270,7 @@ pub struct QueryRequest {
     #[doc = "Azure subscriptions against which to execute the query."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subscriptions: Vec<String>,
@@ -285,7 +285,7 @@ pub struct QueryRequest {
     #[doc = "An array of facet requests to be computed against the query result."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub facets: Vec<FacetRequest>,
@@ -352,7 +352,7 @@ pub struct QueryResponse {
     #[doc = "Query facets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub facets: Vec<Facet>,
@@ -402,7 +402,7 @@ pub struct ResourceChangeData {
     #[serde(
         rename = "propertyChanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_changes: Vec<ResourcePropertyChange>,
@@ -450,7 +450,7 @@ pub struct ResourceChangeList {
     #[doc = "The pageable value returned by the operation, i.e. a list of changes to the resource.\n\n- The list is ordered from the most recent changes to the least recent changes.\n- This list will be empty if there were no changes during the requested interval.\n- The `Before` snapshot timestamp value of the oldest change can be outside of the specified time interval."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub changes: Vec<ResourceChangeData>,
@@ -568,7 +568,7 @@ impl ResourceSnapshotData {
 pub struct ResourcesHistoryRequest {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subscriptions: Vec<String>,

@@ -321,7 +321,7 @@ pub struct BackupSetInfo {
     #[serde(
         rename = "listOfBackupFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub list_of_backup_files: Vec<BackupFileInfo>,
@@ -424,7 +424,7 @@ pub struct CheckOciDriverTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -445,7 +445,7 @@ pub struct CheckOciDriverTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<CheckOciDriverTaskOutput>,
@@ -468,7 +468,7 @@ pub struct CommandProperties {
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ODataError>,
@@ -542,7 +542,7 @@ pub struct ConnectToMongoDbTaskProperties {
     #[doc = "An array containing a single MongoDbClusterInfo object"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MongoDbClusterInfo>,
@@ -593,7 +593,7 @@ pub struct ConnectToSourceMySqlTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToSourceNonSqlTaskOutput>,
@@ -622,7 +622,7 @@ pub struct ConnectToSourceNonSqlTaskOutput {
     #[doc = "List of databases on the server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases: Vec<String>,
@@ -630,7 +630,7 @@ pub struct ConnectToSourceNonSqlTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -661,7 +661,7 @@ pub struct ConnectToSourceOracleSyncTaskOutput {
     #[doc = "List of schemas on source server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases: Vec<String>,
@@ -672,7 +672,7 @@ pub struct ConnectToSourceOracleSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -693,7 +693,7 @@ pub struct ConnectToSourceOracleSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToSourceOracleSyncTaskOutput>,
@@ -731,7 +731,7 @@ pub struct ConnectToSourcePostgreSqlSyncTaskOutput {
     #[doc = "List of databases on source server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases: Vec<String>,
@@ -742,7 +742,7 @@ pub struct ConnectToSourcePostgreSqlSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -763,7 +763,7 @@ pub struct ConnectToSourcePostgreSqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToSourcePostgreSqlSyncTaskOutput>,
@@ -788,7 +788,7 @@ pub struct ConnectToSourceSqlServerSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToSourceSqlServerTaskOutput>,
@@ -879,7 +879,7 @@ pub struct ConnectToSourceSqlServerTaskOutputAgentJobLevel {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -916,7 +916,7 @@ pub struct ConnectToSourceSqlServerTaskOutputDatabaseLevel {
     #[serde(
         rename = "databaseFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub database_files: Vec<DatabaseFileInfo>,
@@ -999,7 +999,7 @@ pub struct ConnectToSourceSqlServerTaskOutputTaskLevel {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -1029,7 +1029,7 @@ pub struct ConnectToSourceSqlServerTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToSourceSqlServerTaskOutput>,
@@ -1077,7 +1077,7 @@ pub struct ConnectToTargetAzureDbForMySqlTaskOutput {
     #[doc = "List of databases on target server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases: Vec<String>,
@@ -1088,7 +1088,7 @@ pub struct ConnectToTargetAzureDbForMySqlTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -1109,7 +1109,7 @@ pub struct ConnectToTargetAzureDbForMySqlTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetAzureDbForMySqlTaskOutput>,
@@ -1153,7 +1153,7 @@ pub struct ConnectToTargetAzureDbForPostgreSqlSyncTaskOutput {
     #[doc = "List of databases on target server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases: Vec<String>,
@@ -1164,7 +1164,7 @@ pub struct ConnectToTargetAzureDbForPostgreSqlSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -1185,7 +1185,7 @@ pub struct ConnectToTargetAzureDbForPostgreSqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetAzureDbForPostgreSqlSyncTaskOutput>,
@@ -1220,7 +1220,7 @@ pub struct ConnectToTargetOracleAzureDbForPostgreSqlSyncTaskOutput {
     #[doc = "List of databases on target server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases: Vec<String>,
@@ -1231,7 +1231,7 @@ pub struct ConnectToTargetOracleAzureDbForPostgreSqlSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -1239,7 +1239,7 @@ pub struct ConnectToTargetOracleAzureDbForPostgreSqlSyncTaskOutput {
     #[serde(
         rename = "databaseSchemaMap",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub database_schema_map: Vec<serde_json::Value>,
@@ -1260,7 +1260,7 @@ pub struct ConnectToTargetOracleAzureDbForPostgreSqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetOracleAzureDbForPostgreSqlSyncTaskOutput>,
@@ -1318,7 +1318,7 @@ pub struct ConnectToTargetSqlDbTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetSqlDbTaskOutput>,
@@ -1363,7 +1363,7 @@ pub struct ConnectToTargetSqlMiSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -1384,7 +1384,7 @@ pub struct ConnectToTargetSqlMiSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetSqlMiSyncTaskOutput>,
@@ -1439,7 +1439,7 @@ pub struct ConnectToTargetSqlMiTaskOutput {
     #[doc = "List of logins on the target server."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logins: Vec<String>,
@@ -1447,7 +1447,7 @@ pub struct ConnectToTargetSqlMiTaskOutput {
     #[serde(
         rename = "agentJobs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub agent_jobs: Vec<String>,
@@ -1455,7 +1455,7 @@ pub struct ConnectToTargetSqlMiTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -1476,7 +1476,7 @@ pub struct ConnectToTargetSqlMiTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetSqlMiTaskOutput>,
@@ -1519,7 +1519,7 @@ pub struct ConnectToTargetSqlSqlDbSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ConnectToTargetSqlDbTaskOutput>,
@@ -1649,7 +1649,7 @@ pub struct DataMigrationProjectMetadata {
     #[serde(
         rename = "selectedMigrationTables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selected_migration_tables: Vec<MigrationTableMetadata>,
@@ -1698,7 +1698,7 @@ pub struct DataMigrationServiceList {
     #[doc = "List of services"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataMigrationService>,
@@ -1815,7 +1815,7 @@ pub struct DataMigrationServiceStatusResponse {
     #[serde(
         rename = "supportedTaskTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_task_types: Vec<String>,
@@ -1898,7 +1898,7 @@ pub struct DatabaseBackupInfo {
     #[serde(
         rename = "backupFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_files: Vec<String>,
@@ -2392,7 +2392,7 @@ pub struct ExecutionStatistics {
     #[serde(
         rename = "sqlErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sql_errors: Vec<String>,
@@ -2408,7 +2408,7 @@ pub struct FileList {
     #[doc = "List of files"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProjectFile>,
@@ -2516,7 +2516,7 @@ pub struct GetTdeCertificatesSqlTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2537,7 +2537,7 @@ pub struct GetTdeCertificatesSqlTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<GetTdeCertificatesSqlTaskOutput>,
@@ -2582,7 +2582,7 @@ pub struct GetUserTablesMySqlTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2603,7 +2603,7 @@ pub struct GetUserTablesMySqlTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<GetUserTablesMySqlTaskOutput>,
@@ -2644,7 +2644,7 @@ pub struct GetUserTablesOracleTaskOutput {
     #[doc = "List of valid tables found for this schema"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tables: Vec<DatabaseTable>,
@@ -2652,7 +2652,7 @@ pub struct GetUserTablesOracleTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2673,7 +2673,7 @@ pub struct GetUserTablesOracleTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<GetUserTablesOracleTaskOutput>,
@@ -2714,7 +2714,7 @@ pub struct GetUserTablesPostgreSqlTaskOutput {
     #[doc = "List of valid tables found for this database"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tables: Vec<DatabaseTable>,
@@ -2722,7 +2722,7 @@ pub struct GetUserTablesPostgreSqlTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2743,7 +2743,7 @@ pub struct GetUserTablesPostgreSqlTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<GetUserTablesPostgreSqlTaskOutput>,
@@ -2804,7 +2804,7 @@ pub struct GetUserTablesSqlSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2825,7 +2825,7 @@ pub struct GetUserTablesSqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<GetUserTablesSqlSyncTaskOutput>,
@@ -2870,7 +2870,7 @@ pub struct GetUserTablesSqlTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2891,7 +2891,7 @@ pub struct GetUserTablesSqlTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<GetUserTablesSqlTaskOutput>,
@@ -2924,7 +2924,7 @@ pub struct InstallOciDriverTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -2945,7 +2945,7 @@ pub struct InstallOciDriverTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<InstallOciDriverTaskOutput>,
@@ -3096,7 +3096,7 @@ pub struct MigrateMiSyncCompleteCommandOutput {
     #[doc = "List of errors that happened during the command execution"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ReportableException>,
@@ -3137,7 +3137,7 @@ pub struct MigrateMongoDbTaskProperties {
     pub input: Option<MongoDbMigrationSettings>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MongoDbProgress>,
@@ -3233,7 +3233,7 @@ pub struct MigrateMySqlAzureDbForMySqlOfflineTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateMySqlAzureDbForMySqlOfflineTaskOutput>,
@@ -3325,7 +3325,7 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputDatabaseError {
     #[doc = "List of error events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SyncMigrationDatabaseErrorEvent>,
@@ -3538,7 +3538,7 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateMySqlAzureDbForMySqlSyncTaskOutput>,
@@ -3563,7 +3563,7 @@ pub struct MigrateOracleAzureDbForPostgreSqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateOracleAzureDbPostgreSqlSyncTaskOutput>,
@@ -3661,7 +3661,7 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputDatabaseError {
     #[doc = "List of error events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SyncMigrationDatabaseErrorEvent>,
@@ -3885,7 +3885,7 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncDatabaseInput {
     #[serde(
         rename = "selectedTables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selected_tables: Vec<MigratePostgreSqlAzureDbForPostgreSqlSyncDatabaseTableInput>,
@@ -3958,7 +3958,7 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputDatabaseError {
     #[doc = "List of error events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SyncMigrationDatabaseErrorEvent>,
@@ -4183,7 +4183,7 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput>,
@@ -4370,7 +4370,7 @@ pub struct MigrateSchemaSqlServerSqlDbTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateSchemaSqlServerSqlDbTaskOutput>,
@@ -4500,7 +4500,7 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputDatabaseError {
     #[doc = "List of error events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<SyncMigrationDatabaseErrorEvent>,
@@ -4717,7 +4717,7 @@ pub struct MigrateSqlServerSqlDbSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateSqlServerSqlDbSyncTaskOutput>,
@@ -4811,7 +4811,7 @@ pub struct MigrateSqlServerSqlDbTaskOutputDatabaseLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -4925,7 +4925,7 @@ pub struct MigrateSqlServerSqlDbTaskOutputMigrationLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5026,7 +5026,7 @@ pub struct MigrateSqlServerSqlDbTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateSqlServerSqlDbTaskOutput>,
@@ -5055,7 +5055,7 @@ pub struct MigrateSqlServerSqlMiDatabaseInput {
     #[serde(
         rename = "backupFilePaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_file_paths: Vec<String>,
@@ -5124,7 +5124,7 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutputDatabaseLevel {
     #[serde(
         rename = "activeBackupSets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub active_backup_sets: Vec<BackupSetInfo>,
@@ -5141,7 +5141,7 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutputDatabaseLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5251,7 +5251,7 @@ pub struct MigrateSqlServerSqlMiSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateSqlServerSqlMiSyncTaskOutput>,
@@ -5277,7 +5277,7 @@ pub struct MigrateSqlServerSqlMiTaskInput {
     #[serde(
         rename = "selectedLogins",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selected_logins: Vec<String>,
@@ -5285,7 +5285,7 @@ pub struct MigrateSqlServerSqlMiTaskInput {
     #[serde(
         rename = "selectedAgentJobs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selected_agent_jobs: Vec<String>,
@@ -5361,7 +5361,7 @@ pub struct MigrateSqlServerSqlMiTaskOutputAgentJobLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5409,7 +5409,7 @@ pub struct MigrateSqlServerSqlMiTaskOutputDatabaseLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5475,7 +5475,7 @@ pub struct MigrateSqlServerSqlMiTaskOutputLoginLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5526,7 +5526,7 @@ pub struct MigrateSqlServerSqlMiTaskOutputMigrationLevel {
     #[serde(
         rename = "orphanedUsersInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub orphaned_users_info: Vec<OrphanedUserInfo>,
@@ -5549,7 +5549,7 @@ pub struct MigrateSqlServerSqlMiTaskOutputMigrationLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5587,7 +5587,7 @@ pub struct MigrateSqlServerSqlMiTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateSqlServerSqlMiTaskOutput>,
@@ -5617,7 +5617,7 @@ pub struct MigrateSqlServerSqlServerDatabaseInput {
     #[serde(
         rename = "databaseFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub database_files: Vec<DatabaseFileInput>,
@@ -5691,7 +5691,7 @@ pub struct MigrateSsisTaskOutputMigrationLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5745,7 +5745,7 @@ pub struct MigrateSsisTaskOutputProjectLevel {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -5776,7 +5776,7 @@ pub struct MigrateSsisTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MigrateSsisTaskOutput>,
@@ -5817,7 +5817,7 @@ pub struct MigrateSyncCompleteCommandOutput {
     #[doc = "List of errors that happened during the command execution"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ReportableException>,
@@ -5858,7 +5858,7 @@ pub struct MigrationEligibilityInfo {
     #[serde(
         rename = "validationMessages",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_messages: Vec<String>,
@@ -6991,7 +6991,7 @@ pub struct NonSqlDataMigrationTableResult {
     #[doc = "List of errors, if any, during migration"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<DataMigrationError>,
@@ -7130,7 +7130,7 @@ pub struct ODataError {
     #[doc = "Inner errors that caused this error"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ODataError>,
@@ -7179,7 +7179,7 @@ pub struct OracleOciDriverInfo {
     #[serde(
         rename = "supportedOracleVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_oracle_versions: Vec<String>,
@@ -7307,7 +7307,7 @@ pub struct ProjectList {
     #[doc = "List of projects"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Project>,
@@ -7348,7 +7348,7 @@ pub struct ProjectProperties {
     #[serde(
         rename = "databasesInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub databases_info: Vec<DatabaseInfo>,
@@ -7530,7 +7530,7 @@ pub struct ProjectTaskProperties {
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ODataError>,
@@ -7540,7 +7540,7 @@ pub struct ProjectTaskProperties {
     #[doc = "Array of command properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub commands: Vec<CommandProperties>,
@@ -7695,7 +7695,7 @@ pub struct QuotaList {
     #[doc = "List of quotas"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Quota>,
@@ -7837,7 +7837,7 @@ pub struct ResourceSku {
     #[doc = "The set of locations that the SKU is available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -7845,28 +7845,28 @@ pub struct ResourceSku {
     #[serde(
         rename = "apiVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub api_versions: Vec<String>,
     #[doc = "Metadata for retrieving price info."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub costs: Vec<ResourceSkuCosts>,
     #[doc = "A name value pair to describe the capability."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<ResourceSkuCapabilities>,
     #[doc = "The restrictions because of which SKU cannot be used. This is empty if there are no restrictions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<ResourceSkuRestrictions>,
@@ -7981,7 +7981,7 @@ pub struct ResourceSkuRestrictions {
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -8453,7 +8453,7 @@ pub struct ServiceOperationList {
     #[doc = "List of actions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServiceOperation>,
@@ -8502,7 +8502,7 @@ pub struct ServiceSkuList {
     #[doc = "List of service SKUs"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableServiceSku>,
@@ -8834,7 +8834,7 @@ pub struct StartMigrationScenarioServerRoleResult {
     #[serde(
         rename = "exceptionsAndWarnings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
@@ -9010,7 +9010,7 @@ pub struct TaskList {
     #[doc = "List of tasks"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProjectTask>,
@@ -9114,7 +9114,7 @@ pub struct UploadOciDriverTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -9135,7 +9135,7 @@ pub struct UploadOciDriverTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<UploadOciDriverTaskOutput>,
@@ -9160,7 +9160,7 @@ pub struct ValidateMigrationInputSqlServerSqlDbSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ValidateSyncMigrationInputSqlServerTaskOutput>,
@@ -9200,7 +9200,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -9221,7 +9221,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiSyncTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ValidateMigrationInputSqlServerSqlMiSyncTaskOutput>,
@@ -9251,7 +9251,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskInput {
     #[serde(
         rename = "selectedLogins",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selected_logins: Vec<String>,
@@ -9296,7 +9296,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskOutput {
     #[serde(
         rename = "restoreDatabaseNameErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restore_database_name_errors: Vec<ReportableException>,
@@ -9304,7 +9304,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskOutput {
     #[serde(
         rename = "backupFolderErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_folder_errors: Vec<ReportableException>,
@@ -9312,7 +9312,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskOutput {
     #[serde(
         rename = "backupShareCredentialsErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_share_credentials_errors: Vec<ReportableException>,
@@ -9320,7 +9320,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskOutput {
     #[serde(
         rename = "backupStorageAccountErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_storage_account_errors: Vec<ReportableException>,
@@ -9328,7 +9328,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskOutput {
     #[serde(
         rename = "existingBackupErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub existing_backup_errors: Vec<ReportableException>,
@@ -9352,7 +9352,7 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskProperties {
     #[doc = "Task output. This is ignored if submitted."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ValidateMigrationInputSqlServerSqlMiTaskOutput>,
@@ -9377,7 +9377,7 @@ pub struct ValidateMongoDbTaskProperties {
     #[doc = "An array containing a single MongoDbMigrationProgress object"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<MongoDbMigrationProgress>,
@@ -9402,7 +9402,7 @@ pub struct ValidateOracleAzureDbForPostgreSqlSyncTaskProperties {
     #[doc = "An array containing a single validation error response object"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output: Vec<ValidateOracleAzureDbPostgreSqlSyncTaskOutput>,
@@ -9423,7 +9423,7 @@ pub struct ValidateOracleAzureDbPostgreSqlSyncTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,
@@ -9472,7 +9472,7 @@ pub struct ValidateSyncMigrationInputSqlServerTaskOutput {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<ReportableException>,

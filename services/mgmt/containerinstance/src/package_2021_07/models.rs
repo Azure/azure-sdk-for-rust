@@ -35,7 +35,7 @@ pub struct CachedImagesListResult {
     #[doc = "The list of cached images."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CachedImages>,
@@ -108,7 +108,7 @@ pub struct CapabilitiesListResult {
     #[doc = "The list of capabilities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Capabilities>,
@@ -160,7 +160,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -204,7 +204,7 @@ pub struct ContainerExec {
     #[doc = "The commands to execute within the container."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub command: Vec<String>,
@@ -293,7 +293,7 @@ pub mod container_group {
         #[serde(
             rename = "imageRegistryCredentials",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub image_registry_credentials: Vec<ImageRegistryCredential>,
@@ -309,7 +309,7 @@ pub mod container_group {
         #[doc = "The list of volumes that can be mounted by containers in this container group."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub volumes: Vec<Volume>,
@@ -323,7 +323,7 @@ pub mod container_group {
         #[serde(
             rename = "subnetIds",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub subnet_ids: Vec<ContainerGroupSubnetId>,
@@ -340,7 +340,7 @@ pub mod container_group {
         #[serde(
             rename = "initContainers",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub init_containers: Vec<InitContainerDefinition>,
@@ -449,7 +449,7 @@ pub mod container_group {
             #[doc = "The events of this container group."]
             #[serde(
                 default,
-                deserialize_with = "azure_core::util::deserialize_null_default",
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
                 skip_serializing_if = "Vec::is_empty"
             )]
             pub events: Vec<Event>,
@@ -515,7 +515,7 @@ pub struct ContainerGroupListResult {
     #[doc = "The list of container groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ContainerGroup>,
@@ -600,7 +600,7 @@ pub struct ContainerHttpGet {
     #[serde(
         rename = "httpHeaders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub http_headers: Vec<HttpHeader>,
@@ -751,14 +751,14 @@ pub struct ContainerProperties {
     #[doc = "The commands to execute within the container instance in exec form."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub command: Vec<String>,
     #[doc = "The exposed ports on the container instance."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ports: Vec<ContainerPort>,
@@ -766,7 +766,7 @@ pub struct ContainerProperties {
     #[serde(
         rename = "environmentVariables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environment_variables: Vec<EnvironmentVariable>,
@@ -779,7 +779,7 @@ pub struct ContainerProperties {
     #[serde(
         rename = "volumeMounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_mounts: Vec<VolumeMount>,
@@ -822,7 +822,7 @@ pub mod container_properties {
         #[doc = "The events of the container instance."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub events: Vec<Event>,
@@ -1098,7 +1098,7 @@ pub struct InitContainerPropertiesDefinition {
     #[doc = "The command to execute within the init container in exec form."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub command: Vec<String>,
@@ -1106,7 +1106,7 @@ pub struct InitContainerPropertiesDefinition {
     #[serde(
         rename = "environmentVariables",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environment_variables: Vec<EnvironmentVariable>,
@@ -1117,7 +1117,7 @@ pub struct InitContainerPropertiesDefinition {
     #[serde(
         rename = "volumeMounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_mounts: Vec<VolumeMount>,
@@ -1144,7 +1144,7 @@ pub mod init_container_properties_definition {
         #[doc = "The events of the init container."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub events: Vec<Event>,
@@ -1398,7 +1398,7 @@ pub struct OperationListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1603,7 +1603,7 @@ pub struct UsageListResult {
     #[doc = "The usage data."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Usage>,

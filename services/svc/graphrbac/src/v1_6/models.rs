@@ -56,7 +56,7 @@ pub struct AppRole {
     #[serde(
         rename = "allowedMemberTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_member_types: Vec<String>,
@@ -121,7 +121,7 @@ pub struct AppRoleAssignmentListResult {
     #[doc = "A collection of AppRoleAssignment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AppRoleAssignment>,
@@ -161,7 +161,7 @@ pub struct Application {
     #[serde(
         rename = "appRoles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub app_roles: Vec<AppRole>,
@@ -169,7 +169,7 @@ pub struct Application {
     #[serde(
         rename = "appPermissions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub app_permissions: Vec<String>,
@@ -192,7 +192,7 @@ pub struct Application {
     #[serde(
         rename = "identifierUris",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub identifier_uris: Vec<String>,
@@ -206,7 +206,7 @@ pub struct Application {
     #[serde(
         rename = "keyCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_credentials: Vec<KeyCredential>,
@@ -214,7 +214,7 @@ pub struct Application {
     #[serde(
         rename = "knownClientApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub known_client_applications: Vec<String>,
@@ -231,7 +231,7 @@ pub struct Application {
     #[serde(
         rename = "oauth2Permissions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub oauth2_permissions: Vec<OAuth2Permission>,
@@ -242,7 +242,7 @@ pub struct Application {
     #[serde(
         rename = "orgRestrictions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub org_restrictions: Vec<String>,
@@ -253,7 +253,7 @@ pub struct Application {
     #[serde(
         rename = "passwordCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub password_credentials: Vec<PasswordCredential>,
@@ -261,7 +261,7 @@ pub struct Application {
     #[serde(
         rename = "preAuthorizedApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pre_authorized_applications: Vec<PreAuthorizedApplication>,
@@ -275,7 +275,7 @@ pub struct Application {
     #[serde(
         rename = "replyUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reply_urls: Vec<String>,
@@ -283,7 +283,7 @@ pub struct Application {
     #[serde(
         rename = "requiredResourceAccess",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_resource_access: Vec<RequiredResourceAccess>,
@@ -352,7 +352,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "appRoles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub app_roles: Vec<AppRole>,
@@ -360,7 +360,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "appPermissions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub app_permissions: Vec<String>,
@@ -386,7 +386,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "keyCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_credentials: Vec<KeyCredential>,
@@ -394,7 +394,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "knownClientApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub known_client_applications: Vec<String>,
@@ -411,7 +411,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "oauth2Permissions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub oauth2_permissions: Vec<OAuth2Permission>,
@@ -422,7 +422,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "orgRestrictions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub org_restrictions: Vec<String>,
@@ -433,7 +433,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "passwordCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub password_credentials: Vec<PasswordCredential>,
@@ -441,7 +441,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "preAuthorizedApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pre_authorized_applications: Vec<PreAuthorizedApplication>,
@@ -455,7 +455,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "replyUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reply_urls: Vec<String>,
@@ -463,7 +463,7 @@ pub struct ApplicationBase {
     #[serde(
         rename = "requiredResourceAccess",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_resource_access: Vec<RequiredResourceAccess>,
@@ -494,7 +494,7 @@ pub struct ApplicationCreateParameters {
     #[serde(
         rename = "identifierUris",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub identifier_uris: Vec<String>,
@@ -514,7 +514,7 @@ pub struct ApplicationListResult {
     #[doc = "A collection of applications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Application>,
@@ -545,7 +545,7 @@ pub struct ApplicationUpdateParameters {
     #[serde(
         rename = "identifierUris",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub identifier_uris: Vec<String>,
@@ -610,7 +610,7 @@ pub struct DirectoryObjectListResult {
     #[doc = "A collection of DirectoryObject."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DirectoryObject>,
@@ -660,7 +660,7 @@ pub struct DomainListResult {
     #[doc = "the list of domains."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Domain>,
@@ -695,14 +695,14 @@ pub struct GetObjectsParameters {
     #[serde(
         rename = "objectIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub object_ids: Vec<String>,
     #[doc = "The requested object types."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub types: Vec<String>,
@@ -802,7 +802,7 @@ pub struct GroupGetMemberGroupsResult {
     #[doc = "A collection of group IDs of which the group is a member."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -824,7 +824,7 @@ pub struct GroupListResult {
     #[doc = "A collection of Active Directory groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AdGroup>,
@@ -939,7 +939,7 @@ pub struct KeyCredentialListResult {
     #[doc = "A collection of KeyCredentials."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<KeyCredential>,
@@ -1080,7 +1080,7 @@ pub struct OAuth2PermissionGrantListResult {
     #[doc = "the list of oauth2 permissions grants"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OAuth2PermissionGrant>,
@@ -1141,7 +1141,7 @@ pub struct OptionalClaims {
     #[serde(
         rename = "idToken",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub id_token: Vec<OptionalClaim>,
@@ -1149,7 +1149,7 @@ pub struct OptionalClaims {
     #[serde(
         rename = "accessToken",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub access_token: Vec<OptionalClaim>,
@@ -1157,7 +1157,7 @@ pub struct OptionalClaims {
     #[serde(
         rename = "samlToken",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub saml_token: Vec<OptionalClaim>,
@@ -1197,7 +1197,7 @@ pub struct PasswordCredentialListResult {
     #[doc = "A collection of PasswordCredentials."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PasswordCredential>,
@@ -1250,14 +1250,14 @@ pub struct PreAuthorizedApplication {
     #[doc = "Collection of required app permissions/entitlements from the resource application."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub permissions: Vec<PreAuthorizedApplicationPermission>,
     #[doc = "Collection of extensions from the resource application."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub extensions: Vec<PreAuthorizedApplicationExtension>,
@@ -1273,7 +1273,7 @@ pub struct PreAuthorizedApplicationExtension {
     #[doc = "The extension's conditions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub conditions: Vec<String>,
@@ -1293,7 +1293,7 @@ pub struct PreAuthorizedApplicationPermission {
     #[serde(
         rename = "accessGrants",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub access_grants: Vec<String>,
@@ -1347,7 +1347,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "alternativeNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alternative_names: Vec<String>,
@@ -1366,7 +1366,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "appRoles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub app_roles: Vec<AppRole>,
@@ -1383,7 +1383,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "keyCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_credentials: Vec<KeyCredential>,
@@ -1394,7 +1394,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "oauth2Permissions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub oauth2_permissions: Vec<OAuth2Permission>,
@@ -1402,7 +1402,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "passwordCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub password_credentials: Vec<PasswordCredential>,
@@ -1416,7 +1416,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "replyUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reply_urls: Vec<String>,
@@ -1427,7 +1427,7 @@ pub struct ServicePrincipal {
     #[serde(
         rename = "servicePrincipalNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_principal_names: Vec<String>,
@@ -1437,7 +1437,7 @@ pub struct ServicePrincipal {
     #[doc = "Optional list of tags that you can apply to your service principals. Not nullable."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<String>,
@@ -1483,7 +1483,7 @@ pub struct ServicePrincipalBase {
     #[serde(
         rename = "keyCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_credentials: Vec<KeyCredential>,
@@ -1491,7 +1491,7 @@ pub struct ServicePrincipalBase {
     #[serde(
         rename = "passwordCredentials",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub password_credentials: Vec<PasswordCredential>,
@@ -1501,7 +1501,7 @@ pub struct ServicePrincipalBase {
     #[doc = "Optional list of tags that you can apply to your service principals. Not nullable."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<String>,
@@ -1534,7 +1534,7 @@ pub struct ServicePrincipalListResult {
     #[doc = "the list of service principals."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServicePrincipal>,
@@ -1633,7 +1633,7 @@ pub struct User {
     #[serde(
         rename = "signInNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sign_in_names: Vec<SignInName>,
@@ -1820,7 +1820,7 @@ pub struct UserGetMemberGroupsResult {
     #[doc = "A collection of group IDs of which the user is a member."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -1842,7 +1842,7 @@ pub struct UserListResult {
     #[doc = "the list of users."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<User>,

@@ -90,7 +90,7 @@ pub struct AzureBackupDiscreteRecoveryPoint {
     #[serde(
         rename = "recoveryPointDataStoresDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recovery_point_data_stores_details: Vec<RecoveryPointDataStoreDetails>,
@@ -210,7 +210,7 @@ pub struct AzureBackupFindRestorableTimeRangesResponse {
     #[serde(
         rename = "restorableTimeRanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restorable_time_ranges: Vec<RestorableTimeRange>,
@@ -273,7 +273,7 @@ pub struct AzureBackupJob {
     #[serde(
         rename = "errorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_details: Vec<UserFacingError>,
@@ -406,7 +406,7 @@ pub struct AzureBackupJobResourceList {
     #[doc = "List of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AzureBackupJobResource>,
@@ -488,7 +488,7 @@ pub struct AzureBackupRecoveryPointResourceList {
     #[doc = "List of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AzureBackupRecoveryPointResource>,
@@ -888,7 +888,7 @@ pub struct BackupInstanceResourceList {
     #[doc = "List of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BackupInstanceResource>,
@@ -1100,7 +1100,7 @@ pub struct BackupVaultResourceList {
     #[doc = "List of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BackupVaultResource>,
@@ -1155,7 +1155,7 @@ pub struct BaseBackupPolicyResourceList {
     #[doc = "List of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BaseBackupPolicyResource>,
@@ -1274,7 +1274,7 @@ pub struct ClientDiscoveryForServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<ClientDiscoveryForLogSpecification>,
@@ -1293,7 +1293,7 @@ pub struct ClientDiscoveryResponse {
     #[doc = "List of available operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ClientDiscoveryValueForSingleApi>,
@@ -1640,7 +1640,7 @@ pub struct DppBaseResourceList {
     #[doc = "List of Dpp resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DppBaseResource>,
@@ -1764,7 +1764,7 @@ pub struct DppWorkerRequest {
     #[serde(
         rename = "supportedGroupVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_group_versions: Vec<String>,
@@ -1787,7 +1787,7 @@ pub struct Error {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -1797,7 +1797,7 @@ pub struct Error {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<Error>,
@@ -1933,7 +1933,7 @@ pub struct FeatureValidationResponse {
     #[doc = "Response features"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub features: Vec<SupportedFeature>,
@@ -2094,7 +2094,7 @@ pub struct JobExtendedInfo {
     #[serde(
         rename = "subTasks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sub_tasks: Vec<JobSubTask>,
@@ -2236,7 +2236,7 @@ pub struct PolicyParameters {
     #[serde(
         rename = "dataStoreParametersList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_store_parameters_list: Vec<DataStoreParameters>,
@@ -2478,7 +2478,7 @@ pub struct ResourceGuard {
     #[serde(
         rename = "resourceGuardOperations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_guard_operations: Vec<ResourceGuardOperation>,
@@ -2486,7 +2486,7 @@ pub struct ResourceGuard {
     #[serde(
         rename = "vaultCriticalOperationExclusionList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vault_critical_operation_exclusion_list: Vec<String>,
@@ -2580,7 +2580,7 @@ pub struct ResourceGuardResourceList {
     #[doc = "List of resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceGuardResource>,
@@ -2785,7 +2785,7 @@ pub struct ScheduleBasedBackupCriteria {
     #[serde(
         rename = "absoluteCriteria",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub absolute_criteria: Vec<String>,
@@ -2793,7 +2793,7 @@ pub struct ScheduleBasedBackupCriteria {
     #[serde(
         rename = "daysOfMonth",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub days_of_month: Vec<Day>,
@@ -2801,7 +2801,7 @@ pub struct ScheduleBasedBackupCriteria {
     #[serde(
         rename = "daysOfTheWeek",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub days_of_the_week: Vec<String>,
@@ -2809,7 +2809,7 @@ pub struct ScheduleBasedBackupCriteria {
     #[serde(
         rename = "monthsOfYear",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub months_of_year: Vec<String>,
@@ -2817,7 +2817,7 @@ pub struct ScheduleBasedBackupCriteria {
     #[serde(
         rename = "scheduleTimes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schedule_times: Vec<time::OffsetDateTime>,
@@ -2825,7 +2825,7 @@ pub struct ScheduleBasedBackupCriteria {
     #[serde(
         rename = "weeksOfTheMonth",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub weeks_of_the_month: Vec<String>,
@@ -2954,7 +2954,7 @@ pub struct SourceLifeCycle {
     #[serde(
         rename = "targetDataStoreCopySettings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub target_data_store_copy_settings: Vec<TargetCopySetting>,
@@ -3075,7 +3075,7 @@ pub struct SupportedFeature {
     #[serde(
         rename = "exposureControlledFeatures",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exposure_controlled_features: Vec<String>,
@@ -3191,7 +3191,7 @@ pub struct TaggingCriteria {
     #[doc = "Criteria which decides whether the tag can be applied to a triggered backup."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub criteria: Vec<BackupCriteria>,
@@ -3326,7 +3326,7 @@ pub struct UserFacingError {
     #[doc = "Additional related Errors"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<UserFacingError>,
@@ -3348,7 +3348,7 @@ pub struct UserFacingError {
     #[serde(
         rename = "recommendedAction",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recommended_action: Vec<String>,

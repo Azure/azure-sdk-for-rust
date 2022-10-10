@@ -1969,7 +1969,7 @@ pub struct DataShareErrorInfo {
     #[doc = "Nested details of the error model"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<DataShareErrorInfo>,
@@ -2955,7 +2955,7 @@ pub struct OperationMetaMetricSpecification {
     #[doc = "properties for dimension"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<DimensionProperties>,
@@ -2984,7 +2984,7 @@ pub struct OperationMetaMetricSpecification {
     #[serde(
         rename = "supportedAggregationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_aggregation_types: Vec<String>,
@@ -2992,7 +2992,7 @@ pub struct OperationMetaMetricSpecification {
     #[serde(
         rename = "supportedTimeGrainTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_time_grain_types: Vec<String>,
@@ -3024,7 +3024,7 @@ pub struct OperationMetaServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
@@ -3032,7 +3032,7 @@ pub struct OperationMetaServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
@@ -5277,7 +5277,7 @@ pub struct TableLevelSharingProperties {
     #[serde(
         rename = "externalTablesToExclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub external_tables_to_exclude: Vec<String>,
@@ -5285,7 +5285,7 @@ pub struct TableLevelSharingProperties {
     #[serde(
         rename = "externalTablesToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub external_tables_to_include: Vec<String>,
@@ -5293,7 +5293,7 @@ pub struct TableLevelSharingProperties {
     #[serde(
         rename = "materializedViewsToExclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub materialized_views_to_exclude: Vec<String>,
@@ -5301,7 +5301,7 @@ pub struct TableLevelSharingProperties {
     #[serde(
         rename = "materializedViewsToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub materialized_views_to_include: Vec<String>,
@@ -5309,7 +5309,7 @@ pub struct TableLevelSharingProperties {
     #[serde(
         rename = "tablesToExclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tables_to_exclude: Vec<String>,
@@ -5317,7 +5317,7 @@ pub struct TableLevelSharingProperties {
     #[serde(
         rename = "tablesToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tables_to_include: Vec<String>,

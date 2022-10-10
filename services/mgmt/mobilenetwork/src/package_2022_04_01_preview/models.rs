@@ -83,7 +83,7 @@ pub struct AttachedDataNetworkListResult {
     #[doc = "A list of data networks in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AttachedDataNetwork>,
@@ -115,7 +115,7 @@ pub struct AttachedDataNetworkPropertiesFormat {
     #[serde(
         rename = "dnsAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_addresses: Vec<Ipv4Addr>,
@@ -126,7 +126,7 @@ pub struct AttachedDataNetworkPropertiesFormat {
     #[serde(
         rename = "userEquipmentAddressPoolPrefix",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_equipment_address_pool_prefix: Vec<Ipv4AddrMask>,
@@ -134,7 +134,7 @@ pub struct AttachedDataNetworkPropertiesFormat {
     #[serde(
         rename = "userEquipmentStaticAddressPoolPrefix",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_equipment_static_address_pool_prefix: Vec<Ipv4AddrMask>,
@@ -374,7 +374,7 @@ pub struct DataNetworkConfiguration {
     #[serde(
         rename = "additionalAllowedSessionTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_allowed_session_types: Vec<PduSessionType>,
@@ -403,7 +403,7 @@ pub struct DataNetworkListResult {
     #[doc = "A list of data networks."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataNetwork>,
@@ -478,7 +478,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -486,7 +486,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -675,7 +675,7 @@ pub struct MobileNetworkListResult {
     #[doc = "A list of mobile networks in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MobileNetwork>,
@@ -841,7 +841,7 @@ pub struct OperationList {
     #[doc = "List of Microsoft.MobileNetwork operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -890,7 +890,7 @@ pub struct PacketCoreControlPlaneListResult {
     #[doc = "A list of packet core control planes in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PacketCoreControlPlane>,
@@ -976,7 +976,7 @@ pub struct PacketCoreControlPlaneVersionListResult {
     #[doc = "A list of supported packet core control plane versions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PacketCoreControlPlaneVersion>,
@@ -1124,7 +1124,7 @@ pub struct PacketCoreDataPlaneListResult {
     #[doc = "A list of packet core data planes in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PacketCoreDataPlane>,
@@ -1681,7 +1681,7 @@ pub struct ServiceDataFlowTemplate {
     #[doc = "The port(s) to which UEs will connect for this flow. You can specify zero or more ports or port ranges. If you specify one or more ports or port ranges then you must specify a value other than `ip` in the `protocol` field. This is an optional setting. If you do not specify it then connections will be allowed on all ports. Port ranges must be specified as <FirstPort>-<LastPort>. For example: [`8080`, `8082-8085`]."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ports: Vec<String>,
@@ -1703,7 +1703,7 @@ pub struct ServiceListResult {
     #[doc = "A list of services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Service>,
@@ -1809,7 +1809,7 @@ pub struct SimGroupListResult {
     #[doc = "A list of SIM groups in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SimGroup>,
@@ -1863,7 +1863,7 @@ pub struct SimIdListResult {
     #[doc = "A list of SIM IDs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubResource>,
@@ -1882,7 +1882,7 @@ pub struct SimListResult {
     #[doc = "A list of SIMs in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Sim>,
@@ -1927,7 +1927,7 @@ pub struct SimPolicyListResult {
     #[doc = "A list of SIM policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SimPolicy>,
@@ -2022,7 +2022,7 @@ pub struct SimPropertiesFormat {
     #[serde(
         rename = "staticIpConfiguration",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub static_ip_configuration: Vec<SimStaticIpProperties>,
@@ -2141,7 +2141,7 @@ pub struct SiteListResult {
     #[doc = "A list of sites in a mobile network."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Site>,
@@ -2170,7 +2170,7 @@ pub struct SitePropertiesFormat {
     #[serde(
         rename = "networkFunctions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_functions: Vec<SubResource>,
@@ -2231,7 +2231,7 @@ pub struct SliceListResult {
     #[doc = "A list of network slices in a mobile network."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Slice>,

@@ -67,7 +67,7 @@ pub struct HybridUseBenefitListResult {
     #[doc = "List of hybrid use benefits"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HybridUseBenefitModel>,
@@ -155,7 +155,7 @@ pub struct OperationList {
     #[doc = "List of all operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResponse>,

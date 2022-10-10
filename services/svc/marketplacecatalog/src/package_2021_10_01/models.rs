@@ -37,7 +37,7 @@ pub struct AvailabilityEntity {
     #[doc = "List of allowed actions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<String>,
@@ -65,7 +65,7 @@ pub struct AvailabilityEntity {
     #[doc = "List of applicable terms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub terms: Vec<Term>,
@@ -82,7 +82,7 @@ pub struct AvailabilityEntity {
     #[serde(
         rename = "assetBehaviors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub asset_behaviors: Vec<String>,
@@ -101,7 +101,7 @@ pub struct AvailabilityEntity {
     #[doc = "Remediation actions for acquiring availability if RemediationRequired is true"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub remediations: Vec<Remediation>,
@@ -115,7 +115,7 @@ pub struct AvailabilityEntity {
     #[serde(
         rename = "planAvailabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub plan_availabilities: Vec<AvailabilityEntity>,
@@ -217,7 +217,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "determinedStorefronts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub determined_storefronts: Vec<Store>,
@@ -251,7 +251,7 @@ pub struct CatalogItem {
     #[doc = "Markets for the item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub markets: Vec<String>,
@@ -292,7 +292,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "categoryIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub category_ids: Vec<String>,
@@ -303,7 +303,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "marketStates",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub market_states: Vec<String>,
@@ -311,7 +311,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "industryIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub industry_ids: Vec<String>,
@@ -319,7 +319,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "cloudIndustryCategories",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cloud_industry_categories: Vec<String>,
@@ -330,7 +330,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "supportedProducts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_products: Vec<String>,
@@ -338,7 +338,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "applicableProducts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub applicable_products: Vec<String>,
@@ -348,7 +348,7 @@ pub struct CatalogItem {
     #[doc = "Competencies that apply to the offer"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub competencies: Vec<Competency>,
@@ -362,7 +362,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "marketPricingDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub market_pricing_details: Vec<MarketPricingDetailsItem>,
@@ -373,7 +373,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "solutionAreas",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub solution_areas: Vec<String>,
@@ -381,21 +381,21 @@ pub struct CatalogItem {
     #[serde(
         rename = "screenshotUris",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub screenshot_uris: Vec<String>,
     #[doc = "List of Links provided for the item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub links: Vec<LinkProperties>,
     #[doc = "List of filters for the item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filters: Vec<Filter>,
@@ -405,7 +405,7 @@ pub struct CatalogItem {
     #[doc = "List of artifacts"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<Artifact>,
@@ -415,21 +415,21 @@ pub struct CatalogItem {
     #[doc = "List of Images"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub images: Vec<ImageGroup>,
     #[doc = "List of product videos"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub videos: Vec<ProductVideo>,
     #[doc = "Plans available for the offer details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub plans: Vec<Plan>,
@@ -455,14 +455,14 @@ pub struct CatalogItem {
     #[serde(
         rename = "hideKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hide_keys: Vec<String>,
     #[doc = "List of keywords provided for the item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub keywords: Vec<String>,
@@ -517,7 +517,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "documentLinks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub document_links: Vec<LinkProperties>,
@@ -528,7 +528,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "linkedAddIns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub linked_add_ins: Vec<String>,
@@ -563,7 +563,7 @@ pub struct CatalogItem {
     #[serde(
         rename = "pbiServicePrincipalIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pbi_service_principal_ids: Vec<String>,
@@ -828,7 +828,7 @@ pub struct ImageGroup {
     #[doc = "List of images"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub items: Vec<Image>,
@@ -930,7 +930,7 @@ pub struct MarketPricingDetailsItem {
     #[serde(
         rename = "marketStates",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub market_states: Vec<String>,
@@ -975,7 +975,7 @@ pub struct Meter {
     #[serde(
         rename = "includedQuantityProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub included_quantity_properties: Vec<IncludedQuantityProperty>,
@@ -1063,7 +1063,7 @@ pub struct PiFilter {
     #[serde(
         rename = "exclusionProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exclusion_properties: Vec<String>,
@@ -1071,7 +1071,7 @@ pub struct PiFilter {
     #[serde(
         rename = "inclusionProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inclusion_properties: Vec<String>,
@@ -1087,7 +1087,7 @@ pub struct PageResultOfCatalogItem {
     #[doc = "Gets the collection of entities for this feed."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub items: Vec<CatalogItem>,
@@ -1132,7 +1132,7 @@ pub struct Plan {
     #[doc = "List of keywords"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub keywords: Vec<String>,
@@ -1148,7 +1148,7 @@ pub struct Plan {
     #[doc = "List of availabilities for this plan"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availabilities: Vec<AvailabilityEntity>,
@@ -1156,7 +1156,7 @@ pub struct Plan {
     #[serde(
         rename = "categoryIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub category_ids: Vec<String>,
@@ -1164,7 +1164,7 @@ pub struct Plan {
     #[serde(
         rename = "conversionPaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub conversion_paths: Vec<String>,
@@ -1180,7 +1180,7 @@ pub struct Plan {
     #[doc = "Files related to the marketplace item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<Artifact>,
@@ -1379,7 +1379,7 @@ pub struct Pricing {
     #[serde(
         rename = "planPrices",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub plan_prices: Vec<PlanPrice>,
@@ -1454,21 +1454,21 @@ pub struct RestrictedAudience {
     #[doc = "Subscription based restricted audience"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subscriptions: Vec<String>,
     #[doc = "Tenant based restricted audience"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tenants: Vec<String>,
     #[doc = "User based restricted audience"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub users: Vec<String>,
@@ -1503,7 +1503,7 @@ pub struct Term {
     #[serde(
         rename = "termDescriptionParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub term_description_parameters: Vec<TermDescriptionParameter>,

@@ -29,14 +29,14 @@ pub struct AdcCatalogProperties {
     #[doc = "Azure data catalog admin list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub admins: Vec<Principals>,
     #[doc = "Azure data catalog user list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub users: Vec<Principals>,
@@ -98,7 +98,7 @@ pub struct AdcCatalogsListResult {
     #[doc = "the list of Azure Data Catalogs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AdcCatalog>,
@@ -150,7 +150,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,

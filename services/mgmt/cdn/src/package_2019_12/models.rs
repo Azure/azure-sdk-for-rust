@@ -321,14 +321,14 @@ pub struct CookiesMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -536,7 +536,7 @@ pub struct CustomDomainListResult {
     #[doc = "List of CDN CustomDomains within an endpoint."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CustomDomain>,
@@ -887,7 +887,7 @@ pub struct DeliveryRule {
     #[doc = "A list of conditions that must be matched for the actions to be executed"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub conditions: Vec<DeliveryRuleCondition>,
@@ -1360,7 +1360,7 @@ pub struct EdgenodeResult {
     #[doc = "Edge node of CDN service."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EdgeNode>,
@@ -1402,7 +1402,7 @@ pub struct EndpointListResult {
     #[doc = "List of CDN endpoints within a profile"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Endpoint>,
@@ -1435,7 +1435,7 @@ pub struct EndpointProperties {
     #[serde(
         rename = "originGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub origin_groups: Vec<DeepCreatedOriginGroup>,
@@ -1516,7 +1516,7 @@ pub struct EndpointPropertiesUpdateParameters {
     #[serde(
         rename = "contentTypesToCompress",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub content_types_to_compress: Vec<String>,
@@ -1545,7 +1545,7 @@ pub struct EndpointPropertiesUpdateParameters {
     #[serde(
         rename = "geoFilters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub geo_filters: Vec<GeoFilter>,
@@ -1789,7 +1789,7 @@ pub struct HttpVersionMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
@@ -1860,7 +1860,7 @@ pub struct IpAddressGroup {
     #[serde(
         rename = "ipv4Addresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv4_addresses: Vec<CidrIpAddress>,
@@ -1868,7 +1868,7 @@ pub struct IpAddressGroup {
     #[serde(
         rename = "ipv6Addresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv6_addresses: Vec<CidrIpAddress>,
@@ -1892,14 +1892,14 @@ pub struct IsDeviceMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -2142,7 +2142,7 @@ pub struct OperationsListResult {
     #[doc = "List of CDN operations supported by the CDN resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -2238,7 +2238,7 @@ pub struct OriginGroupListResult {
     #[doc = "List of CDN origin groups within an endpoint"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OriginGroup>,
@@ -2379,7 +2379,7 @@ pub struct OriginGroupUpdatePropertiesParameters {
     #[doc = "The source of the content being delivered via CDN within given origin group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub origins: Vec<ResourceReference>,
@@ -2409,7 +2409,7 @@ pub struct OriginListResult {
     #[doc = "List of CDN origins within an endpoint"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Origin>,
@@ -2550,14 +2550,14 @@ pub struct PostArgsMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -2662,7 +2662,7 @@ pub struct ProfileListResult {
     #[doc = "List of CDN profiles within a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Profile>,
@@ -2797,14 +2797,14 @@ pub struct QueryStringMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -2896,14 +2896,14 @@ pub struct RemoteAddressMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -2984,14 +2984,14 @@ pub struct RequestBodyMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -3086,14 +3086,14 @@ pub struct RequestHeaderMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -3186,7 +3186,7 @@ pub struct RequestMethodMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
@@ -3261,7 +3261,7 @@ pub struct RequestSchemeMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
@@ -3306,14 +3306,14 @@ pub struct RequestUriMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -3454,7 +3454,7 @@ pub struct ResourceUsageListResult {
     #[doc = "List of resource usages."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceUsage>,
@@ -3490,7 +3490,7 @@ pub struct ResponseBasedOriginErrorDetectionParameters {
     #[serde(
         rename = "httpErrorRanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub http_error_ranges: Vec<HttpErrorRangeParameters>,
@@ -3598,7 +3598,7 @@ pub struct SupportedOptimizationTypesListResult {
     #[serde(
         rename = "supportedOptimizationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_optimization_types: Vec<OptimizationType>,
@@ -3642,14 +3642,14 @@ pub struct UrlFileExtensionMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -3741,14 +3741,14 @@ pub struct UrlFileNameMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,
@@ -3840,14 +3840,14 @@ pub struct UrlPathMatchConditionParameters {
     #[serde(
         rename = "matchValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub match_values: Vec<String>,
     #[doc = "List of transforms"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub transforms: Vec<Transform>,

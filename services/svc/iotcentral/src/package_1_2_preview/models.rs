@@ -329,7 +329,7 @@ pub struct DataExportStatus {
     #[doc = "Errors encountered by the export or destination."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<DataExportError>,
@@ -441,7 +441,7 @@ pub struct Device {
     #[doc = "List of organization IDs that the device is a part of."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -562,7 +562,7 @@ pub struct DeviceGroup {
     #[doc = "List of organization IDs of the device group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -1030,7 +1030,7 @@ pub struct Job {
     #[doc = "List of organizations of the job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,

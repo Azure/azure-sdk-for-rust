@@ -357,7 +357,7 @@ pub struct Dashboard {
     #[doc = "The tiles displayed by the dashboard."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tiles: Vec<Tile>,
@@ -373,7 +373,7 @@ pub struct Dashboard {
     #[doc = "The organization the dashboard belongs to. If not present, the dashboard is root-level or personal. only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -543,7 +543,7 @@ pub struct DataExportStatus {
     #[doc = "Errors encountered by the export or destination."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<DataExportError>,
@@ -669,7 +669,7 @@ pub struct Device {
     #[doc = "List of organization IDs that the device is a part of, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -813,7 +813,7 @@ pub struct DeviceGroup {
     #[doc = "List of organization IDs of the device group, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -1614,7 +1614,7 @@ pub struct Job {
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -2276,7 +2276,7 @@ pub struct ScheduledJob {
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -2696,7 +2696,7 @@ impl TileCapability {
 pub struct TileCapabilityConfiguration {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<TileCapability>,

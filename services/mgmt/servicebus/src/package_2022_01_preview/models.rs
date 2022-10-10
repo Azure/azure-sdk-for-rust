@@ -182,7 +182,7 @@ pub struct ArmDisasterRecoveryListResult {
     #[doc = "List of Alias(Disaster Recovery configurations)"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ArmDisasterRecovery>,
@@ -335,7 +335,7 @@ pub struct Encryption {
     #[serde(
         rename = "keyVaultProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_vault_properties: Vec<KeyVaultProperties>,
@@ -458,7 +458,7 @@ pub mod error_response {
         #[doc = "The error details."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<ErrorResponse>,
@@ -466,7 +466,7 @@ pub mod error_response {
         #[serde(
             rename = "additionalInfo",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -657,7 +657,7 @@ pub struct MigrationConfigListResult {
     #[doc = "List of Migration Configs"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MigrationConfigProperties>,
@@ -831,7 +831,7 @@ pub mod network_rule_set {
         #[serde(
             rename = "virtualNetworkRules",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub virtual_network_rules: Vec<NwRuleSetVirtualNetworkRules>,
@@ -839,7 +839,7 @@ pub mod network_rule_set {
         #[serde(
             rename = "ipRules",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub ip_rules: Vec<NwRuleSetIpRules>,
@@ -941,7 +941,7 @@ pub struct NetworkRuleSetListResult {
     #[doc = "Result of the List NetworkRuleSet operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkRuleSet>,
@@ -1011,7 +1011,7 @@ pub struct OperationListResult {
     #[doc = "List of ServiceBus operations supported by the Microsoft.ServiceBus resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1065,7 +1065,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "A collection of private endpoint connection resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -1180,7 +1180,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1188,7 +1188,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1204,7 +1204,7 @@ pub struct PrivateLinkResourcesListResult {
     #[doc = "A collection of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -1351,7 +1351,7 @@ pub struct RuleListResult {
     #[doc = "Result of the List Rules operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Rule>,
@@ -1428,7 +1428,7 @@ pub struct SbAuthorizationRuleListResult {
     #[doc = "Result of the List Authorization Rules operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SbAuthorizationRule>,
@@ -1500,7 +1500,7 @@ pub struct SbNamespaceListResult {
     #[doc = "Result of the List Namespace operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SbNamespace>,
@@ -1553,7 +1553,7 @@ pub struct SbNamespaceProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -1709,7 +1709,7 @@ pub struct SbNamespaceUpdateProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -1748,7 +1748,7 @@ pub struct SbQueueListResult {
     #[doc = "Result of the List Queues operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SbQueue>,
@@ -1967,7 +1967,7 @@ pub struct SbSubscriptionListResult {
     #[doc = "Result of the List Subscriptions operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SbSubscription>,
@@ -2079,7 +2079,7 @@ pub struct SbTopicListResult {
     #[doc = "Result of the List Topics operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SbTopic>,

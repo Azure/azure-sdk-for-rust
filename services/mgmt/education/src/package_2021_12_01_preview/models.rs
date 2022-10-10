@@ -175,7 +175,7 @@ pub struct GrantListResponse {
     #[doc = "The list of labs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GrantDetails>,
@@ -226,7 +226,7 @@ pub struct JoinRequestList {
     #[doc = "The list of requests."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JoinRequestDetails>,
@@ -326,7 +326,7 @@ pub struct LabListResult {
     #[doc = "The list of labs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LabDetails>,
@@ -567,7 +567,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -657,7 +657,7 @@ pub struct StudentLabListResult {
     #[doc = "The list of labs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StudentLabDetails>,
@@ -801,7 +801,7 @@ pub struct StudentListResult {
     #[doc = "The list of students."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StudentDetails>,

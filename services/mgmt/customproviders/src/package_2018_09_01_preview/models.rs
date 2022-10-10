@@ -94,7 +94,7 @@ pub struct AssociationsList {
     #[doc = "The array of associations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Association>,
@@ -193,7 +193,7 @@ pub mod custom_rp_manifest {
         #[doc = "A list of actions that the custom resource provider implements."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub actions: Vec<CustomRpActionRouteDefinition>,
@@ -201,14 +201,14 @@ pub mod custom_rp_manifest {
         #[serde(
             rename = "resourceTypes",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub resource_types: Vec<CustomRpResourceTypeRouteDefinition>,
         #[doc = "A list of validations to run on the custom resource provider's requests."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub validations: Vec<CustomRpValidations>,
@@ -406,7 +406,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -440,7 +440,7 @@ pub struct ListByCustomRpManifest {
     #[doc = "The array of custom resource provider manifests."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CustomRpManifest>,
@@ -533,7 +533,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,

@@ -118,7 +118,7 @@ pub struct CloudErrorBody {
     #[doc = "More detailed error information."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -418,7 +418,7 @@ pub struct RestResponse {
     #[serde(
         rename = "successStatusCodes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub success_status_codes: Vec<String>,
@@ -439,7 +439,7 @@ pub mod rest_response {
         #[doc = "The list of regular expressions."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub matches: Vec<String>,
@@ -536,7 +536,7 @@ pub struct RolloutProperties {
     #[doc = "The detailed information on the services being deployed."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub services: Vec<Service>,
@@ -609,14 +609,14 @@ pub struct RolloutStep {
     #[serde(
         rename = "resourceOperations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_operations: Vec<ResourceOperation>,
     #[doc = "Supplementary informative messages during rollout."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub messages: Vec<Message>,
@@ -674,7 +674,7 @@ pub struct Service {
     #[serde(
         rename = "serviceUnits",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_units: Vec<ServiceUnit>,
@@ -763,7 +763,7 @@ pub struct ServiceUnit {
     #[doc = "Detailed step information, if present."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub steps: Vec<RolloutStep>,
@@ -855,7 +855,7 @@ pub struct StepGroup {
     #[serde(
         rename = "dependsOnStepGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on_step_groups: Vec<String>,
@@ -863,7 +863,7 @@ pub struct StepGroup {
     #[serde(
         rename = "preDeploymentSteps",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pre_deployment_steps: Vec<PrePostStep>,
@@ -874,7 +874,7 @@ pub struct StepGroup {
     #[serde(
         rename = "postDeploymentSteps",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub post_deployment_steps: Vec<PrePostStep>,

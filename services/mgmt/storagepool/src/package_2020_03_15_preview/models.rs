@@ -116,7 +116,7 @@ pub struct DiskPoolCreateProperties {
     #[doc = "List of Azure Managed Disks to attach to a Disk pool. Can attach 8 disks at most."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<Disk>,
@@ -127,7 +127,7 @@ pub struct DiskPoolCreateProperties {
     #[serde(
         rename = "additionalCapabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_capabilities: Vec<AdditionalCapability>,
@@ -179,7 +179,7 @@ pub struct DiskPoolProperties {
     #[doc = "List of Azure Managed Disks to attach to a Disk pool. Can attach 8 disks at most."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<Disk>,
@@ -190,7 +190,7 @@ pub struct DiskPoolProperties {
     #[serde(
         rename = "additionalCapabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_capabilities: Vec<AdditionalCapability>,
@@ -275,7 +275,7 @@ pub struct DiskPoolUpdateProperties {
     #[doc = "List of Azure Managed Disks to attach to a Disk pool. Can attach 8 disks at most."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<Disk>,
@@ -333,7 +333,7 @@ pub struct ErrorResponse {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponse>,
@@ -341,7 +341,7 @@ pub struct ErrorResponse {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -767,14 +767,14 @@ pub struct TargetPortalGroupUpdate {
     #[doc = "List of LUNs to be exposed through the iSCSI target portal group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub luns: Vec<IscsiLun>,
     #[doc = "Access Control List (ACL) for an iSCSI target portal group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub acls: Vec<Acl>,

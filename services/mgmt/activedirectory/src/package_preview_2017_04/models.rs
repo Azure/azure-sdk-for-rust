@@ -24,7 +24,7 @@ pub struct DiagnosticSettings {
     #[doc = "The list of logs settings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logs: Vec<LogSettings>,
@@ -104,7 +104,7 @@ pub struct DiagnosticSettingsCategoryResourceCollection {
     #[doc = "The collection of diagnostic settings category resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
@@ -134,7 +134,7 @@ pub struct DiagnosticSettingsResourceCollection {
     #[doc = "The collection of diagnostic settings resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DiagnosticSettingsResource>,
@@ -180,7 +180,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -293,7 +293,7 @@ pub struct OperationsDiscoveryCollection {
     #[doc = "The ClientDiscovery details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationsDiscovery>,

@@ -30,7 +30,7 @@ pub struct ClassicAdministratorListResult {
     #[doc = "An array of administrators."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ClassicAdministrator>,
@@ -109,7 +109,7 @@ pub struct DenyAssignmentListResult {
     #[doc = "Deny assignment list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DenyAssignment>,
@@ -134,7 +134,7 @@ pub struct DenyAssignmentPermission {
     #[doc = "Actions to which the deny assignment does not grant access."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<String>,
@@ -142,7 +142,7 @@ pub struct DenyAssignmentPermission {
     #[serde(
         rename = "notActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub not_actions: Vec<String>,
@@ -150,7 +150,7 @@ pub struct DenyAssignmentPermission {
     #[serde(
         rename = "dataActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_actions: Vec<String>,
@@ -158,7 +158,7 @@ pub struct DenyAssignmentPermission {
     #[serde(
         rename = "notDataActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub not_data_actions: Vec<String>,
@@ -180,7 +180,7 @@ pub struct DenyAssignmentProperties {
     #[doc = "An array of permissions that are denied by the deny assignment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub permissions: Vec<DenyAssignmentPermission>,
@@ -193,7 +193,7 @@ pub struct DenyAssignmentProperties {
     #[doc = "Array of principals to which the deny assignment applies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub principals: Vec<Principal>,
@@ -201,7 +201,7 @@ pub struct DenyAssignmentProperties {
     #[serde(
         rename = "excludePrincipals",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exclude_principals: Vec<Principal>,
@@ -244,7 +244,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -252,7 +252,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -286,7 +286,7 @@ pub struct Permission {
     #[doc = "Allowed actions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<String>,
@@ -294,7 +294,7 @@ pub struct Permission {
     #[serde(
         rename = "notActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub not_actions: Vec<String>,
@@ -302,7 +302,7 @@ pub struct Permission {
     #[serde(
         rename = "dataActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_actions: Vec<String>,
@@ -310,7 +310,7 @@ pub struct Permission {
     #[serde(
         rename = "notDataActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub not_data_actions: Vec<String>,
@@ -326,7 +326,7 @@ pub struct PermissionGetResult {
     #[doc = "An array of permissions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Permission>,
@@ -412,14 +412,14 @@ pub struct ProviderOperationsMetadata {
     #[serde(
         rename = "resourceTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_types: Vec<ResourceType>,
     #[doc = "The provider operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub operations: Vec<ProviderOperation>,
@@ -435,7 +435,7 @@ pub struct ProviderOperationsMetadataListResult {
     #[doc = "The list of providers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProviderOperationsMetadata>,
@@ -466,7 +466,7 @@ pub struct ResourceType {
     #[doc = "The resource type operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub operations: Vec<ProviderOperation>,
@@ -529,7 +529,7 @@ pub struct RoleAssignmentListResult {
     #[doc = "Role assignment list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RoleAssignment>,
@@ -794,7 +794,7 @@ pub struct RoleDefinitionListResult {
     #[doc = "Role definition list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RoleDefinition>,
@@ -828,7 +828,7 @@ pub struct RoleDefinitionProperties {
     #[doc = "Role definition permissions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub permissions: Vec<Permission>,
@@ -836,7 +836,7 @@ pub struct RoleDefinitionProperties {
     #[serde(
         rename = "assignableScopes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub assignable_scopes: Vec<String>,

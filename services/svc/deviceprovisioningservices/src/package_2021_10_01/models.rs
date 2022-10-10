@@ -101,7 +101,7 @@ pub struct BulkEnrollmentGroupOperationResult {
     #[doc = "Registration errors"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<BulkEnrollmentGroupOperationError>,
@@ -173,7 +173,7 @@ pub struct BulkEnrollmentOperationResult {
     #[doc = "Registration errors"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<BulkEnrollmentOperationError>,
@@ -326,7 +326,7 @@ pub struct EnrollmentGroup {
     #[serde(
         rename = "iotHubs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub iot_hubs: Vec<String>,
@@ -429,7 +429,7 @@ pub struct IndividualEnrollment {
     #[serde(
         rename = "iotHubs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub iot_hubs: Vec<String>,

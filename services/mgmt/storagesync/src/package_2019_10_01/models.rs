@@ -85,7 +85,7 @@ pub struct CloudEndpointArray {
     #[doc = "Collection of CloudEndpoint."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CloudEndpoint>,
@@ -224,7 +224,7 @@ pub struct CloudTieringFilesNotTiering {
     #[doc = "Array of tiering errors"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<FilesNotTieringError>,
@@ -381,7 +381,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,
@@ -474,7 +474,7 @@ pub struct PostRestoreRequest {
     #[serde(
         rename = "restoreFileSpec",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restore_file_spec: Vec<RestoreFileSpec>,
@@ -512,7 +512,7 @@ pub struct PreRestoreRequest {
     #[serde(
         rename = "restoreFileSpec",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restore_file_spec: Vec<RestoreFileSpec>,
@@ -589,7 +589,7 @@ pub struct RegisteredServerArray {
     #[doc = "Collection of Registered Server."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RegisteredServer>,
@@ -747,7 +747,7 @@ pub struct ResourcesMoveInfo {
     #[doc = "Collection of Resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<ResourceId>,
@@ -792,7 +792,7 @@ pub struct ServerEndpointArray {
     #[doc = "Collection of ServerEndpoint."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServerEndpoint>,
@@ -1019,7 +1019,7 @@ pub struct ServerEndpointRecallStatus {
     #[serde(
         rename = "recallErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recall_errors: Vec<ServerEndpointRecallError>,
@@ -1206,7 +1206,7 @@ pub struct StorageSyncServiceArray {
     #[doc = "Collection of StorageSyncServices."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StorageSyncService>,
@@ -1399,7 +1399,7 @@ pub struct SyncGroupArray {
     #[doc = "Collection of SyncGroup."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SyncGroup>,
@@ -1477,7 +1477,7 @@ pub struct SyncSessionStatus {
     #[serde(
         rename = "filesNotSyncingErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files_not_syncing_errors: Vec<ServerEndpointFilesNotSyncingError>,
@@ -1527,7 +1527,7 @@ pub struct TriggerChangeDetectionParameters {
     #[doc = "Array of relative paths on the Azure File share to be included in the change detection. Can be files and directories."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub paths: Vec<String>,
@@ -1609,7 +1609,7 @@ pub struct WorkflowArray {
     #[doc = "Collection of workflow items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Workflow>,

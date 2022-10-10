@@ -12,7 +12,7 @@ pub struct A2aAddDisksInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<A2aVmDiskInputDetails>,
@@ -20,7 +20,7 @@ pub struct A2aAddDisksInput {
     #[serde(
         rename = "vmManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_managed_disks: Vec<A2aVmManagedDiskInputDetails>,
@@ -222,7 +222,7 @@ pub struct A2aCreateProtectionIntentInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<A2aProtectionIntentDiskInputDetails>,
@@ -230,7 +230,7 @@ pub struct A2aCreateProtectionIntentInput {
     #[serde(
         rename = "vmManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_managed_disks: Vec<A2aProtectionIntentManagedDiskInputDetails>,
@@ -580,7 +580,7 @@ pub struct A2aEnableProtectionInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<A2aVmDiskInputDetails>,
@@ -588,7 +588,7 @@ pub struct A2aEnableProtectionInput {
     #[serde(
         rename = "vmManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_managed_disks: Vec<A2aVmManagedDiskInputDetails>,
@@ -843,7 +843,7 @@ pub struct A2aProtectedDiskDetails {
     #[serde(
         rename = "allowedDiskLevelOperation",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_disk_level_operation: Vec<String>,
@@ -945,7 +945,7 @@ pub struct A2aProtectedManagedDiskDetails {
     #[serde(
         rename = "allowedDiskLevelOperation",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_disk_level_operation: Vec<String>,
@@ -1179,7 +1179,7 @@ pub struct A2aRecoveryPointDetails {
     #[doc = "List of disk ids representing a recovery point."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<String>,
@@ -1244,7 +1244,7 @@ pub struct A2aRemoveDisksInput {
     #[serde(
         rename = "vmDisksUris",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks_uris: Vec<String>,
@@ -1252,7 +1252,7 @@ pub struct A2aRemoveDisksInput {
     #[serde(
         rename = "vmManagedDisksIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_managed_disks_ids: Vec<String>,
@@ -1308,7 +1308,7 @@ pub struct A2aReplicationDetails {
     #[serde(
         rename = "protectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_disks: Vec<A2aProtectedDiskDetails>,
@@ -1316,7 +1316,7 @@ pub struct A2aReplicationDetails {
     #[serde(
         rename = "unprotectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub unprotected_disks: Vec<A2aUnprotectedDiskDetails>,
@@ -1324,7 +1324,7 @@ pub struct A2aReplicationDetails {
     #[serde(
         rename = "protectedManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_managed_disks: Vec<A2aProtectedManagedDiskDetails>,
@@ -1365,7 +1365,7 @@ pub struct A2aReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -1652,7 +1652,7 @@ pub struct A2aReplicationIntentDetails {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<A2aProtectionIntentDiskInputDetails>,
@@ -1660,7 +1660,7 @@ pub struct A2aReplicationIntentDetails {
     #[serde(
         rename = "vmManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_managed_disks: Vec<A2aProtectionIntentManagedDiskInputDetails>,
@@ -1878,7 +1878,7 @@ pub struct A2aReprotectInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<A2aVmDiskInputDetails>,
@@ -1920,7 +1920,7 @@ pub struct A2aSwitchProtectionInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<A2aVmDiskInputDetails>,
@@ -1928,7 +1928,7 @@ pub struct A2aSwitchProtectionInput {
     #[serde(
         rename = "vmManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_managed_disks: Vec<A2aVmManagedDiskInputDetails>,
@@ -2206,7 +2206,7 @@ pub struct A2aUpdateReplicationProtectedItemInput {
     #[serde(
         rename = "managedDiskUpdateDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub managed_disk_update_details: Vec<A2aVmManagedDiskUpdateDetails>,
@@ -2366,7 +2366,7 @@ pub struct AsrTask {
     #[serde(
         rename = "allowedActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_actions: Vec<String>,
@@ -2391,7 +2391,7 @@ pub struct AsrTask {
     #[doc = "The task error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<JobErrorDetails>,
@@ -2540,7 +2540,7 @@ pub struct AgentDetails {
     #[doc = "The disks."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<AgentDiskDetails>,
@@ -2594,7 +2594,7 @@ pub struct AlertCollection {
     #[doc = "The list of alerts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Alert>,
@@ -2623,7 +2623,7 @@ pub struct AlertProperties {
     #[serde(
         rename = "customEmailAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_email_addresses: Vec<String>,
@@ -2642,7 +2642,7 @@ pub struct ApplianceCollection {
     #[doc = "The appliance details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReplicationAppliance>,
@@ -2815,14 +2815,14 @@ pub struct AzureFabricSpecificDetails {
     #[serde(
         rename = "containerIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub container_ids: Vec<String>,
     #[doc = "The zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<A2aZoneDetails>,
@@ -2902,7 +2902,7 @@ pub struct AzureToAzureVmSyncedConfigDetails {
     #[serde(
         rename = "inputEndpoints",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub input_endpoints: Vec<InputEndpoint>,
@@ -3000,7 +3000,7 @@ pub struct ConfigureAlertRequestProperties {
     #[serde(
         rename = "customEmailAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_email_addresses: Vec<String>,
@@ -3022,7 +3022,7 @@ pub struct ConsistencyCheckTaskDetails {
     #[serde(
         rename = "vmDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_details: Vec<InconsistentVmDetails>,
@@ -3111,7 +3111,7 @@ pub struct CreateProtectionContainerInputProperties {
     #[serde(
         rename = "providerSpecificInput",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provider_specific_input: Vec<ReplicationProviderSpecificContainerCreationInput>,
@@ -3216,7 +3216,7 @@ pub struct CreateRecoveryPlanInputProperties {
     #[serde(
         rename = "providerSpecificInput",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provider_specific_input: Vec<RecoveryPlanProviderSpecificInput>,
@@ -3575,7 +3575,7 @@ pub struct DraDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -3756,7 +3756,7 @@ pub struct EventCollection {
     #[doc = "The list of events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Event>,
@@ -3812,7 +3812,7 @@ pub struct EventProperties {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -4078,7 +4078,7 @@ pub struct FabricCollection {
     #[doc = "The fabric details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Fabric>,
@@ -4146,7 +4146,7 @@ pub struct FabricProperties {
     #[serde(
         rename = "healthErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_error_details: Vec<HealthError>,
@@ -4264,7 +4264,7 @@ pub struct FailoverJobDetails {
     #[serde(
         rename = "protectedItemDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_item_details: Vec<FailoverReplicationProtectedItemDetails>,
@@ -4305,7 +4305,7 @@ pub struct FailoverProcessServerRequestProperties {
     #[serde(
         rename = "vmsToMigrate",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vms_to_migrate: Vec<String>,
@@ -4364,7 +4364,7 @@ pub struct GroupTaskDetails {
     #[serde(
         rename = "childTasks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub child_tasks: Vec<AsrTask>,
@@ -4384,7 +4384,7 @@ pub struct HealthError {
     #[serde(
         rename = "innerHealthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inner_health_errors: Vec<InnerHealthError>,
@@ -4501,7 +4501,7 @@ pub struct HealthErrorSummary {
     #[serde(
         rename = "affectedResourceCorrelationIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub affected_resource_correlation_ids: Vec<String>,
@@ -4819,7 +4819,7 @@ pub struct HyperVReplicaAzureEnableProtectionInput {
     #[serde(
         rename = "disksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include: Vec<String>,
@@ -4860,7 +4860,7 @@ pub struct HyperVReplicaAzureEnableProtectionInput {
     #[serde(
         rename = "disksToIncludeForManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include_for_managed_disks: Vec<HyperVReplicaAzureDiskInputDetails>,
@@ -5204,7 +5204,7 @@ pub struct HyperVReplicaAzurePolicyInput {
     #[serde(
         rename = "storageAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_accounts: Vec<String>,
@@ -5230,7 +5230,7 @@ pub struct HyperVReplicaAzureReplicationDetails {
     #[serde(
         rename = "azureVmDiskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub azure_vm_disk_details: Vec<AzureVmDiskDetails>,
@@ -5271,7 +5271,7 @@ pub struct HyperVReplicaAzureReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -5336,7 +5336,7 @@ pub struct HyperVReplicaAzureReplicationDetails {
     #[serde(
         rename = "protectedManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_managed_disks: Vec<HyperVReplicaAzureManagedDiskDetails>,
@@ -5507,7 +5507,7 @@ pub struct HyperVReplicaAzureUpdateReplicationProtectedItemInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<UpdateDiskInput>,
@@ -5674,7 +5674,7 @@ pub struct HyperVReplicaBaseReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -5694,7 +5694,7 @@ pub struct HyperVReplicaBaseReplicationDetails {
     #[serde(
         rename = "vMDiskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub v_m_disk_details: Vec<DiskDetails>,
@@ -5803,7 +5803,7 @@ pub struct HyperVReplicaBlueReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -5823,7 +5823,7 @@ pub struct HyperVReplicaBlueReplicationDetails {
     #[serde(
         rename = "vMDiskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub v_m_disk_details: Vec<DiskDetails>,
@@ -5968,7 +5968,7 @@ pub struct HyperVReplicaReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -5988,7 +5988,7 @@ pub struct HyperVReplicaReplicationDetails {
     #[serde(
         rename = "vMDiskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub v_m_disk_details: Vec<DiskDetails>,
@@ -6016,7 +6016,7 @@ pub struct HyperVSiteDetails {
     #[serde(
         rename = "hyperVHosts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hyper_v_hosts: Vec<HyperVHostDetails>,
@@ -6047,7 +6047,7 @@ pub struct HyperVVirtualMachineDetails {
     #[serde(
         rename = "diskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disk_details: Vec<DiskDetails>,
@@ -6224,7 +6224,7 @@ pub struct IpConfigDetails {
     #[serde(
         rename = "recoveryLBBackendAddressPoolIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recovery_lb_backend_address_pool_ids: Vec<String>,
@@ -6237,7 +6237,7 @@ pub struct IpConfigDetails {
     #[serde(
         rename = "tfoLBBackendAddressPoolIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tfo_lb_backend_address_pool_ids: Vec<String>,
@@ -6264,7 +6264,7 @@ pub struct IpConfigInputDetails {
     #[serde(
         rename = "recoveryLBBackendAddressPoolIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recovery_lb_backend_address_pool_ids: Vec<String>,
@@ -6277,7 +6277,7 @@ pub struct IpConfigInputDetails {
     #[serde(
         rename = "tfoLBBackendAddressPoolIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tfo_lb_backend_address_pool_ids: Vec<String>,
@@ -6467,7 +6467,7 @@ pub struct InMageAzureV2EnableProtectionInput {
     #[serde(
         rename = "disksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include: Vec<InMageAzureV2DiskInputDetails>,
@@ -7030,7 +7030,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[serde(
         rename = "protectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_disks: Vec<InMageAzureV2ProtectedDiskDetails>,
@@ -7059,7 +7059,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[serde(
         rename = "azureVMDiskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub azure_vm_disk_details: Vec<AzureVmDiskDetails>,
@@ -7079,7 +7079,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -7101,7 +7101,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[doc = "The datastores of the on-premise machine. Value can be list of strings that contain datastore names."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datastores: Vec<String>,
@@ -7133,7 +7133,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<HealthError>,
@@ -7153,7 +7153,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[serde(
         rename = "protectedManagedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_managed_disks: Vec<InMageAzureV2ManagedDiskDetails>,
@@ -7191,7 +7191,7 @@ pub struct InMageAzureV2ReplicationDetails {
     #[serde(
         rename = "switchProviderBlockingErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub switch_provider_blocking_error_details: Vec<InMageAzureV2SwitchProviderBlockingErrorDetails>,
@@ -7300,7 +7300,7 @@ pub struct InMageAzureV2ReprotectInput {
     #[serde(
         rename = "disksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include: Vec<String>,
@@ -7467,7 +7467,7 @@ pub struct InMageAzureV2UpdateReplicationProtectedItemInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<UpdateDiskInput>,
@@ -7603,7 +7603,7 @@ pub struct InMageDiskDetails {
     #[serde(
         rename = "volumeList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_list: Vec<DiskVolumeDetails>,
@@ -7620,7 +7620,7 @@ pub struct InMageDiskExclusionInput {
     #[serde(
         rename = "volumeOptions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_options: Vec<InMageVolumeExclusionOptions>,
@@ -7628,7 +7628,7 @@ pub struct InMageDiskExclusionInput {
     #[serde(
         rename = "diskSignatureOptions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disk_signature_options: Vec<InMageDiskSignatureExclusionOptions>,
@@ -7686,7 +7686,7 @@ pub struct InMageEnableProtectionInput {
     #[serde(
         rename = "disksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include: Vec<String>,
@@ -7982,7 +7982,7 @@ pub struct InMageRcmApplianceDetails {
     #[serde(
         rename = "switchProviderBlockingErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub switch_provider_blocking_error_details: Vec<InMageRcmFabricSwitchProviderBlockingErrorDetails>,
@@ -8000,7 +8000,7 @@ pub struct InMageRcmApplianceSpecificDetails {
     #[doc = "The list of appliances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub appliances: Vec<InMageRcmApplianceDetails>,
@@ -8042,7 +8042,7 @@ pub struct InMageRcmDiscoveredProtectedVmDetails {
     #[doc = "The list of datastores."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datastores: Vec<String>,
@@ -8050,7 +8050,7 @@ pub struct InMageRcmDiscoveredProtectedVmDetails {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -8234,7 +8234,7 @@ pub struct InMageRcmEnableProtectionInput {
     #[serde(
         rename = "disksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include: Vec<InMageRcmDiskInput>,
@@ -8467,7 +8467,7 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "processServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub process_servers: Vec<ProcessServerDetails>,
@@ -8475,7 +8475,7 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "rcmProxies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rcm_proxies: Vec<RcmProxyDetails>,
@@ -8483,7 +8483,7 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "pushInstallers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub push_installers: Vec<PushInstallerDetails>,
@@ -8491,7 +8491,7 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "replicationAgents",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replication_agents: Vec<ReplicationAgentDetails>,
@@ -8499,7 +8499,7 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "reprotectAgents",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reprotect_agents: Vec<ReprotectAgentDetails>,
@@ -8507,14 +8507,14 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "marsAgents",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mars_agents: Vec<MarsAgentDetails>,
     #[doc = "The list of DRAs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dras: Vec<DraDetails>,
@@ -8522,7 +8522,7 @@ pub struct InMageRcmFabricSpecificDetails {
     #[serde(
         rename = "agentDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub agent_details: Vec<AgentDetails>,
@@ -8589,7 +8589,7 @@ pub struct InMageRcmFailbackDiscoveredProtectedVmDetails {
     #[doc = "The list of datastores."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datastores: Vec<String>,
@@ -8597,7 +8597,7 @@ pub struct InMageRcmFailbackDiscoveredProtectedVmDetails {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -8692,7 +8692,7 @@ pub struct InMageRcmFailbackMobilityAgentDetails {
     #[serde(
         rename = "reasonsBlockingUpgrade",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reasons_blocking_upgrade: Vec<String>,
@@ -8939,7 +8939,7 @@ pub struct InMageRcmFailbackReplicationDetails {
     #[serde(
         rename = "protectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_disks: Vec<InMageRcmFailbackProtectedDiskDetails>,
@@ -8950,7 +8950,7 @@ pub struct InMageRcmFailbackReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<InMageRcmFailbackNicDetails>,
@@ -9346,7 +9346,7 @@ pub struct InMageRcmMobilityAgentDetails {
     #[serde(
         rename = "reasonsBlockingUpgrade",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reasons_blocking_upgrade: Vec<String>,
@@ -9891,7 +9891,7 @@ pub struct InMageRcmReplicationDetails {
     #[serde(
         rename = "protectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_disks: Vec<InMageRcmProtectedDiskDetails>,
@@ -9912,7 +9912,7 @@ pub struct InMageRcmReplicationDetails {
     #[serde(
         rename = "lastAgentUpgradeErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub last_agent_upgrade_error_details: Vec<InMageRcmLastAgentUpgradeErrorDetails>,
@@ -9920,7 +9920,7 @@ pub struct InMageRcmReplicationDetails {
     #[serde(
         rename = "agentUpgradeBlockingErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub agent_upgrade_blocking_error_details: Vec<InMageRcmAgentUpgradeBlockingErrorDetails>,
@@ -9928,7 +9928,7 @@ pub struct InMageRcmReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<InMageRcmNicDetails>,
@@ -10393,7 +10393,7 @@ pub struct InMageRcmUpdateReplicationProtectedItemInput {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<InMageRcmNicInput>,
@@ -10512,7 +10512,7 @@ pub struct InMageReplicationDetails {
     #[serde(
         rename = "protectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_disks: Vec<InMageProtectedDiskDetails>,
@@ -10559,7 +10559,7 @@ pub struct InMageReplicationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicDetails>,
@@ -10572,7 +10572,7 @@ pub struct InMageReplicationDetails {
     #[doc = "The datastores of the on-premise machine Value can be list of strings that contain datastore names."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub datastores: Vec<String>,
@@ -10580,7 +10580,7 @@ pub struct InMageReplicationDetails {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<HealthError>,
@@ -10683,7 +10683,7 @@ pub struct InMageReprotectInput {
     #[serde(
         rename = "disksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks_to_include: Vec<String>,
@@ -10862,7 +10862,7 @@ pub struct InconsistentVmDetails {
     #[doc = "The list of details regarding state of the Protected Entity in SRS and On prem."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<String>,
@@ -10870,7 +10870,7 @@ pub struct InconsistentVmDetails {
     #[serde(
         rename = "errorIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_ids: Vec<String>,
@@ -10904,7 +10904,7 @@ pub struct InlineWorkflowTaskDetails {
     #[serde(
         rename = "workflowIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub workflow_ids: Vec<String>,
@@ -11044,7 +11044,7 @@ pub struct JobCollection {
     #[doc = "The list of jobs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Job>,
@@ -11153,14 +11153,14 @@ pub struct JobProperties {
     #[doc = "The tasks."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tasks: Vec<AsrTask>,
     #[doc = "The errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<JobErrorDetails>,
@@ -11174,7 +11174,7 @@ pub struct JobProperties {
     #[serde(
         rename = "allowedActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_actions: Vec<String>,
@@ -11352,7 +11352,7 @@ pub struct LogicalNetworkCollection {
     #[doc = "The Logical Networks list details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LogicalNetwork>,
@@ -11448,7 +11448,7 @@ pub struct MarsAgentDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -11530,7 +11530,7 @@ pub struct MasterTargetServer {
     #[serde(
         rename = "retentionVolumes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub retention_volumes: Vec<RetentionVolume>,
@@ -11538,7 +11538,7 @@ pub struct MasterTargetServer {
     #[serde(
         rename = "dataStores",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_stores: Vec<DataStore>,
@@ -11546,7 +11546,7 @@ pub struct MasterTargetServer {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<HealthError>,
@@ -11554,7 +11554,7 @@ pub struct MasterTargetServer {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -11640,7 +11640,7 @@ pub struct MigrationItemCollection {
     #[doc = "The list of migration items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MigrationItem>,
@@ -11708,7 +11708,7 @@ pub struct MigrationItemProperties {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -11716,7 +11716,7 @@ pub struct MigrationItemProperties {
     #[serde(
         rename = "allowedOperations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_operations: Vec<String>,
@@ -11727,7 +11727,7 @@ pub struct MigrationItemProperties {
     #[serde(
         rename = "criticalJobHistory",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub critical_job_history: Vec<CriticalJobHistoryDetails>,
@@ -11961,7 +11961,7 @@ pub struct MigrationRecoveryPointCollection {
     #[doc = "The migration recovery point details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MigrationRecoveryPoint>,
@@ -12075,7 +12075,7 @@ pub struct NetworkCollection {
     #[doc = "The Networks list details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Network>,
@@ -12114,7 +12114,7 @@ pub struct NetworkMappingCollection {
     #[doc = "The Network Mappings list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkMapping>,
@@ -12190,7 +12190,7 @@ pub struct NetworkProperties {
     #[doc = "The List of subnets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subnets: Vec<Subnet>,
@@ -12395,7 +12395,7 @@ pub struct OperationsDiscoveryCollection {
     #[doc = "The ClientDiscovery details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationsDiscovery>,
@@ -12504,7 +12504,7 @@ pub struct PolicyCollection {
     #[doc = "The policy details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Policy>,
@@ -12590,7 +12590,7 @@ pub struct ProcessServer {
     #[serde(
         rename = "mobilityServiceUpdates",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mobility_service_updates: Vec<MobilityServiceUpdate>,
@@ -12649,7 +12649,7 @@ pub struct ProcessServer {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -12755,7 +12755,7 @@ pub struct ProcessServerDetails {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -12823,7 +12823,7 @@ pub struct ProcessServerDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -13149,7 +13149,7 @@ pub struct ProtectableItemCollection {
     #[doc = "The Protectable item details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProtectableItem>,
@@ -13187,7 +13187,7 @@ pub struct ProtectableItemProperties {
     #[serde(
         rename = "protectionReadinessErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protection_readiness_errors: Vec<String>,
@@ -13195,7 +13195,7 @@ pub struct ProtectableItemProperties {
     #[serde(
         rename = "supportedReplicationProviders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_replication_providers: Vec<String>,
@@ -13313,7 +13313,7 @@ pub struct ProtectionContainerCollection {
     #[doc = "The Protection Container details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProtectionContainer>,
@@ -13364,7 +13364,7 @@ pub struct ProtectionContainerMappingCollection {
     #[doc = "List of container mappings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProtectionContainerMapping>,
@@ -13402,7 +13402,7 @@ pub struct ProtectionContainerMappingProperties {
     #[serde(
         rename = "healthErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_error_details: Vec<HealthError>,
@@ -13551,7 +13551,7 @@ pub struct PushInstallerDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -13639,7 +13639,7 @@ pub struct RcmProxyDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -13999,7 +13999,7 @@ pub struct RecoveryPlanCollection {
     #[doc = "The list of recovery plans."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecoveryPlan>,
@@ -14028,7 +14028,7 @@ pub struct RecoveryPlanGroup {
     #[serde(
         rename = "replicationProtectedItems",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replication_protected_items: Vec<RecoveryPlanProtectedItem>,
@@ -14036,7 +14036,7 @@ pub struct RecoveryPlanGroup {
     #[serde(
         rename = "startGroupActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub start_group_actions: Vec<RecoveryPlanAction>,
@@ -14044,7 +14044,7 @@ pub struct RecoveryPlanGroup {
     #[serde(
         rename = "endGroupActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub end_group_actions: Vec<RecoveryPlanAction>,
@@ -14601,7 +14601,7 @@ pub struct RecoveryPlanPlannedFailoverInputProperties {
     #[serde(
         rename = "providerSpecificDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provider_specific_details: Vec<RecoveryPlanProviderSpecificFailoverInput>,
@@ -14679,7 +14679,7 @@ pub struct RecoveryPlanProperties {
     #[serde(
         rename = "replicationProviders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replication_providers: Vec<String>,
@@ -14687,7 +14687,7 @@ pub struct RecoveryPlanProperties {
     #[serde(
         rename = "allowedOperations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_operations: Vec<String>,
@@ -14712,7 +14712,7 @@ pub struct RecoveryPlanProperties {
     #[doc = "The recovery plan groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub groups: Vec<RecoveryPlanGroup>,
@@ -14720,7 +14720,7 @@ pub struct RecoveryPlanProperties {
     #[serde(
         rename = "providerSpecificDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provider_specific_details: Vec<RecoveryPlanProviderSpecificDetails>,
@@ -14912,7 +14912,7 @@ pub struct RecoveryPlanTestFailoverInputProperties {
     #[serde(
         rename = "providerSpecificDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provider_specific_details: Vec<RecoveryPlanProviderSpecificFailoverInput>,
@@ -14991,7 +14991,7 @@ pub struct RecoveryPlanUnplannedFailoverInputProperties {
     #[serde(
         rename = "providerSpecificDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provider_specific_details: Vec<RecoveryPlanProviderSpecificFailoverInput>,
@@ -15105,7 +15105,7 @@ pub struct RecoveryPointCollection {
     #[doc = "The recovery point details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecoveryPoint>,
@@ -15186,7 +15186,7 @@ pub struct RecoveryServicesProviderCollection {
     #[doc = "The Servers details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecoveryServicesProvider>,
@@ -15242,7 +15242,7 @@ pub struct RecoveryServicesProviderProperties {
     #[serde(
         rename = "allowedScenarios",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_scenarios: Vec<String>,
@@ -15250,7 +15250,7 @@ pub struct RecoveryServicesProviderProperties {
     #[serde(
         rename = "healthErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_error_details: Vec<HealthError>,
@@ -15415,7 +15415,7 @@ pub struct ReplicationAgentDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -15520,7 +15520,7 @@ pub struct ReplicationEligibilityResultsCollection {
     #[doc = "The replication eligibility results details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReplicationEligibilityResults>,
@@ -15563,7 +15563,7 @@ pub struct ReplicationEligibilityResultsProperties {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ReplicationEligibilityResultsErrorInfo>,
@@ -15604,7 +15604,7 @@ pub struct ReplicationProtectedItemCollection {
     #[doc = "The Replication protected item details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReplicationProtectedItem>,
@@ -15689,7 +15689,7 @@ pub struct ReplicationProtectedItemProperties {
     #[serde(
         rename = "allowedOperations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_operations: Vec<String>,
@@ -15703,7 +15703,7 @@ pub struct ReplicationProtectedItemProperties {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -15760,7 +15760,7 @@ pub struct ReplicationProtectionIntentCollection {
     #[doc = "The Replication protection intent details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReplicationProtectionIntent>,
@@ -15909,7 +15909,7 @@ pub struct ReprotectAgentDetails {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -15920,7 +15920,7 @@ pub struct ReprotectAgentDetails {
     #[serde(
         rename = "accessibleDatastores",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub accessible_datastores: Vec<String>,
@@ -16011,7 +16011,7 @@ pub struct ResolveHealthInputProperties {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<ResolveHealthError>,
@@ -16051,7 +16051,7 @@ pub struct ResourceHealthSummary {
     #[doc = "The list of summary of health errors across the resources under the container."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub issues: Vec<HealthErrorSummary>,
@@ -16342,7 +16342,7 @@ pub struct StorageClassificationCollection {
     #[doc = "The storage details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StorageClassification>,
@@ -16381,7 +16381,7 @@ pub struct StorageClassificationMappingCollection {
     #[doc = "The storage details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StorageClassificationMapping>,
@@ -16461,7 +16461,7 @@ pub struct Subnet {
     #[serde(
         rename = "addressList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub address_list: Vec<String>,
@@ -16484,7 +16484,7 @@ pub struct SupportedOsDetails {
     #[serde(
         rename = "osVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub os_versions: Vec<OsVersionWrapper>,
@@ -16501,7 +16501,7 @@ pub struct SupportedOsProperties {
     #[serde(
         rename = "supportedOsList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_os_list: Vec<SupportedOsProperty>,
@@ -16521,7 +16521,7 @@ pub struct SupportedOsProperty {
     #[serde(
         rename = "supportedOs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_os: Vec<SupportedOsDetails>,
@@ -16667,7 +16667,7 @@ pub struct TargetComputeSizeCollection {
     #[doc = "The list of target compute sizes."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TargetComputeSize>,
@@ -16713,7 +16713,7 @@ pub struct TargetComputeSizeProperties {
     #[doc = "The reasons why the target compute size is not applicable for the protected item."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ComputeSizeErrorDetails>,
@@ -16724,7 +16724,7 @@ pub struct TargetComputeSizeProperties {
     #[serde(
         rename = "hyperVGenerations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hyper_v_generations: Vec<String>,
@@ -16825,7 +16825,7 @@ pub struct TestFailoverJobDetails {
     #[serde(
         rename = "protectedItemDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_item_details: Vec<FailoverReplicationProtectedItemDetails>,
@@ -17172,7 +17172,7 @@ pub struct UpdateRecoveryPlanInputProperties {
     #[doc = "The recovery plan groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub groups: Vec<RecoveryPlanGroup>,
@@ -17219,7 +17219,7 @@ pub struct UpdateReplicationProtectedItemInputProperties {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VmNicInputDetails>,
@@ -17348,7 +17348,7 @@ pub struct VCenterCollection {
     #[doc = "The vCenter details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VCenter>,
@@ -17404,7 +17404,7 @@ pub struct VCenterProperties {
     #[serde(
         rename = "healthErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_errors: Vec<HealthError>,
@@ -17436,7 +17436,7 @@ pub struct VmNicDetails {
     #[serde(
         rename = "ipConfigs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_configs: Vec<IpConfigDetails>,
@@ -17495,7 +17495,7 @@ pub struct VmNicInputDetails {
     #[serde(
         rename = "ipConfigs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_configs: Vec<IpConfigInputDetails>,
@@ -17965,7 +17965,7 @@ pub struct VMwareCbtMigrationDetails {
     #[serde(
         rename = "protectedDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_disks: Vec<VMwareCbtProtectedDiskDetails>,
@@ -17979,7 +17979,7 @@ pub struct VMwareCbtMigrationDetails {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VMwareCbtNicDetails>,
@@ -18539,7 +18539,7 @@ pub struct VMwareCbtTestMigrateInput {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VMwareCbtNicInput>,
@@ -18616,7 +18616,7 @@ pub struct VMwareCbtUpdateMigrationItemInput {
     #[serde(
         rename = "vmNics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_nics: Vec<VMwareCbtNicInput>,
@@ -18624,7 +18624,7 @@ pub struct VMwareCbtUpdateMigrationItemInput {
     #[serde(
         rename = "vmDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_disks: Vec<VMwareCbtUpdateDiskInput>,
@@ -18765,7 +18765,7 @@ pub struct VMwareDetails {
     #[serde(
         rename = "processServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub process_servers: Vec<ProcessServer>,
@@ -18773,7 +18773,7 @@ pub struct VMwareDetails {
     #[serde(
         rename = "masterTargetServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub master_target_servers: Vec<MasterTargetServer>,
@@ -18781,7 +18781,7 @@ pub struct VMwareDetails {
     #[serde(
         rename = "runAsAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub run_as_accounts: Vec<RunAsAccount>,
@@ -18876,7 +18876,7 @@ pub struct VMwareDetails {
     #[serde(
         rename = "switchProviderBlockingErrorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub switch_provider_blocking_error_details: Vec<InMageFabricSwitchProviderBlockingErrorDetails>,
@@ -18973,7 +18973,7 @@ pub struct VMwareV2FabricSpecificDetails {
     #[serde(
         rename = "processServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub process_servers: Vec<ProcessServerDetails>,
@@ -19025,7 +19025,7 @@ pub struct VMwareVirtualMachineDetails {
     #[serde(
         rename = "diskDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disk_details: Vec<InMageDiskDetails>,
@@ -19033,7 +19033,7 @@ pub struct VMwareVirtualMachineDetails {
     #[serde(
         rename = "validationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_errors: Vec<HealthError>,
@@ -19076,7 +19076,7 @@ pub struct VaultHealthProperties {
     #[serde(
         rename = "vaultErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vault_errors: Vec<HealthError>,
@@ -19115,7 +19115,7 @@ pub struct VaultSettingCollection {
     #[doc = "The list of vault setting."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VaultSetting>,

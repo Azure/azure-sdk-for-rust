@@ -36,7 +36,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -56,7 +56,7 @@ pub struct ConfigDiagnostics {
     #[serde(
         rename = "validatorResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validator_results: Vec<ConfigDiagnosticsValidatorResult>,
@@ -81,7 +81,7 @@ pub struct ConfigDiagnosticsValidatorResult {
     #[doc = "List of resource config validation issues."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub issues: Vec<ConfigDiagnosticsValidatorResultIssue>,
@@ -155,7 +155,7 @@ pub struct ConfigDiagnosticsValidatorResultIssue {
     #[serde(
         rename = "descriptionParams",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub description_params: Vec<String>,
@@ -530,7 +530,7 @@ pub struct DomainServiceListResult {
     #[doc = "the list of domain services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DomainService>,
@@ -571,7 +571,7 @@ pub struct DomainServiceProperties {
     #[serde(
         rename = "replicaSets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replica_sets: Vec<ReplicaSet>,
@@ -886,7 +886,7 @@ pub struct NotificationSettings {
     #[serde(
         rename = "additionalRecipients",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_recipients: Vec<String>,
@@ -1018,7 +1018,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,
@@ -1057,7 +1057,7 @@ pub struct OuContainerListResult {
     #[doc = "The list of OuContainer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OuContainer>,
@@ -1094,7 +1094,7 @@ pub struct OuContainerProperties {
     #[doc = "The list of container accounts"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub accounts: Vec<ContainerAccount>,
@@ -1132,7 +1132,7 @@ pub struct ReplicaSet {
     #[serde(
         rename = "domainControllerIpAddress",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub domain_controller_ip_address: Vec<String>,
@@ -1149,7 +1149,7 @@ pub struct ReplicaSet {
     #[serde(
         rename = "healthMonitors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_monitors: Vec<HealthMonitor>,
@@ -1157,7 +1157,7 @@ pub struct ReplicaSet {
     #[serde(
         rename = "healthAlerts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_alerts: Vec<HealthAlert>,
@@ -1203,7 +1203,7 @@ pub struct ResourceForestSettings {
     #[doc = "List of settings for Resource Forest"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub settings: Vec<ForestTrust>,

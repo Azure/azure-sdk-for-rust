@@ -13,7 +13,7 @@ pub struct ErrorResponseBody {
     pub target: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponseBody>,
@@ -107,7 +107,7 @@ impl NginxCertificate {
 pub struct NginxCertificateListResponse {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NginxCertificate>,
@@ -182,7 +182,7 @@ pub struct NginxConfigurationListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NginxConfiguration>,
@@ -217,14 +217,14 @@ pub struct NginxConfigurationProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<NginxConfigurationFile>,
     #[serde(
         rename = "protectedFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protected_files: Vec<NginxConfigurationFile>,
@@ -269,7 +269,7 @@ impl NginxDeployment {
 pub struct NginxDeploymentListResponse {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NginxDeployment>,
@@ -346,14 +346,14 @@ pub struct NginxFrontendIpConfiguration {
     #[serde(
         rename = "publicIPAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_ip_addresses: Vec<NginxPublicIpAddress>,
     #[serde(
         rename = "privateIPAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_ip_addresses: Vec<NginxPrivateIpAddress>,
@@ -494,7 +494,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Nginx.NginxPlus provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResult>,

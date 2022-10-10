@@ -123,7 +123,7 @@ pub struct AvailableOperationDisplayPropertyServiceSpecificationMetricsList {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<AvailableOperationDisplayPropertyServiceSpecificationMetricsItem>,
@@ -142,7 +142,7 @@ pub struct AvailableOperationsListResponse {
     #[doc = "Returns a list of available operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableOperation>,
@@ -185,7 +185,7 @@ pub struct CsrpErrorBody {
     #[doc = "Error's details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CsrpErrorBody>,
@@ -270,7 +270,7 @@ pub struct CustomizationIpSettings {
     #[doc = "The list of gateways"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub gateway: Vec<String>,
@@ -352,7 +352,7 @@ pub struct CustomizationPoliciesListResponse {
     #[doc = "List of the customization policies"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CustomizationPolicy>,
@@ -435,7 +435,7 @@ pub struct CustomizationSpecification {
     #[serde(
         rename = "nicSettings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nic_settings: Vec<CustomizationNicSetting>,
@@ -491,7 +491,7 @@ pub struct DedicatedCloudNodeListResponse {
     #[doc = "Results of the DedicatedCloudNode list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DedicatedCloudNode>,
@@ -626,7 +626,7 @@ pub struct DedicatedCloudServiceListResponse {
     #[doc = "Results of the DedicatedCloudService list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DedicatedCloudService>,
@@ -690,7 +690,7 @@ pub struct GuestOsCustomization {
     #[serde(
         rename = "dnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_servers: Vec<Ipv4Address>,
@@ -722,14 +722,14 @@ pub struct GuestOsnicCustomization {
     #[serde(
         rename = "dnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_servers: Vec<Ipv4Address>,
     #[doc = "Gateway addresses assigned to nic"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub gateway: Vec<Ipv4Address>,
@@ -855,7 +855,7 @@ pub struct PrivateCloudList {
     #[doc = "the list of private clouds"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateCloud>,
@@ -893,7 +893,7 @@ pub struct PrivateCloudProperties {
     #[serde(
         rename = "dnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_servers: Vec<String>,
@@ -916,7 +916,7 @@ pub struct PrivateCloudProperties {
     #[serde(
         rename = "resourcePools",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_pools: Vec<ResourcePool>,
@@ -951,7 +951,7 @@ pub struct PrivateCloudProperties {
     #[serde(
         rename = "virtualMachineTemplates",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_machine_templates: Vec<VirtualMachineTemplate>,
@@ -959,7 +959,7 @@ pub struct PrivateCloudProperties {
     #[serde(
         rename = "virtualNetworks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_networks: Vec<VirtualNetwork>,
@@ -1026,7 +1026,7 @@ pub struct ResourcePoolsListResponse {
     #[doc = "Results of the Resource pools list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourcePool>,
@@ -1121,7 +1121,7 @@ pub struct SkuAvailabilityListResponse {
     #[doc = "Results of the DedicatedPlacementGroupSkuAvailability list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuAvailability>,
@@ -1205,7 +1205,7 @@ pub struct UsageListResponse {
     #[doc = "The list of usages"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Usage>,
@@ -1342,7 +1342,7 @@ pub struct VirtualMachineListResponse {
     #[doc = "Results of the VirtualMachine list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualMachine>,
@@ -1367,7 +1367,7 @@ pub struct VirtualMachineProperties {
     #[doc = "The list of Virtual Disks' Controllers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub controllers: Vec<VirtualDiskController>,
@@ -1377,7 +1377,7 @@ pub struct VirtualMachineProperties {
     #[doc = "The list of Virtual Disks"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VirtualDisk>,
@@ -1399,7 +1399,7 @@ pub struct VirtualMachineProperties {
     #[doc = "The list of Virtual NICs"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nics: Vec<VirtualNic>,
@@ -1434,7 +1434,7 @@ pub struct VirtualMachineProperties {
     #[serde(
         rename = "vSphereNetworks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub v_sphere_networks: Vec<String>,
@@ -1562,7 +1562,7 @@ pub struct VirtualMachineTemplateListResponse {
     #[doc = "Results of the VM template list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualMachineTemplate>,
@@ -1587,7 +1587,7 @@ pub struct VirtualMachineTemplateProperties {
     #[doc = "The list of Virtual Disk Controllers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub controllers: Vec<VirtualDiskController>,
@@ -1597,7 +1597,7 @@ pub struct VirtualMachineTemplateProperties {
     #[doc = "The list of Virtual Disks"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VirtualDisk>,
@@ -1613,7 +1613,7 @@ pub struct VirtualMachineTemplateProperties {
     #[doc = "The list of Virtual NICs"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nics: Vec<VirtualNic>,
@@ -1630,7 +1630,7 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(
         rename = "vSphereNetworks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub v_sphere_networks: Vec<String>,
@@ -1638,7 +1638,7 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(
         rename = "vSphereTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub v_sphere_tags: Vec<String>,
@@ -1708,7 +1708,7 @@ pub struct VirtualNetworkListResponse {
     #[doc = "Results of the VirtualNetwork list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetwork>,
@@ -1746,7 +1746,7 @@ pub struct VirtualNic {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,

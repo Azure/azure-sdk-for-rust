@@ -23,7 +23,7 @@ pub struct AadProfileResponse {
     #[serde(
         rename = "adminGroupObjectIDs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub admin_group_object_i_ds: Vec<String>,
@@ -114,7 +114,7 @@ pub struct AgentPoolProfile {
     #[serde(
         rename = "availabilityZones",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availability_zones: Vec<String>,
@@ -137,7 +137,7 @@ pub struct AgentPoolProfile {
     #[serde(
         rename = "nodeTaints",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub node_taints: Vec<String>,
@@ -421,7 +421,7 @@ pub mod cloud_provider_profile {
         #[serde(
             rename = "vnetSubnetIds",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub vnet_subnet_ids: Vec<String>,
@@ -438,7 +438,7 @@ pub mod cloud_provider_profile {
         #[serde(
             rename = "storageSpaceIds",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub storage_space_ids: Vec<String>,
@@ -524,7 +524,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -532,7 +532,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -596,7 +596,7 @@ pub mod linux_profile_properties {
         #[serde(
             rename = "publicKeys",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub public_keys: Vec<serde_json::Value>,
@@ -655,7 +655,7 @@ pub struct NetworkProfile {
     #[serde(
         rename = "podCidrs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pod_cidrs: Vec<String>,
@@ -666,7 +666,7 @@ pub struct NetworkProfile {
     #[serde(
         rename = "serviceCidrs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_cidrs: Vec<String>,
@@ -809,7 +809,7 @@ pub struct OrchestratorVersionProfile {
     #[doc = "The list of available upgrade versions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub upgrades: Vec<OrchestratorProfile>,
@@ -825,7 +825,7 @@ pub struct OrchestratorVersionProfileListResult {
     #[doc = "Profile of the orchestrator versions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub orchestrators: Vec<OrchestratorVersionProfile>,
@@ -920,7 +920,7 @@ pub mod resource_provider_operation {
 pub struct ResourceProviderOperationList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,
@@ -965,7 +965,7 @@ pub struct VmSkuListResult {
     #[serde(
         rename = "vmSKUs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_sk_us: Vec<String>,
@@ -1120,7 +1120,7 @@ pub mod agent_pool {
 pub struct AgentPoolListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AgentPool>,
@@ -1297,7 +1297,7 @@ pub struct HttpProxyConfigResponse {
     #[serde(
         rename = "noProxy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub no_proxy: Vec<String>,
@@ -1494,7 +1494,7 @@ pub struct ProvisionedClustersCommonProperties {
     #[serde(
         rename = "agentPoolProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub agent_pool_profiles: Vec<NamedAgentPoolProfile>,
@@ -1740,7 +1740,7 @@ pub mod provisioned_clusters_response {
 pub struct ProvisionedClustersResponseListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProvisionedClustersResponse>,
@@ -1815,7 +1815,7 @@ pub mod storage_spaces {
 pub struct StorageSpacesListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StorageSpaces>,
@@ -2156,7 +2156,7 @@ pub mod virtual_networks {
 pub struct VirtualNetworksListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworks>,
@@ -2195,7 +2195,7 @@ pub struct VirtualNetworksProperties {
     #[serde(
         rename = "vipPool",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vip_pool: Vec<serde_json::Value>,
@@ -2203,7 +2203,7 @@ pub struct VirtualNetworksProperties {
     #[serde(
         rename = "vmipPool",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vmip_pool: Vec<serde_json::Value>,
@@ -2211,7 +2211,7 @@ pub struct VirtualNetworksProperties {
     #[serde(
         rename = "dhcpServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dhcp_servers: Vec<String>,
@@ -2219,7 +2219,7 @@ pub struct VirtualNetworksProperties {
     #[serde(
         rename = "dnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_servers: Vec<String>,

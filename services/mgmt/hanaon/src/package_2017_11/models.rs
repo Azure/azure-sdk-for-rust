@@ -241,7 +241,7 @@ pub struct HanaInstancesListResult {
     #[doc = "The list of SAP HANA on Azure instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HanaInstance>,
@@ -482,7 +482,7 @@ pub struct NetworkProfile {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<IpAddress>,
@@ -540,7 +540,7 @@ pub struct OperationList {
     #[doc = "List of HANA operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -614,7 +614,7 @@ pub struct StorageProfile {
     #[serde(
         rename = "osDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub os_disks: Vec<Disk>,
@@ -622,7 +622,7 @@ pub struct StorageProfile {
     #[serde(
         rename = "hanaSids",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub hana_sids: Vec<SapSystemId>,

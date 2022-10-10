@@ -18,7 +18,7 @@ pub struct Activity {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<ActivityDependency>,
@@ -175,7 +175,7 @@ pub struct Dataset {
     #[doc = "List of tags that can be used for describing the Dataset."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -271,7 +271,7 @@ pub struct ErrorResponse {
     #[doc = "Array with additional error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponse>,
@@ -588,7 +588,7 @@ pub struct IntegrationRuntimeMonitoringData {
     #[doc = "Integration runtime node monitoring data."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nodes: Vec<IntegrationRuntimeNodeMonitoringData>,
@@ -907,7 +907,7 @@ pub struct LinkedService {
     #[doc = "List of tags that can be used for describing the Dataset."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -1040,7 +1040,7 @@ pub struct OperationListResponse {
     #[doc = "List of Data Factory operations supported by the Data Factory resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1116,7 +1116,7 @@ pub struct OperationMetricSpecification {
     #[doc = "Defines how often data for metrics becomes available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availabilities: Vec<OperationMetricAvailability>,
@@ -1145,7 +1145,7 @@ pub struct OperationServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<OperationLogSpecification>,
@@ -1153,7 +1153,7 @@ pub struct OperationServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<OperationMetricSpecification>,
@@ -1256,7 +1256,7 @@ pub struct Pipeline {
     #[doc = "List of activities in pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub activities: Vec<Activity>,
@@ -1269,7 +1269,7 @@ pub struct Pipeline {
     #[doc = "List of tags that can be used for describing the Pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub annotations: Vec<serde_json::Value>,
@@ -1399,7 +1399,7 @@ pub struct PipelineRunFilterParameters {
     #[doc = "List of filters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filters: Vec<PipelineRunQueryFilter>,
@@ -1407,7 +1407,7 @@ pub struct PipelineRunFilterParameters {
     #[serde(
         rename = "orderBy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub order_by: Vec<PipelineRunQueryOrderBy>,

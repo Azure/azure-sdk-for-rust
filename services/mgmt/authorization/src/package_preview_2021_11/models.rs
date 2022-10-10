@@ -93,7 +93,7 @@ pub struct AccessReviewContactedReviewerListResult {
     #[doc = "Access Review Contacted Reviewer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessReviewContactedReviewer>,
@@ -221,7 +221,7 @@ pub struct AccessReviewDecisionListResult {
     #[doc = "Access Review Decision list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessReviewDecision>,
@@ -571,7 +571,7 @@ pub struct AccessReviewHistoryDefinitionInstanceListResult {
     #[doc = "Access Review History Definition's Instance list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessReviewHistoryInstance>,
@@ -596,7 +596,7 @@ pub struct AccessReviewHistoryDefinitionListResult {
     #[doc = "Access Review History Definition list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessReviewHistoryDefinition>,
@@ -630,7 +630,7 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[doc = "Collection of review decisions which the history data should be filtered on. For example if Approve and Deny are supplied the data will only contain review results in which the decision maker approved or denied a review request."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub decisions: Vec<String>,
@@ -646,7 +646,7 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[doc = "A collection of scopes used when selecting review history data"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<AccessReviewScope>,
@@ -656,7 +656,7 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[doc = "Set of access review history instances for this history definition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub instances: Vec<AccessReviewHistoryInstance>,
@@ -850,7 +850,7 @@ pub struct AccessReviewInstanceListResult {
     #[doc = "Access Review Instance list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessReviewInstance>,
@@ -884,7 +884,7 @@ pub struct AccessReviewInstanceProperties {
     #[doc = "This is the collection of reviewers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reviewers: Vec<AccessReviewReviewer>,
@@ -892,7 +892,7 @@ pub struct AccessReviewInstanceProperties {
     #[serde(
         rename = "backupReviewers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_reviewers: Vec<AccessReviewReviewer>,
@@ -1225,7 +1225,7 @@ pub struct AccessReviewScheduleDefinitionListResult {
     #[doc = "Access Review Schedule Definition list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessReviewScheduleDefinition>,
@@ -1271,7 +1271,7 @@ pub struct AccessReviewScheduleDefinitionProperties {
     #[doc = "This is the collection of reviewers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reviewers: Vec<AccessReviewReviewer>,
@@ -1279,7 +1279,7 @@ pub struct AccessReviewScheduleDefinitionProperties {
     #[serde(
         rename = "backupReviewers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_reviewers: Vec<AccessReviewReviewer>,
@@ -1289,7 +1289,7 @@ pub struct AccessReviewScheduleDefinitionProperties {
     #[doc = "This is the collection of instances returned when one does an expand on it."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub instances: Vec<AccessReviewInstance>,
@@ -1676,7 +1676,7 @@ pub struct OperationListResult {
     #[doc = "The collection value."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

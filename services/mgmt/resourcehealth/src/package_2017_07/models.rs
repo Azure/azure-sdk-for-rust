@@ -120,7 +120,7 @@ pub mod availability_status {
         #[serde(
             rename = "recommendedActions",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub recommended_actions: Vec<RecommendedAction>,
@@ -128,7 +128,7 @@ pub mod availability_status {
         #[serde(
             rename = "serviceImpactingEvents",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
@@ -203,7 +203,7 @@ pub struct EmergingIssue {
     #[serde(
         rename = "statusBanners",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub status_banners: Vec<StatusBanner>,
@@ -211,7 +211,7 @@ pub struct EmergingIssue {
     #[serde(
         rename = "statusActiveEvents",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub status_active_events: Vec<StatusActiveEvent>,
@@ -233,7 +233,7 @@ pub struct EmergingIssueImpact {
     #[doc = "The list of impacted regions for corresponding emerging issues."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub regions: Vec<ImpactedRegion>,
@@ -249,7 +249,7 @@ pub struct EmergingIssueListResult {
     #[doc = "The list of emerging issues."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EmergingIssuesGetResult>,
@@ -458,7 +458,7 @@ pub struct StatusActiveEvent {
     #[doc = "The list of emerging issues impacts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub impacts: Vec<EmergingIssueImpact>,

@@ -186,7 +186,7 @@ pub struct CommunicationsListResult {
     #[doc = "List of Communication resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CommunicationDetails>,
@@ -224,7 +224,7 @@ pub struct ContactProfile {
     #[serde(
         rename = "additionalEmailAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_email_addresses: Vec<String>,
@@ -368,7 +368,7 @@ pub struct OperationsListResult {
     #[doc = "The list of operations supported by Microsoft Support resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -423,7 +423,7 @@ pub struct ProblemClassificationsListResult {
     #[doc = "List of ProblemClassification resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProblemClassification>,
@@ -467,7 +467,7 @@ pub struct QuotaTicketDetails {
     #[serde(
         rename = "quotaChangeRequests",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub quota_change_requests: Vec<QuotaChangeRequest>,
@@ -513,7 +513,7 @@ pub struct ServiceError {
     #[doc = "The list of error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ServiceErrorDetail>,
@@ -569,7 +569,7 @@ pub struct ServiceProperties {
     #[serde(
         rename = "resourceTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_types: Vec<String>,
@@ -585,7 +585,7 @@ pub struct ServicesListResult {
     #[doc = "List of Service resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Service>,
@@ -782,7 +782,7 @@ pub struct SupportTicketsListResult {
     #[doc = "List of SupportTicket resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SupportTicketDetails>,
@@ -832,7 +832,7 @@ pub struct UpdateContactProfile {
     #[serde(
         rename = "additionalEmailAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_email_addresses: Vec<String>,

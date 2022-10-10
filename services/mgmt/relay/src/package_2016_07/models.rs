@@ -49,7 +49,7 @@ pub struct AuthorizationRuleListResult {
     #[doc = "Result of the List AuthorizationRules operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AuthorizationRule>,
@@ -149,7 +149,7 @@ pub struct HybridConnectionListResult {
     #[doc = "Result of the List HybridConnection ."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HybridConnection>,
@@ -234,7 +234,7 @@ pub struct OperationListResult {
     #[doc = "List of EventHub operations supported by the Microsoft.EventHub resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -332,7 +332,7 @@ pub struct RelayNamespaceListResult {
     #[doc = "Result of the List Namespace operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RelayNamespace>,
@@ -617,7 +617,7 @@ pub struct WcfRelaysListResult {
     #[doc = "Result of the List WcfRelays ."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<WcfRelay>,

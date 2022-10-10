@@ -84,7 +84,7 @@ pub struct OperationList {
     #[doc = "List of HANA operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -120,7 +120,7 @@ pub struct ProviderInstanceListResult {
     #[doc = "The list of provider instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProviderInstance>,
@@ -262,7 +262,7 @@ pub struct SapMonitorListResult {
     #[doc = "The list of SAP monitors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SapMonitor>,

@@ -27,7 +27,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "emailReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub email_receivers: Vec<EmailReceiver>,
@@ -35,7 +35,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "smsReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sms_receivers: Vec<SmsReceiver>,
@@ -43,7 +43,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "webhookReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub webhook_receivers: Vec<WebhookReceiver>,
@@ -51,7 +51,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "itsmReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub itsm_receivers: Vec<ItsmReceiver>,
@@ -59,7 +59,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "azureAppPushReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
@@ -67,7 +67,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "automationRunbookReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
@@ -75,7 +75,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "voiceReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub voice_receivers: Vec<VoiceReceiver>,
@@ -83,7 +83,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "logicAppReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logic_app_receivers: Vec<LogicAppReceiver>,
@@ -91,7 +91,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "azureFunctionReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub azure_function_receivers: Vec<AzureFunctionReceiver>,
@@ -99,7 +99,7 @@ pub struct ActionGroup {
     #[serde(
         rename = "armRoleReceivers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
@@ -128,7 +128,7 @@ pub struct ActionGroupList {
     #[doc = "The list of action groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ActionGroupResource>,
@@ -243,7 +243,7 @@ pub struct ActivityLogAlertActionList {
     #[serde(
         rename = "actionGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub action_groups: Vec<ActivityLogAlertActionGroup>,
@@ -284,7 +284,7 @@ pub struct ActivityLogAlertList {
     #[doc = "The list of activity log alerts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ActivityLogAlertResource>,
@@ -379,7 +379,7 @@ pub struct AlertRule {
     #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<RuleAction>,
@@ -420,7 +420,7 @@ pub struct AlertRuleResourceCollection {
     #[doc = "the values for the alert rule resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AlertRuleResource>,
@@ -596,7 +596,7 @@ pub struct AutoscaleNotification {
     #[doc = "the collection of webhook notifications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub webhooks: Vec<WebhookNotification>,
@@ -653,7 +653,7 @@ pub struct AutoscaleSetting {
     #[doc = "the collection of notifications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub notifications: Vec<AutoscaleNotification>,
@@ -737,7 +737,7 @@ pub struct AzNsActionGroup {
     #[serde(
         rename = "actionGroup",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub action_group: Vec<String>,
@@ -842,7 +842,7 @@ pub struct AzureMonitorPrivateLinkScopeProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -959,7 +959,7 @@ pub struct Criteria {
     #[doc = "List of Dimensions for creating metric"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<Dimension>,
@@ -1001,14 +1001,14 @@ pub struct DiagnosticSettings {
     #[doc = "The list of metric settings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metrics: Vec<MetricSettings>,
     #[doc = "The list of logs settings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logs: Vec<LogSettings>,
@@ -1065,7 +1065,7 @@ pub struct DiagnosticSettingsCategoryResourceCollection {
     #[doc = "The collection of diagnostic settings category resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
@@ -1095,7 +1095,7 @@ pub struct DiagnosticSettingsResourceCollection {
     #[doc = "The collection of diagnostic settings resources;."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DiagnosticSettingsResource>,
@@ -1303,7 +1303,7 @@ pub struct EmailNotification {
     #[serde(
         rename = "customEmails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_emails: Vec<String>,
@@ -1426,7 +1426,7 @@ pub struct ErrorResponseCommon {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponseCommon>,
@@ -1434,7 +1434,7 @@ pub struct ErrorResponseCommon {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -1625,7 +1625,7 @@ pub struct IncidentListResult {
     #[doc = "the incident collection."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Incident>,
@@ -2009,7 +2009,7 @@ pub struct LogSearchRuleResourceCollection {
     #[doc = "The values for the Log Search Rule resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LogSearchRuleResource>,
@@ -2274,7 +2274,7 @@ pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
     #[serde(
         rename = "allOf",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub all_of: Vec<MultiMetricCriteria>,
@@ -2319,7 +2319,7 @@ pub struct MetricAlertProperties {
     #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<MetricAlertAction>,
@@ -2371,7 +2371,7 @@ pub struct MetricAlertPropertiesPatch {
     #[doc = "the list of resource id's that this metric alert is scoped to."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<String>,
@@ -2396,7 +2396,7 @@ pub struct MetricAlertPropertiesPatch {
     #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub actions: Vec<MetricAlertAction>,
@@ -2431,7 +2431,7 @@ pub struct MetricAlertResourceCollection {
     #[doc = "the values for the alert rule resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MetricAlertResource>,
@@ -2471,7 +2471,7 @@ pub struct MetricAlertSingleResourceMultipleMetricCriteria {
     #[serde(
         rename = "allOf",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub all_of: Vec<MetricCriteria>,
@@ -2511,7 +2511,7 @@ pub struct MetricAlertStatusCollection {
     #[doc = "the values for the alert rule resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MetricAlertStatus>,
@@ -2583,7 +2583,7 @@ pub struct MetricBaselinesResponse {
     #[doc = "The list of metric baselines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SingleMetricBaseline>,
@@ -2741,7 +2741,7 @@ pub struct MetricDefinition {
     #[serde(
         rename = "supportedAggregationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_aggregation_types: Vec<AggregationType>,
@@ -2749,7 +2749,7 @@ pub struct MetricDefinition {
     #[serde(
         rename = "metricAvailabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_availabilities: Vec<MetricAvailability>,
@@ -2759,7 +2759,7 @@ pub struct MetricDefinition {
     #[doc = "the name and the display name of the dimension, i.e. it is a localizable string."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<LocalizableString>,
@@ -2925,7 +2925,7 @@ pub struct MetricTrigger {
     #[doc = "List of dimension conditions. For example: [{\"DimensionName\":\"AppName\",\"Operator\":\"Equals\",\"Values\":[\"App1\"]},{\"DimensionName\":\"Deployment\",\"Operator\":\"Equals\",\"Values\":[\"default\"]}]."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<ScaleRuleMetricDimension>,
@@ -3088,7 +3088,7 @@ pub struct MultiMetricCriteria {
     #[doc = "List of dimension conditions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -3278,7 +3278,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Insights provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -3338,7 +3338,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -3407,7 +3407,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -3436,7 +3436,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -3781,7 +3781,7 @@ pub struct RuleEmailAction {
     #[serde(
         rename = "customEmails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_emails: Vec<String>,
@@ -4069,7 +4069,7 @@ pub struct ScopedResourceListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ScopedResource>,
@@ -4242,7 +4242,7 @@ pub struct Source {
     #[serde(
         rename = "authorizedResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorized_resources: Vec<String>,
@@ -4281,7 +4281,7 @@ pub struct SubscriptionDiagnosticSettings {
     #[doc = "The list of logs settings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logs: Vec<SubscriptionLogSettings>,
@@ -4314,7 +4314,7 @@ pub struct SubscriptionDiagnosticSettingsResourceCollection {
     #[doc = "The collection of subscription diagnostic settings resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionDiagnosticSettingsResource>,
@@ -4415,7 +4415,7 @@ pub struct TimeSeriesBaseline {
     #[doc = "The dimensions of this time series."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricSingleDimension>,
@@ -4427,7 +4427,7 @@ pub struct TimeSeriesBaseline {
     #[serde(
         rename = "metadataValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metadata_values: Vec<BaselineMetadata>,
@@ -4449,14 +4449,14 @@ pub struct TimeSeriesElement {
     #[doc = "the metadata values returned if $filter was specified in the call."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metadatavalues: Vec<MetadataValue>,
     #[doc = "An array of data points representing the metric values.  This is only returned if a result type of data is specified."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data: Vec<MetricValue>,
@@ -4599,7 +4599,7 @@ pub mod vm_insights_onboarding_status {
         #[doc = "Containers that currently store VM Insights data for the specified resource."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub data: Vec<DataContainer>,

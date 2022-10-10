@@ -138,7 +138,7 @@ pub mod availability_status {
         #[serde(
             rename = "recommendedActions",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub recommended_actions: Vec<RecommendedAction>,
@@ -146,7 +146,7 @@ pub mod availability_status {
         #[serde(
             rename = "serviceImpactingEvents",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
@@ -304,7 +304,7 @@ pub struct Impact {
     #[serde(
         rename = "impactedRegions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub impacted_regions: Vec<ImpactedServiceRegion>,
@@ -480,7 +480,7 @@ pub struct ImpactedServiceRegion {
     #[serde(
         rename = "impactedSubscriptions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub impacted_subscriptions: Vec<String>,
@@ -490,7 +490,7 @@ pub struct ImpactedServiceRegion {
     #[doc = "List of updates for given service health event."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub updates: Vec<Update>,

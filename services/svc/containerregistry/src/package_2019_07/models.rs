@@ -38,7 +38,7 @@ pub struct AcrErrors {
     #[doc = "Array of detailed error"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<AcrErrorInfo>,
@@ -96,7 +96,7 @@ pub struct AcrManifestAttributesBase {
     #[doc = "List of tags"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<String>,
@@ -120,7 +120,7 @@ pub struct AcrManifests {
     #[doc = "List of manifests"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub manifests: Vec<AcrManifestAttributesBase>,
@@ -142,7 +142,7 @@ pub struct AcrRepositoryTags {
     #[doc = "List of tag attribute details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<AcrTagAttributesBase>,
@@ -223,7 +223,7 @@ pub struct DeletedRepository {
     #[serde(
         rename = "manifestsDeleted",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub manifests_deleted: Vec<String>,
@@ -231,7 +231,7 @@ pub struct DeletedRepository {
     #[serde(
         rename = "tagsDeleted",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags_deleted: Vec<String>,
@@ -337,7 +337,7 @@ pub struct Manifest {
     #[doc = "List of V2 image layer information"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub layers: Vec<V2Descriptor>,
@@ -354,21 +354,21 @@ pub struct Manifest {
     #[serde(
         rename = "fsLayers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub fs_layers: Vec<FsLayer>,
     #[doc = "Image history"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub history: Vec<History>,
     #[doc = "Image signature"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub signatures: Vec<ImageSignature>,
@@ -384,7 +384,7 @@ pub struct ManifestAttributesManifest {
     #[doc = "List of manifest attributes details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub references: Vec<ManifestAttributesManifestReferences>,
@@ -459,7 +459,7 @@ pub struct Repositories {
     #[doc = "Repository names"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub repositories: Vec<String>,
@@ -507,7 +507,7 @@ pub struct RepositoryTags {
     #[doc = "List of tags"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags: Vec<String>,

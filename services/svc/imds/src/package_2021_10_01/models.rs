@@ -62,7 +62,7 @@ pub struct Compute {
     #[serde(
         rename = "publicKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_keys: Vec<PublicKeysProperties>,
@@ -109,7 +109,7 @@ pub struct Compute {
     #[serde(
         rename = "tagsList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tags_list: Vec<TagsProperties>,
@@ -479,7 +479,7 @@ pub struct Network {
     #[doc = "This contains data about the network interface."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub interface: Vec<NetworkInterface>,
@@ -516,14 +516,14 @@ pub mod network_interface {
         #[serde(
             rename = "ipAddress",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub ip_address: Vec<Ipv4Properties>,
         #[doc = "This is the subnet"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub subnet: Vec<SubnetProperties>,
@@ -540,7 +540,7 @@ pub mod network_interface {
         #[serde(
             rename = "ipAddress",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub ip_address: Vec<Ipv6Properties>,
@@ -672,7 +672,7 @@ pub struct StorageProfile {
     #[serde(
         rename = "dataDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disks: Vec<DataDisk>,

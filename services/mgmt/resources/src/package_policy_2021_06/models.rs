@@ -12,7 +12,7 @@ pub struct Alias {
     #[doc = "The paths for an alias."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub paths: Vec<AliasPath>,
@@ -53,7 +53,7 @@ pub struct AliasPath {
     #[serde(
         rename = "apiVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub api_versions: Vec<String>,
@@ -244,7 +244,7 @@ pub struct DataManifestCustomResourceFunctionDefinition {
     #[serde(
         rename = "defaultProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub default_properties: Vec<String>,
@@ -263,14 +263,14 @@ pub struct DataManifestResourceFunctionsDefinition {
     #[doc = "The standard resource functions (subscription and/or resourceGroup)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub standard: Vec<String>,
     #[doc = "An array of data manifest custom resource definition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom: Vec<DataManifestCustomResourceFunctionDefinition>,
@@ -307,7 +307,7 @@ pub struct DataPolicyManifestListResult {
     #[doc = "An array of data policy manifests."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataPolicyManifest>,
@@ -332,7 +332,7 @@ pub struct DataPolicyManifestProperties {
     #[doc = "The list of namespaces for the data policy manifest."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub namespaces: Vec<String>,
@@ -346,14 +346,14 @@ pub struct DataPolicyManifestProperties {
     #[serde(
         rename = "resourceTypeAliases",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_type_aliases: Vec<ResourceTypeAliases>,
     #[doc = "The effect definition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub effects: Vec<DataEffect>,
@@ -361,7 +361,7 @@ pub struct DataPolicyManifestProperties {
     #[serde(
         rename = "fieldValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub field_values: Vec<String>,
@@ -404,7 +404,7 @@ pub struct ErrorResponse {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponse>,
@@ -412,7 +412,7 @@ pub struct ErrorResponse {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -488,7 +488,7 @@ pub struct ParameterDefinitionsValue {
     #[serde(
         rename = "allowedValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_values: Vec<serde_json::Value>,
@@ -631,7 +631,7 @@ pub struct PolicyAssignmentListResult {
     #[doc = "An array of policy assignments."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicyAssignment>,
@@ -666,7 +666,7 @@ pub struct PolicyAssignmentProperties {
     #[serde(
         rename = "notScopes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub not_scopes: Vec<String>,
@@ -686,7 +686,7 @@ pub struct PolicyAssignmentProperties {
     #[serde(
         rename = "nonComplianceMessages",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub non_compliance_messages: Vec<NonComplianceMessage>,
@@ -814,7 +814,7 @@ pub struct PolicyDefinitionListResult {
     #[doc = "An array of policy definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicyDefinition>,
@@ -923,7 +923,7 @@ pub struct PolicyDefinitionReference {
     #[serde(
         rename = "groupNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_names: Vec<String>,
@@ -973,7 +973,7 @@ pub struct PolicyExemptionListResult {
     #[doc = "An array of policy exemptions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicyExemption>,
@@ -1002,7 +1002,7 @@ pub struct PolicyExemptionProperties {
     #[serde(
         rename = "policyDefinitionReferenceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub policy_definition_reference_ids: Vec<String>,
@@ -1105,7 +1105,7 @@ pub struct PolicySetDefinitionListResult {
     #[doc = "An array of policy set definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PolicySetDefinition>,
@@ -1149,7 +1149,7 @@ pub struct PolicySetDefinitionProperties {
     #[serde(
         rename = "policyDefinitionGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub policy_definition_groups: Vec<PolicyDefinitionGroup>,
@@ -1269,7 +1269,7 @@ pub struct ResourceTypeAliases {
     #[doc = "The aliases for property names."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aliases: Vec<Alias>,
@@ -1314,7 +1314,7 @@ pub struct VariableListResult {
     #[doc = "An array of variables."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Variable>,
@@ -1368,7 +1368,7 @@ pub struct VariableValueListResult {
     #[doc = "An array of variable values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VariableValue>,

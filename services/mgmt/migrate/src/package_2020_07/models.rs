@@ -59,7 +59,7 @@ pub struct AppsAndRoles {
     #[doc = "Applications of the AppsAndRoles."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub applications: Vec<Application>,
@@ -67,14 +67,14 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "webApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub web_applications: Vec<WebApplication>,
     #[doc = "Features of the AppsAndRoles."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub features: Vec<Feature>,
@@ -82,7 +82,7 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "sqlServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sql_servers: Vec<SqlServer>,
@@ -90,7 +90,7 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "sharePointServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub share_point_servers: Vec<SharePointServer>,
@@ -98,7 +98,7 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "systemCenters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub system_centers: Vec<SystemCenter>,
@@ -106,7 +106,7 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "bizTalkServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub biz_talk_servers: Vec<BizTalkServer>,
@@ -114,7 +114,7 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "exchangeServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exchange_servers: Vec<ExchangeServer>,
@@ -122,7 +122,7 @@ pub struct AppsAndRoles {
     #[serde(
         rename = "otherDatabases",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub other_databases: Vec<OtherDatabase>,
@@ -138,7 +138,7 @@ pub struct AvailableOperations {
     #[doc = "Collection of available operation details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationDetail>,
@@ -205,7 +205,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -390,7 +390,7 @@ pub struct HyperVClusterCollection {
     #[doc = "List of clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HyperVCluster>,
@@ -434,14 +434,14 @@ pub struct HyperVClusterProperties {
     #[serde(
         rename = "hostFqdnList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub host_fqdn_list: Vec<String>,
     #[doc = "Errors for Hyper-V clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<HealthErrorDetails>,
@@ -508,7 +508,7 @@ pub struct HyperVHostCollection {
     #[doc = "List of hosts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HyperVHost>,
@@ -548,7 +548,7 @@ pub struct HyperVHostProperties {
     #[doc = "Errors for Hyper-V hosts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<HealthErrorDetails>,
@@ -585,7 +585,7 @@ pub struct HyperVJobCollection {
     #[doc = "List of jobs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HyperVJob>,
@@ -631,7 +631,7 @@ pub struct HyperVMachineCollection {
     #[doc = "List of machines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HyperVMachine>,
@@ -689,7 +689,7 @@ pub struct HyperVMachineProperties {
     #[doc = "Disks attached to the machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<HyperVDisk>,
@@ -700,7 +700,7 @@ pub struct HyperVMachineProperties {
     #[serde(
         rename = "networkAdapters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_adapters: Vec<HyperVNetworkAdapter>,
@@ -758,7 +758,7 @@ pub struct HyperVMachineProperties {
     #[doc = "Errors for machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<HealthErrorDetails>,
@@ -803,7 +803,7 @@ pub struct HyperVNetworkAdapter {
     #[serde(
         rename = "ipAddressList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_address_list: Vec<String>,
@@ -846,7 +846,7 @@ pub struct HyperVRunAsAccountCollection {
     #[doc = "List of run as accounts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HyperVRunAsAccount>,
@@ -924,7 +924,7 @@ pub struct HyperVSitesResultList {
     #[doc = "List of sites."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HyperVSite>,
@@ -1010,7 +1010,7 @@ pub struct JobProperties {
     #[doc = "Error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ErrorDetails>,
@@ -1149,7 +1149,7 @@ pub struct MasterSiteList {
     #[doc = "List of projects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MasterSite>,
@@ -1179,7 +1179,7 @@ pub struct MasterSiteProperties {
     #[doc = "List of sites that are a part of Master Site."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sites: Vec<String>,
@@ -1190,7 +1190,7 @@ pub struct MasterSiteProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -1215,49 +1215,49 @@ pub struct NetworkConfiguration {
     #[serde(
         rename = "ipv4Interfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv4_interfaces: Vec<Ipv4NetworkInterface>,
     #[serde(
         rename = "ipv6Interfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv6_interfaces: Vec<Ipv6NetworkInterface>,
     #[serde(
         rename = "defaultIpv4Gateways",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub default_ipv4_gateways: Vec<String>,
     #[serde(
         rename = "macAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mac_addresses: Vec<String>,
     #[serde(
         rename = "dnsNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_names: Vec<String>,
     #[serde(
         rename = "dnsQuestions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_questions: Vec<String>,
     #[serde(
         rename = "dnsCanonicalNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_canonical_names: Vec<String>,
@@ -1478,7 +1478,7 @@ pub struct PrivateEndpointConnectionCollection {
     #[doc = "Gets the list of machines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -1541,7 +1541,7 @@ pub struct PrivateLinkResourceCollection {
     #[doc = "Gets the list of machines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -1559,14 +1559,14 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1790,7 +1790,7 @@ pub struct SiteHealthSummary {
     #[serde(
         rename = "affectedResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub affected_resources: Vec<String>,
@@ -1806,7 +1806,7 @@ pub struct SiteHealthSummaryCollection {
     #[doc = "List of SiteHealthSummary."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SiteHealthSummary>,
@@ -1931,7 +1931,7 @@ pub struct VCenterCollection {
     #[doc = "List of vCenter."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VCenter>,
@@ -1980,7 +1980,7 @@ pub struct VCenterProperties {
     #[doc = "Error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<HealthErrorDetails>,
@@ -1996,7 +1996,7 @@ pub struct VmWareSitesResultList {
     #[doc = "List of sites."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VMwareSite>,
@@ -2134,7 +2134,7 @@ pub struct VMwareJobCollection {
     #[doc = "List of jobs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VMwareJob>,
@@ -2180,7 +2180,7 @@ pub struct VMwareMachineCollection {
     #[doc = "List of machines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VMwareMachine>,
@@ -2232,7 +2232,7 @@ pub struct VMwareMachineProperties {
     #[doc = "Disks attached to the machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VMwareDisk>,
@@ -2255,7 +2255,7 @@ pub struct VMwareMachineProperties {
     #[serde(
         rename = "networkAdapters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_adapters: Vec<VMwareNetworkAdapter>,
@@ -2319,7 +2319,7 @@ pub struct VMwareMachineProperties {
     #[doc = "Errors for machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<HealthErrorDetails>,
@@ -2345,7 +2345,7 @@ pub struct VMwareNetworkAdapter {
     #[serde(
         rename = "ipAddressList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_address_list: Vec<String>,
@@ -2388,7 +2388,7 @@ pub struct VMwareRunAsAccountCollection {
     #[doc = "List of run as accounts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VMwareRunAsAccount>,

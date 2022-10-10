@@ -42,7 +42,7 @@ pub struct AvailableContactsListResult {
     #[doc = "A list of available contacts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableContacts>,
@@ -91,7 +91,7 @@ pub struct AvailableGroundStationListResult {
     #[doc = "A list of ground station resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableGroundStation>,
@@ -248,7 +248,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -317,7 +317,7 @@ pub struct ContactListResult {
     #[doc = "A list of contact resources in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Contact>,
@@ -557,7 +557,7 @@ pub struct ContactProfileListResult {
     #[doc = "A list of contact profile resources in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ContactProfile>,
@@ -781,7 +781,7 @@ pub mod contacts_properties {
         #[serde(
             rename = "sourceIps",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub source_ips: Vec<String>,
@@ -990,7 +990,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1148,7 +1148,7 @@ pub struct ResourceIdListResult {
     #[doc = "A list of Azure Resource IDs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<serde_json::Value>,
@@ -1212,7 +1212,7 @@ pub struct SpacecraftLink {
     #[doc = "Authorized Ground Stations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorizations: Vec<AuthorizedGroundstation>,
@@ -1328,7 +1328,7 @@ pub struct SpacecraftListResult {
     #[doc = "A list of spacecraft resources in a resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Spacecraft>,
@@ -1368,7 +1368,7 @@ pub struct SpacecraftsProperties {
     #[doc = "Immutable list of Spacecraft links."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub links: Vec<SpacecraftLink>,

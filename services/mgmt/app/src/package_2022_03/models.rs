@@ -10,7 +10,7 @@ pub struct AllowedAudiencesValidation {
     #[serde(
         rename = "allowedAudiences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_audiences: Vec<String>,
@@ -26,14 +26,14 @@ pub struct AllowedPrincipals {
     #[doc = "The list of the allowed groups."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub groups: Vec<String>,
     #[doc = "The list of the allowed identities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub identities: Vec<String>,
@@ -188,7 +188,7 @@ pub struct AvailableOperations {
     #[doc = "Collection of available operation details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationDetail>,
@@ -238,7 +238,7 @@ pub struct AzureActiveDirectoryLogin {
     #[serde(
         rename = "loginParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub login_parameters: Vec<String>,
@@ -292,7 +292,7 @@ pub struct AzureActiveDirectoryValidation {
     #[serde(
         rename = "allowedAudiences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_audiences: Vec<String>,
@@ -645,7 +645,7 @@ pub struct Configuration {
     #[doc = "Collection of secrets used by a Container app"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub secrets: Vec<Secret>,
@@ -658,7 +658,7 @@ pub struct Configuration {
     #[doc = "Collection of private container registry credentials for containers used by the Container app"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub registries: Vec<RegistryCredentials>,
@@ -723,21 +723,21 @@ pub struct Container {
     #[doc = "Container start command."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub command: Vec<String>,
     #[doc = "Container start command arguments."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub args: Vec<String>,
     #[doc = "Container environment variables."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub env: Vec<EnvironmentVar>,
@@ -747,7 +747,7 @@ pub struct Container {
     #[doc = "List of probes for the container."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub probes: Vec<ContainerAppProbe>,
@@ -755,7 +755,7 @@ pub struct Container {
     #[serde(
         rename = "volumeMounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_mounts: Vec<VolumeMount>,
@@ -816,7 +816,7 @@ pub mod container_app {
         #[serde(
             rename = "outboundIPAddresses",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub outbound_ip_addresses: Vec<String>,
@@ -941,7 +941,7 @@ pub mod container_app_probe {
         #[serde(
             rename = "httpHeaders",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub http_headers: Vec<serde_json::Value>,
@@ -1204,7 +1204,7 @@ pub struct CustomHostnameAnalysisResult {
     #[serde(
         rename = "cNameRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub c_name_records: Vec<String>,
@@ -1212,7 +1212,7 @@ pub struct CustomHostnameAnalysisResult {
     #[serde(
         rename = "txtRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub txt_records: Vec<String>,
@@ -1220,7 +1220,7 @@ pub struct CustomHostnameAnalysisResult {
     #[serde(
         rename = "aRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub a_records: Vec<String>,
@@ -1228,7 +1228,7 @@ pub struct CustomHostnameAnalysisResult {
     #[serde(
         rename = "alternateCNameRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alternate_c_name_records: Vec<String>,
@@ -1236,7 +1236,7 @@ pub struct CustomHostnameAnalysisResult {
     #[serde(
         rename = "alternateTxtRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alternate_txt_records: Vec<String>,
@@ -1270,7 +1270,7 @@ pub mod custom_hostname_analysis_result {
         #[doc = "Details or the error"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<serde_json::Value>,
@@ -1311,7 +1311,7 @@ pub struct CustomScaleRule {
     #[doc = "Authentication secrets for the custom scale rule."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub auth: Vec<ScaleRuleAuth>,
@@ -1418,21 +1418,21 @@ pub mod dapr_component {
         #[doc = "Collection of secrets used by a Dapr component"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub secrets: Vec<Secret>,
         #[doc = "Component metadata"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub metadata: Vec<DaprMetadata>,
         #[doc = "Names of container apps that can use this Dapr component"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub scopes: Vec<String>,
@@ -1502,7 +1502,7 @@ pub struct DefaultAuthorizationPolicy {
     #[serde(
         rename = "allowedApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_applications: Vec<String>,
@@ -1547,7 +1547,7 @@ pub mod default_error_response {
         #[doc = "Details or the error"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<serde_json::Value>,
@@ -1692,7 +1692,7 @@ pub struct GlobalValidation {
     #[serde(
         rename = "excludedPaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_paths: Vec<String>,
@@ -1743,7 +1743,7 @@ pub struct HttpScaleRule {
     #[doc = "Authentication secrets for the custom scale rule."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub auth: Vec<ScaleRuleAuth>,
@@ -1834,7 +1834,7 @@ pub struct Ingress {
     #[doc = "Traffic weights for app's revisions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub traffic: Vec<TrafficWeight>,
@@ -1842,7 +1842,7 @@ pub struct Ingress {
     #[serde(
         rename = "customDomains",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub custom_domains: Vec<CustomDomain>,
@@ -1907,7 +1907,7 @@ pub struct JwtClaimChecks {
     #[serde(
         rename = "allowedGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_groups: Vec<String>,
@@ -1915,7 +1915,7 @@ pub struct JwtClaimChecks {
     #[serde(
         rename = "allowedClientApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_client_applications: Vec<String>,
@@ -1953,7 +1953,7 @@ pub struct Login {
     #[serde(
         rename = "allowedExternalRedirectUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_external_redirect_urls: Vec<String>,
@@ -1987,7 +1987,7 @@ pub struct LoginScopes {
     #[doc = "A list of the scopes that should be requested while authenticating."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<String>,
@@ -2316,7 +2316,7 @@ pub struct OpenIdConnectLogin {
     #[doc = "A list of the scopes that should be requested while authenticating."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scopes: Vec<String>,
@@ -2409,7 +2409,7 @@ pub struct QueueScaleRule {
     #[doc = "Authentication secrets for the queue scale rule."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub auth: Vec<ScaleRuleAuth>,
@@ -2483,7 +2483,7 @@ pub mod replica {
         #[doc = "The containers collection under a replica."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub containers: Vec<ReplicaContainer>,
@@ -2720,7 +2720,7 @@ pub struct Scale {
     #[doc = "Scaling rules."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rules: Vec<ScaleRule>,
@@ -2903,7 +2903,7 @@ pub struct Template {
     #[doc = "List of container definitions for the Container App."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub containers: Vec<Container>,
@@ -2913,7 +2913,7 @@ pub struct Template {
     #[doc = "List of volume definitions for the Container App."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volumes: Vec<Volume>,

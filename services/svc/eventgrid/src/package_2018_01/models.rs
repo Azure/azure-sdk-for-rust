@@ -296,7 +296,7 @@ pub struct AcsChatThreadCreatedEventData {
     #[doc = "The list of properties of participants who are part of the thread"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
@@ -320,7 +320,7 @@ pub struct AcsChatThreadCreatedWithUserEventData {
     #[doc = "The list of properties of participants who are part of the thread"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
@@ -633,7 +633,7 @@ pub struct AcsRecordingStorageInfoProperties {
     #[serde(
         rename = "recordingChunks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recording_chunks: Vec<AcsRecordingChunkInfoProperties>,
@@ -676,7 +676,7 @@ pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(
         rename = "deliveryAttempts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attempts: Vec<AcsSmsDeliveryAttemptProperties>,
@@ -2758,14 +2758,14 @@ pub struct MapsGeofenceEventProperties {
     #[serde(
         rename = "expiredGeofenceGeometryId",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub expired_geofence_geometry_id: Vec<String>,
     #[doc = "Lists the fence geometries that either fully contain the coordinate position or have an overlap with the searchBuffer around the fence."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub geometries: Vec<MapsGeofenceGeometry>,
@@ -2773,7 +2773,7 @@ pub struct MapsGeofenceEventProperties {
     #[serde(
         rename = "invalidPeriodGeofenceGeometryId",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub invalid_period_geofence_geometry_id: Vec<String>,
@@ -2843,7 +2843,7 @@ pub struct MediaJobCanceledEventData {
     #[doc = "Gets the Job outputs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<MediaJobOutput>,
@@ -2882,7 +2882,7 @@ pub struct MediaJobError {
     #[doc = "An array of details about specific errors that led to this reported error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<MediaJobErrorDetail>,
@@ -2948,7 +2948,7 @@ pub struct MediaJobErroredEventData {
     #[doc = "Gets the Job outputs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<MediaJobOutput>,
@@ -2966,7 +2966,7 @@ pub struct MediaJobFinishedEventData {
     #[doc = "Gets the Job outputs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<MediaJobOutput>,

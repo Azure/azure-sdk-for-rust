@@ -27,7 +27,7 @@ pub struct CreateGenericQuotaRequestParameters {
     #[doc = "Quota change requests."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CurrentQuotaLimitBase>,
@@ -225,7 +225,7 @@ impl OperationDisplay {
 pub struct OperationList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResponse>,
@@ -264,7 +264,7 @@ pub struct QuotaLimits {
     #[doc = "List of quota limits."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CurrentQuotaLimitBase>,
@@ -289,7 +289,7 @@ pub struct QuotaLimitsResponse {
     #[doc = "List of quota limits with the quota request status."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CurrentQuotaLimitBase>,
@@ -359,7 +359,7 @@ pub struct QuotaRequestDetailsList {
     #[doc = "Quota request details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<QuotaRequestDetails>,
@@ -417,7 +417,7 @@ pub struct QuotaRequestProperties {
     #[doc = "Quota request details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubRequest>,
@@ -573,7 +573,7 @@ pub struct ServiceError {
     #[doc = "List of error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ServiceErrorDetail>,
@@ -634,7 +634,7 @@ pub struct UsagesLimits {
     #[doc = "List of quota limits."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CurrentUsagesBase>,

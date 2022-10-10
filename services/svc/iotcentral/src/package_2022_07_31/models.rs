@@ -191,7 +191,7 @@ pub struct Device {
     #[doc = "List of organization IDs that the device is a part of, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -314,7 +314,7 @@ pub struct DeviceGroup {
     #[doc = "List of organization IDs of the device group, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -753,7 +753,7 @@ pub struct Job {
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,
@@ -1123,7 +1123,7 @@ pub struct ScheduledJob {
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub organizations: Vec<String>,

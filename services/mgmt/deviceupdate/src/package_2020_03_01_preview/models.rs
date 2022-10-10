@@ -42,7 +42,7 @@ pub mod account {
         #[serde(
             rename = "privateEndpointConnections",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -152,7 +152,7 @@ pub struct AccountList {
     #[doc = "List of Accounts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Account>,
@@ -372,7 +372,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -380,7 +380,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -421,7 +421,7 @@ pub struct GroupConnectivityInformation {
     #[serde(
         rename = "customerVisibleFqdns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub customer_visible_fqdns: Vec<String>,
@@ -543,7 +543,7 @@ pub mod instance {
         #[serde(
             rename = "iotHubs",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub iot_hubs: Vec<IotHubSettings>,
@@ -617,7 +617,7 @@ pub struct InstanceList {
     #[doc = "List of Instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Instance>,
@@ -856,7 +856,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -909,7 +909,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -938,7 +938,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -1034,7 +1034,7 @@ pub struct PrivateEndpointConnectionProxyListResult {
     #[doc = "The list of available private endpoint connection proxies for an Account"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnectionProxy>,
@@ -1181,7 +1181,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "The list of available private link resources for an Account"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GroupInformation>,
@@ -1210,7 +1210,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1218,7 +1218,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1238,7 +1238,7 @@ pub struct PrivateLinkServiceConnection {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -1289,7 +1289,7 @@ pub struct PrivateLinkServiceProxy {
     #[serde(
         rename = "groupConnectivityInformation",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_connectivity_information: Vec<GroupConnectivityInformation>,
@@ -1332,7 +1332,7 @@ pub struct RemotePrivateEndpoint {
     #[serde(
         rename = "manualPrivateLinkServiceConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub manual_private_link_service_connections: Vec<PrivateLinkServiceConnection>,
@@ -1340,7 +1340,7 @@ pub struct RemotePrivateEndpoint {
     #[serde(
         rename = "privateLinkServiceConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_link_service_connections: Vec<PrivateLinkServiceConnection>,
@@ -1348,7 +1348,7 @@ pub struct RemotePrivateEndpoint {
     #[serde(
         rename = "privateLinkServiceProxies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_link_service_proxies: Vec<PrivateLinkServiceProxy>,
@@ -1356,7 +1356,7 @@ pub struct RemotePrivateEndpoint {
     #[serde(
         rename = "connectionDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub connection_details: Vec<ConnectionDetails>,

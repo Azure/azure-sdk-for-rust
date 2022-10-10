@@ -52,7 +52,7 @@ pub struct ControllerConnectionDetailsList {
     #[serde(
         rename = "connectionDetailsList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub connection_details_list: Vec<ControllerConnectionDetails>,
@@ -67,7 +67,7 @@ pub struct ControllerList {
     #[doc = "List of Azure Dev Spaces Controllers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Controller>,
@@ -324,7 +324,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "Resource provider operations list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperationDefinition>,

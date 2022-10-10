@@ -56,7 +56,7 @@ pub struct AuthorizationPolicyListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AuthorizationPolicyResourceFormat>,
@@ -110,7 +110,7 @@ pub struct CanonicalProfileDefinition {
     #[doc = "Properties of the canonical profile."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub properties: Vec<serde_json::Value>,
@@ -193,7 +193,7 @@ pub struct ConnectorListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConnectorResourceFormat>,
@@ -435,7 +435,7 @@ pub struct ConnectorMappingListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConnectorMappingResourceFormat>,
@@ -795,7 +795,7 @@ pub struct EntityTypeDefinition {
     #[doc = "The properties of the Profile."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub fields: Vec<PropertyDefinition>,
@@ -893,7 +893,7 @@ pub struct HubListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Hub>,
@@ -960,7 +960,7 @@ pub struct InteractionListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<InteractionResourceFormat>,
@@ -1002,7 +1002,7 @@ pub struct InteractionTypeDefinition {
     #[serde(
         rename = "idPropertyNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub id_property_names: Vec<String>,
@@ -1010,7 +1010,7 @@ pub struct InteractionTypeDefinition {
     #[serde(
         rename = "participantProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub participant_profiles: Vec<Participant>,
@@ -1021,7 +1021,7 @@ pub struct InteractionTypeDefinition {
     #[serde(
         rename = "dataSourcePrecedenceRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_source_precedence_rules: Vec<DataSourcePrecedence>,
@@ -1092,7 +1092,7 @@ pub struct KpiDefinition {
     #[serde(
         rename = "groupBy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_by: Vec<String>,
@@ -1100,7 +1100,7 @@ pub struct KpiDefinition {
     #[serde(
         rename = "groupByMetadata",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_by_metadata: Vec<KpiGroupByMetadata>,
@@ -1108,7 +1108,7 @@ pub struct KpiDefinition {
     #[serde(
         rename = "participantProfilesMetadata",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub participant_profiles_metadata: Vec<KpiParticipantProfilesMetadata>,
@@ -1121,14 +1121,14 @@ pub struct KpiDefinition {
     #[doc = "The aliases."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aliases: Vec<KpiAlias>,
     #[doc = "The KPI extracts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub extracts: Vec<KpiExtract>,
@@ -1234,7 +1234,7 @@ pub struct KpiListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<KpiResourceFormat>,
@@ -1331,7 +1331,7 @@ pub struct LinkDefinition {
     #[doc = "The set of properties mappings between the source and target Types."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mappings: Vec<TypePropertiesMapping>,
@@ -1404,7 +1404,7 @@ pub struct LinkListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LinkResourceFormat>,
@@ -1509,7 +1509,7 @@ pub struct OperationListResult {
     #[doc = "List of Customer Insights operations supported by the Microsoft.CustomerInsights resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1622,7 +1622,7 @@ pub struct Prediction {
     #[serde(
         rename = "involvedInteractionTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub involved_interaction_types: Vec<String>,
@@ -1630,7 +1630,7 @@ pub struct Prediction {
     #[serde(
         rename = "involvedKpiTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub involved_kpi_types: Vec<String>,
@@ -1638,7 +1638,7 @@ pub struct Prediction {
     #[serde(
         rename = "involvedRelationships",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub involved_relationships: Vec<String>,
@@ -1674,7 +1674,7 @@ pub struct Prediction {
     #[doc = "The prediction grades."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub grades: Vec<serde_json::Value>,
@@ -1737,7 +1737,7 @@ pub mod prediction {
         #[serde(
             rename = "generatedInteractionTypes",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub generated_interaction_types: Vec<String>,
@@ -1745,7 +1745,7 @@ pub mod prediction {
         #[serde(
             rename = "generatedLinks",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub generated_links: Vec<String>,
@@ -1771,7 +1771,7 @@ pub struct PredictionDistributionDefinition {
     #[doc = "Distributions of the prediction."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub distributions: Vec<serde_json::Value>,
@@ -1787,7 +1787,7 @@ pub struct PredictionListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PredictionResourceFormat>,
@@ -1961,7 +1961,7 @@ pub struct PredictionTrainingResults {
     #[serde(
         rename = "canonicalProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub canonical_profiles: Vec<CanonicalProfileDefinition>,
@@ -1995,7 +1995,7 @@ pub struct ProfileListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProfileResourceFormat>,
@@ -2037,7 +2037,7 @@ pub struct ProfileTypeDefinition {
     #[serde(
         rename = "strongIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub strong_ids: Vec<StrongId>,
@@ -2057,7 +2057,7 @@ pub struct PropertyDefinition {
     #[serde(
         rename = "enumValidValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enum_valid_values: Vec<ProfileEnumValidValuesFormat>,
@@ -2104,7 +2104,7 @@ pub struct PropertyDefinition {
     #[serde(
         rename = "dataSourcePrecedenceRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_source_precedence_rules: Vec<DataSourcePrecedence>,
@@ -2212,7 +2212,7 @@ pub struct RelationshipDefinition {
     #[doc = "The properties of the Relationship."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub fields: Vec<PropertyDefinition>,
@@ -2220,7 +2220,7 @@ pub struct RelationshipDefinition {
     #[serde(
         rename = "lookupMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub lookup_mappings: Vec<RelationshipTypeMapping>,
@@ -2289,7 +2289,7 @@ pub struct RelationshipLinkDefinition {
     #[doc = "The mappings between Interaction and Relationship fields."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mappings: Vec<RelationshipLinkFieldMapping>,
@@ -2371,7 +2371,7 @@ pub struct RelationshipLinkListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RelationshipLinkResourceFormat>,
@@ -2410,7 +2410,7 @@ pub struct RelationshipListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RelationshipResourceFormat>,
@@ -2483,7 +2483,7 @@ pub struct RelationshipsLookup {
     #[serde(
         rename = "profilePropertyReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub profile_property_references: Vec<ParticipantProfilePropertyReference>,
@@ -2494,7 +2494,7 @@ pub struct RelationshipsLookup {
     #[serde(
         rename = "relatedProfilePropertyReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub related_profile_property_references: Vec<ParticipantProfilePropertyReference>,
@@ -2537,14 +2537,14 @@ pub struct ResourceSetDescription {
     #[doc = "The elements included in the set."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub elements: Vec<String>,
     #[doc = "The elements that are not included in the set, in case elements contains '*' indicating 'all'."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exceptions: Vec<String>,
@@ -2676,7 +2676,7 @@ pub struct RoleAssignmentListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RoleAssignmentResourceFormat>,
@@ -2715,7 +2715,7 @@ pub struct RoleListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RoleResourceFormat>,
@@ -2844,7 +2844,7 @@ pub struct SuggestRelationshipLinksResponse {
     #[serde(
         rename = "suggestedRelationships",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub suggested_relationships: Vec<RelationshipsLookup>,
@@ -2928,7 +2928,7 @@ pub struct ViewListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ViewResourceFormat>,
@@ -3012,7 +3012,7 @@ pub struct WidgetTypeListResult {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<WidgetTypeResourceFormat>,

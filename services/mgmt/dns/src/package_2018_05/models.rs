@@ -78,7 +78,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -107,7 +107,7 @@ pub struct DnsResourceReference {
     #[serde(
         rename = "dnsResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_resources: Vec<SubResource>,
@@ -139,7 +139,7 @@ pub struct DnsResourceReferenceRequestProperties {
     #[serde(
         rename = "targetResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub target_resources: Vec<SubResource>,
@@ -168,7 +168,7 @@ pub struct DnsResourceReferenceResultProperties {
     #[serde(
         rename = "dnsResourceReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_resource_references: Vec<DnsResourceReference>,
@@ -247,7 +247,7 @@ pub struct RecordSetListResult {
     #[doc = "Information about the record sets in the response."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RecordSet>,
@@ -288,7 +288,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "ARecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub a_records: Vec<ARecord>,
@@ -296,7 +296,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "AAAARecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aaaa_records: Vec<AaaaRecord>,
@@ -304,7 +304,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "MXRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mx_records: Vec<MxRecord>,
@@ -312,7 +312,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "NSRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ns_records: Vec<NsRecord>,
@@ -320,7 +320,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "PTRRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ptr_records: Vec<PtrRecord>,
@@ -328,7 +328,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "SRVRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub srv_records: Vec<SrvRecord>,
@@ -336,7 +336,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "TXTRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub txt_records: Vec<TxtRecord>,
@@ -350,7 +350,7 @@ pub struct RecordSetProperties {
     #[serde(
         rename = "caaRecords",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub caa_records: Vec<CaaRecord>,
@@ -470,7 +470,7 @@ pub struct TxtRecord {
     #[doc = "The text value of this TXT record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -507,7 +507,7 @@ pub struct ZoneListResult {
     #[doc = "Information about the DNS zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Zone>,
@@ -542,7 +542,7 @@ pub struct ZoneProperties {
     #[serde(
         rename = "nameServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub name_servers: Vec<String>,
@@ -553,7 +553,7 @@ pub struct ZoneProperties {
     #[serde(
         rename = "registrationVirtualNetworks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub registration_virtual_networks: Vec<SubResource>,
@@ -561,7 +561,7 @@ pub struct ZoneProperties {
     #[serde(
         rename = "resolutionVirtualNetworks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resolution_virtual_networks: Vec<SubResource>,

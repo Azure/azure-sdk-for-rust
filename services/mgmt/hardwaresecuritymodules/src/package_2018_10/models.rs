@@ -52,7 +52,7 @@ pub struct DedicatedHsmListResult {
     #[doc = "The list of dedicated HSMs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DedicatedHsm>,
@@ -117,7 +117,7 @@ pub struct DedicatedHsmOperationListResult {
     #[doc = "List of Dedicated HSM Resource Provider operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DedicatedHsmOperation>,
@@ -257,7 +257,7 @@ pub struct NetworkProfile {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterface>,
@@ -287,7 +287,7 @@ pub struct Resource {
     #[doc = "The Dedicated Hsm zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -314,7 +314,7 @@ pub struct ResourceListResult {
     #[doc = "The list of dedicated HSM resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Resource>,

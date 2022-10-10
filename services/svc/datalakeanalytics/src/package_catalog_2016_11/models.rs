@@ -301,7 +301,7 @@ pub struct AclList {
     #[doc = "the access control list (ACL)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Acl>,
@@ -496,14 +496,14 @@ pub struct USqlAssembly {
     #[doc = "the list of files associated with the assembly"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<USqlAssemblyFileInfo>,
     #[doc = "the list of dependencies associated with the assembly"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dependencies: Vec<USqlAssemblyDependencyInfo>,
@@ -613,7 +613,7 @@ pub struct USqlAssemblyList {
     #[doc = "the list of assemblies in the database"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlAssemblyClr>,
@@ -651,7 +651,7 @@ pub struct USqlCredentialList {
     #[doc = "the list of credentials in the database"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlCredential>,
@@ -689,7 +689,7 @@ pub struct USqlDatabaseList {
     #[doc = "the list of databases"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlDatabase>,
@@ -729,7 +729,7 @@ pub struct USqlDistributionInfo {
     #[doc = "the list of directed columns in the distribution"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub keys: Vec<USqlDirectedColumn>,
@@ -766,7 +766,7 @@ pub struct USqlExternalDataSource {
     #[serde(
         rename = "pushdownTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pushdown_types: Vec<String>,
@@ -784,7 +784,7 @@ pub struct USqlExternalDataSourceList {
     #[doc = "the list of external data sources in the database"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlExternalDataSource>,
@@ -810,14 +810,14 @@ pub struct USqlIndex {
     #[serde(
         rename = "indexKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub index_keys: Vec<USqlDirectedColumn>,
     #[doc = "the list of columns in the index"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub columns: Vec<String>,
@@ -831,7 +831,7 @@ pub struct USqlIndex {
     #[serde(
         rename = "partitionKeyList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub partition_key_list: Vec<String>,
@@ -839,7 +839,7 @@ pub struct USqlIndex {
     #[serde(
         rename = "streamNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub stream_names: Vec<String>,
@@ -889,7 +889,7 @@ pub struct USqlPackageList {
     #[doc = "the list of packages in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlPackage>,
@@ -936,7 +936,7 @@ pub struct USqlProcedureList {
     #[doc = "the list of procedure in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlProcedure>,
@@ -977,7 +977,7 @@ pub struct USqlSchemaList {
     #[doc = "the list of schemas in the database"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlSchema>,
@@ -1037,7 +1037,7 @@ pub struct USqlTable {
     #[serde(
         rename = "columnList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub column_list: Vec<USqlTableColumn>,
@@ -1045,7 +1045,7 @@ pub struct USqlTable {
     #[serde(
         rename = "indexList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub index_list: Vec<USqlIndex>,
@@ -1053,7 +1053,7 @@ pub struct USqlTable {
     #[serde(
         rename = "partitionKeyList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub partition_key_list: Vec<String>,
@@ -1122,7 +1122,7 @@ pub struct USqlTableFragmentList {
     #[doc = "the list of table fragments in the database, schema and table combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlTableFragment>,
@@ -1146,7 +1146,7 @@ pub struct USqlTableList {
     #[doc = "the list of tables in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlTable>,
@@ -1185,7 +1185,7 @@ pub struct USqlTablePartition {
     #[doc = "the list of labels associated with this partition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub label: Vec<String>,
@@ -1206,7 +1206,7 @@ pub struct USqlTablePartitionList {
     #[doc = "the list of table partitions in the database, schema and table combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlTablePartition>,
@@ -1234,7 +1234,7 @@ pub struct USqlTablePreview {
     #[doc = "the rows of the table or partition preview, where each row is an array of string representations the row's values. Note: Byte arrays will appear as base-64 encoded values, SqlMap and SqlArray objects will appear as escaped JSON objects, and DateTime objects will appear as ISO formatted UTC date-times."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rows: Vec<Vec<String>>,
@@ -1244,7 +1244,7 @@ pub struct USqlTablePreview {
     #[doc = "the schema of the table or partition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schema: Vec<USqlTableColumn>,
@@ -1299,7 +1299,7 @@ pub struct USqlTableStatistics {
     #[serde(
         rename = "colNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub col_names: Vec<String>,
@@ -1317,7 +1317,7 @@ pub struct USqlTableStatisticsList {
     #[doc = "the list of table statistics in the database, schema and table combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlTableStatistics>,
@@ -1341,7 +1341,7 @@ pub struct USqlTableType {
     #[doc = "the type field information associated with this table type."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub columns: Vec<TypeFieldInfo>,
@@ -1359,7 +1359,7 @@ pub struct USqlTableTypeList {
     #[doc = "the list of table types in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlTableType>,
@@ -1406,7 +1406,7 @@ pub struct USqlTableValuedFunctionList {
     #[doc = "the list of table valued functions in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlTableValuedFunction>,
@@ -1486,7 +1486,7 @@ pub struct USqlTypeList {
     #[doc = "the list of types in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlType>,
@@ -1533,7 +1533,7 @@ pub struct USqlViewList {
     #[doc = "the list of view in the database and schema combination"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<USqlView>,

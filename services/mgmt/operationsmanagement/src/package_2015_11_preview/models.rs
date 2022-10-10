@@ -90,7 +90,7 @@ pub struct ManagementAssociationPropertiesList {
     #[doc = "List of Management Association properties within the subscription."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ManagementAssociation>,
@@ -158,7 +158,7 @@ pub struct ManagementConfigurationPropertiesList {
     #[doc = "List of Management Configuration properties within the subscription."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ManagementConfiguration>,
@@ -210,7 +210,7 @@ pub struct OperationListResult {
     #[doc = "List of solution operations supported by the OperationsManagement resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -302,7 +302,7 @@ pub struct SolutionProperties {
     #[serde(
         rename = "containedResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub contained_resources: Vec<String>,
@@ -310,7 +310,7 @@ pub struct SolutionProperties {
     #[serde(
         rename = "referencedResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub referenced_resources: Vec<String>,
@@ -331,7 +331,7 @@ pub struct SolutionPropertiesList {
     #[doc = "List of solution properties within the subscription."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Solution>,

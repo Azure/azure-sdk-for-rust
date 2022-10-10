@@ -161,7 +161,7 @@ pub struct AzureFunctionEventSubscriptionDestinationProperties {
     #[serde(
         rename = "deliveryAttributeMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
@@ -393,7 +393,7 @@ pub struct ChannelsListResult {
     #[doc = "A collection of Channels."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Channel>,
@@ -545,7 +545,7 @@ pub struct DeliveryAttributeListResult {
     #[doc = "A collection of DeliveryAttributeMapping"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DeliveryAttributeMapping>,
@@ -661,7 +661,7 @@ pub struct DomainProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -687,7 +687,7 @@ pub struct DomainProperties {
     #[serde(
         rename = "inboundIpRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
@@ -991,7 +991,7 @@ pub struct DomainTopicsListResult {
     #[doc = "A collection of Domain Topics."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DomainTopic>,
@@ -1020,7 +1020,7 @@ pub struct DomainUpdateParameterProperties {
     #[serde(
         rename = "inboundIpRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
@@ -1151,7 +1151,7 @@ pub struct DomainsListResult {
     #[doc = "A collection of Domains"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Domain>,
@@ -1244,7 +1244,7 @@ pub struct EventChannelFilter {
     #[serde(
         rename = "advancedFilters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub advanced_filters: Vec<AdvancedFilter>,
@@ -1393,7 +1393,7 @@ pub struct EventChannelsListResult {
     #[doc = "A collection of Event Channels"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventChannel>,
@@ -1439,7 +1439,7 @@ pub struct EventHubEventSubscriptionDestinationProperties {
     #[serde(
         rename = "deliveryAttributeMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
@@ -1543,7 +1543,7 @@ pub struct EventSubscriptionFilter {
     #[serde(
         rename = "includedEventTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub included_event_types: Vec<String>,
@@ -1557,7 +1557,7 @@ pub struct EventSubscriptionFilter {
     #[serde(
         rename = "advancedFilters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub advanced_filters: Vec<AdvancedFilter>,
@@ -1655,7 +1655,7 @@ pub struct EventSubscriptionProperties {
     #[doc = "List of user defined labels."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<String>,
@@ -1790,7 +1790,7 @@ pub struct EventSubscriptionUpdateParameters {
     #[doc = "List of user defined labels."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<String>,
@@ -1864,7 +1864,7 @@ pub struct EventSubscriptionsListResult {
     #[doc = "A collection of EventSubscriptions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventSubscription>,
@@ -1977,7 +1977,7 @@ pub struct EventTypesListResult {
     #[doc = "A collection of event types"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventType>,
@@ -2067,7 +2067,7 @@ pub struct HybridConnectionEventSubscriptionDestinationProperties {
     #[serde(
         rename = "deliveryAttributeMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
@@ -2398,7 +2398,7 @@ pub struct NumberInAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<f64>,
@@ -2419,7 +2419,7 @@ pub struct NumberInRangeAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<Vec<f64>>,
@@ -2474,7 +2474,7 @@ pub struct NumberNotInAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<f64>,
@@ -2495,7 +2495,7 @@ pub struct NumberNotInRangeAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<Vec<f64>>,
@@ -2559,7 +2559,7 @@ pub struct OperationsListResult {
     #[doc = "A collection of operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -2603,7 +2603,7 @@ pub struct PartnerAuthorization {
     #[serde(
         rename = "authorizedPartnersList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorized_partners_list: Vec<Partner>,
@@ -2790,7 +2790,7 @@ pub struct PartnerConfigurationsListResult {
     #[doc = "A collection of partner configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PartnerConfiguration>,
@@ -2852,7 +2852,7 @@ pub struct PartnerDestinationInfo {
     #[serde(
         rename = "resourceMoveChangeHistory",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_move_change_history: Vec<ResourceMoveChangeHistory>,
@@ -3045,7 +3045,7 @@ pub struct PartnerDestinationsListResult {
     #[doc = "A collection of partner destinations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PartnerDestination>,
@@ -3135,7 +3135,7 @@ pub struct PartnerNamespaceProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -3155,7 +3155,7 @@ pub struct PartnerNamespaceProperties {
     #[serde(
         rename = "inboundIpRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
@@ -3340,7 +3340,7 @@ pub struct PartnerNamespaceUpdateParameterProperties {
     #[serde(
         rename = "inboundIpRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
@@ -3419,7 +3419,7 @@ pub struct PartnerNamespacesListResult {
     #[doc = "A collection of partner namespaces."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PartnerNamespace>,
@@ -3505,7 +3505,7 @@ pub struct PartnerRegistrationProperties {
     #[serde(
         rename = "authorizedAzureSubscriptionIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorized_azure_subscription_ids: Vec<String>,
@@ -3627,7 +3627,7 @@ pub struct PartnerRegistrationUpdateParameters {
     #[serde(
         rename = "authorizedAzureSubscriptionIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorized_azure_subscription_ids: Vec<String>,
@@ -3643,7 +3643,7 @@ pub struct PartnerRegistrationsListResult {
     #[doc = "A collection of partner registrations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PartnerRegistration>,
@@ -3852,7 +3852,7 @@ pub struct PartnerTopicsListResult {
     #[doc = "A collection of partner topics."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PartnerTopic>,
@@ -3969,7 +3969,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "A collection of private endpoint connection resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -3998,7 +3998,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -4091,14 +4091,14 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -4114,7 +4114,7 @@ pub struct PrivateLinkResourcesListResult {
     #[doc = "A collection of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -4268,7 +4268,7 @@ pub struct ServiceBusQueueEventSubscriptionDestinationProperties {
     #[serde(
         rename = "deliveryAttributeMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
@@ -4305,7 +4305,7 @@ pub struct ServiceBusTopicEventSubscriptionDestinationProperties {
     #[serde(
         rename = "deliveryAttributeMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
@@ -4422,7 +4422,7 @@ pub struct StringBeginsWithAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4443,7 +4443,7 @@ pub struct StringContainsAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4464,7 +4464,7 @@ pub struct StringEndsWithAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4485,7 +4485,7 @@ pub struct StringInAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4506,7 +4506,7 @@ pub struct StringNotBeginsWithAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4527,7 +4527,7 @@ pub struct StringNotContainsAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4548,7 +4548,7 @@ pub struct StringNotEndsWithAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4569,7 +4569,7 @@ pub struct StringNotInAdvancedFilter {
     #[doc = "The set of filter values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -4697,7 +4697,7 @@ pub struct SystemTopicsListResult {
     #[doc = "A collection of system Topics."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SystemTopic>,
@@ -4804,7 +4804,7 @@ pub struct TopicProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -4830,7 +4830,7 @@ pub struct TopicProperties {
     #[serde(
         rename = "inboundIpRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
@@ -5081,7 +5081,7 @@ pub struct TopicTypeProperties {
     #[serde(
         rename = "supportedLocations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_locations: Vec<String>,
@@ -5092,7 +5092,7 @@ pub struct TopicTypeProperties {
     #[serde(
         rename = "supportedScopesForSource",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_scopes_for_source: Vec<String>,
@@ -5193,7 +5193,7 @@ pub struct TopicTypesListResult {
     #[doc = "A collection of topic types"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TopicTypeInfo>,
@@ -5219,7 +5219,7 @@ pub struct TopicUpdateParameterProperties {
     #[serde(
         rename = "inboundIpRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_ip_rules: Vec<InboundIpRule>,
@@ -5344,7 +5344,7 @@ pub struct TopicsListResult {
     #[doc = "A collection of Topics"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Topic>,
@@ -5496,7 +5496,7 @@ pub struct VerifiedPartnersListResult {
     #[doc = "A collection of verified partners."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VerifiedPartner>,
@@ -5561,7 +5561,7 @@ pub struct WebHookEventSubscriptionDestinationProperties {
     #[serde(
         rename = "deliveryAttributeMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
@@ -5583,7 +5583,7 @@ pub struct WebhookPartnerDestinationInfo {
     #[serde(
         rename = "resourceMoveChangeHistory",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_move_change_history: Vec<ResourceMoveChangeHistory>,

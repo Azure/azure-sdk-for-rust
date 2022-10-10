@@ -22,7 +22,7 @@ pub struct BlobHierarchyListSegment {
     #[serde(
         rename = "BlobPrefixes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub blob_prefixes: Vec<BlobPrefix>,
@@ -199,7 +199,7 @@ impl FileSystem {
 pub struct FileSystemList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filesystems: Vec<FileSystem>,
@@ -290,7 +290,7 @@ impl Path {
 pub struct PathList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub paths: Vec<Path>,
@@ -317,7 +317,7 @@ pub struct SetAccessControlRecursiveResponse {
     #[serde(
         rename = "failedEntries",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub failed_entries: Vec<AclFailedEntry>,

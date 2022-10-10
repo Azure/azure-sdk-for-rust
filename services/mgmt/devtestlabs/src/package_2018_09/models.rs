@@ -59,7 +59,7 @@ pub struct ApplyArtifactsRequest {
     #[doc = "The list of artifacts to apply."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<ArtifactInstallProperties>,
@@ -106,7 +106,7 @@ pub struct ArmTemplateList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ArmTemplate>,
@@ -173,7 +173,7 @@ pub struct ArmTemplateProperties {
     #[serde(
         rename = "parametersValueFilesInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters_value_files_info: Vec<ParametersValueFileInfo>,
@@ -240,7 +240,7 @@ pub struct ArtifactInstallProperties {
     #[doc = "The parameters of the artifact."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ArtifactParameterProperties>,
@@ -276,7 +276,7 @@ pub struct ArtifactList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Artifact>,
@@ -384,7 +384,7 @@ pub struct ArtifactSourceList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ArtifactSource>,
@@ -666,7 +666,7 @@ pub struct CloudErrorBody {
     #[doc = "Inner errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -737,7 +737,7 @@ pub struct ComputeVmProperties {
     #[doc = "Gets the statuses of the virtual machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub statuses: Vec<ComputeVmInstanceViewStatus>,
@@ -757,7 +757,7 @@ pub struct ComputeVmProperties {
     #[serde(
         rename = "dataDiskIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disk_ids: Vec<String>,
@@ -765,7 +765,7 @@ pub struct ComputeVmProperties {
     #[serde(
         rename = "dataDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disks: Vec<ComputeDataDisk>,
@@ -917,7 +917,7 @@ pub struct CustomImageList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CustomImage>,
@@ -964,7 +964,7 @@ pub struct CustomImageProperties {
     #[serde(
         rename = "dataDiskStorageInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disk_storage_info: Vec<DataDiskStorageTypeInfo>,
@@ -1329,7 +1329,7 @@ pub struct DiskList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Disk>,
@@ -1474,7 +1474,7 @@ pub struct DtlEnvironmentList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DtlEnvironment>,
@@ -1502,7 +1502,7 @@ pub struct EnvironmentDeploymentProperties {
     #[doc = "The parameters of the Azure Resource Manager template."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ArmTemplateParameterProperties>,
@@ -1582,7 +1582,7 @@ pub struct EvaluatePoliciesRequest {
     #[doc = "Policies to evaluate."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub policies: Vec<EvaluatePoliciesProperties>,
@@ -1598,7 +1598,7 @@ pub struct EvaluatePoliciesResponse {
     #[doc = "Results of evaluating a policy set."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub results: Vec<PolicySetResult>,
@@ -1739,7 +1739,7 @@ pub struct FormulaList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Formula>,
@@ -1841,7 +1841,7 @@ pub struct GalleryImageList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GalleryImage>,
@@ -1934,7 +1934,7 @@ pub struct GenerateArmTemplateRequest {
     #[doc = "The parameters of the ARM template."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ParameterInfo>,
@@ -2364,7 +2364,7 @@ pub struct LabCostProperties {
     #[serde(
         rename = "labCostDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub lab_cost_details: Vec<LabCostDetailsProperties>,
@@ -2372,7 +2372,7 @@ pub struct LabCostProperties {
     #[serde(
         rename = "resourceCosts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_costs: Vec<LabResourceCostProperties>,
@@ -2429,7 +2429,7 @@ pub struct LabList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Lab>,
@@ -2473,7 +2473,7 @@ pub struct LabProperties {
     #[serde(
         rename = "mandatoryArtifactsResourceIdsLinux",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mandatory_artifacts_resource_ids_linux: Vec<String>,
@@ -2481,7 +2481,7 @@ pub struct LabProperties {
     #[serde(
         rename = "mandatoryArtifactsResourceIdsWindows",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mandatory_artifacts_resource_ids_windows: Vec<String>,
@@ -2774,7 +2774,7 @@ pub struct LabVhdList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LabVhd>,
@@ -2886,7 +2886,7 @@ pub struct LabVirtualMachineCreationParameterProperties {
     #[doc = "The artifacts to be installed on the virtual machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<ArtifactInstallProperties>,
@@ -2915,7 +2915,7 @@ pub struct LabVirtualMachineCreationParameterProperties {
     #[serde(
         rename = "dataDiskParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disk_parameters: Vec<DataDiskProperties>,
@@ -2923,7 +2923,7 @@ pub struct LabVirtualMachineCreationParameterProperties {
     #[serde(
         rename = "scheduleParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schedule_parameters: Vec<ScheduleCreationParameter>,
@@ -2958,7 +2958,7 @@ pub struct LabVirtualMachineList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LabVirtualMachine>,
@@ -3037,7 +3037,7 @@ pub struct LabVirtualMachineProperties {
     #[doc = "The artifacts to be installed on the virtual machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<ArtifactInstallProperties>,
@@ -3078,7 +3078,7 @@ pub struct LabVirtualMachineProperties {
     #[serde(
         rename = "dataDiskParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disk_parameters: Vec<DataDiskProperties>,
@@ -3086,7 +3086,7 @@ pub struct LabVirtualMachineProperties {
     #[serde(
         rename = "scheduleParameters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schedule_parameters: Vec<ScheduleCreationParameter>,
@@ -3296,7 +3296,7 @@ pub struct NotificationChannelList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NotificationChannel>,
@@ -3333,7 +3333,7 @@ pub struct NotificationChannelProperties {
     #[doc = "The list of event for which this notification is enabled."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<Event>,
@@ -3769,7 +3769,7 @@ pub struct PolicyList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Policy>,
@@ -3972,7 +3972,7 @@ pub struct PolicySetResult {
     #[serde(
         rename = "policyViolations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub policy_violations: Vec<PolicyViolation>,
@@ -4066,7 +4066,7 @@ pub struct ProviderOperationResult {
     #[doc = "List of operations supported by the resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationMetadata>,
@@ -4296,7 +4296,7 @@ pub struct ScheduleList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Schedule>,
@@ -4443,7 +4443,7 @@ pub struct SecretList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Secret>,
@@ -4521,7 +4521,7 @@ pub struct ServiceFabricList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServiceFabric>,
@@ -4592,7 +4592,7 @@ pub struct ServiceRunnerList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServiceRunner>,
@@ -4612,7 +4612,7 @@ pub struct SharedPublicIpAddressConfiguration {
     #[serde(
         rename = "inboundNatRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inbound_nat_rules: Vec<InboundNatRule>,
@@ -4869,7 +4869,7 @@ pub struct SubnetSharedPublicIpAddressConfiguration {
     #[serde(
         rename = "allowedPorts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_ports: Vec<Port>,
@@ -4900,7 +4900,7 @@ pub struct TargetCostProperties {
     #[serde(
         rename = "costThresholds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cost_thresholds: Vec<CostThresholdProperties>,
@@ -5071,7 +5071,7 @@ pub struct UserList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<User>,
@@ -5176,7 +5176,7 @@ pub struct VirtualNetworkList {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetwork>,
@@ -5202,7 +5202,7 @@ pub struct VirtualNetworkProperties {
     #[serde(
         rename = "allowedSubnets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_subnets: Vec<Subnet>,
@@ -5216,7 +5216,7 @@ pub struct VirtualNetworkProperties {
     #[serde(
         rename = "externalSubnets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub external_subnets: Vec<ExternalSubnet>,
@@ -5224,7 +5224,7 @@ pub struct VirtualNetworkProperties {
     #[serde(
         rename = "subnetOverrides",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subnet_overrides: Vec<SubnetOverride>,
@@ -5257,7 +5257,7 @@ pub struct WeekDetails {
     #[doc = "The days of the week for which the schedule is set (e.g. Sunday, Monday, Tuesday, etc.)."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub weekdays: Vec<String>,

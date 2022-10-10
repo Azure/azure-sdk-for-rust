@@ -247,7 +247,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -308,7 +308,7 @@ pub struct ClusterListResult {
     #[doc = "The list of Kusto clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Cluster>,
@@ -343,7 +343,7 @@ pub struct ClusterProperties {
     #[serde(
         rename = "trustedExternalTenants",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub trusted_external_tenants: Vec<TrustedExternalTenant>,
@@ -522,7 +522,7 @@ pub struct DatabaseListResult {
     #[doc = "The list of Kusto databases."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Database>,
@@ -662,7 +662,7 @@ pub struct DatabasePrincipalListRequest {
     #[doc = "The list of Kusto database principals."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatabasePrincipal>,
@@ -678,7 +678,7 @@ pub struct DatabasePrincipalListResult {
     #[doc = "The list of Kusto database principals."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatabasePrincipal>,
@@ -819,7 +819,7 @@ pub struct EventHubConnectionListResult {
     #[doc = "The list of Kusto event hub connections."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventHubConnection>,
@@ -948,7 +948,7 @@ pub struct EventHubConnectionValidationListResult {
     #[doc = "The list of Kusto event hub connection validation errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventHubConnectionValidationResult>,
@@ -975,7 +975,7 @@ pub struct ListResourceSkusResult {
     #[doc = "The collection of available SKUs for an existing resource."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AzureResourceSku>,
@@ -997,7 +997,7 @@ pub struct ListSkusResult {
     #[doc = "The collection of available SKUs for new resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AzureSku>,
@@ -1054,7 +1054,7 @@ pub mod operation {
 pub struct OperationListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

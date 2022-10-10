@@ -102,7 +102,7 @@ pub struct OperationsListResult {
     #[doc = "The list of operations supported by Microsoft Support resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -133,7 +133,7 @@ pub struct ServiceError {
     #[doc = "The list of error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ServiceErrorDetail>,

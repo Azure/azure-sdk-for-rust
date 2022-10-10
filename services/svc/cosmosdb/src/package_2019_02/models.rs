@@ -220,7 +220,7 @@ pub struct TableEntityQueryResponse {
     #[doc = "List of table entities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TableEntityProperties>,
@@ -251,7 +251,7 @@ pub struct TableQueryResponse {
     #[doc = "List of tables."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TableResponseProperties>,

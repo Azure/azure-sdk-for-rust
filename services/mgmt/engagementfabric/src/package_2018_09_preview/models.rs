@@ -20,7 +20,7 @@ pub struct AccountList {
     #[doc = "EngagementFabric accounts"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Account>,
@@ -68,7 +68,7 @@ pub struct ChannelList {
     #[doc = "EngagementFabric channels"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Channel>,
@@ -94,7 +94,7 @@ pub struct ChannelProperties {
     #[serde(
         rename = "channelFunctions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub channel_functions: Vec<String>,
@@ -124,7 +124,7 @@ pub struct ChannelTypeDescription {
     #[serde(
         rename = "channelFunctions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub channel_functions: Vec<String>,
@@ -140,7 +140,7 @@ pub struct ChannelTypeDescriptionList {
     #[doc = "Channel descriptions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ChannelTypeDescription>,
@@ -252,7 +252,7 @@ pub struct CloudErrorBody {
     #[doc = "The list of additional details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -286,7 +286,7 @@ pub struct KeyDescriptionList {
     #[doc = "Account keys"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<KeyDescription>,
@@ -381,7 +381,7 @@ pub struct OperationList {
     #[doc = "The EngagementFabric operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -468,7 +468,7 @@ pub struct SkuDescription {
     #[doc = "The set of locations that the SKU is available"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -476,14 +476,14 @@ pub struct SkuDescription {
     #[serde(
         rename = "locationInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub location_info: Vec<SkuLocationInfoItem>,
     #[doc = "The restrictions because of which SKU cannot be used"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<serde_json::Value>,
@@ -499,7 +499,7 @@ pub struct SkuDescriptionList {
     #[doc = "SKU descriptions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuDescription>,
@@ -524,7 +524,7 @@ pub struct SkuLocationInfoItem {
     #[doc = "The available zone of the SKU"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,

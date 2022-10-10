@@ -19,7 +19,7 @@ pub struct Authorization {
     #[serde(
         rename = "delegatedRoleDefinitionIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delegated_role_definition_ids: Vec<String>,
@@ -88,7 +88,7 @@ pub struct ErrorDefinition {
     #[doc = "The internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -133,7 +133,7 @@ pub struct JustInTimeAccessPolicy {
     #[serde(
         rename = "managedByTenantApprovers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub managed_by_tenant_approvers: Vec<EligibleApprover>,
@@ -221,7 +221,7 @@ pub struct MarketplaceRegistrationDefinitionList {
     #[doc = "The list of marketplace registration definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MarketplaceRegistrationDefinition>,
@@ -252,7 +252,7 @@ pub struct MarketplaceRegistrationDefinitionProperties {
     #[serde(
         rename = "eligibleAuthorizations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub eligible_authorizations: Vec<EligibleAuthorization>,
@@ -323,7 +323,7 @@ pub struct OperationList {
     #[doc = "The list of Microsoft.ManagedServices operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -382,7 +382,7 @@ pub struct RegistrationAssignmentList {
     #[doc = "The list of registration assignments."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RegistrationAssignment>,
@@ -517,7 +517,7 @@ pub mod registration_assignment_properties {
             #[doc = "The collection of authorization objects describing the access Azure Active Directory principals in the managedBy tenant will receive on the delegated resource in the managed tenant."]
             #[serde(
                 default,
-                deserialize_with = "azure_core::util::deserialize_null_default",
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
                 skip_serializing_if = "Vec::is_empty"
             )]
             pub authorizations: Vec<Authorization>,
@@ -525,7 +525,7 @@ pub mod registration_assignment_properties {
             #[serde(
                 rename = "eligibleAuthorizations",
                 default,
-                deserialize_with = "azure_core::util::deserialize_null_default",
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
                 skip_serializing_if = "Vec::is_empty"
             )]
             pub eligible_authorizations: Vec<EligibleAuthorization>,
@@ -645,7 +645,7 @@ pub struct RegistrationDefinitionList {
     #[doc = "The list of registration definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RegistrationDefinition>,
@@ -676,7 +676,7 @@ pub struct RegistrationDefinitionProperties {
     #[serde(
         rename = "eligibleAuthorizations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub eligible_authorizations: Vec<EligibleAuthorization>,

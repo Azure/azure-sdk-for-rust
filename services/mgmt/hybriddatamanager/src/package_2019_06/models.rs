@@ -63,7 +63,7 @@ pub struct AvailableProviderOperations {
     #[doc = "List of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableProviderOperation>,
@@ -136,7 +136,7 @@ pub struct DataManagerList {
     #[doc = "List of data manager resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataManager>,
@@ -192,7 +192,7 @@ pub struct DataServiceList {
     #[doc = "List of data services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataService>,
@@ -220,7 +220,7 @@ pub struct DataServiceProperties {
     #[serde(
         rename = "supportedDataSinkTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_data_sink_types: Vec<String>,
@@ -228,7 +228,7 @@ pub struct DataServiceProperties {
     #[serde(
         rename = "supportedDataSourceTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_data_source_types: Vec<String>,
@@ -286,7 +286,7 @@ pub struct DataStoreList {
     #[doc = "List of data stores."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataStore>,
@@ -323,7 +323,7 @@ pub struct DataStoreProperties {
     #[serde(
         rename = "customerSecrets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub customer_secrets: Vec<CustomerSecret>,
@@ -371,7 +371,7 @@ pub struct DataStoreTypeList {
     #[doc = "List of DataStoreType."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataStoreType>,
@@ -402,7 +402,7 @@ pub struct DataStoreTypeProperties {
     #[serde(
         rename = "supportedDataServicesAsSink",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_data_services_as_sink: Vec<String>,
@@ -410,7 +410,7 @@ pub struct DataStoreTypeProperties {
     #[serde(
         rename = "supportedDataServicesAsSource",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_data_services_as_source: Vec<String>,
@@ -587,7 +587,7 @@ pub struct JobDefinitionList {
     #[doc = "List of job definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobDefinition>,
@@ -618,7 +618,7 @@ pub struct JobDefinitionProperties {
     #[doc = "Schedule for running the job definition"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schedules: Vec<Schedule>,
@@ -640,7 +640,7 @@ pub struct JobDefinitionProperties {
     #[serde(
         rename = "customerSecrets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub customer_secrets: Vec<CustomerSecret>,
@@ -746,7 +746,7 @@ pub struct JobDetails {
     #[serde(
         rename = "jobStages",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub job_stages: Vec<JobStages>,
@@ -757,7 +757,7 @@ pub struct JobDetails {
     #[serde(
         rename = "errorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_details: Vec<ErrorDetails>,
@@ -805,7 +805,7 @@ pub struct JobList {
     #[doc = "List of jobs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Job>,
@@ -891,7 +891,7 @@ pub struct JobStages {
     #[serde(
         rename = "errorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_details: Vec<ErrorDetails>,
@@ -965,7 +965,7 @@ pub struct PublicKeyList {
     #[doc = "List of public keys."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PublicKey>,
@@ -1048,7 +1048,7 @@ pub struct RunParameters {
     #[serde(
         rename = "customerSecrets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub customer_secrets: Vec<CustomerSecret>,
@@ -1082,7 +1082,7 @@ pub struct Schedule {
     #[serde(
         rename = "policyList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub policy_list: Vec<String>,

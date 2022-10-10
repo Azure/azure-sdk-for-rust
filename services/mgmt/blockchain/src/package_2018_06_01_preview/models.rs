@@ -24,7 +24,7 @@ pub struct ApiKeyCollection {
     #[doc = "Gets or sets the collection of API key."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub keys: Vec<ApiKey>,
@@ -57,7 +57,7 @@ pub struct BlockchainMemberCollection {
     #[doc = "Gets or sets the collection of blockchain members."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BlockchainMember>,
@@ -134,7 +134,7 @@ pub struct BlockchainMemberProperties {
     #[serde(
         rename = "firewallRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub firewall_rules: Vec<FirewallRule>,
@@ -327,7 +327,7 @@ pub struct ConsortiumCollection {
     #[doc = "Gets or sets the collection of consortiums."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Consortium>,
@@ -373,7 +373,7 @@ pub struct ConsortiumMemberCollection {
     #[doc = "Gets or sets the collection of consortiums."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConsortiumMember>,
@@ -548,7 +548,7 @@ pub struct ResourceProviderOperationCollection {
     #[doc = "Gets or sets the collection of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,
@@ -597,7 +597,7 @@ pub struct ResourceTypeSku {
     #[doc = "Gets or sets the Skus"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub skus: Vec<SkuSetting>,
@@ -613,7 +613,7 @@ pub struct ResourceTypeSkuCollection {
     #[doc = "Gets or sets the collection of resource type Sku."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceTypeSku>,
@@ -650,7 +650,7 @@ pub struct SkuSetting {
     #[doc = "Gets or sets the locations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -658,7 +658,7 @@ pub struct SkuSetting {
     #[serde(
         rename = "requiredFeatures",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_features: Vec<String>,
@@ -708,7 +708,7 @@ pub struct TransactionNodeCollection {
     #[doc = "Gets or sets the collection of transaction nodes."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TransactionNode>,
@@ -749,7 +749,7 @@ pub struct TransactionNodeProperties {
     #[serde(
         rename = "firewallRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub firewall_rules: Vec<FirewallRule>,
@@ -815,7 +815,7 @@ pub struct TransactionNodePropertiesUpdate {
     #[serde(
         rename = "firewallRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub firewall_rules: Vec<FirewallRule>,

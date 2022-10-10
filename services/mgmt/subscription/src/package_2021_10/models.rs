@@ -137,7 +137,7 @@ pub struct BillingAccountPoliciesResponseProperties {
     #[serde(
         rename = "serviceTenants",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_tenants: Vec<ServiceTenantResponse>,
@@ -220,7 +220,7 @@ pub struct GetTenantPolicyListResponse {
     #[doc = "The list of tenant policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GetTenantPolicyResponse>,
@@ -296,7 +296,7 @@ pub struct LocationListResult {
     #[doc = "An array of locations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Location>,
@@ -360,7 +360,7 @@ pub struct OperationListResult {
     #[doc = "List of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -491,7 +491,7 @@ pub struct PutTenantPolicyRequestProperties {
     #[serde(
         rename = "exemptedPrincipals",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exempted_principals: Vec<String>,
@@ -573,7 +573,7 @@ pub struct SubscriptionAliasListResult {
     #[doc = "The list of alias."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionAliasResponse>,
@@ -703,7 +703,7 @@ pub struct SubscriptionListResult {
     #[doc = "An array of subscriptions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Subscription>,
@@ -783,7 +783,7 @@ pub struct TenantListResult {
     #[doc = "An array of tenants."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TenantIdDescription>,
@@ -825,7 +825,7 @@ pub struct TenantPolicy {
     #[serde(
         rename = "exemptedPrincipals",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub exempted_principals: Vec<String>,

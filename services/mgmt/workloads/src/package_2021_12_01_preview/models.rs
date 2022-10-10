@@ -534,7 +534,7 @@ pub struct Error {
     #[doc = "Array of details about specific errors that led to this reported error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<Error>,
@@ -589,7 +589,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -614,7 +614,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -622,7 +622,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -998,7 +998,7 @@ pub struct MonitorListResult {
     #[doc = "The list of SAP monitors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Monitor>,
@@ -1390,7 +1390,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1432,7 +1432,7 @@ pub struct OperationStatusResult {
     #[doc = "The operations list."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub operations: Vec<OperationStatusResult>,
@@ -1585,7 +1585,7 @@ pub struct OperationsDefinitionArrayResponseWithContinuation {
     #[doc = "Defines the workload operation definition response properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationsDefinition>,
@@ -1718,7 +1718,7 @@ pub struct ProviderInstanceListResult {
     #[doc = "The list of provider instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProviderInstance>,
@@ -1898,14 +1898,14 @@ pub struct RestrictionInfo {
     #[doc = "The restriction locations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
     #[doc = "The restriction zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -1938,7 +1938,7 @@ pub struct SapApplicationServerInstanceList {
     #[doc = "Gets the list of SAP Application Server instance resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SapApplicationServerInstance>,
@@ -2037,7 +2037,7 @@ pub struct SapAvailabilityZoneDetailsResult {
     #[serde(
         rename = "availabilityZonePairs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub availability_zone_pairs: Vec<SapAvailabilityZonePair>,
@@ -2068,7 +2068,7 @@ pub struct SapCentralInstanceList {
     #[doc = "Gets the list of SAP central services instance resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SapCentralServerInstance>,
@@ -2135,7 +2135,7 @@ pub struct SapCentralServerProperties {
     #[serde(
         rename = "vmDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_details: Vec<CentralServerVmDetails>,
@@ -2192,7 +2192,7 @@ pub struct SapDatabaseInstanceList {
     #[doc = "Gets the list of SAP Database instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SapDatabaseInstance>,
@@ -2230,7 +2230,7 @@ pub struct SapDatabaseProperties {
     #[serde(
         rename = "vmDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_details: Vec<DatabaseVmDetails>,
@@ -2365,7 +2365,7 @@ pub struct SapDiskConfigurationsResult {
     #[serde(
         rename = "diskConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disk_configurations: Vec<SapDiskConfiguration>,
@@ -2561,7 +2561,7 @@ pub struct SapSupportedResourceSkusResult {
     #[serde(
         rename = "supportedSkus",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_skus: Vec<SapSupportedSku>,
@@ -2666,7 +2666,7 @@ pub struct SapVirtualInstanceList {
     #[doc = "Gets the list of Virtual Instances for SAP solutions resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SapVirtualInstance>,
@@ -2857,7 +2857,7 @@ pub struct SapNetWeaverProviderInstanceProperties {
     #[serde(
         rename = "sapHostFileEntries",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sap_host_file_entries: Vec<String>,
@@ -3139,7 +3139,7 @@ pub struct SkuDefinition {
     #[doc = "List of locations where this SKU is available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -3147,7 +3147,7 @@ pub struct SkuDefinition {
     #[serde(
         rename = "locationInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub location_info: Vec<SkuLocationAndZones>,
@@ -3157,21 +3157,21 @@ pub struct SkuDefinition {
     #[doc = "The SKU costs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub costs: Vec<SkuCost>,
     #[doc = "The SKU capabilities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<SkuCapability>,
     #[doc = "The SKU restrictions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<SkuRestriction>,
@@ -3203,7 +3203,7 @@ pub struct SkuLocationAndZones {
     #[doc = "The availability zones of SKU location."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -3211,7 +3211,7 @@ pub struct SkuLocationAndZones {
     #[serde(
         rename = "zoneDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zone_details: Vec<SkuZoneDetail>,
@@ -3219,7 +3219,7 @@ pub struct SkuLocationAndZones {
     #[serde(
         rename = "extendedLocations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub extended_locations: Vec<String>,
@@ -3281,7 +3281,7 @@ pub struct SkuRestriction {
     #[doc = "Restriction values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<String>,
@@ -3392,14 +3392,14 @@ pub struct SkuZoneDetail {
     #[doc = "The physical zones."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
     #[doc = "The capabilities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<SkuCapability>,
@@ -3415,7 +3415,7 @@ pub struct SkusListResult {
     #[doc = "List of SKUs supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuDefinition>,
@@ -3455,7 +3455,7 @@ pub struct SshConfiguration {
     #[serde(
         rename = "publicKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_keys: Vec<SshPublicKey>,
@@ -4232,7 +4232,7 @@ pub struct NetworkProfile {
     #[serde(
         rename = "outboundPublicIpResourceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outbound_public_ip_resource_ids: Vec<String>,
@@ -4349,7 +4349,7 @@ pub struct NodeProfile {
     #[serde(
         rename = "dataDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disks: Vec<DiskInfo>,
@@ -4357,7 +4357,7 @@ pub struct NodeProfile {
     #[serde(
         rename = "nodeResourceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub node_resource_ids: Vec<String>,
@@ -4671,7 +4671,7 @@ pub struct PhpWorkloadResourceList {
     #[doc = "List of resources in current page"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PhpWorkloadResource>,
@@ -5046,7 +5046,7 @@ pub struct WordpressInstanceResourceList {
     #[doc = "List of resources in current page"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<WordpressInstanceResource>,

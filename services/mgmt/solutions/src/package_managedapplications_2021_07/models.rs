@@ -9,7 +9,7 @@ pub struct AllowedUpgradePlansResult {
     #[doc = "The array of plans."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Plan>,
@@ -241,7 +241,7 @@ pub struct ApplicationDefinitionListResult {
     #[doc = "The array of managed application definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApplicationDefinition>,
@@ -287,14 +287,14 @@ pub struct ApplicationDefinitionProperties {
     #[doc = "The managed application provider authorizations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorizations: Vec<ApplicationAuthorization>,
     #[doc = "The collection of managed application artifacts. The portal will use the files specified as artifacts to construct the user experience of creating a managed application from a managed application definition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<ApplicationDefinitionArtifact>,
@@ -328,7 +328,7 @@ pub struct ApplicationDefinitionProperties {
     #[doc = "The managed application provider policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub policies: Vec<ApplicationPolicy>,
@@ -379,7 +379,7 @@ pub struct ApplicationJitAccessPolicy {
     #[serde(
         rename = "jitApprovers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub jit_approvers: Vec<JitApproverDefinition>,
@@ -403,7 +403,7 @@ pub struct ApplicationListResult {
     #[doc = "The array of managed applications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Application>,
@@ -530,7 +530,7 @@ pub struct ApplicationPackageLockingPolicyDefinition {
     #[serde(
         rename = "allowedActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_actions: Vec<String>,
@@ -538,7 +538,7 @@ pub struct ApplicationPackageLockingPolicyDefinition {
     #[serde(
         rename = "allowedDataActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_data_actions: Vec<String>,
@@ -634,7 +634,7 @@ pub struct ApplicationProperties {
     #[doc = "The  read-only authorizations property that is retrieved from the application package."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorizations: Vec<ApplicationAuthorization>,
@@ -650,7 +650,7 @@ pub struct ApplicationProperties {
     #[doc = "The collection of managed application artifacts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub artifacts: Vec<ApplicationArtifact>,
@@ -735,7 +735,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -743,7 +743,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -961,7 +961,7 @@ pub struct JitRequestDefinitionListResult {
     #[doc = "The array of Jit request definition."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JitRequestDefinition>,
@@ -1171,7 +1171,7 @@ pub struct ListTokenRequest {
     #[serde(
         rename = "userAssignedIdentities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_assigned_identities: Vec<UserAssignedIdentity>,
@@ -1217,7 +1217,7 @@ pub struct ManagedIdentityTokenResult {
     #[doc = "The array of managed identity tokens."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ManagedIdentityToken>,
@@ -1358,7 +1358,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

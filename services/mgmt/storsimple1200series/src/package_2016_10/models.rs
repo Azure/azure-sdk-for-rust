@@ -272,7 +272,7 @@ pub struct AlertSettingsProperties {
     #[serde(
         rename = "additionalRecipientEmailList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_recipient_email_list: Vec<String>,
@@ -852,7 +852,7 @@ pub struct DeviceProperties {
     #[serde(
         rename = "allowedDeviceOperations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_device_operations: Vec<String>,
@@ -863,7 +863,7 @@ pub struct DeviceProperties {
     #[serde(
         rename = "deviceCapabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub device_capabilities: Vec<String>,
@@ -993,7 +993,7 @@ pub struct Error {
     pub message: Message,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub values: Vec<Item>,
@@ -1019,7 +1019,7 @@ pub struct FailoverRequest {
     #[serde(
         rename = "accesspointIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub accesspoint_ids: Vec<String>,
@@ -1453,7 +1453,7 @@ pub struct JobErrorDetails {
     #[serde(
         rename = "errorDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_details: Vec<JobErrorItem>,
@@ -1477,7 +1477,7 @@ pub struct JobErrorItem {
     #[doc = "The recommended actions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub recommendations: Vec<String>,
@@ -1578,7 +1578,7 @@ pub struct JobProperties {
     #[serde(
         rename = "jobStages",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub job_stages: Vec<JobStage>,

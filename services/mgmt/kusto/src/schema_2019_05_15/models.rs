@@ -312,7 +312,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -375,7 +375,7 @@ pub struct ClusterListResult {
     #[doc = "The list of Kusto clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Cluster>,
@@ -410,7 +410,7 @@ pub struct ClusterProperties {
     #[serde(
         rename = "trustedExternalTenants",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub trusted_external_tenants: Vec<TrustedExternalTenant>,
@@ -645,7 +645,7 @@ pub struct DataConnectionListResult {
     #[doc = "The list of Kusto data connections."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataConnection>,
@@ -682,7 +682,7 @@ pub struct DataConnectionValidationListResult {
     #[doc = "The list of Kusto data connection validation errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataConnectionValidationResult>,
@@ -819,7 +819,7 @@ pub struct DatabaseListResult {
     #[doc = "The list of Kusto databases."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Database>,
@@ -964,7 +964,7 @@ pub struct DatabasePrincipalListRequest {
     #[doc = "The list of Kusto database principals."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatabasePrincipal>,
@@ -980,7 +980,7 @@ pub struct DatabasePrincipalListResult {
     #[doc = "The list of Kusto database principals."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatabasePrincipal>,
@@ -1173,7 +1173,7 @@ pub struct EventHubConnectionProperties {
     #[serde(
         rename = "eventSystemProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub event_system_properties: Vec<String>,
@@ -1229,7 +1229,7 @@ pub struct IotHubConnectionProperties {
     #[serde(
         rename = "eventSystemProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub event_system_properties: Vec<String>,
@@ -1273,7 +1273,7 @@ pub struct ListResourceSkusResult {
     #[doc = "The collection of available SKUs for an existing resource."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AzureResourceSku>,
@@ -1330,7 +1330,7 @@ pub mod operation {
 pub struct OperationListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1415,7 +1415,7 @@ pub struct SkuDescription {
     #[doc = "The set of locations that the SKU is available"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -1423,14 +1423,14 @@ pub struct SkuDescription {
     #[serde(
         rename = "locationInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub location_info: Vec<SkuLocationInfoItem>,
     #[doc = "The restrictions because of which SKU cannot be used"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub restrictions: Vec<serde_json::Value>,
@@ -1446,7 +1446,7 @@ pub struct SkuDescriptionList {
     #[doc = "SKU descriptions"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuDescription>,
@@ -1470,7 +1470,7 @@ pub struct SkuLocationInfoItem {
     #[doc = "The available zone of the SKU."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,

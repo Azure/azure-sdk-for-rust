@@ -18,7 +18,7 @@ pub struct Error {
     #[doc = "If available, a list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<serde_json::Value>,
@@ -124,7 +124,7 @@ pub struct MapsAccounts {
     #[doc = "a Maps Account."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MapsAccount>,
@@ -218,7 +218,7 @@ pub struct MapsOperations {
     #[doc = "An operation available for Maps."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<serde_json::Value>,

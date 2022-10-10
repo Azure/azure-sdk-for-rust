@@ -33,7 +33,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -41,7 +41,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -155,7 +155,7 @@ pub struct LogRules {
     #[serde(
         rename = "filteringTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filtering_tags: Vec<FilteringTag>,
@@ -208,7 +208,7 @@ pub struct LogzMonitorResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LogzMonitorResource>,
@@ -310,7 +310,7 @@ pub struct LogzSingleSignOnResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LogzSingleSignOnResource>,
@@ -481,7 +481,7 @@ pub struct MonitoredResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitoredResource>,
@@ -572,7 +572,7 @@ pub struct MonitoringTagRulesListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitoringTagRules>,
@@ -636,7 +636,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Logz provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResult>,
@@ -890,7 +890,7 @@ pub struct UserRoleListResponse {
     #[doc = "List of user roles for Logz.io account."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UserRoleResponse>,
@@ -955,7 +955,7 @@ pub struct VmHostUpdateRequest {
     #[serde(
         rename = "vmResourceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_resource_ids: Vec<VmResources>,
@@ -1026,7 +1026,7 @@ pub struct VmResourcesListResponse {
     #[doc = "Response of a list vm host update operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VmResources>,

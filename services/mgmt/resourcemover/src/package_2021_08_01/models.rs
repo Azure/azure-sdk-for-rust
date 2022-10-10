@@ -16,7 +16,7 @@ pub struct AffectedMoveResource {
     #[serde(
         rename = "moveResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub move_resources: Vec<AffectedMoveResource>,
@@ -85,7 +85,7 @@ pub struct BulkRemoveRequest {
     #[serde(
         rename = "moveResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub move_resources: Vec<String>,
@@ -131,7 +131,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -406,7 +406,7 @@ pub struct LoadBalancerResourceSettings {
     #[serde(
         rename = "frontendIPConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub frontend_ip_configurations: Vec<LbFrontendIpConfigurationResourceSettings>,
@@ -414,7 +414,7 @@ pub struct LoadBalancerResourceSettings {
     #[serde(
         rename = "backendAddressPools",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backend_address_pools: Vec<LbBackendAddressPoolResourceSettings>,
@@ -514,7 +514,7 @@ pub struct MoveCollectionResultList {
     #[doc = "Gets the list of move collections."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MoveCollection>,
@@ -540,7 +540,7 @@ pub struct MoveErrorInfo {
     #[serde(
         rename = "moveResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub move_resources: Vec<AffectedMoveResource>,
@@ -580,7 +580,7 @@ pub struct MoveResourceCollection {
     #[doc = "Gets the list of move resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MoveResource>,
@@ -677,7 +677,7 @@ pub struct MoveResourceErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<MoveResourceErrorBody>,
@@ -774,7 +774,7 @@ pub struct MoveResourceProperties {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<MoveResourceDependency>,
@@ -782,7 +782,7 @@ pub struct MoveResourceProperties {
     #[serde(
         rename = "dependsOnOverrides",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on_overrides: Vec<MoveResourceDependencyOverride>,
@@ -903,7 +903,7 @@ pub struct NetworkInterfaceResourceSettings {
     #[serde(
         rename = "ipConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_configurations: Vec<NicIpConfigurationResourceSettings>,
@@ -933,7 +933,7 @@ pub struct NetworkSecurityGroupResourceSettings {
     #[serde(
         rename = "securityRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub security_rules: Vec<NsgSecurityRule>,
@@ -969,7 +969,7 @@ pub struct NicIpConfigurationResourceSettings {
     #[serde(
         rename = "loadBalancerBackendAddressPools",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub load_balancer_backend_address_pools: Vec<LoadBalancerBackendAddressPoolReference>,
@@ -977,7 +977,7 @@ pub struct NicIpConfigurationResourceSettings {
     #[serde(
         rename = "loadBalancerNatRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub load_balancer_nat_rules: Vec<LoadBalancerNatRuleReference>,
@@ -1097,7 +1097,7 @@ pub struct OperationStatusError {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<OperationStatusError>,
@@ -1105,7 +1105,7 @@ pub struct OperationStatusError {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<OperationErrorAdditionalInfo>,
@@ -1153,7 +1153,7 @@ pub struct OperationsDiscoveryCollection {
     #[doc = "Gets or sets the ClientDiscovery details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationsDiscovery>,
@@ -1309,7 +1309,7 @@ pub struct RequiredForResourcesCollection {
     #[serde(
         rename = "sourceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub source_ids: Vec<String>,
@@ -1552,7 +1552,7 @@ pub struct SummaryCollection {
     #[doc = "Gets or sets the list of summary items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub summary: Vec<Summary>,
@@ -1605,7 +1605,7 @@ pub struct UnresolvedDependencyCollection {
     #[doc = "Gets or sets the list of unresolved dependencies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UnresolvedDependency>,
@@ -1657,7 +1657,7 @@ pub struct VirtualMachineResourceSettings {
     #[serde(
         rename = "userManagedIdentities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_managed_identities: Vec<String>,
@@ -1746,7 +1746,7 @@ pub struct VirtualNetworkResourceSettings {
     #[serde(
         rename = "addressSpace",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub address_space: Vec<String>,
@@ -1754,14 +1754,14 @@ pub struct VirtualNetworkResourceSettings {
     #[serde(
         rename = "dnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_servers: Vec<String>,
     #[doc = "Gets or sets List of subnets in a VirtualNetwork."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub subnets: Vec<SubnetResourceSettings>,

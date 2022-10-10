@@ -178,7 +178,7 @@ pub struct CdnPeeringPrefixListResult {
     #[doc = "The list of CDN peering prefixes."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CdnPeeringPrefix>,
@@ -256,7 +256,7 @@ pub struct ConnectionMonitorTestListResult {
     #[doc = "The list of [T]."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConnectionMonitorTest>,
@@ -296,7 +296,7 @@ pub struct ConnectionMonitorTestProperties {
     #[doc = "The path representing the Connection Monitor test."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub path: Vec<String>,
@@ -783,7 +783,7 @@ pub struct LogAnalyticsWorkspaceProperties {
     #[serde(
         rename = "connectedAgents",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub connected_agents: Vec<String>,
@@ -887,14 +887,14 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedTimeGrainTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_time_grain_types: Vec<String>,
     #[doc = "Dimensions of the metric."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<MetricDimension>,
@@ -952,7 +952,7 @@ pub struct OperationListResult {
     #[doc = "The list of peering API operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1003,7 +1003,7 @@ pub struct PeerAsnListResult {
     #[doc = "The list of peer ASNs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeerAsn>,
@@ -1032,7 +1032,7 @@ pub struct PeerAsnProperties {
     #[serde(
         rename = "peerContactDetail",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub peer_contact_detail: Vec<ContactDetail>,
@@ -1186,7 +1186,7 @@ pub struct PeeringListResult {
     #[doc = "The list of peerings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Peering>,
@@ -1268,7 +1268,7 @@ pub struct PeeringLocationListResult {
     #[doc = "The list of peering locations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringLocation>,
@@ -1318,7 +1318,7 @@ pub struct PeeringLocationPropertiesDirect {
     #[serde(
         rename = "peeringFacilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub peering_facilities: Vec<DirectPeeringFacility>,
@@ -1326,7 +1326,7 @@ pub struct PeeringLocationPropertiesDirect {
     #[serde(
         rename = "bandwidthOffers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub bandwidth_offers: Vec<PeeringBandwidthOffer>,
@@ -1343,7 +1343,7 @@ pub struct PeeringLocationPropertiesExchange {
     #[serde(
         rename = "peeringFacilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub peering_facilities: Vec<ExchangePeeringFacility>,
@@ -1424,7 +1424,7 @@ pub struct PeeringPropertiesDirect {
     #[doc = "The set of connections that constitute a direct peering."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub connections: Vec<DirectConnection>,
@@ -1501,7 +1501,7 @@ pub struct PeeringPropertiesExchange {
     #[doc = "The set of connections that constitute an exchange peering."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub connections: Vec<ExchangeConnection>,
@@ -1550,7 +1550,7 @@ pub struct PeeringReceivedRouteListResult {
     #[doc = "The list of received routes for the peering."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringReceivedRoute>,
@@ -1589,7 +1589,7 @@ pub struct PeeringRegisteredAsnListResult {
     #[doc = "The list of peering registered ASNs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringRegisteredAsn>,
@@ -1690,7 +1690,7 @@ pub struct PeeringRegisteredPrefixListResult {
     #[doc = "The list of peering registered prefixes."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringRegisteredPrefix>,
@@ -1869,7 +1869,7 @@ pub struct PeeringServiceCountryListResult {
     #[doc = "The list of peering service countries."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringServiceCountry>,
@@ -1894,7 +1894,7 @@ pub struct PeeringServiceListResult {
     #[doc = "The list of peering services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringService>,
@@ -1933,7 +1933,7 @@ pub struct PeeringServiceLocationListResult {
     #[doc = "The list of peering service locations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringServiceLocation>,
@@ -2014,7 +2014,7 @@ pub struct PeeringServicePrefixListResult {
     #[doc = "The list of peering service prefixes."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringServicePrefix>,
@@ -2051,7 +2051,7 @@ pub struct PeeringServicePrefixProperties {
     #[doc = "The list of events for peering service prefix"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub events: Vec<PeeringServicePrefixEvent>,
@@ -2288,7 +2288,7 @@ pub struct PeeringServiceProviderListResult {
     #[doc = "The list of peering service providers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PeeringServiceProvider>,
@@ -2317,7 +2317,7 @@ pub struct PeeringServiceProviderProperties {
     #[serde(
         rename = "peeringLocations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub peering_locations: Vec<String>,
@@ -2513,7 +2513,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<MetricSpecification>,

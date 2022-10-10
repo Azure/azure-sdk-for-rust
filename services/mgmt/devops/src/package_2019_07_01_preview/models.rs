@@ -110,7 +110,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -206,7 +206,7 @@ pub struct InputDescriptor {
     #[serde(
         rename = "possibleValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub possible_values: Vec<InputValue>,
@@ -327,7 +327,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by Microsoft.DevOps resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -382,7 +382,7 @@ pub struct PipelineListResult {
     #[doc = "List of pipelines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Pipeline>,
@@ -450,7 +450,7 @@ pub struct PipelineTemplateDefinition {
     #[doc = "List of input parameters required by the template to create a pipeline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inputs: Vec<InputDescriptor>,
@@ -470,7 +470,7 @@ pub struct PipelineTemplateDefinitionListResult {
     #[doc = "List of pipeline template definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PipelineTemplateDefinition>,

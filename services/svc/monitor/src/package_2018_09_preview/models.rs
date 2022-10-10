@@ -37,7 +37,7 @@ pub struct AzureMetricsBaseData {
     #[serde(
         rename = "dimNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dim_names: Vec<String>,
@@ -94,7 +94,7 @@ pub struct AzureTimeSeriesData {
     #[serde(
         rename = "dimValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dim_values: Vec<String>,

@@ -45,7 +45,7 @@ pub struct CloudErrorBody {
     #[doc = "Inner errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -475,7 +475,7 @@ pub struct EnvironmentSize {
     #[serde(
         rename = "vmSizes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_sizes: Vec<SizeInfo>,
@@ -546,7 +546,7 @@ pub struct EnvironmentSizeFragment {
     #[serde(
         rename = "vmSizes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vm_sizes: Vec<SizeInfoFragment>,
@@ -765,7 +765,7 @@ pub struct GetPersonalPreferencesResponse {
     #[serde(
         rename = "favoriteLabResourceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub favorite_lab_resource_ids: Vec<String>,
@@ -782,7 +782,7 @@ pub struct GetRegionalAvailabilityResponse {
     #[serde(
         rename = "regionalAvailability",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub regional_availability: Vec<RegionalAvailability>,
@@ -1122,7 +1122,7 @@ pub struct ListEnvironmentsResponse {
     #[doc = "List of all the environments"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environments: Vec<EnvironmentDetails>,
@@ -1138,7 +1138,7 @@ pub struct ListLabsResponse {
     #[doc = "List of all the labs"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labs: Vec<LabDetails>,
@@ -1194,7 +1194,7 @@ pub struct OperationBatchStatusResponse {
     #[doc = "Gets a collection of items that contain the operation url and status."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub items: Vec<OperationBatchStatusResponseItem>,
@@ -1373,7 +1373,7 @@ pub struct ProviderOperationResult {
     #[doc = "List of operations supported by the resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationMetadata>,
@@ -1469,7 +1469,7 @@ pub struct RegionalAvailability {
     #[serde(
         rename = "sizeAvailabilities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub size_availabilities: Vec<SizeAvailability>,
@@ -1781,7 +1781,7 @@ pub struct ResponseWithContinuationEnvironmentSetting {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EnvironmentSetting>,
@@ -1806,7 +1806,7 @@ pub struct ResponseWithContinuationEnvironment {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Environment>,
@@ -1831,7 +1831,7 @@ pub struct ResponseWithContinuationGalleryImage {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GalleryImage>,
@@ -1856,7 +1856,7 @@ pub struct ResponseWithContinuationLabAccount {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LabAccount>,
@@ -1881,7 +1881,7 @@ pub struct ResponseWithContinuationLab {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Lab>,
@@ -1906,7 +1906,7 @@ pub struct ResponseWithContinuationUser {
     #[doc = "Results of the list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<User>,
@@ -1989,7 +1989,7 @@ pub struct SizeConfigurationProperties {
     #[serde(
         rename = "environmentSizes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environment_sizes: Vec<EnvironmentSize>,
@@ -2006,7 +2006,7 @@ pub struct SizeConfigurationPropertiesFragment {
     #[serde(
         rename = "environmentSizes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub environment_sizes: Vec<EnvironmentSizeFragment>,

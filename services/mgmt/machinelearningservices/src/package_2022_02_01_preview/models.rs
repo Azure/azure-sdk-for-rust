@@ -42,7 +42,7 @@ pub mod aks_schema {
         #[serde(
             rename = "systemServices",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub system_services: Vec<SystemService>,
@@ -354,7 +354,7 @@ pub struct AmlComputeNodesInformation {
     #[doc = "The collection of returned AmlCompute nodes details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub nodes: Vec<AmlComputeNodeInformation>,
@@ -412,7 +412,7 @@ pub struct AmlComputeProperties {
     #[doc = "Collection of errors encountered by various compute nodes during node setup."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ErrorResponse>,
@@ -660,7 +660,7 @@ pub struct AmlOperationListResult {
     #[doc = "List of AML workspace operations supported by the AML workspace resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AmlOperation>,
@@ -1144,7 +1144,7 @@ pub struct BatchDeploymentTrackedResourceArmPaginatedResult {
     #[doc = "An array of objects of type BatchDeployment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BatchDeploymentTrackedResource>,
@@ -1229,7 +1229,7 @@ pub struct BatchEndpointTrackedResourceArmPaginatedResult {
     #[doc = "An array of objects of type BatchEndpoint."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BatchEndpointTrackedResource>,
@@ -1434,7 +1434,7 @@ pub struct Classification {
     #[serde(
         rename = "allowedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_models: Vec<ClassificationModels>,
@@ -1442,7 +1442,7 @@ pub struct Classification {
     #[serde(
         rename = "blockedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub blocked_models: Vec<ClassificationModels>,
@@ -1703,7 +1703,7 @@ pub struct CodeContainerResourceArmPaginatedResult {
     #[doc = "An array of objects of type CodeContainer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CodeContainerResource>,
@@ -1758,7 +1758,7 @@ pub struct CodeVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type CodeVersion."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CodeVersionResource>,
@@ -1780,7 +1780,7 @@ pub struct ColumnTransformer {
     #[doc = "Fields to apply transformer logic on."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub fields: Vec<String>,
@@ -1891,7 +1891,7 @@ pub struct ComponentContainerResourceArmPaginatedResult {
     #[doc = "An array of objects of type ComponentContainer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ComponentContainerResource>,
@@ -1946,7 +1946,7 @@ pub struct ComponentVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type ComponentVersion."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ComponentVersionResource>,
@@ -1990,7 +1990,7 @@ pub struct Compute {
     #[serde(
         rename = "provisioningErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub provisioning_errors: Vec<ErrorResponse>,
@@ -2134,7 +2134,7 @@ pub struct ComputeInstanceContainer {
     #[doc = "services of this containers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub services: Vec<serde_json::Value>,
@@ -2702,7 +2702,7 @@ pub struct ComputeInstanceProperties {
     #[doc = "Describes available applications and their endpoints on this ComputeInstance."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub applications: Vec<ComputeInstanceApplication>,
@@ -2712,7 +2712,7 @@ pub struct ComputeInstanceProperties {
     #[doc = "Collection of errors encountered on this ComputeInstance."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<ErrorResponse>,
@@ -2740,7 +2740,7 @@ pub struct ComputeInstanceProperties {
     #[doc = "Describes informations of containers on this ComputeInstance."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub containers: Vec<ComputeInstanceContainer>,
@@ -2748,7 +2748,7 @@ pub struct ComputeInstanceProperties {
     #[serde(
         rename = "dataDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disks: Vec<ComputeInstanceDataDisk>,
@@ -2756,7 +2756,7 @@ pub struct ComputeInstanceProperties {
     #[serde(
         rename = "dataMounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_mounts: Vec<ComputeInstanceDataMount>,
@@ -3088,7 +3088,7 @@ pub struct ComputeSchedules {
     #[serde(
         rename = "computeStartStop",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub compute_start_stop: Vec<ComputeStartStopSchedule>,
@@ -3505,7 +3505,7 @@ pub struct DataContainerResourceArmPaginatedResult {
     #[doc = "An array of objects of type DataContainer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataContainerResource>,
@@ -3701,7 +3701,7 @@ pub struct DataVersionBaseResourceArmPaginatedResult {
     #[doc = "An array of objects of type DataVersionBase."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataVersionBaseResource>,
@@ -3848,7 +3848,7 @@ pub struct DatastoreResourceArmPaginatedResult {
     #[doc = "An array of objects of type Datastore."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatastoreResource>,
@@ -4052,63 +4052,63 @@ pub mod diagnose_response_result {
         #[serde(
             rename = "userDefinedRouteResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub user_defined_route_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "networkSecurityRuleResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub network_security_rule_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "resourceLockResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub resource_lock_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "dnsResolutionResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub dns_resolution_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "storageAccountResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub storage_account_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "keyVaultResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub key_vault_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "containerRegistryResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub container_registry_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "applicationInsightsResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub application_insights_results: Vec<DiagnoseResult>,
         #[serde(
             rename = "otherResults",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub other_results: Vec<DiagnoseResult>,
@@ -4673,7 +4673,7 @@ pub struct EnvironmentContainerResourceArmPaginatedResult {
     #[doc = "An array of objects of type EnvironmentContainer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EnvironmentContainerResource>,
@@ -4779,7 +4779,7 @@ pub struct EnvironmentVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type EnvironmentVersion."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EnvironmentVersionResource>,
@@ -4825,7 +4825,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -4833,7 +4833,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -5065,7 +5065,7 @@ pub mod estimated_vm_prices {
 pub struct ExternalFqdnResponse {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FqdnEndpoints>,
@@ -5082,7 +5082,7 @@ pub struct FqdnEndpoint {
     #[serde(
         rename = "endpointDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoint_details: Vec<FqdnEndpointDetail>,
@@ -5118,7 +5118,7 @@ pub struct FqdnEndpointsProperties {
     pub category: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<FqdnEndpoint>,
@@ -5286,7 +5286,7 @@ pub struct Forecasting {
     #[serde(
         rename = "allowedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_models: Vec<ForecastingModels>,
@@ -5294,7 +5294,7 @@ pub struct Forecasting {
     #[serde(
         rename = "blockedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub blocked_models: Vec<ForecastingModels>,
@@ -5478,7 +5478,7 @@ pub struct ForecastingSettings {
     #[serde(
         rename = "timeSeriesIdColumnNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub time_series_id_column_names: Vec<String>,
@@ -5720,7 +5720,7 @@ pub struct ImageClassificationBase {
     #[serde(
         rename = "searchSpace",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub search_space: Vec<ImageModelDistributionSettingsClassification>,
@@ -6176,7 +6176,7 @@ pub struct ImageObjectDetectionBase {
     #[serde(
         rename = "searchSpace",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub search_space: Vec<ImageModelDistributionSettingsObjectDetection>,
@@ -6484,7 +6484,7 @@ pub struct JobBaseResourceArmPaginatedResult {
     #[doc = "An array of objects of type JobBase."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobBaseResource>,
@@ -7070,7 +7070,7 @@ pub struct ListAmlUserFeatureResult {
     #[doc = "The list of AML user facing features."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AmlUserFeature>,
@@ -7117,7 +7117,7 @@ pub struct ListUsagesResult {
     #[doc = "The list of AML resource usages."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Usage>,
@@ -7198,7 +7198,7 @@ pub struct ListWorkspaceQuotas {
     #[doc = "The list of Workspace Quotas by VM Family"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceQuota>,
@@ -7314,7 +7314,7 @@ pub struct MlTableData {
     #[serde(
         rename = "referencedUris",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub referenced_uris: Vec<String>,
@@ -7508,7 +7508,7 @@ pub struct ModelContainerResourceArmPaginatedResult {
     #[doc = "An array of objects of type ModelContainer."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ModelContainerResource>,
@@ -7655,7 +7655,7 @@ pub struct ModelVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type ModelVersion."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ModelVersionResource>,
@@ -8040,7 +8040,7 @@ pub struct OnlineDeploymentTrackedResourceArmPaginatedResult {
     #[doc = "An array of objects of type OnlineDeployment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OnlineDeploymentTrackedResource>,
@@ -8125,7 +8125,7 @@ pub struct OnlineEndpointTrackedResourceArmPaginatedResult {
     #[doc = "An array of objects of type OnlineEndpoint."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OnlineEndpointTrackedResource>,
@@ -8311,7 +8311,7 @@ pub struct PaginatedComputeResourcesList {
     #[doc = "An array of Machine Learning compute objects wrapped in ARM resource envelope."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ComputeResource>,
@@ -8336,7 +8336,7 @@ pub struct PaginatedWorkspaceConnectionsList {
     #[doc = "An array of Workspace connection objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<WorkspaceConnection>,
@@ -8825,7 +8825,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -8979,7 +8979,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -8999,7 +8999,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -9007,7 +9007,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -9178,7 +9178,7 @@ pub struct QuotaUpdateParameters {
     #[doc = "The list for update quota."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<QuotaBaseProperties>,
@@ -9302,7 +9302,7 @@ pub struct RecurrencePattern {
     #[doc = "List of weekdays for recurrence schedule pattern"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub weekdays: Vec<Weekday>,
@@ -9399,7 +9399,7 @@ pub struct RegistryListCredentialsResult {
     pub username: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub passwords: Vec<Password>,
@@ -9420,7 +9420,7 @@ pub struct Regression {
     #[serde(
         rename = "allowedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_models: Vec<RegressionModels>,
@@ -9428,7 +9428,7 @@ pub struct Regression {
     #[serde(
         rename = "blockedModels",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub blocked_models: Vec<RegressionModels>,
@@ -10363,7 +10363,7 @@ pub struct SkuResourceArmPaginatedResult {
     #[doc = "An array of objects of type SkuResource."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuResource>,
@@ -10786,7 +10786,7 @@ pub struct TableVerticalFeaturizationSettings {
     #[serde(
         rename = "blockedTransformers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub blocked_transformers: Vec<String>,
@@ -10797,7 +10797,7 @@ pub struct TableVerticalFeaturizationSettings {
     #[serde(
         rename = "dropColumns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub drop_columns: Vec<String>,
@@ -10855,7 +10855,7 @@ pub struct TableVerticalValidationDataSettings {
     #[serde(
         rename = "cvSplitColumnNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cv_split_column_names: Vec<String>,
@@ -11445,7 +11445,7 @@ pub struct UpdateWorkspaceQuotasResult {
     #[doc = "The list of workspace quota update result."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UpdateWorkspaceQuotas>,
@@ -11903,7 +11903,7 @@ pub struct VirtualMachineSize {
     #[serde(
         rename = "supportedComputeTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_compute_types: Vec<String>,
@@ -11919,7 +11919,7 @@ pub struct VirtualMachineSizeListResult {
     #[doc = "The list of virtual machine sizes supported by AmlCompute."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualMachineSize>,
@@ -12106,7 +12106,7 @@ pub struct WorkspaceListResult {
     #[doc = "The list of machine learning workspaces. Since this list may be incomplete, the nextLink field should be used to request the next list of machine learning workspaces."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Workspace>,
@@ -12179,7 +12179,7 @@ pub struct WorkspaceProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -12187,7 +12187,7 @@ pub struct WorkspaceProperties {
     #[serde(
         rename = "sharedPrivateLinkResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub shared_private_link_resources: Vec<SharedPrivateLinkResource>,

@@ -117,7 +117,7 @@ pub struct DeviceListResult {
     #[doc = "A list of devices."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Device>,
@@ -152,7 +152,7 @@ pub struct DevicePropertiesFormat {
     #[serde(
         rename = "networkFunctions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_functions: Vec<SubResource>,
@@ -290,7 +290,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -298,7 +298,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -419,7 +419,7 @@ pub struct NetworkFunctionListResult {
     #[doc = "A list of network function resources in a subscription or resource group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkFunction>,
@@ -479,7 +479,7 @@ pub struct NetworkFunctionPropertiesFormat {
     #[serde(
         rename = "networkFunctionUserConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_function_user_configurations: Vec<NetworkFunctionUserConfiguration>,
@@ -514,7 +514,7 @@ pub struct NetworkFunctionRoleConfiguration {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterface>,
@@ -689,7 +689,7 @@ pub struct NetworkFunctionRoleInstanceListResult {
     #[doc = "A list of role instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RoleInstance>,
@@ -717,7 +717,7 @@ pub struct NetworkFunctionSkuDetails {
     #[doc = "The network function sku role details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkFunctionSkuRoleDetails>,
@@ -742,7 +742,7 @@ pub struct NetworkFunctionSkuListResult {
     #[doc = "The network function vendor sku overview properties."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SkuOverview>,
@@ -777,7 +777,7 @@ pub struct NetworkFunctionSkuRoleDetails {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterface>,
@@ -794,7 +794,7 @@ pub struct NetworkFunctionTemplate {
     #[serde(
         rename = "networkFunctionRoleConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_function_role_configurations: Vec<NetworkFunctionRoleConfiguration>,
@@ -817,7 +817,7 @@ pub struct NetworkFunctionUserConfiguration {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterface>,
@@ -873,7 +873,7 @@ pub struct NetworkFunctionVendorConfiguration {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterface>,
@@ -889,7 +889,7 @@ pub struct NetworkFunctionVendorListResult {
     #[doc = "A list of available network function vendors and skus."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkFunctionVendor>,
@@ -921,7 +921,7 @@ pub struct NetworkInterface {
     #[serde(
         rename = "ipConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
@@ -1000,7 +1000,7 @@ pub struct NetworkInterfaceIpConfiguration {
     #[serde(
         rename = "dnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_servers: Vec<String>,
@@ -1220,7 +1220,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1365,7 +1365,7 @@ pub struct PreviewSubscriptionsList {
     #[doc = "A list of preview subscriptions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PreviewSubscription>,
@@ -1634,7 +1634,7 @@ pub struct SkuCredential {
     #[doc = "The repositories that could be accessed using the current credential."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub repositories: Vec<String>,
@@ -1711,7 +1711,7 @@ pub struct SshConfiguration {
     #[serde(
         rename = "publicKeys",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub public_keys: Vec<SshPublicKey>,
@@ -1749,7 +1749,7 @@ pub struct StorageProfile {
     #[serde(
         rename = "dataDisks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_disks: Vec<DataDisk>,
@@ -1846,7 +1846,7 @@ pub struct VendorDetails {
     #[serde(
         rename = "skuList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sku_list: Vec<SkuOverview>,
@@ -1862,7 +1862,7 @@ pub struct VendorListResult {
     #[doc = "A list of vendors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Vendor>,
@@ -1904,7 +1904,7 @@ pub struct VendorNetworkFunctionListResult {
     #[doc = "A list of vendor network functions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VendorNetworkFunction>,
@@ -1942,7 +1942,7 @@ pub struct VendorNetworkFunctionPropertiesFormat {
     #[serde(
         rename = "networkFunctionVendorConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_function_vendor_configurations: Vec<NetworkFunctionVendorConfiguration>,
@@ -1961,7 +1961,7 @@ pub struct VendorPropertiesFormat {
     #[doc = "A list of IDs of the vendor skus offered by the vendor."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub skus: Vec<SubResource>,
@@ -2041,7 +2041,7 @@ pub struct VendorSkuListResult {
     #[doc = "A list of vendor skus offered by the vendor."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VendorSku>,

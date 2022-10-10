@@ -21,7 +21,7 @@ pub struct AgConfiguration {
     #[doc = "Replica configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replicas: Vec<AgReplica>,
@@ -271,7 +271,7 @@ pub struct AutoBackupSettings {
     #[serde(
         rename = "daysOfWeek",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub days_of_week: Vec<String>,
@@ -426,7 +426,7 @@ pub struct AvailabilityGroupListenerListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailabilityGroupListener>,
@@ -458,7 +458,7 @@ pub struct AvailabilityGroupListenerProperties {
     #[serde(
         rename = "loadBalancerConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub load_balancer_configurations: Vec<LoadBalancerConfiguration>,
@@ -524,7 +524,7 @@ pub struct LoadBalancerConfiguration {
     #[serde(
         rename = "sqlVirtualMachineInstances",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sql_virtual_machine_instances: Vec<String>,
@@ -624,7 +624,7 @@ pub struct OperationListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -775,7 +775,7 @@ pub struct SqlStorageSettings {
     #[doc = "Logical Unit Numbers for the disks."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub luns: Vec<i32>,
@@ -808,7 +808,7 @@ pub struct SqlTempDbSettings {
     #[doc = "Logical Unit Numbers for the disks."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub luns: Vec<i32>,
@@ -1067,7 +1067,7 @@ pub struct SqlVirtualMachineGroupListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SqlVirtualMachineGroup>,
@@ -1281,7 +1281,7 @@ pub struct SqlVirtualMachineListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SqlVirtualMachine>,

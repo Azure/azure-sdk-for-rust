@@ -102,7 +102,7 @@ pub struct CapabilitiesListResult {
     #[doc = "A list of supported capabilities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CapabilityProperties>,
@@ -139,14 +139,14 @@ pub struct CapabilityProperties {
     #[serde(
         rename = "supportedFlexibleServerEditions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_flexible_server_editions: Vec<FlexibleServerEditionCapability>,
     #[serde(
         rename = "supportedHyperscaleNodeEditions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_hyperscale_node_editions: Vec<HyperscaleNodeEditionCapability>,
@@ -200,7 +200,7 @@ pub struct ConfigurationListResult {
     #[doc = "The list of server configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Configuration>,
@@ -353,7 +353,7 @@ pub struct ErrorResponse {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponse>,
@@ -361,7 +361,7 @@ pub struct ErrorResponse {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -397,7 +397,7 @@ pub struct FirewallRuleListResult {
     #[doc = "The list of firewall rules in a server."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FirewallRule>,
@@ -444,7 +444,7 @@ pub struct FlexibleServerEditionCapability {
     #[serde(
         rename = "supportedStorageEditions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_storage_editions: Vec<StorageEditionCapability>,
@@ -452,7 +452,7 @@ pub struct FlexibleServerEditionCapability {
     #[serde(
         rename = "supportedServerVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_server_versions: Vec<ServerVersionCapability>,
@@ -578,7 +578,7 @@ pub struct HyperscaleNodeEditionCapability {
     #[serde(
         rename = "supportedStorageEditions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_storage_editions: Vec<StorageEditionCapability>,
@@ -586,7 +586,7 @@ pub struct HyperscaleNodeEditionCapability {
     #[serde(
         rename = "supportedServerVersions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_server_versions: Vec<ServerVersionCapability>,
@@ -594,7 +594,7 @@ pub struct HyperscaleNodeEditionCapability {
     #[serde(
         rename = "supportedNodeTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_node_types: Vec<NodeTypeCapability>,
@@ -813,7 +813,7 @@ impl MigrationResourceGroup {
 pub struct MigrationResourceListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MigrationResource>,
@@ -863,7 +863,7 @@ pub struct MigrationResourceProperties {
     #[serde(
         rename = "dBsToMigrate",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub d_bs_to_migrate: Vec<String>,
@@ -903,7 +903,7 @@ pub struct MigrationResourcePropertiesForPatch {
     #[serde(
         rename = "dBsToMigrate",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub d_bs_to_migrate: Vec<String>,
@@ -1293,7 +1293,7 @@ pub struct OperationListResult {
     #[doc = "Collection of available operation details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1449,7 +1449,7 @@ pub struct ServerListResult {
     #[doc = "The list of flexible servers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Server>,
@@ -1788,7 +1788,7 @@ pub struct ServerVersionCapability {
     #[serde(
         rename = "supportedVcores",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_vcores: Vec<VcoreCapability>,
@@ -1895,7 +1895,7 @@ pub struct StorageEditionCapability {
     #[serde(
         rename = "supportedStorageMB",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_storage_mb: Vec<StorageMbCapability>,
@@ -1991,7 +1991,7 @@ pub struct VirtualNetworkSubnetUsageResult {
     #[serde(
         rename = "delegatedSubnetsUsage",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delegated_subnets_usage: Vec<DelegatedSubnetUsage>,

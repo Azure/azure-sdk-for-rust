@@ -124,7 +124,7 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedAggregationTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_aggregation_types: Vec<String>,
@@ -132,7 +132,7 @@ pub struct MetricSpecification {
     #[serde(
         rename = "supportedTimeGrainTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_time_grain_types: Vec<String>,
@@ -151,7 +151,7 @@ pub struct MetricSpecification {
     #[doc = "Dimensions of blobs, including blob type and access tier."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dimensions: Vec<Dimension>,
@@ -227,7 +227,7 @@ pub struct OperationListResult {
     #[doc = "List of Storage operations supported by the Storage resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -444,7 +444,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "metricSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub metric_specifications: Vec<MetricSpecification>,
@@ -452,7 +452,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<LogSpecification>,
@@ -482,7 +482,7 @@ pub struct SubscriptionQuotaItemList {
     #[doc = "A list of SubscriptionQuotaItems"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionQuotaItem>,
@@ -555,7 +555,7 @@ pub struct AccountProperties {
     #[serde(
         rename = "activeDirectories",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub active_directories: Vec<ActiveDirectory>,
@@ -605,14 +605,14 @@ pub struct ActiveDirectory {
     #[serde(
         rename = "backupOperators",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_operators: Vec<String>,
     #[doc = "Users to be added to the Built-in Administrators active directory group. A list of unique usernames without domain specifier"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub administrators: Vec<String>,
@@ -635,7 +635,7 @@ pub struct ActiveDirectory {
     #[serde(
         rename = "securityOperators",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub security_operators: Vec<String>,
@@ -764,7 +764,7 @@ pub struct BackupPoliciesList {
     #[doc = "A list of backup policies"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BackupPolicy>,
@@ -882,7 +882,7 @@ pub struct BackupPolicyProperties {
     #[serde(
         rename = "volumeBackups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_backups: Vec<VolumeBackups>,
@@ -1086,7 +1086,7 @@ pub struct BackupsList {
     #[doc = "A list of Backups"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Backup>,
@@ -1140,7 +1140,7 @@ pub struct CapacityPoolList {
     #[doc = "List of Capacity pools"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CapacityPool>,
@@ -1375,7 +1375,7 @@ pub struct ListReplications {
     #[doc = "A list of replications"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Replication>,
@@ -1500,7 +1500,7 @@ pub struct NetAppAccountList {
     #[doc = "Multiple NetApp accounts"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetAppAccount>,
@@ -2323,7 +2323,7 @@ pub struct SnapshotPoliciesList {
     #[doc = "A list of snapshot policies"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SnapshotPolicy>,
@@ -2446,7 +2446,7 @@ pub struct SnapshotPolicyVolumeList {
     #[doc = "List of volumes"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Volume>,
@@ -2498,7 +2498,7 @@ pub struct SnapshotsList {
     #[doc = "A list of Snapshots"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Snapshot>,
@@ -2642,7 +2642,7 @@ pub struct SubvolumesList {
     #[doc = "A list of Subvolumes"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubvolumeInfo>,
@@ -2807,7 +2807,7 @@ pub struct VaultList {
     #[doc = "A list of vaults"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Vault>,
@@ -2846,7 +2846,7 @@ pub struct Volume {
     #[doc = "Availability Zone"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub zones: Vec<String>,
@@ -2956,7 +2956,7 @@ pub struct VolumeGroupList {
     #[doc = "List of volume Groups"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VolumeGroup>,
@@ -3003,7 +3003,7 @@ pub struct VolumeGroupMetaData {
     #[serde(
         rename = "globalPlacementRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub global_placement_rules: Vec<PlacementKeyValuePairs>,
@@ -3070,7 +3070,7 @@ pub struct VolumeGroupProperties {
     #[doc = "List of volumes from group"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volumes: Vec<VolumeGroupVolumeProperties>,
@@ -3115,7 +3115,7 @@ pub struct VolumeList {
     #[doc = "List of volumes"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Volume>,
@@ -3204,7 +3204,7 @@ pub mod volume_patch_properties {
         #[doc = "Export policy rule"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub rules: Vec<ExportPolicyRule>,
@@ -3252,7 +3252,7 @@ pub struct VolumeProperties {
     #[serde(
         rename = "protocolTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub protocol_types: Vec<String>,
@@ -3284,7 +3284,7 @@ pub struct VolumeProperties {
     #[serde(
         rename = "mountTargets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub mount_targets: Vec<MountTargetProperties>,
@@ -3369,7 +3369,7 @@ pub struct VolumeProperties {
     #[serde(
         rename = "placementRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub placement_rules: Vec<PlacementKeyValuePairs>,
@@ -3434,7 +3434,7 @@ pub mod volume_properties {
         #[doc = "Export policy rule"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub rules: Vec<ExportPolicyRule>,
@@ -3748,7 +3748,7 @@ pub struct VolumeQuotaRulesList {
     #[doc = "A list of Volume Quota Rules"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VolumeQuotaRule>,

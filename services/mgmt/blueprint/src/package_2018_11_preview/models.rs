@@ -70,7 +70,7 @@ pub struct ArtifactList {
     #[doc = "List of blueprint artifacts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Artifact>,
@@ -96,7 +96,7 @@ pub struct ArtifactPropertiesBase {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<String>,
@@ -146,7 +146,7 @@ pub struct AssignmentDeploymentJob {
     #[doc = "Result of this deployment job for each retry."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub history: Vec<AssignmentDeploymentJobResult>,
@@ -168,7 +168,7 @@ pub struct AssignmentDeploymentJobResult {
     #[doc = "Resources created as result of the deployment job."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<AssignmentJobCreatedResource>,
@@ -198,7 +198,7 @@ pub struct AssignmentList {
     #[doc = "List of blueprint assignments."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Assignment>,
@@ -227,7 +227,7 @@ pub struct AssignmentLockSettings {
     #[serde(
         rename = "excludedPrincipals",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_principals: Vec<String>,
@@ -235,7 +235,7 @@ pub struct AssignmentLockSettings {
     #[serde(
         rename = "excludedActions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_actions: Vec<String>,
@@ -307,7 +307,7 @@ pub struct AssignmentOperationList {
     #[doc = "List of AssignmentOperation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AssignmentOperation>,
@@ -347,7 +347,7 @@ pub struct AssignmentOperationProperties {
     #[doc = "List of jobs in this blueprint assignment operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub deployments: Vec<AssignmentDeploymentJob>,
@@ -472,7 +472,7 @@ pub struct AssignmentStatus {
     #[serde(
         rename = "managedResources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub managed_resources: Vec<String>,
@@ -537,7 +537,7 @@ pub struct BlueprintList {
     #[doc = "List of blueprint definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Blueprint>,
@@ -665,7 +665,7 @@ pub struct ErrorResponse {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponse>,
@@ -673,7 +673,7 @@ pub struct ErrorResponse {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -767,7 +767,7 @@ pub struct ParameterDefinition {
     #[serde(
         rename = "allowedValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_values: Vec<serde_json::Value>,
@@ -934,7 +934,7 @@ pub struct PublishedBlueprintList {
     #[doc = "List of published blueprint definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PublishedBlueprint>,
@@ -986,7 +986,7 @@ pub struct ResourceGroupDefinition {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<String>,
@@ -1059,7 +1059,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,

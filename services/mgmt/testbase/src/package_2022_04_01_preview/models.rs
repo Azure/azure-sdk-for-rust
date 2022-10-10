@@ -9,7 +9,7 @@ pub struct AnalysisResultListResult {
     #[doc = "The list of Analysis Results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AnalysisResultSingletonResource>,
@@ -121,7 +121,7 @@ pub struct AvailableOsListResult {
     #[doc = "The list of available OSs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableOsResource>,
@@ -243,7 +243,7 @@ pub struct BillingHubGetFreeHourBalanceResponse {
     #[serde(
         rename = "incrementEntries",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub increment_entries: Vec<BillingHubFreeHourIncrementEntry>,
@@ -285,7 +285,7 @@ pub struct BillingHubGetUsageResponse {
     #[serde(
         rename = "packageUsageEntries",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_usage_entries: Vec<BillingHubPackageUsage>,
@@ -314,7 +314,7 @@ pub struct BillingHubPackageUsage {
     #[serde(
         rename = "usageEntriesGroupedByUpdateType",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub usage_entries_grouped_by_update_type: Vec<BillingHubUsageGroupedByUpdateType>,
@@ -341,7 +341,7 @@ pub struct BillingHubUsage {
     #[serde(
         rename = "usageGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub usage_groups: Vec<BillingHubUsageGroup>,
@@ -376,7 +376,7 @@ pub struct BillingHubUsageGroup {
     #[serde(
         rename = "executionUsageDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub execution_usage_details: Vec<BillingHubExecutionUsageDetail>,
@@ -399,7 +399,7 @@ pub struct BillingHubUsageGroupedByUpdateType {
     #[serde(
         rename = "usageGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub usage_groups: Vec<BillingHubUsageGroup>,
@@ -418,7 +418,7 @@ pub struct CpuRegressionResultSingletonResourceProperties {
     #[serde(
         rename = "cpuRegressionResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cpu_regression_results: Vec<RegressionResult>,
@@ -440,7 +440,7 @@ pub struct CpuUtilizationResultSingletonResourceProperties {
     #[serde(
         rename = "cpuUtilizationResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cpu_utilization_results: Vec<UtilizationResult>,
@@ -649,7 +649,7 @@ pub struct CustomerEventListResult {
     #[doc = "The list of Test Base Customer Events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CustomerEventResource>,
@@ -706,7 +706,7 @@ pub struct DistributionGroupListReceiverValue {
     #[serde(
         rename = "distributionGroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub distribution_groups: Vec<String>,
@@ -737,7 +737,7 @@ pub struct EmailEventListResult {
     #[doc = "The list of email events."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EmailEventResource>,
@@ -806,7 +806,7 @@ pub struct ErrorDefinition {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -840,7 +840,7 @@ pub struct FavoriteProcessListResult {
     #[doc = "The list of favorite processes for a package."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FavoriteProcessResource>,
@@ -909,7 +909,7 @@ pub struct FlightingRingListResult {
     #[doc = "The list of flighting rings."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FlightingRingResource>,
@@ -1046,7 +1046,7 @@ pub struct MemoryRegressionResultSingletonResourceProperties {
     #[serde(
         rename = "memoryRegressionResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub memory_regression_results: Vec<RegressionResult>,
@@ -1068,7 +1068,7 @@ pub struct MemoryUtilizationResultSingletonResourceProperties {
     #[serde(
         rename = "memoryUtilizationResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub memory_utilization_results: Vec<UtilizationResult>,
@@ -1120,7 +1120,7 @@ pub struct OsUpdateListResult {
     #[doc = "The list of OS Updates."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OsUpdateResource>,
@@ -1287,7 +1287,7 @@ pub struct OsUpdatesTestSummary {
     #[serde(
         rename = "osUpdateTestSummaries",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub os_update_test_summaries: Vec<OsUpdateTestSummary>,
@@ -1351,7 +1351,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Test Base resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1408,7 +1408,7 @@ pub struct PackageListResult {
     #[doc = "The list of Test Base Packages."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PackageResource>,
@@ -1442,7 +1442,7 @@ pub struct PackageProperties {
     #[serde(
         rename = "testTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub test_types: Vec<TestType>,
@@ -1468,7 +1468,7 @@ pub struct PackageProperties {
     #[serde(
         rename = "validationResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validation_results: Vec<PackageValidationResult>,
@@ -1657,7 +1657,7 @@ pub struct PackageUpdateParameterProperties {
     #[serde(
         rename = "targetOSList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub target_os_list: Vec<TargetOsInfo>,
@@ -1673,7 +1673,7 @@ pub struct PackageUpdateParameterProperties {
     #[doc = "The detailed test information."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tests: Vec<Test>,
@@ -1710,7 +1710,7 @@ pub struct PackageValidationResult {
     #[doc = "Error information."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<String>,
@@ -1860,7 +1860,7 @@ pub struct ReliabilityResultSingletonResourceProperties {
     #[serde(
         rename = "reliabilityResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reliability_results: Vec<ReliabilityResult>,
@@ -1930,7 +1930,7 @@ pub struct ScriptExecutionResultSingletonResourceProperties {
     #[serde(
         rename = "scriptExecutionResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub script_execution_results: Vec<ScriptExecutionResult>,
@@ -2094,7 +2094,7 @@ pub struct TargetOsInfo {
     #[serde(
         rename = "baselineOSs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub baseline_o_ss: Vec<String>,
@@ -2194,7 +2194,7 @@ pub struct TestAnalysisResult {
     #[serde(
         rename = "identifiedFailures",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub identified_failures: Vec<IdentifiedFailure>,
@@ -2271,7 +2271,7 @@ pub struct TestBaseAccountListResult {
     #[doc = "The list of Test Base Accounts."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TestBaseAccountResource>,
@@ -2345,14 +2345,14 @@ pub struct TestBaseAccountSku {
     #[doc = "The capabilities of a SKU."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub capabilities: Vec<TestBaseAccountSkuCapability>,
     #[doc = "The locations that the SKU is available."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<String>,
@@ -2425,7 +2425,7 @@ pub struct TestBaseAccountSkuListResult {
     #[doc = "The list of Test Base Account SKUs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TestBaseAccountSku>,
@@ -2501,7 +2501,7 @@ pub struct TestBaseAccountUsageDataList {
     #[doc = "The list of Test Base Account usage data."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TestBaseAccountUsageData>,
@@ -2711,7 +2711,7 @@ pub struct TestResultListResult {
     #[doc = "The list of Test Results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TestResultResource>,
@@ -2800,7 +2800,7 @@ pub struct TestResultProperties {
     #[serde(
         rename = "analysisSummaries",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub analysis_summaries: Vec<TestResultAnalysisSummary>,
@@ -2882,7 +2882,7 @@ pub struct TestSummaryListResult {
     #[doc = "The list of Test Summaries."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TestSummaryResource>,
@@ -3003,7 +3003,7 @@ pub struct TestTypeListResult {
     #[doc = "The list of test types."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<TestTypeResource>,
@@ -3082,7 +3082,7 @@ pub struct UserObjectReceiverValue {
     #[serde(
         rename = "userObjectIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub user_object_ids: Vec<String>,
@@ -3137,7 +3137,7 @@ pub struct UtilizationResult {
     #[doc = "Utilization data"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub utilization: Vec<UtilizationEntry>,

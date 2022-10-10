@@ -66,7 +66,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -74,7 +74,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -108,7 +108,7 @@ pub struct OfferingsListResult {
     #[doc = "Result of a list Providers operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ProviderDescription>,
@@ -274,14 +274,14 @@ pub struct ProviderProperties {
     #[doc = "The list of targets available from this provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub targets: Vec<TargetDescription>,
     #[doc = "The list of skus available from this provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub skus: Vec<SkuDescription>,
@@ -289,7 +289,7 @@ pub struct ProviderProperties {
     #[serde(
         rename = "quotaDimensions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub quota_dimensions: Vec<QuotaDimension>,
@@ -297,7 +297,7 @@ pub struct ProviderProperties {
     #[serde(
         rename = "pricingDimensions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pricing_dimensions: Vec<PricingDimension>,
@@ -498,7 +498,7 @@ pub struct SkuDescription {
     #[doc = "The list of targets available for this sku."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub targets: Vec<String>,
@@ -506,7 +506,7 @@ pub struct SkuDescription {
     #[serde(
         rename = "quotaDimensions",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub quota_dimensions: Vec<QuotaDimension>,
@@ -514,7 +514,7 @@ pub struct SkuDescription {
     #[serde(
         rename = "pricingDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pricing_details: Vec<PricingDetail>,
@@ -552,7 +552,7 @@ pub struct TargetDescription {
     #[serde(
         rename = "acceptedDataFormats",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub accepted_data_formats: Vec<String>,
@@ -560,7 +560,7 @@ pub struct TargetDescription {
     #[serde(
         rename = "acceptedContentEncodings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub accepted_content_encodings: Vec<String>,
@@ -596,7 +596,7 @@ pub struct WorkspaceListResult {
     #[doc = "Result of a list Workspaces operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<QuantumWorkspace>,
@@ -621,7 +621,7 @@ pub struct WorkspaceResourceProperties {
     #[doc = "List of Providers selected for this Workspace"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub providers: Vec<Provider>,

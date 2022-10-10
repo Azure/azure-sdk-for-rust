@@ -74,7 +74,7 @@ pub struct Deployment {
     #[serde(
         rename = "deviceClassSubgroups",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub device_class_subgroups: Vec<String>,
@@ -876,7 +876,7 @@ pub struct Error {
     #[doc = "An array of errors that led to the reported error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<Error>,
@@ -956,7 +956,7 @@ pub struct Group {
     #[doc = "The active deployment Ids for the group"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub deployments: Vec<String>,
@@ -1185,7 +1185,7 @@ pub struct ImportUpdateInputItem {
     #[doc = "One or more update file properties like filename and source URL."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<FileImportMetadata>,
@@ -1240,7 +1240,7 @@ pub struct InstallResult {
     #[serde(
         rename = "stepResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub step_results: Vec<StepResult>,
@@ -1352,7 +1352,7 @@ pub struct LogCollectionOperationDetailedStatus {
     #[serde(
         rename = "deviceStatus",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub device_status: Vec<LogCollectionOperationDeviceStatus>,
@@ -1559,7 +1559,7 @@ pub struct Step {
     #[doc = "Collection of file names to be passed to handler during execution. Required if step type is inline."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<String>,
@@ -1698,7 +1698,7 @@ pub struct Update {
     #[serde(
         rename = "referencedBy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub referenced_by: Vec<UpdateId>,
@@ -1787,7 +1787,7 @@ pub struct UpdateFile {
     #[serde(
         rename = "relatedFiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub related_files: Vec<UpdateFileBase>,

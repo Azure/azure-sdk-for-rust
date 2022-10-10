@@ -92,21 +92,21 @@ pub struct ClientMetricsRequestModel {
     #[serde(
         rename = "requestSamplers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub request_samplers: Vec<String>,
     #[doc = "List of errors, maximum supported errors for queries are 20. In case of empty, by default will return metrics for maximum 20 errors"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<String>,
     #[doc = "List of percentiles values for response time, supported values 50,90,99,95. Default value is 50th percentile."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub percentiles: Vec<String>,
@@ -191,7 +191,7 @@ pub struct Error {
     #[doc = "Additional details and inner errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<Error>,
@@ -262,7 +262,7 @@ pub struct Filters {
     #[serde(
         rename = "requestSamplerValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub request_sampler_values: Vec<String>,
@@ -270,7 +270,7 @@ pub struct Filters {
     #[serde(
         rename = "errorFiltersValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub error_filters_values: Vec<String>,
@@ -299,7 +299,7 @@ pub struct InputTestArtifacts {
     #[serde(
         rename = "additionalUrls",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_urls: Vec<FileUrl>,
@@ -508,7 +508,7 @@ impl ServerMetricsModel {
 pub struct SupportedResourceType {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,

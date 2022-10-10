@@ -142,7 +142,7 @@ pub struct OperationListResult {
     #[doc = "List of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -179,7 +179,7 @@ pub struct SubscriptionCreationParameters {
     #[doc = "The list of principals that should be granted Owner access on the subscription. Principals should be of type User, Service Principal or Security Group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub owners: Vec<AdPrincipal>,

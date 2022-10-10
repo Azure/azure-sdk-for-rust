@@ -49,7 +49,7 @@ pub struct ApplicationGroupList {
     #[doc = "List of ApplicationGroup definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApplicationGroup>,
@@ -188,7 +188,7 @@ pub struct ApplicationList {
     #[doc = "List of Application definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Application>,
@@ -544,7 +544,7 @@ pub struct DesktopList {
     #[doc = "List of Desktop definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Desktop>,
@@ -637,7 +637,7 @@ pub struct ExpandMsixImageList {
     #[doc = "List of MSIX package properties from give MSIX Image."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ExpandMsixImage>,
@@ -690,7 +690,7 @@ pub struct ExpandMsixImageProperties {
     #[serde(
         rename = "packageDependencies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_dependencies: Vec<MsixPackageDependencies>,
@@ -704,7 +704,7 @@ pub struct ExpandMsixImageProperties {
     #[serde(
         rename = "packageApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_applications: Vec<MsixPackageApplications>,
@@ -740,7 +740,7 @@ pub struct HostPoolList {
     #[doc = "List of HostPool definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<HostPool>,
@@ -1075,7 +1075,7 @@ pub struct HostPoolProperties {
     #[serde(
         rename = "applicationGroupReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub application_group_references: Vec<String>,
@@ -1457,7 +1457,7 @@ pub struct MsixPackageList {
     #[doc = "List of MSIX Package definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MsixPackage>,
@@ -1536,7 +1536,7 @@ pub struct MsixPackageProperties {
     #[serde(
         rename = "packageDependencies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_dependencies: Vec<MsixPackageDependencies>,
@@ -1550,7 +1550,7 @@ pub struct MsixPackageProperties {
     #[serde(
         rename = "packageApplications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_applications: Vec<MsixPackageApplications>,
@@ -1740,7 +1740,7 @@ pub struct PrivateEndpointConnectionListResultWithSystemData {
     #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnectionWithSystemData>,
@@ -1895,7 +1895,7 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -1924,7 +1924,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1932,7 +1932,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -2185,7 +2185,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,
@@ -2242,7 +2242,7 @@ pub struct ScalingPlanList {
     #[doc = "List of scaling plan definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ScalingPlan>,
@@ -2294,7 +2294,7 @@ pub struct ScalingPlanPatchProperties {
     #[doc = "List of ScalingSchedule definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schedules: Vec<ScalingSchedule>,
@@ -2302,7 +2302,7 @@ pub struct ScalingPlanPatchProperties {
     #[serde(
         rename = "hostPoolReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub host_pool_references: Vec<ScalingHostPoolReference>,
@@ -2336,7 +2336,7 @@ pub struct ScalingPlanProperties {
     #[doc = "List of ScalingSchedule definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub schedules: Vec<ScalingSchedule>,
@@ -2344,7 +2344,7 @@ pub struct ScalingPlanProperties {
     #[serde(
         rename = "hostPoolReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub host_pool_references: Vec<ScalingHostPoolReference>,
@@ -2402,7 +2402,7 @@ pub struct ScalingSchedule {
     #[serde(
         rename = "daysOfWeek",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub days_of_week: Vec<String>,
@@ -2670,7 +2670,7 @@ pub struct ServiceSpecification {
     #[serde(
         rename = "logSpecifications",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_specifications: Vec<LogSpecification>,
@@ -2840,7 +2840,7 @@ pub struct SessionHostList {
     #[doc = "List of SessionHost definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SessionHost>,
@@ -2940,7 +2940,7 @@ pub struct SessionHostProperties {
     #[serde(
         rename = "sessionHostHealthCheckResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub session_host_health_check_results: Vec<SessionHostHealthCheckReport>,
@@ -3114,7 +3114,7 @@ pub struct StartMenuItemList {
     #[doc = "List of StartMenuItem definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StartMenuItem>,
@@ -3193,7 +3193,7 @@ pub struct UserSessionList {
     #[doc = "List of UserSession definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UserSession>,
@@ -3347,7 +3347,7 @@ pub struct WorkspaceList {
     #[doc = "List of Workspace definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Workspace>,
@@ -3394,7 +3394,7 @@ pub struct WorkspacePatchProperties {
     #[serde(
         rename = "applicationGroupReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub application_group_references: Vec<String>,
@@ -3463,7 +3463,7 @@ pub struct WorkspaceProperties {
     #[serde(
         rename = "applicationGroupReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub application_group_references: Vec<String>,

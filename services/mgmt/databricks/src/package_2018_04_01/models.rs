@@ -10,7 +10,7 @@ pub struct AddressSpace {
     #[serde(
         rename = "addressPrefixes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub address_prefixes: Vec<String>,
@@ -134,7 +134,7 @@ pub struct ErrorInfo {
     #[doc = "error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -228,7 +228,7 @@ pub struct OperationListResult {
     #[doc = "List of Resource Provider operations supported by the Resource Provider resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -426,7 +426,7 @@ pub struct VirtualNetworkPeeringList {
     #[doc = "List of virtual network peerings on workspace."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworkPeering>,
@@ -740,7 +740,7 @@ pub struct WorkspaceListResult {
     #[doc = "The array of workspaces."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Workspace>,
@@ -777,7 +777,7 @@ pub struct WorkspaceProperties {
     #[doc = "The workspace provider authorizations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorizations: Vec<WorkspaceProviderAuthorization>,

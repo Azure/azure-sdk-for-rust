@@ -91,7 +91,7 @@ pub struct CertificateListDescription {
     #[doc = "The array of Certificate objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CertificateDescription>,
@@ -228,7 +228,7 @@ pub struct EncryptionPropertiesDescription {
     #[serde(
         rename = "keyVaultProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_vault_properties: Vec<KeyVaultKeyProperties>,
@@ -322,7 +322,7 @@ pub struct EndpointHealthDataListResult {
     #[doc = "JSON-serialized array of Endpoint health data"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EndpointHealthData>,
@@ -440,7 +440,7 @@ pub struct EventHubConsumerGroupsListResult {
     #[doc = "List of consumer groups objects"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventHubConsumerGroupInfo>,
@@ -472,7 +472,7 @@ pub struct EventHubProperties {
     #[serde(
         rename = "partitionIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub partition_ids: Vec<String>,
@@ -700,7 +700,7 @@ pub struct GroupIdInformationProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -708,7 +708,7 @@ pub struct GroupIdInformationProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -870,7 +870,7 @@ pub struct IotHubDescriptionListResult {
     #[doc = "The array of IotHubDescription objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IotHubDescription>,
@@ -980,7 +980,7 @@ pub struct IotHubProperties {
     #[serde(
         rename = "authorizationPolicies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorization_policies: Vec<SharedAccessSignatureAuthorizationRule>,
@@ -1000,7 +1000,7 @@ pub struct IotHubProperties {
     #[serde(
         rename = "allowedFqdnList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub allowed_fqdn_list: Vec<String>,
@@ -1011,7 +1011,7 @@ pub struct IotHubProperties {
     #[serde(
         rename = "ipFilterRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_filter_rules: Vec<IpFilterRule>,
@@ -1025,7 +1025,7 @@ pub struct IotHubProperties {
     #[serde(
         rename = "privateEndpointConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -1071,7 +1071,7 @@ pub struct IotHubProperties {
     #[doc = "Primary and secondary location for iot hub"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub locations: Vec<IotHubLocationDescription>,
@@ -1130,7 +1130,7 @@ pub mod iot_hub_properties {
         #[serde(
             rename = "streamingEndpoints",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub streaming_endpoints: Vec<String>,
@@ -1202,7 +1202,7 @@ pub struct IotHubQuotaMetricInfoListResult {
     #[doc = "The array of quota metrics objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IotHubQuotaMetricInfo>,
@@ -1247,7 +1247,7 @@ pub struct IotHubSkuDescriptionListResult {
     #[doc = "The array of IotHubSkuDescription."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<IotHubSkuDescription>,
@@ -1495,7 +1495,7 @@ pub struct JobResponseListResult {
     #[doc = "The array of JobResponse objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobResponse>,
@@ -1774,7 +1774,7 @@ pub struct OperationListResult {
     #[doc = "List of IoT Hub operations supported by the Microsoft.Devices resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1855,7 +1855,7 @@ pub struct PrivateLinkResources {
     #[doc = "The list of available private link resources for an IotHub"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GroupIdInformation>,
@@ -2153,7 +2153,7 @@ pub struct RoutingEndpoints {
     #[serde(
         rename = "serviceBusQueues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_bus_queues: Vec<RoutingServiceBusQueueEndpointProperties>,
@@ -2161,7 +2161,7 @@ pub struct RoutingEndpoints {
     #[serde(
         rename = "serviceBusTopics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_bus_topics: Vec<RoutingServiceBusTopicEndpointProperties>,
@@ -2169,7 +2169,7 @@ pub struct RoutingEndpoints {
     #[serde(
         rename = "eventHubs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub event_hubs: Vec<RoutingEventHubProperties>,
@@ -2177,7 +2177,7 @@ pub struct RoutingEndpoints {
     #[serde(
         rename = "storageContainers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_containers: Vec<RoutingStorageContainerProperties>,
@@ -2301,7 +2301,7 @@ pub struct RoutingProperties {
     #[doc = "The list of user-provided routing rules that the IoT hub uses to route messages to built-in and custom endpoints. A maximum of 100 routing rules are allowed for paid hubs and a maximum of 5 routing rules are allowed for free hubs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub routes: Vec<RouteProperties>,
@@ -2311,7 +2311,7 @@ pub struct RoutingProperties {
     #[doc = "The list of user-provided enrichments that the IoT hub applies to messages to be delivered to built-in and custom endpoints. See: https://aka.ms/telemetryoneventgrid"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enrichments: Vec<EnrichmentProperties>,
@@ -2701,7 +2701,7 @@ pub struct SharedAccessSignatureAuthorizationRuleListResult {
     #[doc = "The list of shared access policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SharedAccessSignatureAuthorizationRule>,
@@ -2882,7 +2882,7 @@ pub struct TestAllRoutesResult {
     #[doc = "JSON-serialized array of matched routes"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub routes: Vec<MatchedRoute>,
@@ -2980,7 +2980,7 @@ pub struct TestRouteResultDetails {
     #[serde(
         rename = "compilationErrors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub compilation_errors: Vec<RouteCompilationError>,
@@ -3022,7 +3022,7 @@ impl UserSubscriptionQuota {
 pub struct UserSubscriptionQuotaListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UserSubscriptionQuota>,

@@ -63,7 +63,7 @@ pub struct ConfigurationListResult {
     #[doc = "The list of configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfigData>,
@@ -109,7 +109,7 @@ pub struct MetadataEntityListResult {
     #[doc = "The list of metadata entities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MetadataEntity>,
@@ -138,7 +138,7 @@ pub struct MetadataEntityProperties {
     #[serde(
         rename = "dependsOn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub depends_on: Vec<String>,
@@ -146,7 +146,7 @@ pub struct MetadataEntityProperties {
     #[serde(
         rename = "applicableScenarios",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub applicable_scenarios: Vec<String>,
@@ -154,7 +154,7 @@ pub struct MetadataEntityProperties {
     #[serde(
         rename = "supportedValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub supported_values: Vec<MetadataSupportedValueDetail>,
@@ -224,7 +224,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,
@@ -274,7 +274,7 @@ pub struct RecommendationProperties {
     #[serde(
         rename = "suppressionIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub suppression_ids: Vec<String>,
@@ -452,7 +452,7 @@ pub struct ResourceRecommendationBaseListResult {
     #[doc = "The list of recommendations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceRecommendationBase>,
@@ -506,7 +506,7 @@ pub struct SuppressionContractListResult {
     #[doc = "The list of suppressions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SuppressionContract>,

@@ -90,7 +90,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -126,7 +126,7 @@ pub struct FirewallRuleListResult {
     #[doc = "The list of firewall rules in a server group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FirewallRule>,
@@ -321,7 +321,7 @@ pub struct OperationListResult {
     #[doc = "Collection of available operation details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -431,7 +431,7 @@ pub struct RoleListResult {
     #[doc = "The list of roles in a server group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Role>,
@@ -481,7 +481,7 @@ pub struct ServerConfigurationListResult {
     #[doc = "The list of server configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServerConfiguration>,
@@ -621,7 +621,7 @@ pub struct ServerGroupConfigurationListResult {
     #[doc = "The list of server group configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServerGroupConfiguration>,
@@ -734,7 +734,7 @@ pub struct ServerGroupListResult {
     #[doc = "The list of server groups"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServerGroup>,
@@ -814,7 +814,7 @@ pub struct ServerGroupProperties {
     #[serde(
         rename = "readReplicas",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub read_replicas: Vec<String>,
@@ -1004,7 +1004,7 @@ pub struct ServerGroupServerListResult {
     #[doc = "The list of servers in a server group."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServerGroupServer>,
@@ -1239,7 +1239,7 @@ pub struct ServerRoleGroup {
     #[serde(
         rename = "serverNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub server_names: Vec<ServerNameItem>,

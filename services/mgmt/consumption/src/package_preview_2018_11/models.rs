@@ -90,7 +90,7 @@ pub struct BillingAccountProperties {
     #[serde(
         rename = "invoiceSections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub invoice_sections: Vec<InvoiceSection>,
@@ -98,7 +98,7 @@ pub struct BillingAccountProperties {
     #[serde(
         rename = "billingProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub billing_profiles: Vec<BillingProfile>,
@@ -108,7 +108,7 @@ pub struct BillingAccountProperties {
     #[doc = "The departments associated to the enrollment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub departments: Vec<Department>,
@@ -116,7 +116,7 @@ pub struct BillingAccountProperties {
     #[serde(
         rename = "enrollmentAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enrollment_accounts: Vec<EnrollmentAccount>,
@@ -263,7 +263,7 @@ pub struct ChargesListByBillingAccount {
     #[doc = "The list of charge summary by billing account."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ChargeSummaryByBillingAccount>,
@@ -279,7 +279,7 @@ pub struct ChargesListByBillingProfile {
     #[doc = "The list of charge summary by billing profile."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ChargeSummaryByBillingProfile>,
@@ -295,7 +295,7 @@ pub struct ChargesListByInvoiceSection {
     #[doc = "The list of charge summary by invoiceSection."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ChargeSummaryByInvoiceSection>,
@@ -385,7 +385,7 @@ pub struct DepartmentProperties {
     #[serde(
         rename = "enrollmentAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enrollment_accounts: Vec<EnrollmentAccount>,
@@ -642,7 +642,7 @@ pub struct Events {
     #[doc = "The list of event summary."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventSummary>,
@@ -676,7 +676,7 @@ pub struct InvoiceSectionProperties {
     #[serde(
         rename = "billingProfiles",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub billing_profiles: Vec<BillingProfile>,
@@ -773,7 +773,7 @@ pub struct Lots {
     #[doc = "The list of lot summary."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LotSummary>,
@@ -825,7 +825,7 @@ pub struct OperationListResult {
     #[doc = "List of consumption operations supported by the Microsoft.Consumption resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

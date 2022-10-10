@@ -58,7 +58,7 @@ pub struct MeterInfo {
     #[serde(
         rename = "MeterTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub meter_tags: Vec<String>,
@@ -92,7 +92,7 @@ pub struct MonetaryCommitment {
     #[serde(
         rename = "ExcludedMeterIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_meter_ids: Vec<String>,
@@ -118,7 +118,7 @@ pub struct MonetaryCredit {
     #[serde(
         rename = "ExcludedMeterIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub excluded_meter_ids: Vec<String>,
@@ -222,7 +222,7 @@ pub struct ResourceRateCardInfo {
     #[serde(
         rename = "OfferTerms",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub offer_terms: Vec<OfferTermInfo>,
@@ -230,7 +230,7 @@ pub struct ResourceRateCardInfo {
     #[serde(
         rename = "Meters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub meters: Vec<MeterInfo>,
@@ -267,7 +267,7 @@ pub struct UsageAggregationListResult {
     #[doc = "Gets or sets details for the requested aggregation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UsageAggregation>,

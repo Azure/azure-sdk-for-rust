@@ -155,7 +155,7 @@ pub struct DomainServiceListResult {
     #[doc = "the list of domain services."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DomainService>,
@@ -202,7 +202,7 @@ pub struct DomainServiceProperties {
     #[serde(
         rename = "healthMonitors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_monitors: Vec<HealthMonitor>,
@@ -210,7 +210,7 @@ pub struct DomainServiceProperties {
     #[serde(
         rename = "healthAlerts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_alerts: Vec<HealthAlert>,
@@ -227,7 +227,7 @@ pub struct DomainServiceProperties {
     #[serde(
         rename = "domainControllerIpAddress",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub domain_controller_ip_address: Vec<String>,
@@ -454,7 +454,7 @@ pub struct NotificationSettings {
     #[serde(
         rename = "additionalRecipients",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_recipients: Vec<String>,
@@ -586,7 +586,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,

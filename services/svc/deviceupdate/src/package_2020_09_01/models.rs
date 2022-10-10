@@ -495,7 +495,7 @@ pub struct Error {
     #[doc = "An array of errors that led to the reported error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<Error>,
@@ -853,7 +853,7 @@ pub struct PageableListOfDeploymentDeviceStates {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DeploymentDeviceState>,
@@ -878,7 +878,7 @@ pub struct PageableListOfDeployments {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Deployment>,
@@ -903,7 +903,7 @@ pub struct PageableListOfDeviceClasses {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DeviceClass>,
@@ -928,7 +928,7 @@ pub struct PageableListOfDeviceTags {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DeviceTag>,
@@ -953,7 +953,7 @@ pub struct PageableListOfDevices {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Device>,
@@ -978,7 +978,7 @@ pub struct PageableListOfGroups {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Group>,
@@ -1003,7 +1003,7 @@ pub struct PageableListOfOperations {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1028,7 +1028,7 @@ pub struct PageableListOfStrings {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -1053,7 +1053,7 @@ pub struct PageableListOfUpdatableDevices {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UpdatableDevices>,
@@ -1078,7 +1078,7 @@ pub struct PageableListOfUpdateIds {
     #[doc = "The collection of pageable items."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<UpdateId>,

@@ -12,7 +12,7 @@ pub struct AtlasAttributeDef {
     #[doc = "An array of constraints."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub constraints: Vec<AtlasConstraintDef>,
@@ -147,7 +147,7 @@ pub struct AtlasClassification {
     #[serde(
         rename = "validityPeriods",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub validity_periods: Vec<TimeBoundary>,
@@ -172,7 +172,7 @@ pub struct AtlasClassificationDef {
     #[serde(
         rename = "entityTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_types: Vec<String>,
@@ -180,7 +180,7 @@ pub struct AtlasClassificationDef {
     #[serde(
         rename = "subTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sub_types: Vec<String>,
@@ -188,7 +188,7 @@ pub struct AtlasClassificationDef {
     #[serde(
         rename = "superTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub super_types: Vec<String>,
@@ -232,7 +232,7 @@ pub struct AtlasEntitiesWithExtInfo {
     #[doc = "An array of entities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entities: Vec<AtlasEntity>,
@@ -253,7 +253,7 @@ pub struct AtlasEntity {
     #[doc = "An array of classifications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classifications: Vec<AtlasClassification>,
@@ -278,14 +278,14 @@ pub struct AtlasEntity {
     #[doc = "labels"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<String>,
     #[doc = "An array of term assignment headers indicating the meanings of the entity."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub meanings: Vec<AtlasTermAssignmentHeader>,
@@ -334,7 +334,7 @@ pub struct AtlasEntityDef {
     #[serde(
         rename = "subTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sub_types: Vec<String>,
@@ -342,7 +342,7 @@ pub struct AtlasEntityDef {
     #[serde(
         rename = "superTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub super_types: Vec<String>,
@@ -350,7 +350,7 @@ pub struct AtlasEntityDef {
     #[serde(
         rename = "relationshipAttributeDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub relationship_attribute_defs: Vec<AtlasRelationshipAttributeDef>,
@@ -381,14 +381,14 @@ pub struct AtlasEntityHeader {
     #[serde(
         rename = "classificationNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classification_names: Vec<String>,
     #[doc = "An array of classifications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classifications: Vec<AtlasClassification>,
@@ -404,7 +404,7 @@ pub struct AtlasEntityHeader {
     #[doc = "labels"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<String>,
@@ -412,14 +412,14 @@ pub struct AtlasEntityHeader {
     #[serde(
         rename = "meaningNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub meaning_names: Vec<String>,
     #[doc = "An array of term assignment headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub meanings: Vec<AtlasTermAssignmentHeader>,
@@ -470,7 +470,7 @@ pub struct AtlasEnumDef {
     #[serde(
         rename = "elementDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub element_defs: Vec<AtlasEnumElementDef>,
@@ -505,7 +505,7 @@ pub struct AtlasExtraTypeDef {
     #[serde(
         rename = "entityTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_types: Vec<String>,
@@ -513,7 +513,7 @@ pub struct AtlasExtraTypeDef {
     #[serde(
         rename = "subTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sub_types: Vec<String>,
@@ -521,7 +521,7 @@ pub struct AtlasExtraTypeDef {
     #[serde(
         rename = "superTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub super_types: Vec<String>,
@@ -529,7 +529,7 @@ pub struct AtlasExtraTypeDef {
     #[serde(
         rename = "relationshipAttributeDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub relationship_attribute_defs: Vec<AtlasRelationshipAttributeDef>,
@@ -540,7 +540,7 @@ pub struct AtlasExtraTypeDef {
     #[serde(
         rename = "elementDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub element_defs: Vec<AtlasEnumElementDef>,
@@ -560,7 +560,7 @@ pub struct AtlasExtraTypeDef {
     #[serde(
         rename = "attributeDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub attribute_defs: Vec<AtlasAttributeDef>,
@@ -578,7 +578,7 @@ pub struct AtlasGlossary {
     #[doc = "An array of categories."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub categories: Vec<AtlasRelatedCategoryHeader>,
@@ -588,7 +588,7 @@ pub struct AtlasGlossary {
     #[doc = "An array of related term headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub terms: Vec<AtlasRelatedTermHeader>,
@@ -609,7 +609,7 @@ pub struct AtlasGlossaryBaseObject {
     #[doc = "An array of classifications."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classifications: Vec<AtlasClassification>,
@@ -646,7 +646,7 @@ pub struct AtlasGlossaryCategory {
     #[serde(
         rename = "childrenCategories",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children_categories: Vec<AtlasRelatedCategoryHeader>,
@@ -656,7 +656,7 @@ pub struct AtlasGlossaryCategory {
     #[doc = "An array of related term headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub terms: Vec<AtlasRelatedTermHeader>,
@@ -712,7 +712,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "templateName",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub template_name: Vec<serde_json::Value>,
@@ -722,7 +722,7 @@ pub struct AtlasGlossaryTerm {
     #[doc = "An array of related term headers as antonyms."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub antonyms: Vec<AtlasRelatedTermHeader>,
@@ -744,7 +744,7 @@ pub struct AtlasGlossaryTerm {
     #[doc = "An array of resource link for term"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<ResourceLink>,
@@ -758,28 +758,28 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "assignedEntities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub assigned_entities: Vec<AtlasRelatedObjectId>,
     #[doc = "An array of term categorization headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub categories: Vec<AtlasTermCategorizationHeader>,
     #[doc = "An array of related term headers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classifies: Vec<AtlasRelatedTermHeader>,
     #[doc = "An array of examples."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub examples: Vec<String>,
@@ -787,7 +787,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "isA",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub is_a: Vec<AtlasRelatedTermHeader>,
@@ -795,7 +795,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "preferredTerms",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub preferred_terms: Vec<AtlasRelatedTermHeader>,
@@ -803,7 +803,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "preferredToTerms",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub preferred_to_terms: Vec<AtlasRelatedTermHeader>,
@@ -811,7 +811,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "replacedBy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replaced_by: Vec<AtlasRelatedTermHeader>,
@@ -819,7 +819,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "replacementTerms",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replacement_terms: Vec<AtlasRelatedTermHeader>,
@@ -827,14 +827,14 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "seeAlso",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub see_also: Vec<AtlasRelatedTermHeader>,
     #[doc = "An array of related term headers as synonyms."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub synonyms: Vec<AtlasRelatedTermHeader>,
@@ -842,7 +842,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "translatedTerms",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub translated_terms: Vec<AtlasRelatedTermHeader>,
@@ -850,7 +850,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "translationTerms",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub translation_terms: Vec<AtlasRelatedTermHeader>,
@@ -861,7 +861,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "validValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub valid_values: Vec<AtlasRelatedTermHeader>,
@@ -869,7 +869,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(
         rename = "validValuesFor",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub valid_values_for: Vec<AtlasRelatedTermHeader>,
@@ -910,14 +910,14 @@ pub struct AtlasLineageInfo {
     #[serde(
         rename = "parentRelations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parent_relations: Vec<ParentRelation>,
     #[doc = "An array of lineage relations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub relations: Vec<LineageRelation>,
@@ -1194,7 +1194,7 @@ pub struct AtlasStructDef {
     #[serde(
         rename = "attributeDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub attribute_defs: Vec<AtlasAttributeDef>,
@@ -1407,7 +1407,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "businessMetadataDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub business_metadata_defs: Vec<AtlasBusinessMetadataDef>,
@@ -1415,7 +1415,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "classificationDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classification_defs: Vec<AtlasClassificationDef>,
@@ -1423,7 +1423,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "entityDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_defs: Vec<AtlasEntityDef>,
@@ -1431,7 +1431,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "enumDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enum_defs: Vec<AtlasEnumDef>,
@@ -1439,7 +1439,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "relationshipDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub relationship_defs: Vec<AtlasRelationshipDef>,
@@ -1447,7 +1447,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "structDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub struct_defs: Vec<AtlasStructDef>,
@@ -1455,7 +1455,7 @@ pub struct AtlasTypesDef {
     #[serde(
         rename = "termTemplateDefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub term_template_defs: Vec<TermTemplateDef>,
@@ -1488,7 +1488,7 @@ impl AutoCompleteRequest {
 pub struct AutoCompleteResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AutoCompleteResultValue>,
@@ -1542,7 +1542,7 @@ pub struct BrowseResult {
     pub search_count: Option<i32>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BrowseResultValue>,
@@ -1591,7 +1591,7 @@ pub struct BrowseResultValue {
     #[doc = "The owners of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub owner: Vec<BrowseResultOwner>,
@@ -1614,7 +1614,7 @@ pub struct BulkImportResponse {
     #[serde(
         rename = "failedImportInfoList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub failed_import_info_list: Vec<ImportInfo>,
@@ -1622,7 +1622,7 @@ pub struct BulkImportResponse {
     #[serde(
         rename = "successImportInfoList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub success_import_info_list: Vec<ImportInfo>,
@@ -1684,7 +1684,7 @@ pub struct ClassificationAssociateRequest {
     #[serde(
         rename = "entityGuids",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_guids: Vec<String>,
@@ -1733,7 +1733,7 @@ pub struct DateFormat {
     #[serde(
         rename = "availableLocales",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub available_locales: Vec<String>,
@@ -1779,7 +1779,7 @@ pub struct EntityMutationResponse {
     #[serde(
         rename = "partialUpdatedEntities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub partial_updated_entities: Vec<AtlasEntityHeader>,
@@ -1997,7 +1997,7 @@ pub struct MoveEntitiesRequest {
     #[serde(
         rename = "entityGuids",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_guids: Vec<String>,
@@ -2014,7 +2014,7 @@ pub struct NumberFormat {
     #[serde(
         rename = "availableLocales",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub available_locales: Vec<String>,
@@ -2069,7 +2069,7 @@ pub struct PList {
     #[doc = "An array of objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub list: Vec<serde_json::Value>,
@@ -2263,46 +2263,46 @@ pub struct SearchFacetResultValue {
     #[serde(
         rename = "assetType",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub asset_type: Vec<SearchFacetItemValue>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classification: Vec<SearchFacetItemValue>,
     #[serde(
         rename = "classificationCategory",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classification_category: Vec<SearchFacetItemValue>,
     #[serde(
         rename = "contactId",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub contact_id: Vec<SearchFacetItemValue>,
     #[serde(
         rename = "fileExtension",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub file_extension: Vec<SearchFacetItemValue>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub label: Vec<SearchFacetItemValue>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub term: Vec<SearchFacetItemValue>,
@@ -2317,33 +2317,33 @@ impl SearchFacetResultValue {
 pub struct SearchHighlights {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub id: Vec<String>,
     #[serde(
         rename = "qualifiedName",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub qualified_name: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub name: Vec<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub description: Vec<String>,
     #[serde(
         rename = "entityType",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_type: Vec<String>,
@@ -2370,7 +2370,7 @@ pub struct SearchRequest {
     pub filter: Option<serde_json::Value>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub facets: Vec<SearchFacetItem>,
@@ -2389,7 +2389,7 @@ pub mod search_request {
         #[serde(
             rename = "assetTypes",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub asset_types: Vec<String>,
@@ -2414,7 +2414,7 @@ pub struct SearchResult {
     pub search_facets: Option<SearchFacetResultValue>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SearchResultValue>,
@@ -2457,28 +2457,28 @@ pub struct SearchResultValue {
     #[doc = "The classifications of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classification: Vec<String>,
     #[doc = "The labels of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub label: Vec<String>,
     #[doc = "The terms assigned to the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub term: Vec<TermSearchResultValue>,
     #[doc = "The contacts of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub contact: Vec<ContactSearchResultValue>,
@@ -2486,7 +2486,7 @@ pub struct SearchResultValue {
     #[serde(
         rename = "assetType",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub asset_type: Vec<String>,
@@ -2639,7 +2639,7 @@ impl SuggestRequest {
 pub struct SuggestResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SuggestResultValue>,
@@ -2679,28 +2679,28 @@ pub struct SuggestResultValue {
     #[doc = "The classifications of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classification: Vec<String>,
     #[doc = "The labels of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub label: Vec<String>,
     #[doc = "The terms assigned to the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub term: Vec<TermSearchResultValue>,
     #[doc = "The contacts of the record."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub contact: Vec<ContactSearchResultValue>,
@@ -2708,7 +2708,7 @@ pub struct SuggestResultValue {
     #[serde(
         rename = "assetType",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub asset_type: Vec<String>,
@@ -2836,7 +2836,7 @@ pub struct TimeZone {
     #[serde(
         rename = "availableIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub available_ids: Vec<String>,

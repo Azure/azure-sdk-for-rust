@@ -19,7 +19,7 @@ pub struct Authorization {
     #[serde(
         rename = "delegatedRoleDefinitionIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub delegated_role_definition_ids: Vec<String>,
@@ -44,7 +44,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -121,7 +121,7 @@ pub struct OperationList {
     #[doc = "List of Microsoft.ManagedServices operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -180,7 +180,7 @@ pub struct RegistrationAssignmentList {
     #[doc = "List of registration assignments."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RegistrationAssignment>,
@@ -315,7 +315,7 @@ pub mod registration_assignment_properties {
             #[doc = "Authorization tuple containing principal id of the user/security group or service principal and id of the build-in role."]
             #[serde(
                 default,
-                deserialize_with = "azure_core::util::deserialize_null_default",
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
                 skip_serializing_if = "Vec::is_empty"
             )]
             pub authorizations: Vec<Authorization>,
@@ -435,7 +435,7 @@ pub struct RegistrationDefinitionList {
     #[doc = "List of registration definitions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RegistrationDefinition>,

@@ -74,7 +74,7 @@ pub struct ComponentProperties {
     #[doc = "component children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<Component>,
@@ -186,7 +186,7 @@ pub struct ComponentsCollection {
     #[doc = "Collection of components."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Component>,
@@ -232,7 +232,7 @@ pub struct ErrorResponse {
     #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorFieldContract>,
@@ -395,7 +395,7 @@ pub struct MonitorInstanceProperties {
     #[serde(
         rename = "healthStateChanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub health_state_changes: Vec<HealthStateChange>,
@@ -417,7 +417,7 @@ pub struct MonitorInstanceProperties {
     #[doc = "Health instance children."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub children: Vec<MonitorInstance>,
@@ -582,7 +582,7 @@ pub struct MonitorInstancesCollection {
     #[doc = "Collection of health instances."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitorInstance>,
@@ -640,7 +640,7 @@ pub struct MonitorProperties {
     #[doc = "Collection of MonitorCriteria. For PATCH calls, instead of partial list, complete list of expected criteria should be passed for proper updating."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub criteria: Vec<MonitorCriteria>,
@@ -739,7 +739,7 @@ pub struct MonitorsCollection {
     #[doc = "Collection of Monitor."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Monitor>,
@@ -779,7 +779,7 @@ pub struct NotificationSettingProperties {
     #[serde(
         rename = "actionGroupResourceIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub action_group_resource_ids: Vec<String>,
@@ -794,7 +794,7 @@ impl NotificationSettingProperties {
 pub struct NotificationSettingsCollection {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NotificationSetting>,
@@ -840,7 +840,7 @@ pub struct OperationListResult {
     #[doc = "List of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

@@ -135,7 +135,7 @@ pub struct InputLinuxParameters {
     #[serde(
         rename = "packageNameMasksToExclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_name_masks_to_exclude: Vec<String>,
@@ -143,7 +143,7 @@ pub struct InputLinuxParameters {
     #[serde(
         rename = "packageNameMasksToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub package_name_masks_to_include: Vec<String>,
@@ -151,7 +151,7 @@ pub struct InputLinuxParameters {
     #[serde(
         rename = "classificationsToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classifications_to_include: Vec<String>,
@@ -231,7 +231,7 @@ pub struct InputWindowsParameters {
     #[serde(
         rename = "kbNumbersToExclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub kb_numbers_to_exclude: Vec<String>,
@@ -239,7 +239,7 @@ pub struct InputWindowsParameters {
     #[serde(
         rename = "kbNumbersToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub kb_numbers_to_include: Vec<String>,
@@ -247,7 +247,7 @@ pub struct InputWindowsParameters {
     #[serde(
         rename = "classificationsToInclude",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub classifications_to_include: Vec<String>,
@@ -266,7 +266,7 @@ pub struct ListApplyUpdate {
     #[doc = "The list of apply updates"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApplyUpdate>,
@@ -288,7 +288,7 @@ pub struct ListConfigurationAssignmentsResult {
     #[doc = "The list of configuration Assignments"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfigurationAssignment>,
@@ -310,7 +310,7 @@ pub struct ListMaintenanceConfigurationsResult {
     #[doc = "The list of maintenance Configurations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MaintenanceConfiguration>,
@@ -332,7 +332,7 @@ pub struct ListUpdatesResult {
     #[doc = "The pending updates"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Update>,
@@ -576,7 +576,7 @@ pub struct OperationsListResult {
     #[doc = "A collection of operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -794,7 +794,7 @@ pub struct SoftwareUpdateConfigurationTasks {
     #[serde(
         rename = "preTasks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pre_tasks: Vec<TaskProperties>,
@@ -802,7 +802,7 @@ pub struct SoftwareUpdateConfigurationTasks {
     #[serde(
         rename = "postTasks",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub post_tasks: Vec<TaskProperties>,

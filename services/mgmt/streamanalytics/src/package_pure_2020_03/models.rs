@@ -202,7 +202,7 @@ pub struct AzureMachineLearningWebServiceFunctionBindingProperties {
     #[doc = "A list of outputs from the Azure Machine Learning web service endpoint execution."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<AzureMachineLearningWebServiceOutputColumn>,
@@ -275,7 +275,7 @@ pub struct AzureMachineLearningWebServiceInputs {
     #[serde(
         rename = "columnNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub column_names: Vec<AzureMachineLearningWebServiceInputColumn>,
@@ -505,7 +505,7 @@ pub struct AzureTableOutputDataSourceProperties {
     #[serde(
         rename = "columnsToRemove",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub columns_to_remove: Vec<String>,
@@ -525,7 +525,7 @@ pub struct BlobDataSourceProperties {
     #[serde(
         rename = "storageAccounts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_accounts: Vec<StorageAccount>,
@@ -696,7 +696,7 @@ pub struct ClusterJobListResult {
     #[doc = "A list of streaming jobs."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ClusterJob>,
@@ -721,7 +721,7 @@ pub struct ClusterListResult {
     #[doc = "A list of clusters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Cluster>,
@@ -1009,7 +1009,7 @@ pub struct Diagnostics {
     #[doc = "A collection of zero or more conditions applicable to the resource, or to the job overall, that warrant customer attention."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub conditions: Vec<DiagnosticCondition>,
@@ -1134,7 +1134,7 @@ pub mod error {
         #[doc = "Error details."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<ErrorDetails>,
@@ -1221,7 +1221,7 @@ pub struct EventHubOutputDataSourceProperties {
     #[serde(
         rename = "propertyColumns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_columns: Vec<String>,
@@ -1433,7 +1433,7 @@ impl FunctionBinding {
 pub struct FunctionConfiguration {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inputs: Vec<FunctionInput>,
@@ -1470,7 +1470,7 @@ pub struct FunctionListResult {
     #[doc = "A list of functions under a streaming job. Populated by a 'List' operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Function>,
@@ -1640,7 +1640,7 @@ pub struct InputListResult {
     #[doc = "A list of inputs under a streaming job. Populated by a 'List' operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Input>,
@@ -1997,7 +1997,7 @@ pub struct OperationListResult {
     #[doc = "List of Stream Analytics operations supported by the Microsoft.StreamAnalytics resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -2085,7 +2085,7 @@ pub struct OutputListResult {
     #[doc = "A list of outputs under a streaming job. Populated by a 'List' operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Output>,
@@ -2261,7 +2261,7 @@ pub struct PrivateEndpointListResult {
     #[doc = "A list of private endpoints."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpoint>,
@@ -2290,7 +2290,7 @@ pub struct PrivateEndpointProperties {
     #[serde(
         rename = "manualPrivateLinkServiceConnections",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub manual_private_link_service_connections: Vec<PrivateLinkServiceConnection>,
@@ -2340,7 +2340,7 @@ pub struct PrivateLinkServiceConnectionProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -2553,7 +2553,7 @@ pub struct ServiceBusQueueOutputDataSourceProperties {
     #[serde(
         rename = "propertyColumns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_columns: Vec<String>,
@@ -2595,7 +2595,7 @@ pub struct ServiceBusTopicOutputDataSourceProperties {
     #[serde(
         rename = "propertyColumns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_columns: Vec<String>,
@@ -2740,7 +2740,7 @@ pub struct StreamingJobListResult {
     #[doc = "A list of streaming jobs. Populated by a 'List' operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StreamingJob>,
@@ -2810,7 +2810,7 @@ pub struct StreamingJobProperties {
     #[doc = "A list of one or more inputs to the streaming job. The name property for each input is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual input."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inputs: Vec<Input>,
@@ -2820,14 +2820,14 @@ pub struct StreamingJobProperties {
     #[doc = "A list of one or more outputs for the streaming job. The name property for each output is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual output."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<Output>,
     #[doc = "A list of one or more functions for the streaming job. The name property for each function is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual transformation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub functions: Vec<Function>,
@@ -2982,7 +2982,7 @@ pub struct SubscriptionQuotasListResult {
     #[doc = "List of quotas for the subscription in a particular region."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubscriptionQuota>,
@@ -3033,7 +3033,7 @@ pub struct TransformationProperties {
     #[serde(
         rename = "validStreamingUnits",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub valid_streaming_units: Vec<i32>,

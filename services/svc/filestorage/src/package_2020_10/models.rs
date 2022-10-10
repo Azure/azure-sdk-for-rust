@@ -615,14 +615,14 @@ pub struct ShareFileRangeList {
     #[serde(
         rename = "Ranges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ranges: Vec<FileRange>,
     #[serde(
         rename = "ClearRanges",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub clear_ranges: Vec<ClearRange>,

@@ -355,7 +355,7 @@ pub struct ActivityEntityQueriesProperties {
     #[serde(
         rename = "requiredInputFieldsSets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_input_fields_sets: Vec<Vec<String>>,
@@ -448,7 +448,7 @@ pub struct ActivityEntityQueryTemplateProperties {
     #[serde(
         rename = "dataTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_types: Vec<DataTypeDefinitions>,
@@ -459,7 +459,7 @@ pub struct ActivityEntityQueryTemplateProperties {
     #[serde(
         rename = "requiredInputFieldsSets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_input_fields_sets: Vec<Vec<String>>,
@@ -650,7 +650,7 @@ pub struct AlertRuleTemplateDataSource {
     #[serde(
         rename = "dataTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_types: Vec<String>,
@@ -682,7 +682,7 @@ pub struct AlertRuleTemplatePropertiesBase {
     #[serde(
         rename = "requiredDataConnectors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
@@ -742,14 +742,14 @@ pub struct AlertRuleTemplateWithMitreProperties {
     #[doc = "The tactics of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -923,21 +923,21 @@ pub struct AnomalySecurityMlAnalyticsSettingsProperties {
     #[serde(
         rename = "requiredDataConnectors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_data_connectors: Vec<SecurityMlAnalyticsSettingsDataSource>,
     #[doc = "The tactics of the SecurityMLAnalyticsSettings"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the SecurityMLAnalyticsSettings"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -1061,14 +1061,14 @@ pub struct AnomalyTimelineItem {
     #[doc = "The techniques of the anomaly."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
     #[doc = "The reasons that cause the anomaly."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reasons: Vec<String>,
@@ -1781,7 +1781,7 @@ pub struct AutomationRulePropertyValuesChangedCondition {
     #[serde(
         rename = "propertyValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_values: Vec<String>,
@@ -1801,7 +1801,7 @@ pub struct AutomationRulePropertyValuesCondition {
     #[serde(
         rename = "propertyValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub property_values: Vec<String>,
@@ -1843,7 +1843,7 @@ pub struct AutomationRuleTriggeringLogic {
     #[doc = "The conditions to evaluate to determine if the automation rule should be triggered on a given object."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub conditions: Vec<AutomationRuleCondition>,
@@ -1863,7 +1863,7 @@ impl AutomationRuleTriggeringLogic {
 pub struct AutomationRulesList {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AutomationRule>,
@@ -2067,7 +2067,7 @@ pub struct BookmarkEntityMappings {
     #[serde(
         rename = "fieldMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub field_mappings: Vec<EntityFieldMapping>,
@@ -2118,14 +2118,14 @@ pub mod bookmark_expand_response {
         #[doc = "Array of the expansion result entities."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub entities: Vec<Entity>,
         #[doc = "Array of expansion result connected entities"]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub edges: Vec<ConnectedEntity>,
@@ -2171,7 +2171,7 @@ pub struct BookmarkProperties {
     #[doc = "List of labels relevant to this bookmark"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<Label>,
@@ -2207,14 +2207,14 @@ pub struct BookmarkProperties {
     #[doc = "A list of relevant mitre attacks"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "A list of relevant mitre techniques"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<AttackTechnique>,
@@ -2270,7 +2270,7 @@ pub struct BookmarkTimelineItem {
     #[doc = "List of labels relevant to this bookmark"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<Label>,
@@ -2742,7 +2742,7 @@ pub struct ConnectivityCriteria {
     #[doc = "Queries for checking connectivity"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<String>,
@@ -3066,7 +3066,7 @@ pub struct DataConnectorConnectBody {
     #[serde(
         rename = "requestConfigUserInputValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub request_config_user_input_values: Vec<serde_json::Value>,
@@ -3655,7 +3655,7 @@ pub struct EnrichmentDomainWhoisContact {
     #[doc = "A list describing the street address for this contact"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub street: Vec<String>,
@@ -3720,14 +3720,14 @@ pub struct EnrichmentDomainWhoisDetails {
     #[serde(
         rename = "nameServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub name_servers: Vec<String>,
     #[doc = "The set of status flags for this whois record"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub statuses: Vec<String>,
@@ -3864,7 +3864,7 @@ pub struct EntityAnalyticsProperties {
     #[serde(
         rename = "entityProviders",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entity_providers: Vec<EntityProviders>,
@@ -3945,14 +3945,14 @@ pub mod entity_expand_response {
         #[doc = "Array of the expansion result entities."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub entities: Vec<Entity>,
         #[doc = "Array of edges that connects the entity to the list of entities."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub edges: Vec<EntityEdges>,
@@ -3994,7 +3994,7 @@ pub struct EntityGetInsightsParameters {
     #[serde(
         rename = "insightQueryIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub insight_query_ids: Vec<String>,
@@ -4018,7 +4018,7 @@ pub struct EntityGetInsightsResponse {
     #[doc = "The insights result values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EntityInsightItem>,
@@ -4197,7 +4197,7 @@ pub struct EntityInsightItem {
     #[serde(
         rename = "chartQueryResults",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub chart_query_results: Vec<InsightsTableResult>,
@@ -4255,7 +4255,7 @@ pub struct EntityMapping {
     #[serde(
         rename = "fieldMappings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub field_mappings: Vec<FieldMapping>,
@@ -4424,7 +4424,7 @@ pub struct EntityQueryItemProperties {
     #[serde(
         rename = "dataTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_types: Vec<serde_json::Value>,
@@ -4435,7 +4435,7 @@ pub struct EntityQueryItemProperties {
     #[serde(
         rename = "requiredInputFieldsSets",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_input_fields_sets: Vec<Vec<String>>,
@@ -4636,7 +4636,7 @@ pub struct EntityTimelineParameters {
     #[doc = "Array of timeline Item kinds."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub kinds: Vec<EntityTimelineKind>,
@@ -4669,7 +4669,7 @@ pub struct EntityTimelineResponse {
     #[doc = "The timeline result values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EntityTimelineItem>,
@@ -4735,7 +4735,7 @@ pub struct ExpansionEntityQueriesProperties {
     #[serde(
         rename = "dataSources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_sources: Vec<String>,
@@ -4749,7 +4749,7 @@ pub struct ExpansionEntityQueriesProperties {
     #[serde(
         rename = "inputFields",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub input_fields: Vec<String>,
@@ -4757,7 +4757,7 @@ pub struct ExpansionEntityQueriesProperties {
     #[serde(
         rename = "outputEntityTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub output_entity_types: Vec<EntityInnerType>,
@@ -4818,7 +4818,7 @@ pub struct ExpansionResultsMetadata {
     #[doc = "Information of the aggregated nodes in the expansion result."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aggregations: Vec<ExpansionResultAggregation>,
@@ -4907,7 +4907,7 @@ pub struct FusionAlertRuleProperties {
     #[serde(
         rename = "sourceSettings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub source_settings: Vec<FusionSourceSettings>,
@@ -4915,7 +4915,7 @@ pub struct FusionAlertRuleProperties {
     #[serde(
         rename = "scenarioExclusionPatterns",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub scenario_exclusion_patterns: Vec<FusionScenarioExclusionPattern>,
@@ -4928,14 +4928,14 @@ pub struct FusionAlertRuleProperties {
     #[doc = "The tactics of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -4995,7 +4995,7 @@ pub struct FusionAlertRuleTemplateProperties {
     #[serde(
         rename = "requiredDataConnectors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
@@ -5008,14 +5008,14 @@ pub struct FusionAlertRuleTemplateProperties {
     #[doc = "The tactics of the alert rule template"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -5023,7 +5023,7 @@ pub struct FusionAlertRuleTemplateProperties {
     #[serde(
         rename = "sourceSettings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub source_settings: Vec<FusionTemplateSourceSetting>,
@@ -5063,7 +5063,7 @@ pub struct FusionSourceSettings {
     #[serde(
         rename = "sourceSubTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub source_sub_types: Vec<FusionSourceSubTypeSetting>,
@@ -5111,7 +5111,7 @@ pub struct FusionSubTypeSeverityFilter {
     #[doc = "Individual Severity configuration settings for a given source subtype consumed in Fusion detection."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filters: Vec<FusionSubTypeSeverityFiltersItem>,
@@ -5144,7 +5144,7 @@ pub struct FusionTemplateSourceSetting {
     #[serde(
         rename = "sourceSubTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub source_sub_types: Vec<FusionTemplateSourceSubType>,
@@ -5189,7 +5189,7 @@ pub struct FusionTemplateSubTypeSeverityFilter {
     #[serde(
         rename = "severityFilters",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub severity_filters: Vec<AlertSeverityEnum>,
@@ -5270,7 +5270,7 @@ pub struct GetInsightsResultsMetadata {
     #[doc = "information about the failed queries"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<GetInsightsErrorKind>,
@@ -5289,7 +5289,7 @@ pub struct GetQueriesResponse {
     #[doc = "The query result values."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EntityQueryItem>,
@@ -5347,7 +5347,7 @@ pub struct GroupingConfiguration {
     #[serde(
         rename = "groupByEntities",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_by_entities: Vec<EntityMappingType>,
@@ -5355,7 +5355,7 @@ pub struct GroupingConfiguration {
     #[serde(
         rename = "groupByAlertDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_by_alert_details: Vec<String>,
@@ -5363,7 +5363,7 @@ pub struct GroupingConfiguration {
     #[serde(
         rename = "groupByCustomDetails",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_by_custom_details: Vec<String>,
@@ -5462,7 +5462,7 @@ pub struct HuntingBookmarkProperties {
     #[doc = "List of labels relevant to this bookmark"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<Label>,
@@ -5532,7 +5532,7 @@ pub struct IncidentAdditionalData {
     #[serde(
         rename = "alertProductNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub alert_product_names: Vec<String>,
@@ -5542,14 +5542,14 @@ pub struct IncidentAdditionalData {
     #[doc = "The tactics associated with incident"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques associated with incident's tactics'"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -5748,7 +5748,7 @@ pub struct IncidentEntitiesResponse {
     #[doc = "Array of the incident related entities."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub entities: Vec<Entity>,
@@ -5756,7 +5756,7 @@ pub struct IncidentEntitiesResponse {
     #[serde(
         rename = "metaData",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub meta_data: Vec<IncidentEntitiesResultsMetadata>,
@@ -5975,7 +5975,7 @@ pub struct IncidentProperties {
     #[doc = "List of labels relevant to this incident"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<IncidentLabel>,
@@ -5998,7 +5998,7 @@ pub struct IncidentProperties {
     #[serde(
         rename = "relatedAnalyticRuleIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub related_analytic_rule_ids: Vec<String>,
@@ -6061,7 +6061,7 @@ pub struct IncidentPropertiesAction {
     #[doc = "List of labels to add to the incident."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<IncidentLabel>,
@@ -6212,7 +6212,7 @@ pub mod insight_query_item_properties {
         #[serde(
             rename = "columnsDefinitions",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub columns_definitions: Vec<serde_json::Value>,
@@ -6220,7 +6220,7 @@ pub mod insight_query_item_properties {
         #[serde(
             rename = "queriesDefinitions",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub queries_definitions: Vec<serde_json::Value>,
@@ -6279,14 +6279,14 @@ pub struct InsightsTableResult {
     #[doc = "Columns Metadata of the table"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub columns: Vec<serde_json::Value>,
     #[doc = "Rows data of the table"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rows: Vec<Vec<String>>,
@@ -6308,7 +6308,7 @@ pub struct InstructionSteps {
     #[doc = "Instruction step details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub instructions: Vec<serde_json::Value>,
@@ -6574,14 +6574,14 @@ pub struct MlBehaviorAnalyticsAlertRuleProperties {
     #[doc = "The tactics of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -6885,7 +6885,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
     #[serde(
         rename = "displayNamesFilter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub display_names_filter: Vec<String>,
@@ -6893,7 +6893,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
     #[serde(
         rename = "displayNamesExcludeFilter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub display_names_exclude_filter: Vec<String>,
@@ -6904,7 +6904,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
     #[serde(
         rename = "severitiesFilter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub severities_filter: Vec<AlertSeverityEnum>,
@@ -6981,7 +6981,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     #[serde(
         rename = "displayNamesFilter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub display_names_filter: Vec<String>,
@@ -6989,7 +6989,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     #[serde(
         rename = "displayNamesExcludeFilter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub display_names_exclude_filter: Vec<String>,
@@ -7000,7 +7000,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     #[serde(
         rename = "severitiesFilter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub severities_filter: Vec<AlertSeverityEnum>,
@@ -7129,14 +7129,14 @@ pub struct NrtAlertRuleProperties {
     #[doc = "The tactics of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -7658,14 +7658,14 @@ pub struct Permissions {
     #[serde(
         rename = "resourceProvider",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_provider: Vec<serde_json::Value>,
     #[doc = "Customs permissions required for the connector"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub customs: Vec<serde_json::Value>,
@@ -7836,7 +7836,7 @@ pub struct Repo {
     #[doc = "Array of branches."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub branches: Vec<String>,
@@ -7922,7 +7922,7 @@ pub struct Repository {
     #[serde(
         rename = "pathMapping",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub path_mapping: Vec<ContentPathMap>,
@@ -8237,14 +8237,14 @@ pub struct ScheduledAlertRuleProperties {
     #[doc = "The tactics of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -8309,7 +8309,7 @@ pub struct ScheduledAlertRuleTemplateProperties {
     #[serde(
         rename = "requiredDataConnectors",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
@@ -8337,14 +8337,14 @@ pub struct ScheduledAlertRuleTemplateProperties {
     #[doc = "The tactics of the alert rule template"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -8404,7 +8404,7 @@ pub struct SecurityAlertProperties {
     #[serde(
         rename = "confidenceReasons",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub confidence_reasons: Vec<serde_json::Value>,
@@ -8442,7 +8442,7 @@ pub struct SecurityAlertProperties {
     #[serde(
         rename = "remediationSteps",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub remediation_steps: Vec<String>,
@@ -8461,7 +8461,7 @@ pub struct SecurityAlertProperties {
     #[doc = "The tactics of the alert"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
@@ -8478,7 +8478,7 @@ pub struct SecurityAlertProperties {
     #[serde(
         rename = "resourceIdentifiers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_identifiers: Vec<serde_json::Value>,
@@ -8758,7 +8758,7 @@ pub struct SecurityMlAnalyticsSettingsDataSource {
     #[serde(
         rename = "dataTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_types: Vec<String>,
@@ -9124,7 +9124,7 @@ pub struct TeamProperties {
     #[serde(
         rename = "memberIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub member_ids: Vec<String>,
@@ -9132,7 +9132,7 @@ pub struct TeamProperties {
     #[serde(
         rename = "groupIds",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub group_ids: Vec<String>,
@@ -9187,14 +9187,14 @@ pub struct ThreatIntelligenceAlertRuleProperties {
     #[doc = "The tactics of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tactics: Vec<AttackTactic>,
     #[doc = "The techniques of the alert rule"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub techniques: Vec<String>,
@@ -9256,7 +9256,7 @@ pub struct ThreatIntelligenceAppendTags {
     #[serde(
         rename = "threatIntelligenceTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub threat_intelligence_tags: Vec<String>,
@@ -9315,14 +9315,14 @@ pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(
         rename = "sortBy",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sort_by: Vec<ThreatIntelligenceSortingCriteria>,
     #[doc = "Sources of threat intelligence indicators"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub sources: Vec<String>,
@@ -9330,7 +9330,7 @@ pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(
         rename = "patternTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pattern_types: Vec<String>,
@@ -9338,21 +9338,21 @@ pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(
         rename = "threatTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub threat_types: Vec<String>,
     #[doc = "Ids of threat intelligence indicators"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ids: Vec<String>,
     #[doc = "Keywords for searching threat intelligence indicators"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub keywords: Vec<String>,
@@ -9377,7 +9377,7 @@ pub struct ThreatIntelligenceGranularMarkingModel {
     #[doc = "granular marking model selectors"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub selectors: Vec<String>,
@@ -9413,7 +9413,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "threatIntelligenceTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub threat_intelligence_tags: Vec<String>,
@@ -9433,7 +9433,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "indicatorTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub indicator_types: Vec<String>,
@@ -9450,7 +9450,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "killChainPhases",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub kill_chain_phases: Vec<ThreatIntelligenceKillChainPhase>,
@@ -9458,7 +9458,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "parsedPattern",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parsed_pattern: Vec<ThreatIntelligenceParsedPattern>,
@@ -9478,7 +9478,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "externalReferences",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub external_references: Vec<ThreatIntelligenceExternalReference>,
@@ -9486,14 +9486,14 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "granularMarkings",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub granular_markings: Vec<ThreatIntelligenceGranularMarkingModel>,
     #[doc = "Labels  of threat intelligence entity"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<String>,
@@ -9507,7 +9507,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "objectMarkingRefs",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub object_marking_refs: Vec<String>,
@@ -9518,7 +9518,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(
         rename = "threatTypes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub threat_types: Vec<String>,
@@ -9604,7 +9604,7 @@ pub struct ThreatIntelligenceMetric {
     #[serde(
         rename = "threatTypeMetrics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub threat_type_metrics: Vec<ThreatIntelligenceMetricEntity>,
@@ -9612,7 +9612,7 @@ pub struct ThreatIntelligenceMetric {
     #[serde(
         rename = "patternTypeMetrics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pattern_type_metrics: Vec<ThreatIntelligenceMetricEntity>,
@@ -9620,7 +9620,7 @@ pub struct ThreatIntelligenceMetric {
     #[serde(
         rename = "sourceMetrics",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub source_metrics: Vec<ThreatIntelligenceMetricEntity>,
@@ -9678,7 +9678,7 @@ pub struct ThreatIntelligenceParsedPattern {
     #[serde(
         rename = "patternTypeValues",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pattern_type_values: Vec<ThreatIntelligenceParsedPatternTypeValue>,
@@ -9993,7 +9993,7 @@ pub struct TimelineResultsMetadata {
     #[doc = "information about the failure queries"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub errors: Vec<TimelineError>,
@@ -10072,7 +10072,7 @@ pub struct UebaProperties {
     #[serde(
         rename = "dataSources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_sources: Vec<UebaDataSources>,
@@ -10299,7 +10299,7 @@ pub struct WatchlistProperties {
     #[doc = "List of labels relevant to this watchlist"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub labels: Vec<Label>,
@@ -10441,14 +10441,14 @@ pub struct MetadataCategories {
     #[doc = "domain for the solution content item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub domains: Vec<String>,
     #[doc = "Industry verticals for the solution content item"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub verticals: Vec<String>,
@@ -10482,7 +10482,7 @@ pub struct MetadataDependencies {
     #[doc = "This is the list of dependencies we must fulfill, according to the AND/OR operator"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub criteria: Vec<MetadataDependencies>,

@@ -18,7 +18,7 @@ pub struct AccessPolicyListResponse {
     #[doc = "Result of the List access policies operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AccessPolicyResource>,
@@ -37,7 +37,7 @@ pub struct AccessPolicyMutableProperties {
     #[doc = "The list of roles the principal is assigned on the environment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub roles: Vec<String>,
@@ -71,7 +71,7 @@ pub struct AccessPolicyResourceProperties {
     #[doc = "The list of roles the principal is assigned on the environment."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub roles: Vec<String>,
@@ -136,7 +136,7 @@ pub struct CloudErrorBody {
     #[doc = "Contains nested errors that are related to this error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -229,7 +229,7 @@ pub struct EnvironmentListResponse {
     #[doc = "Result of the List Environments operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EnvironmentResource>,
@@ -542,7 +542,7 @@ pub struct EventSourceListResponse {
     #[doc = "Result of the List EventSources operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EventSourceResource>,
@@ -1050,7 +1050,7 @@ pub struct OperationListResult {
     #[doc = "List of Time Series Insights operations supported by the Microsoft.TimeSeriesInsights resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1255,7 +1255,7 @@ pub struct ReferenceDataSetListResponse {
     #[doc = "Result of the List Reference Data Sets operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ReferenceDataSetResource>,
@@ -1432,7 +1432,7 @@ pub struct StandardEnvironmentCreationProperties {
     #[serde(
         rename = "partitionKeyProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub partition_key_properties: Vec<TimeSeriesIdProperty>,

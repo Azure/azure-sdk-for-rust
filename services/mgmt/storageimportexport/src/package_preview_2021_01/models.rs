@@ -242,7 +242,7 @@ pub mod error_response {
         #[doc = "Describes the error details if present."]
         #[serde(
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub details: Vec<serde_json::Value>,
@@ -280,7 +280,7 @@ pub mod export {
         #[serde(
             rename = "blobPath",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub blob_path: Vec<String>,
@@ -288,7 +288,7 @@ pub mod export {
         #[serde(
             rename = "blobPathPrefix",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub blob_path_prefix: Vec<String>,
@@ -305,7 +305,7 @@ pub struct GetBitLockerKeysResponse {
     #[doc = "drive status"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DriveBitLockerKey>,
@@ -435,7 +435,7 @@ pub struct JobDetails {
     #[serde(
         rename = "driveList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub drive_list: Vec<DriveStatus>,
@@ -496,7 +496,7 @@ pub struct ListJobsResponse {
     #[doc = "Job list"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<JobResponse>,
@@ -518,7 +518,7 @@ pub struct ListOperationsResponse {
     #[doc = "operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -591,7 +591,7 @@ pub mod location {
         #[serde(
             rename = "supportedCarriers",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub supported_carriers: Vec<String>,
@@ -599,7 +599,7 @@ pub mod location {
         #[serde(
             rename = "alternateLocations",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub alternate_locations: Vec<String>,
@@ -616,7 +616,7 @@ pub struct LocationsResponse {
     #[doc = "locations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Location>,
@@ -863,7 +863,7 @@ pub mod update_job_parameters {
         #[serde(
             rename = "driveList",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub drive_list: Vec<DriveStatus>,

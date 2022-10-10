@@ -63,7 +63,7 @@ pub struct DataLakeStoreAccountListResult {
     #[doc = "the results of the list operation"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DataLakeStoreAccount>,
@@ -162,7 +162,7 @@ pub struct DataLakeStoreFirewallRuleListResult {
     #[doc = "the results of the list operation"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FirewallRule>,
@@ -246,7 +246,7 @@ pub struct Error {
     #[doc = "the list of error details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetails>,

@@ -36,7 +36,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -66,7 +66,7 @@ pub struct ConfigurationListResult {
     #[doc = "The list of server configurations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Configuration>,
@@ -129,7 +129,7 @@ pub struct DatabaseListResult {
     #[doc = "The list of databases housed in a server"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Database>,
@@ -182,7 +182,7 @@ pub struct FirewallRuleListResult {
     #[doc = "The list of firewall rules in a server."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<FirewallRule>,
@@ -239,7 +239,7 @@ pub struct LogFileListResult {
     #[doc = "The list of log files."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LogFile>,
@@ -448,7 +448,7 @@ pub struct OperationListResult {
     #[doc = "The list of resource provider operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -464,7 +464,7 @@ pub struct PerformanceTierListResult {
     #[doc = "The list of performance tiers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PerformanceTierProperties>,
@@ -508,7 +508,7 @@ pub struct PerformanceTierProperties {
     #[serde(
         rename = "serviceLevelObjectives",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_level_objectives: Vec<PerformanceTierServiceLevelObjectives>,
@@ -686,7 +686,7 @@ pub struct SecurityAlertPolicyProperties {
     #[serde(
         rename = "disabledAlerts",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disabled_alerts: Vec<String>,
@@ -694,7 +694,7 @@ pub struct SecurityAlertPolicyProperties {
     #[serde(
         rename = "emailAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub email_addresses: Vec<String>,
@@ -788,7 +788,7 @@ pub struct ServerListResult {
     #[doc = "The list of servers"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Server>,
@@ -1066,7 +1066,7 @@ pub struct ServerSecurityAlertPolicyListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ServerSecurityAlertPolicy>,
@@ -1387,7 +1387,7 @@ pub struct VirtualNetworkRuleListResult {
     #[doc = "Array of results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworkRule>,

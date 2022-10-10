@@ -165,7 +165,7 @@ pub struct AdlsGen2AccountReceivedAssetProperties {
     #[serde(
         rename = "receiverPaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub receiver_paths: Vec<String>,
@@ -647,7 +647,7 @@ pub struct BlobAccountReceivedAssetProperties {
     #[serde(
         rename = "receiverPaths",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub receiver_paths: Vec<String>,
@@ -1027,7 +1027,7 @@ pub struct PurviewShareErrorInfo {
     #[doc = "Nested details of the error model"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<PurviewShareErrorInfo>,

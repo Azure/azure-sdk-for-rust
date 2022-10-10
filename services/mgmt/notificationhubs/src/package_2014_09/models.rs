@@ -231,7 +231,7 @@ pub struct NamespaceListResult {
     #[doc = "Gets or sets result of the List Namespace operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NamespaceResource>,
@@ -354,7 +354,7 @@ pub struct NotificationHubListResult {
     #[doc = "Gets or sets result of the List NotificationHub operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NotificationHubResource>,
@@ -386,7 +386,7 @@ pub struct NotificationHubProperties {
     #[serde(
         rename = "authorizationRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub authorization_rules: Vec<SharedAccessAuthorizationRuleProperties>,
@@ -511,7 +511,7 @@ pub struct SharedAccessAuthorizationRuleListResult {
     #[doc = "Gets or sets result of the List AuthorizationRules operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SharedAccessAuthorizationRuleResource>,
@@ -551,7 +551,7 @@ pub struct SharedAccessAuthorizationRuleProperties {
     #[doc = "The rights associated with the rule."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rights: Vec<String>,

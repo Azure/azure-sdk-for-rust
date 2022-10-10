@@ -62,7 +62,7 @@ pub struct DatadogAgreementResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatadogAgreementResource>,
@@ -111,7 +111,7 @@ pub struct DatadogApiKeyListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatadogApiKey>,
@@ -138,14 +138,14 @@ pub struct DatadogHost {
     #[doc = "The aliases for the host."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub aliases: Vec<String>,
     #[doc = "The Datadog integrations reporting metrics for the host."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub apps: Vec<String>,
@@ -163,7 +163,7 @@ pub struct DatadogHostListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatadogHost>,
@@ -267,7 +267,7 @@ pub struct DatadogMonitorResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatadogMonitorResource>,
@@ -390,7 +390,7 @@ pub struct DatadogSingleSignOnResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DatadogSingleSignOnResource>,
@@ -419,7 +419,7 @@ pub struct ErrorResponseBody {
     pub target: Option<String>,
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponseBody>,
@@ -518,7 +518,7 @@ pub struct LinkedResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<LinkedResource>,
@@ -553,7 +553,7 @@ pub struct LogRules {
     #[serde(
         rename = "filteringTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filtering_tags: Vec<FilteringTag>,
@@ -648,7 +648,7 @@ pub struct MetricRules {
     #[serde(
         rename = "filteringTags",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub filtering_tags: Vec<FilteringTag>,
@@ -728,7 +728,7 @@ pub struct MonitoredResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitoredResource>,
@@ -816,7 +816,7 @@ pub struct MonitoringTagRulesListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MonitoringTagRules>,
@@ -879,7 +879,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Datadog provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResult>,

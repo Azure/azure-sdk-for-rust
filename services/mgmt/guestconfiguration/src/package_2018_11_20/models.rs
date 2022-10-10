@@ -39,7 +39,7 @@ pub struct AssignmentReportDetails {
     #[doc = "The list of resources for which guest configuration assignment compliance is checked."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resources: Vec<AssignmentReportResource>,
@@ -137,7 +137,7 @@ pub struct AssignmentReportResource {
     #[doc = "Compliance reason and reason code for a resource."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub reasons: Vec<AssignmentReportResourceComplianceReason>,
@@ -397,7 +397,7 @@ pub struct GuestConfigurationAssignmentList {
     #[doc = "Result of the list guest configuration assignment operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GuestConfigurationAssignment>,
@@ -432,7 +432,7 @@ pub struct GuestConfigurationAssignmentProperties {
     #[serde(
         rename = "vmssVMList",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub vmss_vm_list: Vec<VmssvmInfo>,
@@ -564,7 +564,7 @@ pub struct GuestConfigurationAssignmentReportList {
     #[doc = "List of reports for the guest configuration. Report contains information such as compliance status, reason and more."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<GuestConfigurationAssignmentReport>,
@@ -677,7 +677,7 @@ pub struct GuestConfigurationNavigation {
     #[serde(
         rename = "configurationParameter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub configuration_parameter: Vec<ConfigurationParameter>,
@@ -685,7 +685,7 @@ pub struct GuestConfigurationNavigation {
     #[serde(
         rename = "configurationProtectedParameter",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub configuration_protected_parameter: Vec<ConfigurationParameter>,
@@ -838,7 +838,7 @@ pub struct OperationList {
     #[doc = "List of Automation operations supported by the Automation resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

@@ -63,7 +63,7 @@ pub struct ConfluentAgreementResourceListResponse {
     #[doc = "Results of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfluentAgreementResource>,
@@ -97,7 +97,7 @@ pub struct ErrorResponseBody {
     #[doc = "Error detail"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorResponseBody>,
@@ -161,7 +161,7 @@ pub struct OperationListResult {
     #[doc = "List of Confluent operations supported by the Microsoft.Confluent provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationResult>,
@@ -231,7 +231,7 @@ pub struct OrganizationResourceListResult {
     #[doc = "Result of a list operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OrganizationResource>,

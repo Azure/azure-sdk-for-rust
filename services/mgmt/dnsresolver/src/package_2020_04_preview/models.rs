@@ -36,7 +36,7 @@ pub struct CloudErrorBody {
     #[doc = "Extra error information"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -77,7 +77,7 @@ pub struct DnsForwardingRulesetListResult {
     #[doc = "Enumeration of the DNS forwarding rulesets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DnsForwardingRuleset>,
@@ -115,7 +115,7 @@ pub struct DnsForwardingRulesetProperties {
     #[serde(
         rename = "dnsResolverOutboundEndpoints",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dns_resolver_outbound_endpoints: Vec<SubResource>,
@@ -162,7 +162,7 @@ pub struct DnsResolverListResult {
     #[doc = "Enumeration of the DNS resolvers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DnsResolver>,
@@ -285,7 +285,7 @@ pub struct ForwardingRuleListResult {
     #[doc = "Enumeration of the forwarding rules."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ForwardingRule>,
@@ -323,7 +323,7 @@ pub struct ForwardingRulePatchProperties {
     #[serde(
         rename = "targetDnsServers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub target_dns_servers: Vec<TargetDnsServer>,
@@ -485,7 +485,7 @@ pub struct InboundEndpointListResult {
     #[doc = "Enumeration of the inbound endpoints for a DNS resolver."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<InboundEndpoint>,
@@ -523,7 +523,7 @@ pub struct InboundEndpointProperties {
     #[serde(
         rename = "ipConfigurations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_configurations: Vec<IpConfiguration>,
@@ -633,7 +633,7 @@ pub struct OutboundEndpointListResult {
     #[doc = "Enumeration of the outbound endpoints for a DNS resolver."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OutboundEndpoint>,
@@ -775,7 +775,7 @@ pub struct SubResourceListResult {
     #[doc = "Enumeration of the sub-resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SubResource>,
@@ -850,7 +850,7 @@ pub struct VirtualNetworkDnsForwardingRulesetListResult {
     #[doc = "Enumeration of the Virtual Network DNS Forwarding Ruleset."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworkDnsForwardingRuleset>,
@@ -895,7 +895,7 @@ pub struct VirtualNetworkLinkListResult {
     #[doc = "Enumeration of the virtual network links."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetworkLink>,

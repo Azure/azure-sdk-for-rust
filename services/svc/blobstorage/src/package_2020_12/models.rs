@@ -177,7 +177,7 @@ pub struct BlobHierarchyListSegment {
     #[serde(
         rename = "BlobPrefixes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub blob_prefixes: Vec<BlobPrefix>,
@@ -478,21 +478,21 @@ pub struct BlockLookupList {
     #[serde(
         rename = "Committed",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub committed: Vec<String>,
     #[serde(
         rename = "Uncommitted",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub uncommitted: Vec<String>,
     #[serde(
         rename = "Latest",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub latest: Vec<String>,
@@ -1322,14 +1322,14 @@ pub struct PageList {
     #[serde(
         rename = "PageRange",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub page_range: Vec<PageRange>,
     #[serde(
         rename = "ClearRange",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub clear_range: Vec<ClearRange>,

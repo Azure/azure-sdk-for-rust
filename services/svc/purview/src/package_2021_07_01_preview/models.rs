@@ -16,7 +16,7 @@ pub struct AttributeMatcher {
     #[serde(
         rename = "attributeValueIncludedIn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub attribute_value_included_in: Vec<String>,
@@ -27,7 +27,7 @@ pub struct AttributeMatcher {
     #[serde(
         rename = "attributeValueExcludedIn",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub attribute_value_excluded_in: Vec<String>,
@@ -221,7 +221,7 @@ pub struct ErrorModel {
     #[doc = "The error details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorModel>,
@@ -299,7 +299,7 @@ pub struct MetadataPolicyProperties {
     #[serde(
         rename = "decisionRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub decision_rules: Vec<DecisionRule>,
@@ -307,7 +307,7 @@ pub struct MetadataPolicyProperties {
     #[serde(
         rename = "attributeRules",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub attribute_rules: Vec<AttributeRule>,

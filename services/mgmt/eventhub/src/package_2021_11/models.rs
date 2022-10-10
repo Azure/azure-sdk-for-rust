@@ -100,7 +100,7 @@ pub struct ArmDisasterRecoveryListResult {
     #[doc = "List of Alias(Disaster Recovery configurations)"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ArmDisasterRecovery>,
@@ -156,7 +156,7 @@ pub struct AuthorizationRuleListResult {
     #[doc = "Result of the List Authorization Rules operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AuthorizationRule>,
@@ -193,7 +193,7 @@ pub struct AvailableClustersList {
     #[doc = "The count of readily available and pre-provisioned Event Hubs Clusters per region."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailableCluster>,
@@ -318,7 +318,7 @@ pub struct ClusterListResult {
     #[doc = "The Event Hubs Clusters present in the List Event Hubs operation results."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Cluster>,
@@ -504,7 +504,7 @@ pub struct ConsumerGroupListResult {
     #[doc = "Result of the List Consumer Group operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConsumerGroup>,
@@ -636,7 +636,7 @@ pub mod eh_namespace {
         #[serde(
             rename = "privateEndpointConnections",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
@@ -671,7 +671,7 @@ pub struct EhNamespaceIdListResult {
     #[doc = "Result of the List Namespace IDs operation"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EhNamespaceIdContainer>,
@@ -687,7 +687,7 @@ pub struct EhNamespaceListResult {
     #[doc = "Result of the List Namespace operation"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<EhNamespace>,
@@ -713,7 +713,7 @@ pub struct Encryption {
     #[serde(
         rename = "keyVaultProperties",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub key_vault_properties: Vec<KeyVaultProperties>,
@@ -773,7 +773,7 @@ pub struct ErrorDetail {
     #[doc = "The error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDetail>,
@@ -781,7 +781,7 @@ pub struct ErrorDetail {
     #[serde(
         rename = "additionalInfo",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
@@ -815,7 +815,7 @@ pub struct EventHubListResult {
     #[doc = "Result of the List EventHubs operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Eventhub>,
@@ -860,7 +860,7 @@ pub mod eventhub {
         #[serde(
             rename = "partitionIds",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub partition_ids: Vec<String>,
@@ -1058,7 +1058,7 @@ pub mod network_rule_set {
         #[serde(
             rename = "virtualNetworkRules",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub virtual_network_rules: Vec<NwRuleSetVirtualNetworkRules>,
@@ -1066,7 +1066,7 @@ pub mod network_rule_set {
         #[serde(
             rename = "ipRules",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub ip_rules: Vec<NwRuleSetIpRules>,
@@ -1168,7 +1168,7 @@ pub struct NetworkRuleSetListResult {
     #[doc = "Result of the List NetworkRuleSet operation"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<NetworkRuleSet>,
@@ -1232,7 +1232,7 @@ pub struct OperationListResult {
     #[doc = "List of Event Hub operations supported by the Microsoft.EventHub resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -1286,7 +1286,7 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "A collection of private endpoint connection resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
@@ -1402,7 +1402,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredMembers",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
@@ -1410,7 +1410,7 @@ pub struct PrivateLinkResourceProperties {
     #[serde(
         rename = "requiredZoneNames",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
@@ -1426,7 +1426,7 @@ pub struct PrivateLinkResourcesListResult {
     #[doc = "A collection of private link resources"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
@@ -1665,7 +1665,7 @@ pub struct SchemaGroupListResult {
     #[doc = "Result of the List SchemaGroups operation."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<SchemaGroup>,

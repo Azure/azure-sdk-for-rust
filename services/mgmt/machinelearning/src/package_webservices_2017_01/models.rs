@@ -29,7 +29,7 @@ pub struct AssetItem {
     #[doc = "If the asset is a custom module, this holds the module's parameters."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ModuleAssetParameter>,
@@ -103,7 +103,7 @@ pub struct AsyncOperationErrorInfo {
     #[doc = "An array containing error information."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<AsyncOperationErrorInfo>,
@@ -214,7 +214,7 @@ pub struct ColumnSpecification {
     #[serde(
         rename = "enum",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub enum_: Vec<serde_json::Value>,
@@ -482,7 +482,7 @@ pub struct GraphPackage {
     #[doc = "The list of edges making up the graph."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub edges: Vec<GraphEdge>,
@@ -666,7 +666,7 @@ pub struct ModeValueInfo {
     #[doc = "The definition of the parameter."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub parameters: Vec<ModuleAssetParameter>,
@@ -736,7 +736,7 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<OperationEntity>,
@@ -813,7 +813,7 @@ pub struct PaginatedWebServicesList {
     #[doc = "An array of web service objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<WebService>,

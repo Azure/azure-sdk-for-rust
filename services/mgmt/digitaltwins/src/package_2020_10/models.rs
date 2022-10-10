@@ -110,7 +110,7 @@ pub struct DigitalTwinsDescriptionListResult {
     #[doc = "A list of DigitalTwins description objects."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DigitalTwinsDescription>,
@@ -151,7 +151,7 @@ pub struct DigitalTwinsEndpointResourceListResult {
     #[doc = "A list of DigitalTwinsInstance Endpoints."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<DigitalTwinsEndpointResource>,
@@ -420,7 +420,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -570,7 +570,7 @@ pub struct OperationListResult {
     #[doc = "A list of DigitalTwins operations supported by the Microsoft.DigitalTwins resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

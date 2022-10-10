@@ -134,7 +134,7 @@ pub struct ListApplyUpdate {
     #[doc = "The list of apply updates"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ApplyUpdate>,
@@ -156,7 +156,7 @@ pub struct ListConfigurationAssignmentsResult {
     #[doc = "The list of configuration Assignments"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ConfigurationAssignment>,
@@ -178,7 +178,7 @@ pub struct ListMaintenanceConfigurationsResult {
     #[doc = "The list of maintenance Configurations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<MaintenanceConfiguration>,
@@ -200,7 +200,7 @@ pub struct ListUpdatesResult {
     #[doc = "The pending updates"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Update>,
@@ -441,7 +441,7 @@ pub struct OperationsListResult {
     #[doc = "A collection of operations"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

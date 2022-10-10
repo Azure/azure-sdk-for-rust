@@ -80,7 +80,7 @@ pub struct AvailabilitySetListResult {
     #[doc = "List of AvailabilitySets."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AvailabilitySet>,
@@ -213,7 +213,7 @@ pub struct CloudListResult {
     #[doc = "List of Clouds."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Cloud>,
@@ -254,7 +254,7 @@ pub struct CloudProperties {
     #[serde(
         rename = "storageQoSPolicies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_qo_s_policies: Vec<StorageQoSPolicy>,
@@ -279,7 +279,7 @@ pub struct ErrorDefinition {
     #[doc = "Internal error details."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ErrorDefinition>,
@@ -684,7 +684,7 @@ pub struct NetworkInterfaces {
     #[serde(
         rename = "ipv4Addresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv4_addresses: Vec<String>,
@@ -692,7 +692,7 @@ pub struct NetworkInterfaces {
     #[serde(
         rename = "ipv6Addresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ipv6_addresses: Vec<String>,
@@ -760,7 +760,7 @@ pub struct NetworkProfile {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterfaces>,
@@ -777,7 +777,7 @@ pub struct NetworkProfileUpdate {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterfacesUpdate>,
@@ -936,7 +936,7 @@ pub struct ResourceProviderOperationList {
     #[doc = "List of Operations."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ResourceProviderOperation>,
@@ -973,7 +973,7 @@ pub struct StorageProfile {
     #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VirtualDisk>,
@@ -989,7 +989,7 @@ pub struct StorageProfileUpdate {
     #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VirtualDiskUpdate>,
@@ -1087,7 +1087,7 @@ pub struct VmmServerListResult {
     #[doc = "List of VmmServers."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VmmServer>,
@@ -1376,7 +1376,7 @@ pub struct VirtualMachineInventoryItem {
     #[serde(
         rename = "ipAddresses",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ip_addresses: Vec<String>,
@@ -1402,7 +1402,7 @@ pub struct VirtualMachineListResult {
     #[doc = "List of VirtualMachines."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualMachine>,
@@ -1442,7 +1442,7 @@ pub struct VirtualMachineProperties {
     #[doc = "Checkpoints in the vm."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub checkpoints: Vec<Checkpoint>,
@@ -1569,7 +1569,7 @@ pub struct VirtualMachineTemplateListResult {
     #[doc = "List of VirtualMachineTemplates."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualMachineTemplate>,
@@ -1640,14 +1640,14 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(
         rename = "networkInterfaces",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub network_interfaces: Vec<NetworkInterfaces>,
     #[doc = "Gets or sets the disks of the template."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VirtualDisk>,
@@ -1873,7 +1873,7 @@ pub struct VirtualNetworkListResult {
     #[doc = "List of VirtualNetworks."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<VirtualNetwork>,

@@ -52,7 +52,7 @@ pub struct BillingSubscriptionAliasListResult {
     #[doc = "The list of billing subscription aliases."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BillingSubscriptionAlias>,
@@ -203,7 +203,7 @@ pub struct BillingSubscriptionProperties {
     #[serde(
         rename = "suspensionReasons",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub suspension_reasons: Vec<String>,
@@ -345,7 +345,7 @@ pub struct BillingSubscriptionsListResult {
     #[doc = "The list of billing subscriptions."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BillingSubscription>,
@@ -376,7 +376,7 @@ pub struct DetachPaymentMethodEligibilityError {
     #[doc = "The list of detach payment method eligibility errors."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<DetachPaymentMethodErrorDetails>,
@@ -783,7 +783,7 @@ pub struct OperationListResult {
     #[doc = "The list of billing operations supported by the Microsoft.Billing resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -848,7 +848,7 @@ pub struct PaymentMethodLinksListResult {
     #[doc = "The list of payment method links."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PaymentMethodLink>,
@@ -909,7 +909,7 @@ pub struct PaymentMethodProjectionProperties {
     #[doc = "The list of logos for the payment method."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logos: Vec<PaymentMethodLogo>,
@@ -1025,7 +1025,7 @@ pub struct PaymentMethodProperties {
     #[doc = "The list of logos for the payment method."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub logos: Vec<PaymentMethodLogo>,
@@ -1135,7 +1135,7 @@ pub struct PaymentMethodsListResult {
     #[doc = "The list of payment methods."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PaymentMethod>,

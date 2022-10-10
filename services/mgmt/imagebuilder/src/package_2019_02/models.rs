@@ -9,7 +9,7 @@ pub struct ApiError {
     #[doc = "The Api error details"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<ApiErrorBase>,
@@ -173,7 +173,7 @@ pub mod image_template_last_run_status {
 pub struct ImageTemplateListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<ImageTemplate>,
@@ -269,7 +269,7 @@ pub struct ImageTemplatePowerShellCustomizer {
     #[doc = "Array of PowerShell commands to execute"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inline: Vec<String>,
@@ -277,7 +277,7 @@ pub struct ImageTemplatePowerShellCustomizer {
     #[serde(
         rename = "validExitCodes",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub valid_exit_codes: Vec<i64>,
@@ -298,7 +298,7 @@ pub struct ImageTemplateProperties {
     #[doc = "Specifies the properties used to describe the customization steps of the image, like Image source etc"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub customize: Vec<ImageTemplateCustomizer>,
@@ -380,7 +380,7 @@ pub struct ImageTemplateShellCustomizer {
     #[doc = "Array of shell commands to execute"]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub inline: Vec<String>,
@@ -486,7 +486,7 @@ pub mod operation {
 pub struct OperationListResult {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,
@@ -595,7 +595,7 @@ impl RunOutput {
 pub struct RunOutputCollection {
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<RunOutput>,

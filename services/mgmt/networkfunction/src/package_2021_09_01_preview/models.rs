@@ -26,7 +26,7 @@ pub struct AzureTrafficCollectorListResult {
     #[doc = "A list of Traffic Collector resources."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<AzureTrafficCollector>,
@@ -52,7 +52,7 @@ pub struct AzureTrafficCollectorPropertiesFormat {
     #[serde(
         rename = "collectorPolicies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub collector_policies: Vec<CollectorPolicy>,
@@ -101,7 +101,7 @@ pub struct CloudErrorBody {
     #[doc = "A list of additional details about the error."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub details: Vec<CloudErrorBody>,
@@ -137,7 +137,7 @@ pub struct CollectorPolicyListResult {
     #[doc = "A list of collection policies."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<CollectorPolicy>,
@@ -166,7 +166,7 @@ pub struct CollectorPolicyPropertiesFormat {
     #[serde(
         rename = "emissionPolicies",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub emission_policies: Vec<EmissionPoliciesPropertiesFormat>,
@@ -189,7 +189,7 @@ pub struct EmissionPoliciesPropertiesFormat {
     #[serde(
         rename = "emissionDestinations",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub emission_destinations: Vec<EmissionPolicyDestination>,
@@ -298,7 +298,7 @@ pub struct IngestionPolicyPropertiesFormat {
     #[serde(
         rename = "ingestionSources",
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub ingestion_sources: Vec<IngestionSourcesPropertiesFormat>,
@@ -451,7 +451,7 @@ pub struct OperationListResult {
     #[doc = "List of operations supported by the Azure Traffic Collector resource provider."]
     #[serde(
         default,
-        deserialize_with = "azure_core::util::deserialize_null_default",
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Operation>,

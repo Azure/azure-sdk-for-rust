@@ -138,7 +138,7 @@ pub mod availability_status {
         #[serde(
             rename = "recommendedActions",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub recommended_actions: Vec<RecommendedAction>,
@@ -146,7 +146,7 @@ pub mod availability_status {
         #[serde(
             rename = "serviceImpactingEvents",
             default,
-            deserialize_with = "azure_core::util::deserialize_null_default",
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
