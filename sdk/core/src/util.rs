@@ -18,7 +18,7 @@ where
 
 /// Deserialize JSON null as default
 /// https://github.com/serde-rs/serde/issues/1098
-pub fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+pub fn deserialize_null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     T: Default + Deserialize<'de>,
     D: Deserializer<'de>,
@@ -37,7 +37,7 @@ mod tests {
         #[serde(
             rename = "appSettings",
             default,
-            deserialize_with = "deserialize_null_default",
+            deserialize_with = "deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub app_settings: Vec<NameValuePair>,
