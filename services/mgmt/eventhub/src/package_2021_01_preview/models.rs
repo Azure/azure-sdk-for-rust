@@ -98,7 +98,11 @@ pub mod arm_disaster_recovery {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArmDisasterRecoveryListResult {
     #[doc = "List of Alias(Disaster Recovery configurations)"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ArmDisasterRecovery>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Alias(Disaster Recovery configuration)"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -150,7 +154,11 @@ pub mod authorization_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationRuleListResult {
     #[doc = "Result of the List Authorization Rules operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AuthorizationRule>,
     #[doc = "Link to the next set of results. Not empty if Value contains an incomplete list of Authorization Rules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -333,7 +341,11 @@ pub mod consumer_group {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerGroupListResult {
     #[doc = "Result of the List Consumer Group operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConsumerGroup>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Consumer Group"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -451,7 +463,12 @@ pub mod eh_namespace {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub encryption: Option<Encryption>,
         #[doc = "List of private endpoint connections."]
-        #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "privateEndpointConnections",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     }
     impl Properties {
@@ -464,7 +481,11 @@ pub mod eh_namespace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EhNamespaceListResult {
     #[doc = "Result of the List Namespace operation"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EhNamespace>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of namespaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -485,7 +506,12 @@ impl EhNamespaceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
     #[doc = "Properties of KeyVault"]
-    #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "keyVaultProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub key_vault_properties: Vec<KeyVaultProperties>,
     #[doc = "Enumerates the possible value of keySource for Encryption"]
     #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
@@ -538,7 +564,11 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubListResult {
     #[doc = "Result of the List EventHubs operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Eventhub>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of EventHubs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -578,7 +608,12 @@ pub mod eventhub {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Current number of shards on the Event Hub."]
-        #[serde(rename = "partitionIds", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "partitionIds",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub partition_ids: Vec<String>,
         #[doc = "Exact time the Event Hub was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -771,10 +806,20 @@ pub mod network_rule_set {
         #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
         pub default_action: Option<properties::DefaultAction>,
         #[doc = "List VirtualNetwork Rules"]
-        #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "virtualNetworkRules",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub virtual_network_rules: Vec<NwRuleSetVirtualNetworkRules>,
         #[doc = "List of IpRules"]
-        #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "ipRules",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub ip_rules: Vec<NwRuleSetIpRules>,
     }
     impl Properties {
@@ -863,7 +908,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Event Hub operations supported by the Microsoft.EventHub resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -913,7 +962,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "A collection of private endpoint connection resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "A link for the next page of private endpoint connection resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1024,10 +1077,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -1039,7 +1102,11 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourcesListResult {
     #[doc = "A collection of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "A link for the next page of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

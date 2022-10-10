@@ -240,7 +240,11 @@ pub mod error_response {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
         #[doc = "Describes the error details if present."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub details: Vec<serde_json::Value>,
         #[doc = "Inner error object if present."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -273,10 +277,20 @@ pub mod export {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct BlobList {
         #[doc = "A collection of blob-path strings."]
-        #[serde(rename = "blobPath", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "blobPath",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub blob_path: Vec<String>,
         #[doc = "A collection of blob-prefix strings."]
-        #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "blobPathPrefix",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub blob_path_prefix: Vec<String>,
     }
     impl BlobList {
@@ -289,7 +303,11 @@ pub mod export {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetBitLockerKeysResponse {
     #[doc = "drive status"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DriveBitLockerKey>,
 }
 impl azure_core::Continuable for GetBitLockerKeysResponse {
@@ -414,7 +432,12 @@ pub struct JobDetails {
     #[serde(rename = "incompleteBlobListUri", default, skip_serializing_if = "Option::is_none")]
     pub incomplete_blob_list_uri: Option<String>,
     #[doc = "List of up to ten drives that comprise the job. The drive list is a required element for an import job; it is not specified for export jobs."]
-    #[serde(rename = "driveList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "driveList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub drive_list: Vec<DriveStatus>,
     #[doc = "A property containing information about the blobs to be exported for an export job. This property is required for export jobs, but must not be specified for import jobs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -471,7 +494,11 @@ pub struct ListJobsResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Job list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobResponse>,
 }
 impl azure_core::Continuable for ListJobsResponse {
@@ -489,7 +516,11 @@ impl ListJobsResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListOperationsResponse {
     #[doc = "operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for ListOperationsResponse {
@@ -557,10 +588,20 @@ pub mod location {
         #[serde(rename = "additionalShippingInformation", default, skip_serializing_if = "Option::is_none")]
         pub additional_shipping_information: Option<String>,
         #[doc = "A list of carriers that are supported at this location. "]
-        #[serde(rename = "supportedCarriers", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "supportedCarriers",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub supported_carriers: Vec<String>,
         #[doc = "A list of location IDs that should be used to ship shipping drives to for jobs created against the current location. If the current location is active, it will be part of the list. If it is temporarily closed due to maintenance, this list may contain other locations. "]
-        #[serde(rename = "alternateLocations", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "alternateLocations",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub alternate_locations: Vec<String>,
     }
     impl Properties {
@@ -573,7 +614,11 @@ pub mod location {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationsResponse {
     #[doc = "locations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Location>,
 }
 impl azure_core::Continuable for LocationsResponse {
@@ -815,7 +860,12 @@ pub mod update_job_parameters {
         #[serde(rename = "backupDriveManifest", default, skip_serializing_if = "Option::is_none")]
         pub backup_drive_manifest: Option<bool>,
         #[doc = "List of drives that comprise the job."]
-        #[serde(rename = "driveList", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "driveList",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub drive_list: Vec<DriveStatus>,
     }
     impl Properties {

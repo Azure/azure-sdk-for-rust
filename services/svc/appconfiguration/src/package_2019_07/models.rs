@@ -47,7 +47,11 @@ impl Key {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<Key>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -92,7 +96,11 @@ impl KeyValue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyValueListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<KeyValue>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -123,7 +131,11 @@ impl Label {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LabelListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<Label>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]

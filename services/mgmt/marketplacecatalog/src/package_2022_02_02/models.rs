@@ -31,10 +31,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -70,7 +79,12 @@ impl FacetValueDto {
 pub struct FacetsItemDto {
     #[serde(rename = "facetName", default, skip_serializing_if = "Option::is_none")]
     pub facet_name: Option<String>,
-    #[serde(rename = "facetValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "facetValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub facet_values: Vec<FacetValueDto>,
 }
 impl FacetsItemDto {
@@ -80,7 +94,11 @@ impl FacetsItemDto {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FacetsResponseDto {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub facets: Vec<FacetsItemDto>,
 }
 impl FacetsResponseDto {
@@ -231,7 +249,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -360,27 +382,67 @@ pub struct SearchItemDto {
     pub amp_apps_popularity: Option<f64>,
     #[serde(rename = "ampCsPopularity", default, skip_serializing_if = "Option::is_none")]
     pub amp_cs_popularity: Option<f64>,
-    #[serde(rename = "applicableProducts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicableProducts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applicable_products: Vec<String>,
     #[serde(rename = "appSourceAppsPopularity", default, skip_serializing_if = "Option::is_none")]
     pub app_source_apps_popularity: Option<f64>,
-    #[serde(rename = "appSourceCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appSourceCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub app_source_categories: Vec<String>,
     #[serde(rename = "appSourceCsPopularity", default, skip_serializing_if = "Option::is_none")]
     pub app_source_cs_popularity: Option<f64>,
-    #[serde(rename = "appSourceIndustries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appSourceIndustries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub app_source_industries: Vec<String>,
-    #[serde(rename = "azureCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_categories: Vec<String>,
-    #[serde(rename = "azurePortalCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azurePortalCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_portal_categories: Vec<String>,
-    #[serde(rename = "azureIndustries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureIndustries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_industries: Vec<String>,
     #[serde(rename = "bigId", default, skip_serializing_if = "Option::is_none")]
     pub big_id: Option<String>,
-    #[serde(rename = "cspStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cspStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub csp_states: Vec<String>,
-    #[serde(rename = "determinedStorefronts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "determinedStorefronts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub determined_storefronts: Vec<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -406,21 +468,50 @@ pub struct SearchItemDto {
     pub legacy_id: Option<String>,
     #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
     pub offer_type: Option<String>,
-    #[serde(rename = "operatingSystems", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "operatingSystems",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operating_systems: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans: Vec<PlanDto>,
-    #[serde(rename = "pricingTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pricingTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pricing_types: Vec<String>,
     #[serde(rename = "publisherDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub publisher_display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
-    #[serde(rename = "vmGenerations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmGenerations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_generations: Vec<String>,
-    #[serde(rename = "vmImageTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmImageTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_image_types: Vec<String>,
-    #[serde(rename = "vmSecurityTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vmSecurityTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_security_types: Vec<String>,
     #[serde(rename = "smallIconUri", default, skip_serializing_if = "Option::is_none")]
     pub small_icon_uri: Option<String>,
@@ -466,29 +557,87 @@ pub struct SearchRequest {
     pub is_industry_cloud: Option<bool>,
     pub languages: Vec<String>,
     pub stores: Vec<Store>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub select: Vec<String>,
-    #[serde(rename = "sortBy", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sortBy",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sort_by: Vec<String>,
-    #[serde(rename = "offerTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "offerTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub offer_types: Vec<String>,
-    #[serde(rename = "pricingTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pricingTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pricing_types: Vec<PricingType>,
-    #[serde(rename = "privateStoreAllowances", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateStoreAllowances",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_store_allowances: Vec<PrivateStoreAllow>,
-    #[serde(rename = "appSourceIndustries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appSourceIndustries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub app_source_industries: Vec<String>,
-    #[serde(rename = "operatingSystems", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "operatingSystems",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operating_systems: Vec<String>,
-    #[serde(rename = "appSourceCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appSourceCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub app_source_categories: Vec<String>,
-    #[serde(rename = "azureIndustries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureIndustries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_industries: Vec<String>,
-    #[serde(rename = "azureCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_categories: Vec<String>,
-    #[serde(rename = "azurePortalCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azurePortalCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_portal_categories: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub facets: Vec<String>,
 }
 impl SearchRequest {
@@ -525,9 +674,17 @@ impl SearchRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchResponseDto {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub facets: Vec<FacetsItemDto>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub results: Vec<SearchItemDto>,
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,

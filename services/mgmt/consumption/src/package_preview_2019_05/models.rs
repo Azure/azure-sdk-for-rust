@@ -60,10 +60,20 @@ pub struct BalanceProperties {
     #[serde(rename = "priceHidden", default, skip_serializing_if = "Option::is_none")]
     pub price_hidden: Option<bool>,
     #[doc = "List of new purchases."]
-    #[serde(rename = "newPurchasesDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "newPurchasesDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub new_purchases_details: Vec<serde_json::Value>,
     #[doc = "List of Adjustments (Promo credit, SIE credit etc.)."]
-    #[serde(rename = "adjustmentDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "adjustmentDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub adjustment_details: Vec<serde_json::Value>,
 }
 impl BalanceProperties {
@@ -269,7 +279,11 @@ impl BudgetTimePeriod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BudgetsListResult {
     #[doc = "The list of budgets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Budget>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -334,7 +348,11 @@ impl ChargeSummaryProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChargesListResult {
     #[doc = "The list of charge summary"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ChargeSummary>,
 }
 impl ChargesListResult {
@@ -409,13 +427,26 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[doc = "The list of filters on resource groups, allowed at subscription level only."]
-    #[serde(rename = "resourceGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_groups: Vec<String>,
     #[doc = "The list of filters on resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<String>,
     #[doc = "The list of filters on meters (GUID), mandatory for budgets of usage category. "]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub meters: Vec<String>,
     #[doc = "The dictionary of filters on tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -459,7 +490,12 @@ pub struct ForecastProperties {
     #[serde(rename = "chargeType", default, skip_serializing_if = "Option::is_none")]
     pub charge_type: Option<forecast_properties::ChargeType>,
     #[doc = "The details about the forecast confidence levels. This is populated only when chargeType is Forecast."]
-    #[serde(rename = "confidenceLevels", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "confidenceLevels",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub confidence_levels: Vec<serde_json::Value>,
 }
 impl ForecastProperties {
@@ -550,7 +586,11 @@ pub mod forecast_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ForecastsListResult {
     #[doc = "The list of forecasts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Forecast>,
 }
 impl azure_core::Continuable for ForecastsListResult {
@@ -589,13 +629,27 @@ pub struct ManagementGroupAggregatedCostProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
     #[doc = "Children of a management group"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<ManagementGroupAggregatedCostResult>,
     #[doc = "List of subscription Guids included in the calculation of aggregated cost"]
-    #[serde(rename = "includedSubscriptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includedSubscriptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub included_subscriptions: Vec<String>,
     #[doc = "List of subscription Guids excluded from the calculation of aggregated cost"]
-    #[serde(rename = "excludedSubscriptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedSubscriptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_subscriptions: Vec<String>,
 }
 impl ManagementGroupAggregatedCostProperties {
@@ -719,7 +773,11 @@ impl MarketplaceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketplacesListResult {
     #[doc = "The list of marketplaces."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Marketplace>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -809,10 +867,20 @@ pub struct Notification {
     #[serde(rename = "contactEmails")]
     pub contact_emails: Vec<String>,
     #[doc = "Contact roles to send the budget notification to when the threshold is exceeded."]
-    #[serde(rename = "contactRoles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "contactRoles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub contact_roles: Vec<String>,
     #[doc = "Action groups to send the budget notification to when the threshold is exceeded."]
-    #[serde(rename = "contactGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "contactGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub contact_groups: Vec<String>,
 }
 impl Notification {
@@ -909,7 +977,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of consumption operations supported by the Microsoft.Consumption resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -930,7 +1002,11 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PriceSheetModel {
     #[doc = "Price sheet"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pricesheets: Vec<PriceSheetProperties>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1063,7 +1139,11 @@ impl ReservationDetailProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationDetailsListResult {
     #[doc = "The list of reservation details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReservationDetail>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1136,7 +1216,11 @@ impl ReservationRecommendationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationRecommendationsListResult {
     #[doc = "The list of reservation recommendations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReservationRecommendation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1157,7 +1241,11 @@ impl ReservationRecommendationsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationSummariesListResult {
     #[doc = "The list of reservation summaries."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReservationSummary>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1276,7 +1364,11 @@ impl Tag {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagProperties {
     #[doc = "A list of Tag."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<Tag>,
 }
 impl TagProperties {
@@ -1465,7 +1557,11 @@ impl UsageDetailsDownloadResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageDetailsListResult {
     #[doc = "The list of usage details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UsageDetail>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

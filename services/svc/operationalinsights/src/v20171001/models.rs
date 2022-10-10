@@ -31,7 +31,11 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Indicates resources which were responsible for the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<String>,
     #[doc = "Additional properties that can be provided on the error details object"]
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
@@ -56,7 +60,11 @@ pub struct ErrorInfo {
     #[doc = "A human readable error message."]
     pub message: String,
     #[doc = "error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<ErrorInfo>>,
@@ -118,10 +126,18 @@ pub mod metadata_application {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The related tables for the Application Insights app."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub tables: Vec<String>,
         #[doc = "The related functions for the Application Insights app."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub functions: Vec<String>,
     }
     impl Related {
@@ -161,19 +177,40 @@ pub mod metadata_category {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The tables related to the category"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub tables: Vec<String>,
         #[doc = "The functions related to the category"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub functions: Vec<String>,
         #[doc = "The resource types related to the category"]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceTypes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_types: Vec<String>,
         #[doc = "The saved queries related to the category"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub queries: Vec<String>,
         #[doc = "The Log Analytics solutions related to the category"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub solutions: Vec<String>,
     }
     impl Related {
@@ -231,19 +268,40 @@ pub mod metadata_function {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The related tables for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub tables: Vec<String>,
         #[doc = "The related Log Analytics solutions for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub solutions: Vec<String>,
         #[doc = "The related resource types for the function."]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceTypes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_types: Vec<String>,
         #[doc = "The related categories for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub categories: Vec<String>,
         #[doc = "The related workspaces for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub workspaces: Vec<String>,
     }
     impl Related {
@@ -258,10 +316,18 @@ pub struct MetadataPermissions {
     #[doc = "The permission indication for the workspaces on the metadata request."]
     pub workspaces: Vec<serde_json::Value>,
     #[doc = "The permission indication for the Azure resources on the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<serde_json::Value>,
     #[doc = "The permission indication for the Application Insights apps on the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applications: Vec<serde_json::Value>,
 }
 impl MetadataPermissions {
@@ -287,7 +353,11 @@ pub struct MetadataQuery {
     #[doc = "The KQL body of the query."]
     pub body: String,
     #[doc = "The user defined labels associated with the query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "String-based key-value tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -319,16 +389,33 @@ pub mod metadata_query {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The related categories for the query."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub categories: Vec<String>,
         #[doc = "The related Log Analytics solutions for the query."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub solutions: Vec<String>,
         #[doc = "The related resource types for the query."]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceTypes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_types: Vec<String>,
         #[doc = "The related tables for the query."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub tables: Vec<String>,
     }
     impl Related {
@@ -360,7 +447,11 @@ pub struct MetadataResourceType {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The user-defined labels of the resource-type"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "String-based key-value tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -392,22 +483,46 @@ pub mod metadata_resource_type {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The tables related to the resource-type"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub tables: Vec<String>,
         #[doc = "The functions related to the resource-type"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub functions: Vec<String>,
         #[doc = "The categories related to the resource-type"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub categories: Vec<String>,
         #[doc = "The queries related to the resource-type"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub queries: Vec<String>,
         #[doc = "The Log Analytics workspaces related to the resource-type"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub workspaces: Vec<String>,
         #[doc = "The Azure resources related to the resource-type"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resources: Vec<String>,
     }
     impl Related {
@@ -420,34 +535,75 @@ pub mod metadata_resource_type {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataResults {
     #[doc = "The list of categories that are referenced in this metadata response."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub categories: Vec<MetadataCategory>,
     #[doc = "The list of resource types that are referenced in this metadata response."]
-    #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_types: Vec<MetadataResourceType>,
     #[doc = "The list of Log Analytics solutions installed on the workspace."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub solutions: Vec<MetadataSolution>,
     #[doc = "The list of tables and columns that comprise the schema of the workspace."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tables: Vec<MetadataTable>,
     #[doc = "The list of functions stored on the workspace, or introduced by solutions etc."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub functions: Vec<MetadataFunction>,
     #[doc = "The list of saved queries stored on the workspace, or introduced by solutions, resource types, etc."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub queries: Vec<MetadataQuery>,
     #[doc = "The list of Application Insights apps that were referenced in the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applications: Vec<MetadataApplication>,
     #[doc = "The list of Log Analytics workspaces that were referenced in the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub workspaces: Vec<MetadataWorkspace>,
     #[doc = "The list of Azure resources that were referenced in the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<MetadataResource>,
     #[doc = "The list of permission rules that affected the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub permissions: Vec<MetadataPermissions>,
 }
 impl MetadataResults {
@@ -498,16 +654,32 @@ pub mod metadata_solution {
         #[doc = "The tables related to the Log Analytics solution"]
         pub tables: Vec<String>,
         #[doc = "The functions related to the Log Analytics solution"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub functions: Vec<String>,
         #[doc = "The categories related to the Log Analytics solution"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub categories: Vec<String>,
         #[doc = "The saved queries related to the Log Analytics solution"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub queries: Vec<String>,
         #[doc = "The Workspaces referenced in the metadata request that are related to the Log Analytics solution"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub workspaces: Vec<String>,
     }
     impl Related {
@@ -536,7 +708,11 @@ pub struct MetadataTable {
     #[serde(rename = "timespanColumn", default, skip_serializing_if = "Option::is_none")]
     pub timespan_column: Option<String>,
     #[doc = "The user defined labels of the table"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "String-based key-value tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -545,7 +721,11 @@ pub struct MetadataTable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "The list of columns defined on the table"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<serde_json::Value>,
     #[doc = "The related metadata items for the table"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -572,22 +752,47 @@ pub mod metadata_table {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The related categories for the table"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub categories: Vec<String>,
         #[doc = "The related Log Analytics solutions for the table"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub solutions: Vec<String>,
         #[doc = "The related resource types for the table"]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceTypes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_types: Vec<String>,
         #[doc = "The related Log Analytics workspaces for the table"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub workspaces: Vec<String>,
         #[doc = "The related functions for the table"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub functions: Vec<String>,
         #[doc = "The related saved queries for the table"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub queries: Vec<String>,
     }
     impl Related {
@@ -629,19 +834,40 @@ pub mod metadata_workspace {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[doc = "The related tables for the Log Analytics workspace."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub tables: Vec<String>,
         #[doc = "The related Log Analytics solutions for the Log Analytics workspace."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub solutions: Vec<String>,
         #[doc = "The related resource types for the Log Analytics workspace."]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceTypes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_types: Vec<String>,
         #[doc = "The related functions for the Log Analytics workspace."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub functions: Vec<String>,
         #[doc = "The related Azure resources for the Log Analytics workspace."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resources: Vec<String>,
     }
     impl Related {

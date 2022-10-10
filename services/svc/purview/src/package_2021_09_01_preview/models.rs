@@ -162,7 +162,12 @@ pub struct AdlsGen2AccountReceivedAssetProperties {
     #[serde(rename = "receiverAssetName", default, skip_serializing_if = "Option::is_none")]
     pub receiver_asset_name: Option<String>,
     #[doc = "Paths from adls gen2 account made available for the share."]
-    #[serde(rename = "receiverPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "receiverPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub receiver_paths: Vec<String>,
 }
 impl AdlsGen2AccountReceivedAssetProperties {
@@ -639,7 +644,12 @@ pub struct BlobAccountReceivedAssetProperties {
     #[serde(rename = "receiverAssetName", default, skip_serializing_if = "Option::is_none")]
     pub receiver_asset_name: Option<String>,
     #[doc = "Paths from blob account made available for the share."]
-    #[serde(rename = "receiverPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "receiverPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub receiver_paths: Vec<String>,
 }
 impl BlobAccountReceivedAssetProperties {
@@ -1015,7 +1025,11 @@ pub struct PurviewShareErrorInfo {
     #[doc = "Code of the error"]
     pub code: String,
     #[doc = "Nested details of the error model"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<PurviewShareErrorInfo>,
     #[doc = "Message of the error"]
     pub message: String,
