@@ -140,10 +140,48 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     ///
     fn build_connection_resource(
         transport_type: &ServiceBusTransportType,
-        fully_qualified_namespace: Option<impl Into<String>>,
-        entity_name: Option<impl Into<String>>,
-    ) -> String {
-        todo!()
+        fully_qualified_namespace: Option<&str>,
+        entity_name: Option<&str>,
+    ) -> Result<String, Error> {
+        // // If there is no namespace, there is no basis for a URL and the
+        // // resource is empty.
+
+        // if (string.IsNullOrEmpty(fullyQualifiedNamespace))
+        // {
+        //     return string.Empty;
+        // }
+
+        // var builder = new UriBuilder(fullyQualifiedNamespace)
+        // {
+        //     Scheme = transportType.GetUriScheme(),
+        //     Path = entityName,
+        //     Port = -1,
+        //     Fragment = string.Empty,
+        //     Password = string.Empty,
+        //     UserName = string.Empty,
+        // };
+
+        // if (builder.Path.EndsWith("/", StringComparison.Ordinal))
+        // {
+        //     builder.Path = builder.Path.TrimEnd('/');
+        // }
+
+        // return builder.Uri.AbsoluteUri.ToLowerInvariant();
+
+        match fully_qualified_namespace {
+            Some(fqn) => {
+                let mut builder =
+                    Url::parse(&format!("{}://{}", transport_type.url_scheme(), fqn))?;
+                builder.set_path(&entity_name.unwrap_or_default());
+                builder.set_port(None);
+                builder.set_fragment(None);
+                builder.set_password(None);
+                builder.set_username("");
+
+                Ok(builder.to_string().to_lowercase())
+            }
+            None => Ok(String::new()),
+        }
     }
 }
 
@@ -174,7 +212,7 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
                     &options.transport_type,
                     fully_qualified_namespace,
                     entity_path,
-                );
+                )?;
                 let shared_access_key_name = ok_if_not_none_or_empty!(
                     connection_string_properties.shared_access_key_name(),
                     "shared_access_key_name"
