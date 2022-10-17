@@ -74,11 +74,17 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
     /// The endpoint for the Service Bus service to which the scope is associated.
     service_endpoint: Url,
 
+    /// <summary>
+    ///   The endpoint for the Service Bus service to be used when establishing the connection.
+    /// </summary>
+    ///
+    connection_endpoint: Url,
+
     /// The provider to use for obtaining a token for authorization with the Service Bus service.
     cbs_token_provider: CbsTokenProvider<TC>,
 
     /// The type of transport to use for communication.
-    transport: ServiceBusTransportType,
+    transport_type: ServiceBusTransportType,
 
     // /// <summary>
     // ///   The proxy, if any, which should be used for communication.
@@ -150,9 +156,17 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     /// amount, ensuring that it is renewed before it has expired.
     const AUTHORIZATION_TOKEN_EXPIRATION_BUFFER: TimeSpan =
         TimeSpan::seconds(AUTHORIZATION_REFRESH_BUFFER_SECONDS as i64 + 2 * 60);
+
+    pub fn service_endpoint(&self) -> &Url {
+        &self.service_endpoint
+    }
 }
 
 impl<TC: TokenCredential> AmqpConnectionScope<TC> {
+    pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
+        &self.transport_type
+    }
+
     async fn negotiate_claim(&mut self) -> Result<(), ()> {
         todo!()
     }
@@ -217,8 +231,9 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             active_links: HashMap::new(),
             id,
             service_endpoint,
+            connection_endpoint,
             cbs_token_provider,
-            transport: transport_type,
+            transport_type,
             connection_handle,
             session_handle,
             transaction_controller,

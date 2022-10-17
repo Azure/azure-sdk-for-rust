@@ -1,7 +1,9 @@
 use azure_core::{auth::TokenCredential, Url};
+use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
+use tokio::time::error::Elapsed;
 
 use crate::{
-    amqp::amqp_client::AmqpClient,
+    amqp::amqp_client::{AmqpClient, AmqpClientError},
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,
@@ -29,6 +31,37 @@ pub enum Error {
 
     #[error(transparent)]
     SasSignatureError(#[from] SasSignatureError),
+
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+
+    #[error(transparent)]
+    Open(#[from] OpenError),
+
+    #[error(transparent)]
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error(transparent)]
+    TimeoutElapsed(#[from] Elapsed),
+
+    #[error(transparent)]
+    Begin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
+}
+
+impl From<AmqpClientError> for Error {
+    fn from(err: AmqpClientError) -> Self {
+        match err {
+            AmqpClientError::UrlParseError(err) => Self::UrlParseError(err),
+            AmqpClientError::Open(err) => Self::Open(err),
+            AmqpClientError::WebSocket(err) => Self::WebSocket(err),
+            AmqpClientError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
+            AmqpClientError::Begin(err) => Self::Begin(err),
+            AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
+        }
+    }
 }
 
 macro_rules! ok_if_not_none_or_empty {
@@ -54,7 +87,6 @@ macro_rules! ok_if_not_none_or_empty {
 pub(crate) struct ServiceBusConnection<C> {
     fully_qualified_namespace: String,
     entity_path: String,
-    transport_type: ServiceBusTransportType,
     retry_options: ServiceBusRetryOptions,
 
     pub(crate) inner_client: C,
@@ -91,11 +123,6 @@ impl<C: TransportClient> ServiceBusConnection<C> {
         self.inner_client.service_endpoint()
     }
 
-    /// The transport type used for this connection.
-    pub fn transport_type(&self) -> &ServiceBusTransportType {
-        &self.transport_type
-    }
-
     /// The retry options associated with this connection.
     pub fn retry_options(&self) -> &ServiceBusRetryOptions {
         &self.retry_options
@@ -112,7 +139,7 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     /// <returns>The value to use as the audience of the signature.</returns>
     ///
     fn build_connection_resource(
-        transport_type: ServiceBusTransportType,
+        transport_type: &ServiceBusTransportType,
         fully_qualified_namespace: Option<impl Into<String>>,
         entity_name: Option<impl Into<String>>,
     ) -> String {
@@ -120,8 +147,13 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     }
 }
 
-impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<TC>>> {
-    pub(crate) async fn open<'a>(
+impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
+    /// The transport type used for this connection.
+    pub fn transport_type(&self) -> &ServiceBusTransportType {
+        &self.inner_client.transport_type()
+    }
+
+    pub(crate) async fn new<'a>(
         connection_string: impl AsRef<str> + 'a,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
@@ -131,9 +163,7 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<ServiceBusTokenCredent
         let fully_qualified_namespace = connection_string_properties
             .endpoint()
             .and_then(|url| url.host_str());
-        let transport_type = options.transport_type;
         let entity_path = connection_string_properties.entity_path();
-        let retry_options = options.retry_options;
 
         let shared_access_signature = match connection_string_properties.shared_access_signature() {
             Some(shared_access_signature) => {
@@ -141,7 +171,7 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<ServiceBusTokenCredent
             }
             None => {
                 let resource = Self::build_connection_resource(
-                    transport_type,
+                    &options.transport_type,
                     fully_qualified_namespace,
                     entity_path,
                 );
@@ -167,6 +197,21 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<ServiceBusTokenCredent
         let token_credential: ServiceBusTokenCredential<TC> =
             ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 
-        todo!()
+        let host = fully_qualified_namespace.unwrap_or("");
+        let inner_client = AmqpClient::new(
+            host,
+            token_credential,
+            options.transport_type,
+            options.custom_endpoint_address,
+            options.retry_options.try_timeout,
+        )
+        .await?;
+
+        Ok(Self {
+            fully_qualified_namespace: host.to_string(),
+            entity_path: entity_path.unwrap_or("").to_string(),
+            retry_options: options.retry_options,
+            inner_client,
+        })
     }
 }

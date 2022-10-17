@@ -16,7 +16,11 @@ use crate::{
         service_bus_transport_metrics::ServiceBusTransportMetrics,
     },
     core::TransportClient,
-    primitives::service_bus_retry_policy::ServiceBusRetryPolicy,
+    primitives::{
+        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_transport_type::ServiceBusTransportType,
+    },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
 };
 
@@ -84,18 +88,6 @@ where
     /// <summary>The currently active token to use for authorization with the Service Bus service.</summary>
     access_token: Option<AccessToken>,
 
-    /// <summary>
-    ///   The endpoint for the Service Bus service to which the client is associated.
-    /// </summary>
-    ///
-    service_endpoint: Url,
-
-    /// <summary>
-    ///   The endpoint for the Service Bus service to be used when establishing the connection.
-    /// </summary>
-    ///
-    connection_endpoint: Url,
-
     // /// <summary>
     // ///   Gets the credential to use for authorization with the Service Bus service.
     // /// </summary>
@@ -115,22 +107,24 @@ where
 }
 
 impl<C: TokenCredential> AmqpClient<C> {
+    pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
+        self.connection_scope.transport_type()
+    }
+
     pub async fn new(
         host: &str,
         credential: ServiceBusTokenCredential<C>,
-        options: ServiceBusClientOptions,
+        transport_type: ServiceBusTransportType,
+        custom_endpoint: Option<Url>,
+        retry_timeout: Duration,
     ) -> Result<Self, AmqpClientError> {
         let service_endpoint = {
-            let scheme = options.transport_type.url_scheme();
+            let scheme = transport_type.url_scheme();
             let addr = format!("{scheme}://{host}");
             Url::parse(&addr)?
         };
 
-        let connection_endpoint = match options
-            .custom_endpoint_address
-            .as_ref()
-            .and_then(|url| url.host_str())
-        {
+        let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str()) {
             Some(custom_host) => {
                 let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
                 Url::parse(&addr)?
@@ -145,19 +139,19 @@ impl<C: TokenCredential> AmqpClient<C> {
 
         // Create AmqpConnectionScope
         let connection_scope = AmqpConnectionScope::new(
-            service_endpoint.clone(),
-            connection_endpoint.clone(),
+            service_endpoint,
+            connection_endpoint,
             credential,
-            options.transport_type,
-            *options.retry_options.try_timeout(),
+            transport_type,
+            retry_timeout,
         )
         .await?;
         Ok(Self {
             credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
             closed: false,
             access_token: None,
-            service_endpoint,
-            connection_endpoint,
+            // service_endpoint,
+            // connection_endpoint,
             connection_scope,
             // transport_metrics,
         })
@@ -183,7 +177,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
 
     /// The endpoint for the Service Bus service to which the client is associated.
     fn service_endpoint(&self) -> &Url {
-        todo!()
+        self.connection_scope.service_endpoint()
     }
 
     /// Creates a sender strongly aligned with the active protocol and transport,
