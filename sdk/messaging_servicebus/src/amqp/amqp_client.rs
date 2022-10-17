@@ -5,6 +5,8 @@ use azure_core::{
     auth::{AccessToken, TokenCredential, TokenResponse},
     Url,
 };
+use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
+use tokio::time::error::Elapsed;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -19,8 +21,10 @@ use crate::{
 };
 
 use super::{
-    amqp_connection_scope::AmqpConnectionScope, amqp_receiver::AmqpReceiver,
-    amqp_rule_manager::AmqpRuleManager, amqp_sender::AmqpSender,
+    amqp_connection_scope::{AmqpConnectionScope, AmqpConnectionScopeError},
+    amqp_receiver::AmqpReceiver,
+    amqp_rule_manager::AmqpRuleManager,
+    amqp_sender::AmqpSender,
 };
 
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
@@ -29,6 +33,33 @@ const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
 pub enum AmqpClientError {
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
+
+    #[error(transparent)]
+    Open(#[from] OpenError),
+
+    #[error(transparent)]
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error(transparent)]
+    TimeoutElapsed(#[from] Elapsed),
+
+    #[error(transparent)]
+    Begin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
+}
+
+impl From<AmqpConnectionScopeError> for AmqpClientError {
+    fn from(err: AmqpConnectionScopeError) -> Self {
+        match err {
+            AmqpConnectionScopeError::Open(err) => Self::Open(err),
+            AmqpConnectionScopeError::WebSocket(err) => Self::WebSocket(err),
+            AmqpConnectionScopeError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
+            AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
+            AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
+        }
+    }
 }
 
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
@@ -51,7 +82,7 @@ where
     closed: bool,
 
     /// <summary>The currently active token to use for authorization with the Service Bus service.</summary>
-    access_token: AccessToken,
+    access_token: Option<AccessToken>,
 
     /// <summary>
     ///   The endpoint for the Service Bus service to which the client is associated.
@@ -78,12 +109,12 @@ where
     ///
     // private AmqpConnectionScope ConnectionScope { get; }
     connection_scope: AmqpConnectionScope<TC>,
-
-    // public override ServiceBusTransportMetrics TransportMetrics { get; }
-    transport_metrics: Option<ServiceBusTransportMetrics>,
+    // TODO: implement metrics
+    // // public override ServiceBusTransportMetrics TransportMetrics { get; }
+    // transport_metrics: Option<ServiceBusTransportMetrics>,
 }
 
-impl<C: TokenCredential> AmqpClient<ServiceBusTokenCredential<C>> {
+impl<C: TokenCredential> AmqpClient<C> {
     pub async fn new(
         host: &str,
         credential: ServiceBusTokenCredential<C>,
@@ -107,13 +138,29 @@ impl<C: TokenCredential> AmqpClient<ServiceBusTokenCredential<C>> {
             None => service_endpoint.clone(),
         };
 
-        let transport_metrics = match options.enable_transport_metrics {
-            true => Some(ServiceBusTransportMetrics::new()),
-            false => None,
-        };
+        // let transport_metrics = match options.enable_transport_metrics {
+        //     true => Some(ServiceBusTransportMetrics::new()),
+        //     false => None,
+        // };
 
         // Create AmqpConnectionScope
-        todo!()
+        let connection_scope = AmqpConnectionScope::new(
+            service_endpoint.clone(),
+            connection_endpoint.clone(),
+            credential,
+            options.transport_type,
+            *options.retry_options.try_timeout(),
+        )
+        .await?;
+        Ok(Self {
+            credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
+            closed: false,
+            access_token: None,
+            service_endpoint,
+            connection_endpoint,
+            connection_scope,
+            // transport_metrics,
+        })
     }
 }
 

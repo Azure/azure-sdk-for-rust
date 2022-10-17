@@ -181,7 +181,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         transport_type: ServiceBusTransportType,
         // use_single_session: bool,
         operation_timeout: StdDuration,
-        metrics: Option<ServiceBusTransportMetrics>,
+        // metrics: Option<ServiceBusTransportMetrics>, // TODO: implement metrics
     ) -> Result<Self, AmqpConnectionScopeError> {
         // `Guid` from dotnet:
         // This is a convenient static method that you can call to get a new Guid. The method
