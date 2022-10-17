@@ -11,7 +11,7 @@ use azure_storage::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
-    StorageCredentials,
+    CloudLocation, StorageCredentials,
 };
 use time::OffsetDateTime;
 
@@ -28,6 +28,19 @@ impl ContainerClient {
             service_client,
             container_name,
         }
+    }
+
+    pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
+        let cloud_location: CloudLocation = url.try_into()?;
+
+        let container = url.path().split_terminator('/').nth(1).ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                "unable to find storage container from url"
+            })
+        })?;
+
+        let client = ClientBuilder::with_location(cloud_location).container_client(container);
+        Ok(client)
     }
 
     /// Create a container
