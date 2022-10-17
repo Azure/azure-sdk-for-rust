@@ -37,9 +37,9 @@ urlencoding = "2"
 uuid = "1"
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.6.8", features = ["transaction"]}
-fe2o3-amqp-cbs = "0.0.1"
-fe2o3-amqp-types = "0.5.3"
+fe2o3-amqp = {version = "0.7.0", features = ["transaction"]}
+fe2o3-amqp-cbs = "0.0.2"
+fe2o3-amqp-types = "0.6.0"
 fe2o3-amqp-ws = "0.1.2"
 
 [dev-dependencies]

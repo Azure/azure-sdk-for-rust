@@ -4,17 +4,17 @@ use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
     connection::{ConnectionHandle, OpenError},
-    session::SessionHandle,
+    session::{BeginError, SessionHandle},
     transaction::Controller,
     transport::protocol_header::{ProtocolHeader, ProtocolId},
-    Connection,
+    Connection, Session,
 };
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::rngs::StdRng;
 use serde_amqp::Value;
 use time::Duration as TimeSpan;
-use tokio::{net::TcpStream, time::Interval};
+use tokio::time::{error::Elapsed, timeout, Interval};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -35,6 +35,12 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error(transparent)]
+    TimeoutElapsed(#[from] Elapsed),
+
+    #[error(transparent)]
+    Begin(#[from] BeginError),
 }
 
 #[derive(Debug)]
@@ -78,12 +84,13 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
     connection_handle: ConnectionHandle<()>,
 
     /// A handle to the AMQP session that is active for the current connection
+    ///
+    /// TODO: a single session?
     session_handle: SessionHandle<()>,
 
     /// The controller responsible for managing transactions.
     transaction_controller: Controller,
-
-    use_single_session: bool,
+    // use_single_session: bool,
 }
 
 impl<TC: TokenCredential> AmqpConnectionScope<TC> {
@@ -157,7 +164,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     /// * `connection_endpoint` - The endpoint to use for the initial connection to the Service Bus
     ///   service.
     /// * `credential` - The credential to use for authorization with the Service Bus service.
-    /// * `transport` - The transport to use for communication.
+    /// * `transport_type` - The transport to use for communication.
     /// * `use_single_session` - If true, all links will use a single session.
     /// * `operation_timeout` - The timeout for operations associated with the connection.
     /// * `metrics` - The metrics instance to populate transport metrics. May be null.
@@ -165,11 +172,11 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         service_endpoint: Url,
         connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
         credential: ServiceBusTokenCredential<TC>,
-        transport: ServiceBusTransportType,
-        use_single_session: bool,
+        transport_type: ServiceBusTransportType,
+        // use_single_session: bool,
         operation_timeout: StdDuration,
         metrics: Option<ServiceBusTransportMetrics>,
-    ) -> Result<Self, ()> {
+    ) -> Result<Self, AmqpConnectionScopeError> {
         // `Guid` from dotnet:
         // This is a convenient static method that you can call to get a new Guid. The method
         // creates a Version 4 Universally Unique Identifier (UUID) as described in RFC 4122, Sec.
@@ -182,6 +189,12 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
             operation_cancellation_source.child_token(),
         );
+
+        let fut = Self::open_connection(connection_endpoint, transport_type, &id);
+        let mut connection = timeout(operation_timeout, fut).await??;
+
+        // TODO: should timeout account for time used previously?
+        let mut session = timeout(operation_timeout, Session::begin(&mut connection)).await??;
 
         todo!()
     }
@@ -216,6 +229,14 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             }
         };
         Ok(connection)
+    }
+
+    async fn request_authorization_using_cbs(
+        connection: &mut ConnectionHandle<()>,
+        tokoen_provider: &CbsTokenProvider<TC>,
+        endpoint: &Url,
+    ) -> Result<(), ()> {
+        todo!()
     }
 }
 

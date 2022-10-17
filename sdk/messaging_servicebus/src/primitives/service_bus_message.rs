@@ -3,7 +3,9 @@ use std::borrow::Cow;
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
-    messaging::{annotations::OwnedKey, ApplicationProperties, Message, MessageAnnotations},
+    messaging::{
+        annotations::OwnedKey, ApplicationProperties, Body, Data, Message, MessageAnnotations,
+    },
     primitives::{Binary, Value},
 };
 use time::OffsetDateTime;
@@ -27,7 +29,7 @@ use super::service_bus_received_message::ServiceBusReceivedMessage;
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 pub struct ServiceBusMessage {
     // TODO: change to generics?
-    pub(crate) amqp_message: Message<Value>,
+    pub(crate) amqp_message: Message<Data>,
 }
 
 impl Default for ServiceBusMessage {
@@ -51,9 +53,23 @@ where
     }
 }
 
-impl From<ServiceBusReceivedMessage> for ServiceBusMessage {
-    fn from(received: ServiceBusReceivedMessage) -> Self {
+impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
+    type Error = ServiceBusReceivedMessage;
+
+    fn try_from(received: ServiceBusReceivedMessage) -> Result<Self, Self::Error> {
         use fe2o3_amqp_types::messaging::Header;
+
+        // A raw AMQP message may be sent to a queue or topic.
+        //
+        // TODO: what about empty body?
+        match &received.amqp_message.body {
+            Body::Data(batch) => match batch.len() {
+                1 => {}
+                // There should be only one data section
+                _ => return Err(received),
+            },
+            _ => return Err(received),
+        }
 
         let src = received.amqp_message;
 
@@ -104,7 +120,13 @@ impl From<ServiceBusReceivedMessage> for ServiceBusMessage {
                     ApplicationProperties(map)
                 });
 
-        let body = src.body;
+        let body = match src.body {
+            Body::Data(batch) => match batch.into_inner().drain(..).next() {
+                Some(data) => data,
+                None => unreachable!(),
+            },
+            _ => unreachable!(),
+        };
 
         // copy footer
         let footer = src.footer;
@@ -119,28 +141,28 @@ impl From<ServiceBusReceivedMessage> for ServiceBusMessage {
             footer,
         };
 
-        Self { amqp_message }
+        Ok(Self { amqp_message })
     }
 }
 
 impl ServiceBusMessage {
-    /// Gets the raw AMQP message
-    pub fn raw_amqp_message(&self) -> &Message<Value> {
-        &self.amqp_message
-    }
+    // /// Gets the raw AMQP message
+    // pub fn raw_amqp_message(&self) -> &Message<Data> {
+    //     &self.amqp_message
+    // }
 
     /// Gets the body of the message
-    pub fn body(&self) -> Result<&[u8], Error> {
-        self.amqp_message.body()
+    pub fn body(&self) -> &[u8] {
+        &self.amqp_message.body.0
     }
 
-    pub fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error> {
-        self.amqp_message.body_mut()
+    pub fn body_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.amqp_message.body.0
     }
 
     /// Sets the body of the message
     pub fn set_body(&mut self, body: impl Into<Vec<u8>>) {
-        self.amqp_message.set_body(body)
+        self.amqp_message.body = Data(Binary::from(body));
     }
 
     /// Gets the MessageId to identify the message.

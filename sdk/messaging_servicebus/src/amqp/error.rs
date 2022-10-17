@@ -5,6 +5,9 @@ pub enum Error {
 
     #[error("PartitionKey cannot be set to a different value than SessionId")]
     PartitionKeyAndSessionIdAreDifferent,
+
+    #[error("The message is a raw AMQP message")]
+    RawAmqpMessage,
 }
 
 #[inline]

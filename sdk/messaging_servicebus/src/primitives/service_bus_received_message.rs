@@ -4,7 +4,8 @@ use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     messaging::{
-        annotations::AnnotationKey, ApplicationProperties, Header, Message, MessageAnnotations,
+        annotations::AnnotationKey, ApplicationProperties, Body, Header, Message,
+        MessageAnnotations,
     },
     primitives::{SimpleValue, Timestamp, Uuid, Value},
 };
@@ -38,7 +39,7 @@ pub struct ServiceBusReceivedMessage {
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
-    pub(crate) amqp_message: Message<Value>, // TODO: Change to generics?
+    pub(crate) amqp_message: Message<Body<Value>>, // TODO: Change to generics?
 
     pub(crate) lock_token_uuid: fe2o3_amqp_types::primitives::Uuid,
 
@@ -53,13 +54,19 @@ impl ServiceBusReceivedMessage {
     /// # Returns
     ///
     /// The raw Amqp message.
-    pub fn raw_amqp_message(&self) -> &Message<Value> {
+    pub fn raw_amqp_message(&self) -> &Message<Body<Value>> {
         &self.amqp_message
     }
 
     /// Gets the body of the message.
     pub fn body(&self) -> Result<&[u8], Error> {
-        self.amqp_message.body()
+        match &self.amqp_message.body {
+            Body::Data(batch) => match batch.len() {
+                1 => Ok(batch[0].0.as_ref()),
+                _ => Err(Error::RawAmqpMessage),
+            },
+            _ => Err(Error::RawAmqpMessage),
+        }
     }
 
     /// Gets the MessageId to identify the message.

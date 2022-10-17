@@ -22,7 +22,7 @@ use super::{
 };
 
 pub(crate) trait AmqpMessageExt {
-    fn body(&self) -> Result<&[u8], Error>;
+    // fn body(&self) -> Result<&[u8], Error>;
 
     fn message_id(&self) -> Option<Cow<'_, str>>;
 
@@ -50,9 +50,9 @@ pub(crate) trait AmqpMessageExt {
 }
 
 pub(crate) trait AmqpMessageMutExt {
-    fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error>;
+    // fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error>;
 
-    fn set_body(&mut self, body: impl Into<Vec<u8>>);
+    // fn set_body(&mut self, body: impl Into<Vec<u8>>);
 
     fn message_id_mut(&mut self) -> Option<&mut MessageId>;
 
@@ -97,28 +97,11 @@ pub(crate) trait AmqpMessageMutExt {
     fn set_reply_to(&mut self, reply_to: Option<impl Into<String>>);
 }
 
-impl<T> AmqpMessageExt for Message<T> {
-    #[inline]
-    fn body(&self) -> Result<&[u8], Error> {
-        match &self.body {
-            Body::Data(Data(buf)) => Ok(buf),
-            Body::Sequence(_) => Err(not_supported_error(
-                "Body::Sequence",
-                "body()",
-                "raw_amqp_message()",
-            )),
-            Body::Value(_) => Err(not_supported_error(
-                "Body::Value",
-                "body()",
-                "raw_amqp_message()",
-            )),
-            Body::Empty => Err(not_supported_error(
-                "Body::Empty",
-                "body()",
-                "raw_amqp_message()",
-            )),
-        }
-    }
+impl<B> AmqpMessageExt for Message<B> {
+    // #[inline]
+    // fn body(&self) -> Result<&[u8], Error> {
+    //     self.body()
+    // }
 
     #[inline]
     fn message_id(&self) -> Option<Cow<'_, str>> {
@@ -245,33 +228,16 @@ impl<T> AmqpMessageExt for Message<T> {
     }
 }
 
-impl<T> AmqpMessageMutExt for Message<T> {
-    #[inline]
-    fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error> {
-        match &mut self.body {
-            Body::Data(Data(buf)) => Ok(buf),
-            Body::Sequence(_) => Err(not_supported_error(
-                "Body::Sequence",
-                "body()",
-                "raw_amqp_message()",
-            )),
-            Body::Value(_) => Err(not_supported_error(
-                "Body::Value",
-                "body()",
-                "raw_amqp_message()",
-            )),
-            Body::Empty => Err(not_supported_error(
-                "Body::Empty",
-                "body()",
-                "raw_amqp_message()",
-            )),
-        }
-    }
+impl<B> AmqpMessageMutExt for Message<B> {
+    // #[inline]
+    // fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error> {
+    //     Ok(&mut self.body.0)
+    // }
 
-    #[inline]
-    fn set_body(&mut self, body: impl Into<Vec<u8>>) {
-        self.body = Body::Data(Data(Binary::from(body)))
-    }
+    // #[inline]
+    // fn set_body(&mut self, body: impl Into<Vec<u8>>) {
+    //     self.body = Data(Binary::from(body))
+    // }
 
     #[inline]
     fn message_id_mut(&mut self) -> Option<&mut MessageId> {
