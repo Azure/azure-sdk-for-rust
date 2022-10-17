@@ -135,10 +135,20 @@ pub mod availability_status {
         #[serde(rename = "recentlyResolved", default, skip_serializing_if = "Option::is_none")]
         pub recently_resolved: Option<properties::RecentlyResolved>,
         #[doc = "Lists actions the user can take based on the current availabilityState of the resource."]
-        #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "recommendedActions",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub recommended_actions: Vec<RecommendedAction>,
         #[doc = "Lists the service impacting events that may be affecting the health of the resource."]
-        #[serde(rename = "serviceImpactingEvents", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "serviceImpactingEvents",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
     }
     impl Properties {

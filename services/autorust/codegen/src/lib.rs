@@ -1,8 +1,8 @@
 pub mod autorust_toml;
 pub mod cargo_toml;
-mod codegen;
-mod codegen_models;
-mod codegen_operations;
+pub mod codegen;
+pub mod codegen_models;
+pub mod codegen_operations;
 pub mod config_parser;
 pub mod content_type;
 pub mod crates;

@@ -30,7 +30,12 @@ pub struct EnabledResourceTypeProperties {
     #[serde(rename = "extensionType", default, skip_serializing_if = "Option::is_none")]
     pub extension_type: Option<String>,
     #[doc = "Metadata of the Resource Type"]
-    #[serde(rename = "typesMetadata", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "typesMetadata",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub types_metadata: Vec<serde_json::Value>,
 }
 impl EnabledResourceTypeProperties {
@@ -45,7 +50,11 @@ pub struct EnabledResourceTypesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of EnabledResourceTypes available for a customLocation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EnabledResourceType>,
 }
 impl azure_core::Continuable for EnabledResourceTypesListResult {
@@ -87,10 +96,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -255,7 +273,11 @@ pub struct CustomLocationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of Custom Locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomLocation>,
 }
 impl azure_core::Continuable for CustomLocationListResult {
@@ -338,7 +360,12 @@ pub struct CustomLocationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<custom_location_properties::Authentication>,
     #[doc = "Contains the reference to the add-on that contains charts to deploy CRDs and operators."]
-    #[serde(rename = "clusterExtensionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clusterExtensionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cluster_extension_ids: Vec<String>,
     #[doc = "Display name for the Custom Locations location."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]

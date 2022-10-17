@@ -134,7 +134,12 @@ impl BillingAccountPoliciesResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingAccountPoliciesResponseProperties {
     #[doc = "Service tenant for the billing account."]
-    #[serde(rename = "serviceTenants", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceTenants",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_tenants: Vec<ServiceTenantResponse>,
     #[doc = "Determine if the transfers are allowed for the billing account"]
     #[serde(rename = "allowTransfers", default, skip_serializing_if = "Option::is_none")]
@@ -213,7 +218,11 @@ impl ErrorResponseBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetTenantPolicyListResponse {
     #[doc = "The list of tenant policies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GetTenantPolicyResponse>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -285,7 +294,11 @@ impl Location {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationListResult {
     #[doc = "An array of locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Location>,
 }
 impl azure_core::Continuable for LocationListResult {
@@ -345,7 +358,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -471,7 +488,12 @@ pub struct PutTenantPolicyRequestProperties {
     #[serde(rename = "blockSubscriptionsIntoTenant", default, skip_serializing_if = "Option::is_none")]
     pub block_subscriptions_into_tenant: Option<bool>,
     #[doc = "List of user objectIds that are exempted from the set subscription tenant policies for the user's tenant."]
-    #[serde(rename = "exemptedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "exemptedPrincipals",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exempted_principals: Vec<String>,
 }
 impl PutTenantPolicyRequestProperties {
@@ -549,7 +571,11 @@ pub mod subscription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionAliasListResult {
     #[doc = "The list of alias."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubscriptionAliasResponse>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -675,7 +701,11 @@ pub mod subscription_alias_response_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionListResult {
     #[doc = "An array of subscriptions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Subscription>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -751,7 +781,11 @@ impl TenantIdDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TenantListResult {
     #[doc = "An array of tenants."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TenantIdDescription>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink")]
@@ -788,7 +822,12 @@ pub struct TenantPolicy {
     #[serde(rename = "blockSubscriptionsIntoTenant", default, skip_serializing_if = "Option::is_none")]
     pub block_subscriptions_into_tenant: Option<bool>,
     #[doc = "List of user objectIds that are exempted from the set subscription tenant policies for the user's tenant."]
-    #[serde(rename = "exemptedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "exemptedPrincipals",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exempted_principals: Vec<String>,
 }
 impl TenantPolicy {

@@ -32,7 +32,6 @@ async fn main() -> azure_core::Result<()> {
     let _response = blob_client
         .put_block_blob(string)
         .content_type("text/plain")
-        .into_future()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -86,7 +85,6 @@ async fn main() -> azure_core::Result<()> {
     blob_client
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .into_future()
         .await?;
 
     Ok(())

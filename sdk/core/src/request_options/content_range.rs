@@ -49,6 +49,8 @@ impl FromStr for ContentRange {
             })
         })?;
 
+        // when requesting zero byte files from azurite, it can generate invalid content-range
+        // headers.  See Azure/Azurite#1682 for more information.
         if cfg!(feature = "azurite_workaround") && remaining == "0--1/0" {
             return Ok(ContentRange {
                 start: 0,

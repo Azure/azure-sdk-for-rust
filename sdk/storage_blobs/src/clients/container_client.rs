@@ -3,7 +3,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Body, Method, Request, Response, Url,
+    Body, Method, Request, Response, StatusCode, Url,
 };
 use azure_storage::{
     prelude::BlobSasPermissions,
@@ -84,6 +84,22 @@ impl ContainerClient {
     /// Break the lease on a container
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self.clone())
+    }
+
+    /// Check whether the container exists.
+    pub async fn exists(&self) -> azure_core::Result<bool> {
+        match self.get_properties().await {
+            Ok(_) => Ok(true),
+            Err(err)
+                if err
+                    .as_http_error()
+                    .map(|e| e.status() == StatusCode::NotFound)
+                    .unwrap_or_default() =>
+            {
+                Ok(false)
+            }
+            Err(err) => Err(err),
+        }
     }
 
     pub fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient {
@@ -191,12 +207,10 @@ mod integration_tests {
 
         container_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
         container_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -208,7 +222,6 @@ mod integration_tests {
 
         container_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
 
@@ -216,7 +229,6 @@ mod integration_tests {
         container_client
             .blob_client("hello.txt")
             .put_block_blob("world")
-            .into_future()
             .await
             .expect("put block blob should succeed");
         let list = container_client
@@ -241,7 +253,6 @@ mod integration_tests {
 
         container_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }

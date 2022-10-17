@@ -312,7 +312,11 @@ impl CertificateIssuerItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateIssuerListResult {
     #[doc = "A response message containing a list of certificate issuers in the key vault along with a link to the next page of certificate issuers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CertificateIssuerItem>,
     #[doc = "The URL to get the next set of certificate issuers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -400,7 +404,11 @@ impl CertificateItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateListResult {
     #[doc = "A response message containing a list of certificates in the key vault along with a link to the next page of certificates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CertificateItem>,
     #[doc = "The URL to get the next set of certificates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -501,7 +509,11 @@ pub struct CertificatePolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x509_props: Option<X509CertificateProperties>,
     #[doc = "Actions that will be performed by Key Vault over the lifetime of a certificate."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub lifetime_actions: Vec<LifetimeAction>,
     #[doc = "Parameters for the issuer of the X509 component of a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -569,7 +581,11 @@ pub struct Contacts {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The contact list for the vault certificates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub contacts: Vec<Contact>,
 }
 impl Contacts {
@@ -824,7 +840,11 @@ impl DeletedCertificateItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedCertificateListResult {
     #[doc = "A response message containing a list of deleted certificates in the vault along with a link to the next page of deleted certificates"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeletedCertificateItem>,
     #[doc = "The URL to get the next set of deleted certificates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -885,7 +905,11 @@ impl DeletedKeyItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedKeyListResult {
     #[doc = "A response message containing a list of deleted keys in the vault along with a link to the next page of deleted keys"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeletedKeyItem>,
     #[doc = "The URL to get the next set of deleted keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -946,7 +970,11 @@ impl DeletedSasDefinitionItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedSasDefinitionListResult {
     #[doc = "A response message containing a list of the deleted SAS definitions in the vault along with a link to the next page of deleted sas definitions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeletedSasDefinitionItem>,
     #[doc = "The URL to get the next set of deleted SAS definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1007,7 +1035,11 @@ impl DeletedSecretItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedSecretListResult {
     #[doc = "A response message containing a list of the deleted secrets in the vault along with a link to the next page of deleted secrets"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeletedSecretItem>,
     #[doc = "The URL to get the next set of deleted secrets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1068,7 +1100,11 @@ impl DeletedStorageBundle {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedStorageListResult {
     #[doc = "A response message containing a list of the deleted storage accounts in the vault along with a link to the next page of deleted storage accounts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeletedStorageAccountItem>,
     #[doc = "The URL to get the next set of deleted storage accounts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1228,7 +1264,11 @@ pub struct JsonWebKey {
     #[doc = "JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kty: Option<json_web_key::Kty>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub key_ops: Vec<String>,
     #[doc = "RSA modulus."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1489,7 +1529,11 @@ pub struct KeyCreateParameters {
     #[doc = "The public exponent for a RSA key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub public_exponent: Option<i32>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub key_ops: Vec<String>,
     #[doc = "The attributes of a key managed by the key vault service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1734,7 +1778,11 @@ impl KeyItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyListResult {
     #[doc = "A response message containing a list of keys in the key vault along with a link to the next page of keys."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<KeyItem>,
     #[doc = "The URL to get the next set of keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2116,7 +2164,12 @@ pub struct KeyRotationPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Actions that will be performed by Key Vault over the lifetime of a key. For preview, lifetimeActions can only have two items at maximum: one for rotate, one for notify. Notification time would be default to 30 days before expiry and it is not configurable."]
-    #[serde(rename = "lifetimeActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "lifetimeActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub lifetime_actions: Vec<LifetimeActions>,
     #[doc = "The key rotation policy attributes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2230,7 +2283,11 @@ pub mod key_sign_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyUpdateParameters {
     #[doc = "Json web key operations. For more information on possible key operations, see JsonWebKeyOperation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub key_ops: Vec<String>,
     #[doc = "The attributes of a key managed by the key vault service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2436,7 +2493,11 @@ pub struct OrganizationDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Details of the organization administrator."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub admin_details: Vec<AdministratorDetails>,
 }
 impl OrganizationDetails {
@@ -2460,16 +2521,35 @@ impl PendingCertificateSigningRequestResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permission {
     #[doc = "Action permissions that are granted."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
     #[doc = "Action permissions that are excluded but not denied. They may be granted by other role definitions assigned to a principal."]
-    #[serde(rename = "notActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_actions: Vec<String>,
     #[doc = "Data action permissions that are granted."]
-    #[serde(rename = "dataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_actions: Vec<DataAction>,
     #[doc = "Data action permissions that are excluded but not denied. They may be granted by other role definitions assigned to a principal."]
-    #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notDataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_data_actions: Vec<DataAction>,
 }
 impl Permission {
@@ -2579,7 +2659,11 @@ impl RoleAssignmentFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentListResult {
     #[doc = "Role assignment list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleAssignment>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2721,7 +2805,11 @@ impl RoleDefinitionFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleDefinitionListResult {
     #[doc = "Role definition list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2751,10 +2839,19 @@ pub struct RoleDefinitionProperties {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<role_definition_properties::Type>,
     #[doc = "Role definition permissions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub permissions: Vec<Permission>,
     #[doc = "Role definition assignable scopes."]
-    #[serde(rename = "assignableScopes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assignableScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub assignable_scopes: Vec<RoleScope>,
 }
 impl RoleDefinitionProperties {
@@ -3111,7 +3208,11 @@ impl SasDefinitionItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SasDefinitionListResult {
     #[doc = "A response message containing a list of SAS definitions along with a link to the next page of SAS definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SasDefinitionItem>,
     #[doc = "The URL to get the next set of SAS definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3329,7 +3430,11 @@ impl SecretItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretListResult {
     #[doc = "A response message containing a list of secrets in the key vault along with a link to the next page of secrets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SecretItem>,
     #[doc = "The URL to get the next set of secrets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3747,7 +3852,11 @@ impl StorageBundle {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageListResult {
     #[doc = "A response message containing a list of storage accounts in the key vault along with a link to the next page of storage accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageAccountItem>,
     #[doc = "The URL to get the next set of storage accounts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3779,13 +3888,25 @@ impl StorageRestoreParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubjectAlternativeNames {
     #[doc = "Email addresses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub emails: Vec<String>,
     #[doc = "Domain names."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_names: Vec<String>,
     #[doc = "User principal names."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub upns: Vec<String>,
 }
 impl SubjectAlternativeNames {
@@ -3830,13 +3951,21 @@ pub struct X509CertificateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
     #[doc = "The enhanced key usage."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ekus: Vec<String>,
     #[doc = "The subject alternate names of a X509 object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sans: Option<SubjectAlternativeNames>,
     #[doc = "List of key usages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub key_usage: Vec<String>,
     #[doc = "The duration that the certificate is valid in months."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

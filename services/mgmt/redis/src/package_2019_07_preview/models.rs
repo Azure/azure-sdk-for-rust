@@ -55,7 +55,11 @@ impl ImportRdbParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationListResponse {
     #[doc = "List of all notifications."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UpgradeNotification>,
     #[doc = "Link for next set of notifications."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -109,7 +113,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -230,7 +238,11 @@ pub struct RedisCreateParameters {
     #[doc = "Properties supplied to Create Redis operation."]
     pub properties: RedisCreateProperties,
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "The geo-location where the resource lives"]
     pub location: String,
@@ -303,7 +315,11 @@ impl RedisFirewallRuleCreateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisFirewallRuleListResult {
     #[doc = "Results of the list firewall rules operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RedisFirewallRule>,
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -464,7 +480,11 @@ impl RedisLinkedServerWithProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisLinkedServerWithPropertiesList {
     #[doc = "List of linked servers (with properties) of a Redis cache."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RedisLinkedServerWithProperties>,
     #[doc = "Link for next set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -485,7 +505,11 @@ impl RedisLinkedServerWithPropertiesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisListResult {
     #[doc = "List of Redis cache instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RedisResource>,
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -522,7 +546,11 @@ impl RedisPatchSchedule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisPatchScheduleListResult {
     #[doc = "Results of the list patch schedules operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RedisPatchSchedule>,
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -563,10 +591,19 @@ pub struct RedisProperties {
     #[serde(rename = "accessKeys", default, skip_serializing_if = "Option::is_none")]
     pub access_keys: Option<RedisAccessKeys>,
     #[doc = "List of the linked servers associated with the cache"]
-    #[serde(rename = "linkedServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_servers: Vec<RedisLinkedServer>,
     #[doc = "List of the Redis instances associated with the cache"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub instances: Vec<RedisInstanceDetails>,
 }
 impl RedisProperties {
@@ -654,7 +691,11 @@ pub struct RedisRebootParameters {
     #[serde(rename = "shardId", default, skip_serializing_if = "Option::is_none")]
     pub shard_id: Option<i32>,
     #[doc = "A list of redis instances to reboot, specified by per-instance SSL ports or non-SSL ports."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ports: Vec<i64>,
 }
 impl RedisRebootParameters {
@@ -733,7 +774,11 @@ pub struct RedisResource {
     #[doc = "Properties of the redis cache."]
     pub properties: RedisProperties,
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl RedisResource {

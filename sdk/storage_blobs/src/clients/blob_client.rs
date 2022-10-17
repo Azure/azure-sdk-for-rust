@@ -255,15 +255,18 @@ impl BlobClient {
 
     /// Check whether blob exists.
     pub async fn exists(&self) -> azure_core::Result<bool> {
-        let result = self.get_properties().into_future().await.map(|_| true);
-        if let Err(err) = result {
-            if let ErrorKind::HttpResponse { status, .. } = err.kind() {
-                return Ok(status != &StatusCode::NotFound);
-            } else {
-                return Err(err);
+        match self.get_properties().await {
+            Ok(_) => Ok(true),
+            Err(err)
+                if err
+                    .as_http_error()
+                    .map(|e| e.status() == StatusCode::NotFound)
+                    .unwrap_or_default() =>
+            {
+                Ok(false)
             }
+            Err(err) => Err(err),
         }
-        result
     }
 
     /// Create a blob snapshot

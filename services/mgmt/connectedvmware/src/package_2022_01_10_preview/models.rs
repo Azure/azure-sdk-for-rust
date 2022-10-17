@@ -113,16 +113,30 @@ pub struct ClusterProperties {
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
     #[doc = "Gets or sets the datastore ARM ids."]
-    #[serde(rename = "datastoreIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "datastoreIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub datastore_ids: Vec<String>,
     #[doc = "Gets or sets the network ARM ids."]
-    #[serde(rename = "networkIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_ids: Vec<String>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -258,7 +272,11 @@ pub struct DatastoreProperties {
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
@@ -398,7 +416,11 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
 }
 impl ErrorDefinition {
@@ -416,7 +438,11 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Additional error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
 }
 impl ErrorDetail {
@@ -557,7 +583,12 @@ pub struct GuestAgentProfile {
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "Details about the error state."]
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_details: Vec<ErrorDetail>,
 }
 impl GuestAgentProfile {
@@ -629,7 +660,11 @@ pub struct GuestAgentProperties {
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -762,7 +797,11 @@ pub struct HostProperties {
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
@@ -1122,13 +1161,28 @@ impl Serialize for InventoryType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxParameters {
     #[doc = "The update classifications to select when installing patches for Linux."]
-    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "classificationsToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub classifications_to_include: Vec<String>,
     #[doc = "packages to include in the patch operation. Format: packageName_packageVersion"]
-    #[serde(rename = "packageNameMasksToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageNameMasksToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_name_masks_to_include: Vec<String>,
     #[doc = "packages to exclude in the patch operation. Format: packageName_packageVersion"]
-    #[serde(rename = "packageNameMasksToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageNameMasksToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_name_masks_to_exclude: Vec<String>,
 }
 impl LinuxParameters {
@@ -1346,7 +1400,11 @@ impl MachineExtensionUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionsListResult {
     #[doc = "The list of extensions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MachineExtension>,
     #[doc = "The uri to fetch the next page of machine extensions. Call ListNext() with this to fetch the next page of extensions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1424,7 +1482,12 @@ pub struct NetworkInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[doc = "Gets or sets the nic ip addresses."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "Gets or sets the NIC MAC address."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
@@ -1484,7 +1547,12 @@ impl NetworkInterfaceUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
     #[doc = "Gets or sets the list of network interfaces associated with the virtual machine."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
 }
 impl NetworkProfile {
@@ -1496,7 +1564,12 @@ impl NetworkProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfileUpdate {
     #[doc = "Gets or sets the list of network interfaces associated with the virtual machine."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterfaceUpdate>,
 }
 impl NetworkProfileUpdate {
@@ -1529,10 +1602,19 @@ pub struct NicIpSettings {
     #[serde(rename = "allocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub allocation_method: Option<IpAddressAllocationMethod>,
     #[doc = "Gets or sets the dns servers."]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
     #[doc = "Gets or sets the gateway."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub gateway: Vec<String>,
     #[doc = "Gets or sets the ip address for the nic."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
@@ -1547,7 +1629,12 @@ pub struct NicIpSettings {
     #[serde(rename = "secondaryWinsServer", default, skip_serializing_if = "Option::is_none")]
     pub secondary_wins_server: Option<String>,
     #[doc = "Gets or sets the IP address information being reported for this NIC. This contains the same IPv4 information above plus IPV6 information."]
-    #[serde(rename = "ipAddressInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddressInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_address_info: Vec<NicIpAddressSettings>,
 }
 impl NicIpSettings {
@@ -1967,7 +2054,11 @@ pub struct ResourcePoolProperties {
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2147,10 +2238,19 @@ impl StopVirtualMachineOptions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
     #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<VirtualDisk>,
     #[doc = "Gets or sets the list of virtual SCSI controllers associated with the virtual machine."]
-    #[serde(rename = "scsiControllers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "scsiControllers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scsi_controllers: Vec<VirtualScsiController>,
 }
 impl StorageProfile {
@@ -2162,7 +2262,11 @@ impl StorageProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfileUpdate {
     #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<VirtualDiskUpdate>,
 }
 impl StorageProfileUpdate {
@@ -2253,7 +2357,11 @@ pub struct VCenterProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<ViCredential>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2984,7 +3092,12 @@ pub struct VirtualMachineInventoryItem {
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
     #[doc = "Gets or sets the nic ip addresses."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "Gets or sets the folder path of the vm."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
@@ -3097,7 +3210,11 @@ pub struct VirtualMachineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3229,10 +3346,19 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<String>,
     #[doc = "Gets or sets the network interfaces of the template."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "Gets or sets the disks the template."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<VirtualDisk>,
     #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
@@ -3247,7 +3373,11 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
     pub firmware_type: Option<FirmwareType>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3414,7 +3544,11 @@ pub struct VirtualNetworkProperties {
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
     #[doc = "The resource status information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3515,13 +3649,28 @@ impl Serialize for VirtualScsiSharing {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsParameters {
     #[doc = "The update classifications to select when installing patches for Windows."]
-    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "classificationsToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub classifications_to_include: Vec<String>,
     #[doc = "Kbs to include in the patch operation"]
-    #[serde(rename = "kbNumbersToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "kbNumbersToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub kb_numbers_to_include: Vec<String>,
     #[doc = "Kbs to exclude in the patch operation"]
-    #[serde(rename = "kbNumbersToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "kbNumbersToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub kb_numbers_to_exclude: Vec<String>,
     #[doc = "Filters out Kbs that don't have an InstallationRebootBehavior of 'NeverReboots' when this is set to true."]
     #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]

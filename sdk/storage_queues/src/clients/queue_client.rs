@@ -150,12 +150,10 @@ mod integration_tests {
 
         queue_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
         queue_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -167,19 +165,16 @@ mod integration_tests {
 
         queue_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
 
         queue_client
             .put_message("Hello")
-            .into_future()
             .await
             .expect("put message should succeed");
 
         let mut messages = queue_client
             .peek_messages()
-            .into_future()
             .await
             .expect("peek messages should succeed");
         assert_eq!(
@@ -189,7 +184,6 @@ mod integration_tests {
 
         let mut messages = queue_client
             .get_messages()
-            .into_future()
             .await
             .expect("get messages should succeed");
         assert_eq!(
@@ -199,7 +193,6 @@ mod integration_tests {
 
         queue_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }

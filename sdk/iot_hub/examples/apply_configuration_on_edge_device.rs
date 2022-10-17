@@ -60,7 +60,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     service_client
         .apply_on_edge_device(device_id)
         .modules_content(modules_content)
-        .into_future()
         .await?;
 
     println!("Successfully applied the configuration");

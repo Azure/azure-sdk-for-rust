@@ -81,7 +81,11 @@ impl AttachedDataNetwork {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttachedDataNetworkListResult {
     #[doc = "A list of data networks in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AttachedDataNetwork>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -111,10 +115,20 @@ pub struct AttachedDataNetworkPropertiesFormat {
     #[serde(rename = "naptConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub napt_configuration: Option<NaptConfiguration>,
     #[doc = "The user equipment address pool prefixes for the attached data network that are dynamically assigned by the core to UEs when they set up a PDU session.\nAt least one of userEquipmentAddressPoolPrefix and userEquipmentStaticAddressPoolPrefix must be defined. If both are defined then they must be the same size."]
-    #[serde(rename = "userEquipmentAddressPoolPrefix", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userEquipmentAddressPoolPrefix",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_equipment_address_pool_prefix: Vec<Ipv4AddrMask>,
     #[doc = "The user equipment address pool prefixes for the attached data network that are statically assigned by the core to UEs when they set up a PDU session.\nThe mapping of static IP to sim is configured in staticIpConfiguration on the sim resource.\nAt least one of userEquipmentAddressPoolPrefix and userEquipmentStaticAddressPoolPrefix must be defined. If both are defined then they must be the same size."]
-    #[serde(rename = "userEquipmentStaticAddressPoolPrefix", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userEquipmentStaticAddressPoolPrefix",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_equipment_static_address_pool_prefix: Vec<Ipv4AddrMask>,
 }
 impl AttachedDataNetworkPropertiesFormat {
@@ -276,7 +290,12 @@ pub struct DataNetworkConfiguration {
     #[serde(rename = "defaultSessionType", default, skip_serializing_if = "Option::is_none")]
     pub default_session_type: Option<PduSessionType>,
     #[doc = "Allowed session types in addition to the default session type.  Must not duplicate the default session type."]
-    #[serde(rename = "additionalAllowedSessionTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalAllowedSessionTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_allowed_session_types: Vec<PduSessionType>,
     #[doc = "List of Services that can be used as part of this Sim Policy. The list must not contain duplicate items and must contain at least one item."]
     #[serde(rename = "allowedServices")]
@@ -301,7 +320,11 @@ impl DataNetworkConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataNetworkListResult {
     #[doc = "A list of data networks in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataNetwork>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -372,10 +395,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -458,7 +490,11 @@ impl MobileNetwork {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MobileNetworkListResult {
     #[doc = "A list of mobile networks in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MobileNetwork>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -620,7 +656,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of Microsoft.MobileNetwork operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -661,7 +701,11 @@ impl PacketCoreControlPlane {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCoreControlPlaneListResult {
     #[doc = "A list of packet core control planes in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PacketCoreControlPlane>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -736,7 +780,11 @@ impl PacketCoreDataPlane {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCoreDataPlaneListResult {
     #[doc = "A list of packet core data planes in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PacketCoreDataPlane>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1213,7 +1261,11 @@ pub struct ServiceDataFlowTemplate {
     #[serde(rename = "remoteIpList")]
     pub remote_ip_list: Vec<String>,
     #[doc = "The port(s) to which UEs will connect for this flow. You can specify zero or more ports or port ranges. If you specify one or more ports or port ranges then you must specify a value other than `ip` in the `protocol` field. This is an optional setting. If you do not specify it then connections will be allowed on all ports. Port ranges must be specified as <FirstPort>-<LastPort>. For example: [`8080`, `8082-8085`]."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ports: Vec<String>,
 }
 impl ServiceDataFlowTemplate {
@@ -1231,7 +1283,11 @@ impl ServiceDataFlowTemplate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceListResult {
     #[doc = "A list of Services."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Service>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1309,7 +1365,11 @@ impl Sim {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SimIdListResult {
     #[doc = "A list of sim profile ids in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubResource>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1324,7 +1384,11 @@ impl SimIdListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SimListResult {
     #[doc = "A list of Sims in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Sim>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1365,7 +1429,11 @@ impl SimPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SimPolicyListResult {
     #[doc = "A list of SimPolicies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SimPolicy>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1458,7 +1526,12 @@ pub struct SimPropertiesFormat {
     #[serde(rename = "simPolicy", default, skip_serializing_if = "Option::is_none")]
     pub sim_policy: Option<SimPolicyResourceId>,
     #[doc = "A list of static IP addresses assigned to this sim. Each address is assigned at a defined network scope, made up of {attached data network, slice}."]
-    #[serde(rename = "staticIpConfiguration", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "staticIpConfiguration",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub static_ip_configuration: Vec<SimStaticIpProperties>,
 }
 impl SimPropertiesFormat {
@@ -1574,7 +1647,11 @@ impl Site {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteListResult {
     #[doc = "A list of sites in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Site>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1598,7 +1675,12 @@ pub struct SitePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An array of ids of the network functions deployed on the site, maintained by the user."]
-    #[serde(rename = "networkFunctions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkFunctions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_functions: Vec<SubResource>,
 }
 impl SitePropertiesFormat {
@@ -1655,7 +1737,11 @@ impl SliceConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SliceListResult {
     #[doc = "A list of data networks in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Slice>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

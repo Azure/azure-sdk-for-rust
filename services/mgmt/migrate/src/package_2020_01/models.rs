@@ -57,31 +57,74 @@ impl Application {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppsAndRoles {
     #[doc = "Applications of the AppsAndRoles."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applications: Vec<Application>,
     #[doc = "WebApplications of the AppsAndRoles."]
-    #[serde(rename = "webApplications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "webApplications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub web_applications: Vec<WebApplication>,
     #[doc = "Features of the AppsAndRoles."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub features: Vec<Feature>,
     #[doc = "SQLServers of the AppsAndRoles."]
-    #[serde(rename = "sqlServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sqlServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sql_servers: Vec<SqlServer>,
     #[doc = "SharePointServers of the AppsAndRoles."]
-    #[serde(rename = "sharePointServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sharePointServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub share_point_servers: Vec<SharePointServer>,
     #[doc = "SystemCenters of the AppsAndRoles."]
-    #[serde(rename = "systemCenters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "systemCenters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub system_centers: Vec<SystemCenter>,
     #[doc = "BizTalkServers of the AppsAndRoles."]
-    #[serde(rename = "bizTalkServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bizTalkServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub biz_talk_servers: Vec<BizTalkServer>,
     #[doc = "ExchangeServers of the AppsAndRoles."]
-    #[serde(rename = "exchangeServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "exchangeServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exchange_servers: Vec<ExchangeServer>,
     #[doc = "OtherDatabaseServers of the AppsAndRoles."]
-    #[serde(rename = "otherDatabases", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "otherDatabases",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub other_databases: Vec<OtherDatabase>,
 }
 impl AppsAndRoles {
@@ -277,7 +320,11 @@ impl HyperVCluster {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVClusterCollection {
     #[doc = "List of clusters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HyperVCluster>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -316,10 +363,19 @@ pub struct HyperVClusterProperties {
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
     #[doc = "List of hosts (FQDN) currently being tracked by the cluster."]
-    #[serde(rename = "hostFqdnList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostFqdnList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub host_fqdn_list: Vec<String>,
     #[doc = "Errors for Hyper-V clusters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<HealthErrorDetails>,
 }
 impl HyperVClusterProperties {
@@ -382,7 +438,11 @@ impl HyperVHost {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVHostCollection {
     #[doc = "List of hosts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HyperVHost>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -418,7 +478,11 @@ pub struct HyperVHostProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Errors for Hyper-V hosts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<HealthErrorDetails>,
 }
 impl HyperVHostProperties {
@@ -451,7 +515,11 @@ impl HyperVJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVJobCollection {
     #[doc = "List of jobs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HyperVJob>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -493,7 +561,11 @@ impl HyperVMachine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVMachineCollection {
     #[doc = "List of machines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HyperVMachine>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -547,13 +619,22 @@ pub struct HyperVMachineProperties {
     #[serde(rename = "isDynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_dynamic_memory_enabled: Option<bool>,
     #[doc = "Disks attached to the machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<HyperVDisk>,
     #[doc = "AppsAndRoles in the guest virtual machine."]
     #[serde(rename = "appsAndRoles", default, skip_serializing_if = "Option::is_none")]
     pub apps_and_roles: Option<AppsAndRoles>,
     #[doc = "Network adapters attached to the machine."]
-    #[serde(rename = "networkAdapters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkAdapters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_adapters: Vec<HyperVNetworkAdapter>,
     #[doc = "Display name of the machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -607,7 +688,11 @@ pub struct HyperVMachineProperties {
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
     #[doc = "Errors for machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<HealthErrorDetails>,
 }
 impl HyperVMachineProperties {
@@ -647,7 +732,12 @@ pub struct HyperVNetworkAdapter {
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
     #[doc = "IP addresses for the machine."]
-    #[serde(rename = "ipAddressList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddressList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_address_list: Vec<String>,
     #[doc = "Network Name."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
@@ -686,7 +776,11 @@ impl HyperVRunAsAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVRunAsAccountCollection {
     #[doc = "List of run as accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HyperVRunAsAccount>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -819,7 +913,11 @@ pub struct JobProperties {
     #[serde(rename = "activityId", default, skip_serializing_if = "Option::is_none")]
     pub activity_id: Option<String>,
     #[doc = "Errors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<ErrorDetails>,
 }
 impl JobProperties {
@@ -922,19 +1020,54 @@ pub mod machine_resources_configuration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
-    #[serde(rename = "ipv4Interfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipv4Interfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipv4_interfaces: Vec<Ipv4NetworkInterface>,
-    #[serde(rename = "ipv6Interfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipv6Interfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipv6_interfaces: Vec<Ipv6NetworkInterface>,
-    #[serde(rename = "defaultIpv4Gateways", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultIpv4Gateways",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_ipv4_gateways: Vec<String>,
-    #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "macAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mac_addresses: Vec<String>,
-    #[serde(rename = "dnsNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_names: Vec<String>,
-    #[serde(rename = "dnsQuestions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsQuestions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_questions: Vec<String>,
-    #[serde(rename = "dnsCanonicalNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsCanonicalNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_canonical_names: Vec<String>,
 }
 impl NetworkConfiguration {
@@ -1047,7 +1180,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultList {
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1314,7 +1451,12 @@ pub struct SiteHealthSummary {
     #[serde(rename = "affectedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub affected_resource_type: Option<String>,
     #[doc = "Affected resources."]
-    #[serde(rename = "affectedResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "affectedResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub affected_resources: Vec<String>,
 }
 impl SiteHealthSummary {
@@ -1326,7 +1468,11 @@ impl SiteHealthSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteHealthSummaryCollection {
     #[doc = "List of SiteHealthSummary."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SiteHealthSummary>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1447,7 +1593,11 @@ impl VCenter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VCenterCollection {
     #[doc = "List of vCenter."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VCenter>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1492,7 +1642,11 @@ pub struct VCenterProperties {
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
     #[doc = "Error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<HealthErrorDetails>,
 }
 impl VCenterProperties {
@@ -1618,7 +1772,11 @@ impl VMwareJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareJobCollection {
     #[doc = "List of jobs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VMwareJob>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1660,7 +1818,11 @@ impl VMwareMachine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareMachineCollection {
     #[doc = "List of machines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VMwareMachine>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1708,7 +1870,11 @@ pub struct VMwareMachineProperties {
     #[serde(rename = "maxSnapshots", default, skip_serializing_if = "Option::is_none")]
     pub max_snapshots: Option<i32>,
     #[doc = "Disks attached to the machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disks: Vec<VMwareDisk>,
     #[doc = "AppsAndRoles in the guest virtual machine."]
     #[serde(rename = "appsAndRoles", default, skip_serializing_if = "Option::is_none")]
@@ -1726,7 +1892,12 @@ pub struct VMwareMachineProperties {
     #[serde(rename = "hostVersion", default, skip_serializing_if = "Option::is_none")]
     pub host_version: Option<String>,
     #[doc = "Network adapters attached to the machine."]
-    #[serde(rename = "networkAdapters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkAdapters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_adapters: Vec<VMwareNetworkAdapter>,
     #[doc = "If dependency mapping feature is enabled or not for the VM."]
     #[serde(rename = "dependencyMapping", default, skip_serializing_if = "Option::is_none")]
@@ -1786,7 +1957,11 @@ pub struct VMwareMachineProperties {
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
     #[doc = "Errors for machine."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<HealthErrorDetails>,
 }
 impl VMwareMachineProperties {
@@ -1807,7 +1982,12 @@ pub struct VMwareNetworkAdapter {
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
     #[doc = "IP addresses for the machine."]
-    #[serde(rename = "ipAddressList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddressList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_address_list: Vec<String>,
     #[doc = "Network Name."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
@@ -1846,7 +2026,11 @@ impl VMwareRunAsAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareRunAsAccountCollection {
     #[doc = "List of run as accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VMwareRunAsAccount>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

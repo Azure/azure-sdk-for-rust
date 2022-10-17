@@ -632,10 +632,20 @@ pub mod blob_inventory_policy_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobInventoryPolicyFilter {
     #[doc = "An array of strings for blob prefixes to be matched."]
-    #[serde(rename = "prefixMatch", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "prefixMatch",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub prefix_match: Vec<String>,
     #[doc = "An array of predefined enum values. Valid values include blockBlob, appendBlob, pageBlob. Hns accounts does not support pageBlobs. This field is required when definition.objectType property is set to 'Blob'."]
-    #[serde(rename = "blobTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blobTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_types: Vec<String>,
     #[doc = "Includes blob versions in blob inventory when value is set to true. The definition.schemaFields values 'VersionId and IsCurrentVersion' are required if this property is set to true, else they must be excluded."]
     #[serde(rename = "includeBlobVersions", default, skip_serializing_if = "Option::is_none")]
@@ -841,7 +851,11 @@ pub mod blob_restore_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobServiceItems {
     #[doc = "List of blob services returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BlobServiceProperties>,
 }
 impl azure_core::Continuable for BlobServiceItems {
@@ -984,7 +998,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -1225,7 +1243,12 @@ impl CorsRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CorsRules {
     #[doc = "The List of CORS rules. You can include up to five CorsRule elements in the request. "]
-    #[serde(rename = "corsRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "corsRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cors_rules: Vec<CorsRule>,
 }
 impl CorsRules {
@@ -1312,7 +1335,11 @@ impl DeletedAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedAccountListResult {
     #[doc = "Gets the list of deleted accounts and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeletedAccount>,
     #[doc = "Request URL that can be used to query next page of deleted accounts. Returned when total number of requested deleted accounts exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1511,7 +1538,11 @@ impl EncryptionScopeKeyVaultProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionScopeListResult {
     #[doc = "List of encryption scopes requested."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EncryptionScope>,
     #[doc = "Request URL that can be used to query next page of encryption scopes. Returned when total number of requested encryption scopes exceeds the maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1832,7 +1863,11 @@ impl Serialize for ExtendedLocationType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileServiceItems {
     #[doc = "List of file services returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FileServiceProperties>,
 }
 impl FileServiceItems {
@@ -1910,7 +1945,11 @@ impl FileShareItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileShareItems {
     #[doc = "List of file shares returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FileShareItem>,
     #[doc = "Request URL that can be used to query next page of shares. Returned when total number of requested shares exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1979,7 +2018,12 @@ pub struct FileShareProperties {
     #[serde(rename = "leaseDuration", default, skip_serializing_if = "Option::is_none")]
     pub lease_duration: Option<file_share_properties::LeaseDuration>,
     #[doc = "List of stored access policies specified on the share."]
-    #[serde(rename = "signedIdentifiers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "signedIdentifiers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub signed_identifiers: Vec<SignedIdentifier>,
     #[doc = "Creation time of share snapshot returned in the response of list shares with expand param \"snapshots\"."]
     #[serde(rename = "snapshotTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2413,7 +2457,12 @@ pub struct ImmutabilityPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "The ImmutabilityPolicy update history of the blob container."]
-    #[serde(rename = "updateHistory", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "updateHistory",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub update_history: Vec<UpdateHistoryProperty>,
 }
 impl ImmutabilityPolicyProperties {
@@ -2618,7 +2667,12 @@ pub struct LastAccessTimeTrackingPolicy {
     #[serde(rename = "trackingGranularityInDays", default, skip_serializing_if = "Option::is_none")]
     pub tracking_granularity_in_days: Option<i32>,
     #[doc = "An array of predefined supported blob types. Only blockBlob is the supported value. This field is currently read only"]
-    #[serde(rename = "blobType", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blobType",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_type: Vec<String>,
 }
 impl LastAccessTimeTrackingPolicy {
@@ -2843,7 +2897,11 @@ pub struct LegalHoldProperties {
     #[serde(rename = "hasLegalHold", default, skip_serializing_if = "Option::is_none")]
     pub has_legal_hold: Option<bool>,
     #[doc = "The list of LegalHold tags of a blob container."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<TagProperty>,
     #[doc = "Protected append writes history setting for the blob container with Legal holds."]
     #[serde(rename = "protectedAppendWritesHistory", default, skip_serializing_if = "Option::is_none")]
@@ -2870,7 +2928,11 @@ impl ListAccountSasResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListBlobInventoryPolicy {
     #[doc = "List of blob inventory policies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BlobInventoryPolicy>,
 }
 impl azure_core::Continuable for ListBlobInventoryPolicy {
@@ -2902,7 +2964,11 @@ impl ListContainerItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerItems {
     #[doc = "List of blobs containers returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ListContainerItem>,
     #[doc = "Request URL that can be used to query next page of containers. Returned when total number of requested containers exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2946,7 +3012,11 @@ impl ListQueueProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListQueueResource {
     #[doc = "List of queues returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ListQueue>,
     #[doc = "Request URL that can be used to list next page of queues"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2966,7 +3036,11 @@ impl ListQueueResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListQueueServices {
     #[doc = "List of queue services returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QueueServiceProperties>,
 }
 impl ListQueueServices {
@@ -2990,7 +3064,11 @@ impl ListServiceSasResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListTableResource {
     #[doc = "List of tables returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Table>,
     #[doc = "Request URL that can be used to query next page of tables"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3010,7 +3088,11 @@ impl ListTableResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListTableServices {
     #[doc = "List of table services returned."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TableServiceProperties>,
 }
 impl ListTableServices {
@@ -3089,13 +3171,23 @@ impl ManagementPolicyDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicyFilter {
     #[doc = "An array of strings for prefixes to be match."]
-    #[serde(rename = "prefixMatch", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "prefixMatch",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub prefix_match: Vec<String>,
     #[doc = "An array of predefined enum values. Currently blockBlob supports all tiering and delete actions. Only delete actions are supported for appendBlob."]
     #[serde(rename = "blobTypes")]
     pub blob_types: Vec<String>,
     #[doc = "An array of blob index tag based filters, there can be at most 10 tag filters"]
-    #[serde(rename = "blobIndexMatch", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blobIndexMatch",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_index_match: Vec<TagFilter>,
 }
 impl ManagementPolicyFilter {
@@ -3249,7 +3341,11 @@ pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "Dimensions of blobs, including blob type and access tier."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<Dimension>,
     #[doc = "Aggregation type could be Average."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
@@ -3288,13 +3384,28 @@ pub struct NetworkRuleSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bypass: Option<network_rule_set::Bypass>,
     #[doc = "Sets the resource access rules"]
-    #[serde(rename = "resourceAccessRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceAccessRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_access_rules: Vec<ResourceAccessRule>,
     #[doc = "Sets the virtual network rules"]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "Sets the IP ACL rules"]
-    #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_rules: Vec<IpRule>,
     #[doc = "Specifies the default action of allow or deny when no other rules match."]
     #[serde(rename = "defaultAction")]
@@ -3375,7 +3486,11 @@ pub mod network_rule_set {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectReplicationPolicies {
     #[doc = "The replication policy between two storage accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ObjectReplicationPolicy>,
 }
 impl azure_core::Continuable for ObjectReplicationPolicies {
@@ -3407,7 +3522,12 @@ impl ObjectReplicationPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectReplicationPolicyFilter {
     #[doc = "Optional. Filters the results to replicate only blobs whose names begin with the specified prefix."]
-    #[serde(rename = "prefixMatch", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "prefixMatch",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub prefix_match: Vec<String>,
     #[doc = "Blobs created after the time will be replicated to the destination. It must be in datetime format 'yyyy-MM-ddTHH:mm:ssZ'. Example: 2020-02-19T16:05:00Z"]
     #[serde(rename = "minCreationTime", default, skip_serializing_if = "Option::is_none")]
@@ -3434,7 +3554,11 @@ pub struct ObjectReplicationPolicyProperties {
     #[serde(rename = "destinationAccount")]
     pub destination_account: String,
     #[doc = "The storage account object replication rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<ObjectReplicationPolicyRule>,
 }
 impl ObjectReplicationPolicyProperties {
@@ -3523,7 +3647,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Storage operations supported by the Storage resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -3579,7 +3707,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
@@ -3713,7 +3845,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
 }
 impl PrivateLinkResourceListResult {
@@ -3728,10 +3864,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -3903,7 +4049,11 @@ pub struct Restriction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
     #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". Quota Id is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. The \"NotAvailableForSubscription\" is related to capacity at DC."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
@@ -4287,7 +4437,12 @@ pub mod service_sas_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "Metric specifications of operation."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
 }
 impl ServiceSpecification {
@@ -4337,13 +4492,25 @@ pub struct SkuInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<sku_information::Kind>,
     #[doc = "The set of locations that the SKU is available. This will be supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "The capability information in the specified SKU, including file encryption, network ACLs, change notification, etc."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<SkuCapability>,
     #[doc = "The restrictions because of which SKU cannot be used. This is empty if there are no restrictions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restrictions: Vec<Restriction>,
 }
 impl SkuInformation {
@@ -4724,7 +4891,11 @@ pub mod storage_account_key {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListKeysResult {
     #[doc = "Gets the list of storage account keys and their properties for the specified storage account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub keys: Vec<StorageAccountKey>,
 }
 impl StorageAccountListKeysResult {
@@ -4736,7 +4907,11 @@ impl StorageAccountListKeysResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListResult {
     #[doc = "Gets the list of storage accounts and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageAccount>,
     #[doc = "Request URL that can be used to query next page of storage accounts. Returned when total number of requested storage accounts exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4850,7 +5025,12 @@ pub struct StorageAccountProperties {
     #[serde(rename = "largeFileSharesState", default, skip_serializing_if = "Option::is_none")]
     pub large_file_shares_state: Option<storage_account_properties::LargeFileSharesState>,
     #[doc = "List of private endpoint connection associated with the specified storage account"]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Routing preference defines the type of network, either microsoft or internet routing to be used to deliver the user data, the default option is microsoft routing"]
     #[serde(rename = "routingPreference", default, skip_serializing_if = "Option::is_none")]
@@ -5511,7 +5691,11 @@ impl StorageQueue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSkuListResult {
     #[doc = "Get the list result of storage SKUs and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuInformation>,
 }
 impl azure_core::Continuable for StorageSkuListResult {
@@ -5759,7 +5943,11 @@ pub mod usage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
     #[doc = "Gets or sets the list of Storage Resource Usages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResult {

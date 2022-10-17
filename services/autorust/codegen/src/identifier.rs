@@ -215,14 +215,14 @@ mod tests {
     fn test_odata_next_link() -> Result<()> {
         let idt = "odata.nextLink".to_snake_case();
         let idt = id(&idt);
-        assert_eq!(idt.to_string(), "odata_next_link");
+        assert_eq!(idt, "odata_next_link");
         Ok(())
     }
 
     #[test]
     fn test_three_dot_two() -> Result<()> {
         let idt = id("3.2");
-        assert_eq!(idt.to_string(), "n3_2");
+        assert_eq!(idt, "n3_2");
         Ok(())
     }
 

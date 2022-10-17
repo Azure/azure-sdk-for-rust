@@ -91,7 +91,11 @@ impl AccessReviewContactedReviewer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewContactedReviewerListResult {
     #[doc = "Access Review Contacted Reviewer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewContactedReviewer>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -215,7 +219,11 @@ pub mod access_review_decision_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewDecisionListResult {
     #[doc = "Access Review Decision list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewDecision>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -561,7 +569,11 @@ impl AccessReviewHistoryDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewHistoryDefinitionInstanceListResult {
     #[doc = "Access Review History Definition's Instance list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewHistoryInstance>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -582,7 +594,11 @@ impl AccessReviewHistoryDefinitionInstanceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewHistoryDefinitionListResult {
     #[doc = "Access Review History Definition list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewHistoryDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -612,7 +628,11 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[serde(rename = "reviewHistoryPeriodEndDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub review_history_period_end_date_time: Option<time::OffsetDateTime>,
     #[doc = "Collection of review decisions which the history data should be filtered on. For example if Approve and Deny are supplied the data will only contain review results in which the decision maker approved or denied a review request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub decisions: Vec<String>,
     #[doc = "This read-only field specifies the of the requested review history data. This is either requested, in-progress, done or error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -624,13 +644,21 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<AccessReviewActorIdentity>,
     #[doc = "A collection of scopes used when selecting review history data"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scopes: Vec<AccessReviewScope>,
     #[doc = "Recurrence settings of an Access Review History Definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<AccessReviewHistoryScheduleSettings>,
     #[doc = "Set of access review history instances for this history definition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub instances: Vec<AccessReviewHistoryInstance>,
 }
 impl AccessReviewHistoryDefinitionProperties {
@@ -820,7 +848,11 @@ impl AccessReviewInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewInstanceListResult {
     #[doc = "Access Review Instance list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewInstance>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -850,10 +882,19 @@ pub struct AccessReviewInstanceProperties {
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time: Option<time::OffsetDateTime>,
     #[doc = "This is the collection of reviewers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This is the collection of backup reviewers."]
-    #[serde(rename = "backupReviewers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backupReviewers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backup_reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This field specifies the type of reviewers for a review. Usually for a review, reviewers are explicitly assigned. However, in some cases, the reviewers may not be assigned and instead be chosen dynamically. For example managers review or self review."]
     #[serde(rename = "reviewersType", default, skip_serializing_if = "Option::is_none")]
@@ -1182,7 +1223,11 @@ impl AccessReviewScheduleDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewScheduleDefinitionListResult {
     #[doc = "Access Review Schedule Definition list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewScheduleDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1224,16 +1269,29 @@ pub struct AccessReviewScheduleDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<AccessReviewScope>,
     #[doc = "This is the collection of reviewers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This is the collection of backup reviewers."]
-    #[serde(rename = "backupReviewers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backupReviewers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backup_reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This field specifies the type of reviewers for a review. Usually for a review, reviewers are explicitly assigned. However, in some cases, the reviewers may not be assigned and instead be chosen dynamically. For example managers review or self review."]
     #[serde(rename = "reviewersType", default, skip_serializing_if = "Option::is_none")]
     pub reviewers_type: Option<access_review_schedule_definition_properties::ReviewersType>,
     #[doc = "This is the collection of instances returned when one does an expand on it."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub instances: Vec<AccessReviewInstance>,
 }
 impl AccessReviewScheduleDefinitionProperties {
@@ -1616,7 +1674,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

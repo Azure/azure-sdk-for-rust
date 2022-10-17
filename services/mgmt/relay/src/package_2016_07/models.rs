@@ -47,7 +47,11 @@ impl AuthorizationRuleKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationRuleListResult {
     #[doc = "Result of the List AuthorizationRules operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AuthorizationRule>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of AuthorizationRules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -143,7 +147,11 @@ impl HybridConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridConnectionListResult {
     #[doc = "Result of the List HybridConnection ."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HybridConnection>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of HybridConnection operation"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -224,7 +232,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of EventHub operations supported by the Microsoft.EventHub resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -318,7 +330,11 @@ impl RelayNamespace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelayNamespaceListResult {
     #[doc = "Result of the List Namespace operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RelayNamespace>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Namespaces"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -599,7 +615,11 @@ pub mod wcf_relay_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WcfRelaysListResult {
     #[doc = "Result of the List WcfRelays ."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WcfRelay>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of WcfRelays operation"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
