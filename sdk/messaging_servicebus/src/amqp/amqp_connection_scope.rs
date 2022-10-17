@@ -4,11 +4,14 @@ use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
     connection::{ConnectionHandle, OpenError},
+    link::SenderAttachError,
     session::{BeginError, SessionHandle},
     transaction::Controller,
     transport::protocol_header::{ProtocolHeader, ProtocolId},
     Connection, Session,
 };
+use fe2o3_amqp_cbs::client::CbsClient;
+use fe2o3_amqp_management::error::AttachError;
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::rngs::StdRng;
@@ -41,6 +44,9 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     Begin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
 }
 
 #[derive(Debug)]
@@ -184,19 +190,39 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         let uuid = uuid::Uuid::new_v4();
         let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
         let operation_cancellation_source = CancellationToken::new();
-        let token_provider = CbsTokenProvider::new(
+        let cbs_token_provider = CbsTokenProvider::new(
             credential,
             Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
             operation_cancellation_source.child_token(),
         );
 
         let fut = Self::open_connection(connection_endpoint, transport_type, &id);
-        let mut connection = timeout(operation_timeout, fut).await??;
+        let mut connection_handle = timeout(operation_timeout, fut).await??;
 
         // TODO: should timeout account for time used previously?
-        let mut session = timeout(operation_timeout, Session::begin(&mut connection)).await??;
+        let mut session_handle =
+            timeout(operation_timeout, Session::begin(&mut connection_handle)).await??;
 
-        todo!()
+        // TODO: it looks like CBS auth does not happen until attacing links
+        let transaction_controller = timeout(
+            operation_timeout,
+            Self::attach_txn_controller(&mut session_handle, &id),
+        )
+        .await??;
+
+        Ok(Self {
+            random_number_generator: todo!(),
+            is_disposed: false,
+            operation_cancellation_source,
+            active_links: HashMap::new(),
+            id,
+            service_endpoint,
+            cbs_token_provider,
+            transport: transport_type,
+            connection_handle,
+            session_handle,
+            transaction_controller,
+        })
     }
 
     async fn open_connection(
@@ -229,6 +255,16 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             }
         };
         Ok(connection)
+    }
+
+    async fn attach_txn_controller(
+        session: &mut SessionHandle<()>,
+        scope_identifier: &str,
+    ) -> Result<Controller, AmqpConnectionScopeError> {
+        let controller_id = format!("{}-txn-controller", scope_identifier);
+        Controller::attach(session, controller_id)
+            .await
+            .map_err(Into::into)
     }
 
     async fn request_authorization_using_cbs(
