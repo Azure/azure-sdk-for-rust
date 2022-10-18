@@ -13,11 +13,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
 
-    let response = service_client
-        .query(query)
-        .max_item_count(1)
-        .into_future()
-        .await?;
+    let response = service_client.query(query).max_item_count(1).await?;
 
     println!(
         "Response of first result: {}",
@@ -33,7 +29,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .query(query)
         .max_item_count(1)
         .continuation(token)
-        .into_future()
         .await?;
 
     println!(

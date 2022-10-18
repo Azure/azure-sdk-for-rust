@@ -11,7 +11,7 @@ async fn collection_operations() -> azure_core::Result<()> {
     let database_name = "test-collection-operations";
 
     log::info!("Creating a database with name '{}'...", database_name);
-    client.create_database(database_name).into_future().await?;
+    client.create_database(database_name).await?;
     log::info!("Successfully created a database");
 
     // create collection!
@@ -20,10 +20,7 @@ async fn collection_operations() -> azure_core::Result<()> {
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);
 
-    let create_collection_response = database
-        .create_collection(collection_name, "/id")
-        .into_future()
-        .await?;
+    let create_collection_response = database.create_collection(collection_name, "/id").await?;
 
     assert_eq!(create_collection_response.collection.id, collection_name);
 
@@ -36,7 +33,7 @@ async fn collection_operations() -> azure_core::Result<()> {
     let collection = database.collection_client(collection_name);
 
     // get collection!
-    let get_collection = collection.get_collection().into_future().await?;
+    let get_collection = collection.get_collection().await?;
 
     assert_eq!(get_collection.collection.id, collection_name);
 
@@ -81,7 +78,6 @@ async fn collection_operations() -> azure_core::Result<()> {
     let replace_collection_response = collection
         .replace_collection("/id")
         .indexing_policy(new_indexing_policy)
-        .into_future()
         .await?;
 
     assert_eq!(replace_collection_response.collection.id, collection_name);
@@ -110,7 +106,7 @@ async fn collection_operations() -> azure_core::Result<()> {
     );
 
     // delete collection!
-    let delete_collection_response = collection.delete_collection().into_future().await?;
+    let delete_collection_response = collection.delete_collection().await?;
 
     log::info!("Successfully deleted collection");
     log::debug!(
@@ -119,7 +115,7 @@ async fn collection_operations() -> azure_core::Result<()> {
     );
 
     // delete database
-    database.delete_database().into_future().await?;
+    database.delete_database().await?;
     log::info!("Successfully deleted database");
 
     Ok(())

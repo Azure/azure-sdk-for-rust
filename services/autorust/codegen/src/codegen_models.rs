@@ -15,22 +15,27 @@ use spec::{get_schema_schema_references, openapi, RefKey};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
-struct PropertyGen {
+pub struct PropertyGen {
     name: String,
     schema: SchemaGen,
 }
 
 impl PropertyGen {
-    fn name(&self) -> &str {
+    pub fn name(&self) -> &str {
         self.name.as_str()
     }
-    fn xml_name(&self) -> Option<&str> {
+
+    pub fn xml_name(&self) -> Option<&str> {
         self.schema.xml_name()
+    }
+
+    pub fn schema(&self) -> &SchemaGen {
+        &self.schema
     }
 }
 
 #[derive(Clone)]
-struct SchemaGen {
+pub struct SchemaGen {
     ref_key: Option<RefKey>,
     schema: Schema,
 
@@ -43,9 +48,19 @@ struct SchemaGen {
 }
 
 #[derive(Clone)]
-struct EnumValue {
+pub struct EnumValue {
     value: String,
     description: Option<String>,
+}
+
+impl EnumValue {
+    pub fn value(&self) -> &str {
+        self.value.as_str()
+    }
+
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
 }
 
 impl SchemaGen {
@@ -87,7 +102,7 @@ impl SchemaGen {
         self.schema.common.xml.as_ref().and_then(|xml| xml.wrapped).unwrap_or_default()
     }
 
-    fn name(&self) -> Result<&str> {
+    pub fn name(&self) -> Result<&str> {
         Ok(&self
             .ref_key
             .as_ref()
@@ -141,7 +156,7 @@ impl SchemaGen {
         get_schema_array_items(&self.schema.common)
     }
 
-    fn enum_values(&self) -> Vec<EnumValue> {
+    pub fn enum_values(&self) -> Vec<EnumValue> {
         self.schema
             .common
             .enum_
@@ -156,7 +171,7 @@ impl SchemaGen {
             .collect()
     }
 
-    fn properties(&self) -> Vec<&PropertyGen> {
+    pub fn properties(&self) -> Vec<&PropertyGen> {
         self.properties.iter().collect()
     }
 
@@ -332,6 +347,16 @@ fn add_schema_gen(all_schemas: &mut IndexMap<RefKey, SchemaGen>, resolved_schema
     }
 }
 
+pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
+    let schemas = all_schemas(spec)?;
+    let schemas = resolve_all_schema_properties(&schemas, spec)?;
+    let schemas = resolve_all_all_of(&schemas, spec)?;
+    // sort schemas by name
+    let mut schemas: Vec<_> = schemas.into_iter().collect();
+    schemas.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+    Ok(schemas)
+}
+
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
 
@@ -380,13 +405,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
     // println!("response_names: {:?}", pageable_response_names);
 
     let mut schema_names = IndexMap::new();
-    let schemas = all_schemas(&cg.spec)?;
-    let schemas = resolve_all_schema_properties(&schemas, &cg.spec)?;
-    let schemas = resolve_all_all_of(&schemas, &cg.spec)?;
-    // sort schemas by name
-    let mut schemas: Vec<_> = schemas.into_iter().collect();
-    schemas.sort_by(|a, b| a.0.name.cmp(&b.0.name));
-    for (ref_key, schema) in &schemas {
+    for (ref_key, schema) in &all_schemas_resolved(&cg.spec)? {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
 
@@ -688,7 +707,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                 // Must specify `default` when using `with` for `Option`
                 serde_attrs.push(quote! { default, with = "azure_core::date::rfc1123::option"});
             } else if type_name.is_vec() {
-                serde_attrs.push(quote! { default, skip_serializing_if = "Vec::is_empty"});
+                serde_attrs.push(quote! { default, deserialize_with = "azure_core::util::deserialize_null_as_default", skip_serializing_if = "Vec::is_empty"});
             } else {
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
             }

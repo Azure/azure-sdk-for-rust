@@ -191,7 +191,11 @@ impl ComputePolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputePolicyListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ComputePolicy>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -312,13 +316,28 @@ pub struct CreateDataLakeAnalyticsAccountProperties {
     #[serde(rename = "dataLakeStoreAccounts")]
     pub data_lake_store_accounts: Vec<AddDataLakeStoreWithAccountParameters>,
     #[doc = "The list of Azure Blob Storage accounts associated with this account."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<AddStorageAccountWithAccountParameters>,
     #[doc = "The list of compute policies associated with this account."]
-    #[serde(rename = "computePolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "computePolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub compute_policies: Vec<CreateComputePolicyWithAccountParameters>,
     #[doc = "The list of firewall rules associated with this account."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<CreateFirewallRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this account."]
     #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
@@ -568,7 +587,11 @@ impl DataLakeAnalyticsAccountBasic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeAnalyticsAccountListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataLakeAnalyticsAccountBasic>,
     #[doc = "The current number of data lake analytics accounts under this subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -597,25 +620,60 @@ pub struct DataLakeAnalyticsAccountProperties {
     #[serde(rename = "defaultDataLakeStoreAccount", default, skip_serializing_if = "Option::is_none")]
     pub default_data_lake_store_account: Option<String>,
     #[doc = "The list of Data Lake Store accounts associated with this account."]
-    #[serde(rename = "dataLakeStoreAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataLakeStoreAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_lake_store_accounts: Vec<DataLakeStoreAccountInformation>,
     #[doc = "The list of Data Lake Store accounts associated with this account."]
-    #[serde(rename = "publicDataLakeStoreAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicDataLakeStoreAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_data_lake_store_accounts: Vec<DataLakeStoreAccountInformation>,
     #[doc = "The list of Azure Blob Storage accounts associated with this account."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<StorageAccountInformation>,
     #[doc = "The list of compute policies associated with this account."]
-    #[serde(rename = "computePolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "computePolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub compute_policies: Vec<ComputePolicy>,
     #[doc = "The list of hiveMetastores associated with this account."]
-    #[serde(rename = "hiveMetastores", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hiveMetastores",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hive_metastores: Vec<HiveMetastore>,
     #[doc = "The list of virtualNetwork rules associated with this account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "The list of firewall rules associated with this account."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<FirewallRule>,
     #[doc = "The current state of the IP address firewall for this account."]
     #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
@@ -801,7 +859,11 @@ impl DataLakeStoreAccountInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountInformationListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataLakeStoreAccountInformation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -858,10 +920,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -905,7 +976,11 @@ impl FirewallRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallRule>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -954,7 +1029,11 @@ impl HiveMetastore {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HiveMetastoreListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HiveMetastore>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1107,7 +1186,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1167,7 +1250,11 @@ pub struct OperationMetaMetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "The availabilities for OperationMetaMetricSpecification."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub availabilities: Vec<OperationMetaMetricAvailabilitiesSpecification>,
 }
 impl OperationMetaMetricSpecification {
@@ -1188,10 +1275,20 @@ impl OperationMetaPropertyInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaServiceSpecification {
     #[doc = "The metricSpecifications for OperationMetaServiceSpecification."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
     #[doc = "The logSpecifications for OperationMetaServiceSpecification."]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
 }
 impl OperationMetaServiceSpecification {
@@ -1239,7 +1336,11 @@ impl SasTokenInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SasTokenInformationListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SasTokenInformation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1274,7 +1375,11 @@ impl StorageAccountInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountInformationListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageAccountInformation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1321,7 +1426,11 @@ impl StorageContainer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageContainerListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StorageContainer>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1476,16 +1585,36 @@ impl UpdateDataLakeAnalyticsAccountParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateDataLakeAnalyticsAccountProperties {
     #[doc = "The list of Data Lake Store accounts associated with this account."]
-    #[serde(rename = "dataLakeStoreAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataLakeStoreAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_lake_store_accounts: Vec<UpdateDataLakeStoreWithAccountParameters>,
     #[doc = "The list of Azure Blob storage accounts associated with this account."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<UpdateStorageAccountWithAccountParameters>,
     #[doc = "The list of compute policies associated with this account."]
-    #[serde(rename = "computePolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "computePolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub compute_policies: Vec<UpdateComputePolicyWithAccountParameters>,
     #[doc = "The list of firewall rules associated with this account."]
-    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_rules: Vec<UpdateFirewallRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this account. Disabling the firewall does not remove existing rules, they will just be ignored until the firewall is re-enabled."]
     #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
@@ -1679,7 +1808,11 @@ impl VirtualNetworkRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkRuleListResult {
     #[doc = "The results of the list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkRule>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

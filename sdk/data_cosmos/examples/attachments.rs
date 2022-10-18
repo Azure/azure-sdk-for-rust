@@ -54,7 +54,7 @@ async fn main() -> azure_core::Result<()> {
     };
 
     // let's add an entity.
-    match client.create_document(doc.clone()).into_future().await {
+    match client.create_document(doc.clone()).await {
         Ok(_) => {
             println!("document created");
         }
@@ -83,7 +83,6 @@ async fn main() -> azure_core::Result<()> {
             "image/jpeg",
         )
         .consistency_level(ret)
-        .into_future()
         .await?;
     println!("create reference == {:#?}", resp);
 
@@ -91,11 +90,7 @@ async fn main() -> azure_core::Result<()> {
     // sure to find the just created attachment
     let session_token: ConsistencyLevel = resp.into();
 
-    let resp = attachment
-        .get()
-        .consistency_level(session_token)
-        .into_future()
-        .await?;
+    let resp = attachment.get().consistency_level(session_token).await?;
 
     println!("get attachment == {:#?}", resp);
     let session_token: ConsistencyLevel = resp.into();
@@ -108,16 +103,11 @@ async fn main() -> azure_core::Result<()> {
             "image/jpeg",
         )
         .consistency_level(session_token)
-        .into_future()
         .await?;
     println!("replace reference == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment
-        .delete()
-        .consistency_level(&resp)
-        .into_future()
-        .await?;
+    let resp_delete = attachment.delete().consistency_level(&resp).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     // slug attachment
@@ -127,17 +117,12 @@ async fn main() -> azure_core::Result<()> {
         .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .into_future()
         .await?;
 
     println!("create slug == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment
-        .delete()
-        .consistency_level(&resp)
-        .into_future()
-        .await?;
+    let resp_delete = attachment.delete().consistency_level(&resp).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     Ok(())

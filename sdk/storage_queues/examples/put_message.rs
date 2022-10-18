@@ -28,7 +28,6 @@ async fn main() -> azure_core::Result<()> {
             "Azure SDK for Rust rocks! {}",
             OffsetDateTime::now_utc()
         ))
-        .into_future()
         .await?;
 
     println!("response == {:#?}", response);

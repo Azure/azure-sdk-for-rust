@@ -399,8 +399,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.update_module_twin("some-device", "some-module")
     ///              .tag("TagName", "TagValue")
-    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
-    ///              .into_future();
+    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}));
     /// ```
     pub fn update_module_twin<S, T>(&self, device_id: S, module_id: T) -> UpdateOrReplaceTwinBuilder
     where
@@ -420,8 +419,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.replace_module_twin("some-device", "some-module")
     ///              .tag("TagName", "TagValue")
-    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
-    ///              .into_future();
+    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}));
     /// ```
     pub fn replace_module_twin<S, T>(
         &self,
@@ -445,8 +443,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.update_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
-    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
-    ///              .into_future();
+    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}));
     /// ```
     pub fn update_device_twin<S>(&self, device_id: S) -> UpdateOrReplaceTwinBuilder
     where
@@ -464,8 +461,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.replace_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
-    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
-    ///              .into_future();
+    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}));
     /// ```
     pub fn replace_device_twin<S>(&self, device_id: S) -> UpdateOrReplaceTwinBuilder
     where
@@ -498,8 +494,7 @@ impl ServiceClient {
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iot_hub.create_device_identity("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"))
-    ///     .into_future();
+    /// let device = iot_hub.create_device_identity("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_device_identity<S>(
         &self,
@@ -596,7 +591,7 @@ impl ServiceClient {
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iot_hub.create_module_identity("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key")).into_future();
+    /// let device = iot_hub.create_module_identity("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_module_identity<S1, S2, S3>(
         &self,
@@ -756,8 +751,7 @@ impl ServiceClient {
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let configuration = iot_hub.create_configuration("some-configuration-id", 10, "tags.environment='test'")
-    ///     .into_future();
+    /// let configuration = iot_hub.create_configuration("some-configuration-id", 10, "tags.environment='test'");
     /// ```
     pub fn create_configuration<S, T>(
         &self,
@@ -786,8 +780,7 @@ impl ServiceClient {
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let configuration = iot_hub.update_configuration("some-configuration-id", 10, "tags.environment='test'", "some-etag-value")
-    ///     .into_future();
+    /// let configuration = iot_hub.update_configuration("some-configuration-id", 10, "tags.environment='test'", "some-etag-value");
     /// ```
     pub fn update_configuration<S, T, U>(
         &self,

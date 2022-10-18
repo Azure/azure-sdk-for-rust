@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn get_secret(client: &SecretClient) -> Result<(), Box<dyn std::error::Error>> {
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
-    let secrets = client.get(secret_name).into_future().await?;
+    let secrets = client.get(secret_name).await?;
     dbg!(&secrets);
 
     Ok(())

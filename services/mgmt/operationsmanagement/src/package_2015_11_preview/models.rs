@@ -88,7 +88,11 @@ impl ManagementAssociationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementAssociationPropertiesList {
     #[doc = "List of Management Association properties within the subscription."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagementAssociation>,
 }
 impl ManagementAssociationPropertiesList {
@@ -152,7 +156,11 @@ impl ManagementConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementConfigurationPropertiesList {
     #[doc = "List of Management Configuration properties within the subscription."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagementConfiguration>,
 }
 impl ManagementConfigurationPropertiesList {
@@ -200,7 +208,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of solution operations supported by the OperationsManagement resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -287,10 +299,20 @@ pub struct SolutionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The azure resources that will be contained within the solutions. They will be locked and gets deleted automatically when the solution is deleted."]
-    #[serde(rename = "containedResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containedResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub contained_resources: Vec<String>,
     #[doc = "The resources that will be referenced from this solution. Deleting any of those solution out of band will break the solution."]
-    #[serde(rename = "referencedResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "referencedResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub referenced_resources: Vec<String>,
 }
 impl SolutionProperties {
@@ -307,7 +329,11 @@ impl SolutionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionPropertiesList {
     #[doc = "List of solution properties within the subscription."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Solution>,
 }
 impl SolutionPropertiesList {

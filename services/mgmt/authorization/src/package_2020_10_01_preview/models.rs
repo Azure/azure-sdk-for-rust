@@ -91,7 +91,11 @@ impl AccessReviewDecision {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewDecisionListResult {
     #[doc = "Access Review Decision list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewDecision>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -376,7 +380,11 @@ impl AccessReviewInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewInstanceListResult {
     #[doc = "Access Review Instance list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewInstance>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -689,7 +697,11 @@ impl AccessReviewScheduleDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewScheduleDefinitionListResult {
     #[doc = "Access Review Schedule Definition list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccessReviewScheduleDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -731,13 +743,21 @@ pub struct AccessReviewScheduleDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<AccessReviewScope>,
     #[doc = "This is the collection of reviewers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This field specifies the type of reviewers for a review. Usually for a review, reviewers are explicitly assigned. However, in some cases, the reviewers may not be assigned and instead be chosen dynamically. For example managers review or self review."]
     #[serde(rename = "reviewersType", default, skip_serializing_if = "Option::is_none")]
     pub reviewers_type: Option<access_review_schedule_definition_properties::ReviewersType>,
     #[doc = "This is the collection of instances returned when one does an expand on it."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub instances: Vec<AccessReviewInstance>,
 }
 impl AccessReviewScheduleDefinitionProperties {
@@ -997,7 +1017,12 @@ pub struct ApprovalSettings {
     #[serde(rename = "approvalMode", default, skip_serializing_if = "Option::is_none")]
     pub approval_mode: Option<approval_settings::ApprovalMode>,
     #[doc = "The approval stages of the request."]
-    #[serde(rename = "approvalStages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "approvalStages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub approval_stages: Vec<ApprovalStage>,
 }
 impl ApprovalSettings {
@@ -1062,13 +1087,23 @@ pub struct ApprovalStage {
     #[serde(rename = "escalationTimeInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub escalation_time_in_minutes: Option<i32>,
     #[doc = "The primary approver of the request."]
-    #[serde(rename = "primaryApprovers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "primaryApprovers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub primary_approvers: Vec<UserSet>,
     #[doc = "The value determine whether escalation feature is enabled."]
     #[serde(rename = "isEscalationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_escalation_enabled: Option<bool>,
     #[doc = "The escalation approver of the request."]
-    #[serde(rename = "escalationApprovers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "escalationApprovers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub escalation_approvers: Vec<UserSet>,
 }
 impl ApprovalStage {
@@ -1152,7 +1187,11 @@ impl DenyAssignmentFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentListResult {
     #[doc = "Deny assignment list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DenyAssignment>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1173,16 +1212,35 @@ impl DenyAssignmentListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentPermission {
     #[doc = "Actions to which the deny assignment does not grant access."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
     #[doc = "Actions to exclude from that the deny assignment does not grant access."]
-    #[serde(rename = "notActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_actions: Vec<String>,
     #[doc = "Data actions to which the deny assignment does not grant access."]
-    #[serde(rename = "dataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_actions: Vec<String>,
     #[doc = "Data actions to exclude from that the deny assignment does not grant access."]
-    #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notDataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_data_actions: Vec<String>,
 }
 impl DenyAssignmentPermission {
@@ -1200,7 +1258,11 @@ pub struct DenyAssignmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "An array of permissions that are denied by the deny assignment."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub permissions: Vec<DenyAssignmentPermission>,
     #[doc = "The deny assignment scope."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1209,10 +1271,19 @@ pub struct DenyAssignmentProperties {
     #[serde(rename = "doNotApplyToChildScopes", default, skip_serializing_if = "Option::is_none")]
     pub do_not_apply_to_child_scopes: Option<bool>,
     #[doc = "Array of principals to which the deny assignment applies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub principals: Vec<Principal>,
     #[doc = "Array of principals to which the deny assignment does not apply."]
-    #[serde(rename = "excludePrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludePrincipals",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclude_principals: Vec<Principal>,
     #[doc = "Specifies whether this deny assignment was created by Azure and cannot be edited or deleted."]
     #[serde(rename = "isSystemProtected", default, skip_serializing_if = "Option::is_none")]
@@ -1245,7 +1316,11 @@ impl EligibleChildResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EligibleChildResourcesListResult {
     #[doc = "Eligible child resource list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EligibleChildResource>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1323,10 +1398,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -1475,7 +1559,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1496,16 +1584,35 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permission {
     #[doc = "Allowed actions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
     #[doc = "Denied actions."]
-    #[serde(rename = "notActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_actions: Vec<String>,
     #[doc = "Allowed Data actions."]
-    #[serde(rename = "dataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_actions: Vec<String>,
     #[doc = "Denied Data actions."]
-    #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notDataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_data_actions: Vec<String>,
 }
 impl Permission {
@@ -1517,7 +1624,11 @@ impl Permission {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PermissionGetResult {
     #[doc = "An array of permissions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Permission>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1704,10 +1815,19 @@ pub struct ProviderOperationsMetadata {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The provider resource types"]
-    #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_types: Vec<ResourceType>,
     #[doc = "The provider operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<ProviderOperation>,
 }
 impl ProviderOperationsMetadata {
@@ -1719,7 +1839,11 @@ impl ProviderOperationsMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderOperationsMetadataListResult {
     #[doc = "The list of providers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProviderOperationsMetadata>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1746,7 +1870,11 @@ pub struct ResourceType {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The resource type operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<ProviderOperation>,
 }
 impl ResourceType {
@@ -1802,7 +1930,11 @@ impl RoleAssignmentFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentListResult {
     #[doc = "Role assignment list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleAssignment>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2034,7 +2166,11 @@ impl RoleAssignmentScheduleInstanceFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleInstanceListResult {
     #[doc = "Role assignment schedule instance list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleAssignmentScheduleInstance>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2317,7 +2453,11 @@ pub mod role_assignment_schedule_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleListResult {
     #[doc = "Role assignment schedule list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleAssignmentSchedule>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2635,7 +2775,11 @@ impl RoleAssignmentScheduleRequestFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleRequestListResult {
     #[doc = "Role assignment schedule request list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleAssignmentScheduleRequest>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3048,7 +3192,11 @@ impl RoleDefinitionFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleDefinitionListResult {
     #[doc = "Role definition list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleDefinition>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3078,10 +3226,19 @@ pub struct RoleDefinitionProperties {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "Role definition permissions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub permissions: Vec<Permission>,
     #[doc = "Role definition assignable scopes."]
-    #[serde(rename = "assignableScopes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assignableScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub assignable_scopes: Vec<String>,
 }
 impl RoleDefinitionProperties {
@@ -3174,7 +3331,11 @@ impl RoleEligibilityScheduleInstanceFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleInstanceListResult {
     #[doc = "Role eligibility schedule instance list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleEligibilityScheduleInstance>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3404,7 +3565,11 @@ pub mod role_eligibility_schedule_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleListResult {
     #[doc = "role eligibility schedule list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleEligibilitySchedule>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3679,7 +3844,11 @@ impl RoleEligibilityScheduleRequestFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleRequestListResult {
     #[doc = "Role eligibility schedule request list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleEligibilityScheduleRequest>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4111,7 +4280,11 @@ impl RoleManagementPolicyAssignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyAssignmentListResult {
     #[doc = "Role management policy assignment list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleManagementPolicyAssignment>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4175,7 +4348,12 @@ pub struct RoleManagementPolicyEnablementRule {
     #[serde(flatten)]
     pub role_management_policy_rule: RoleManagementPolicyRule,
     #[doc = "The list of enabled rules."]
-    #[serde(rename = "enabledRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enabledRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enabled_rules: Vec<String>,
 }
 impl RoleManagementPolicyEnablementRule {
@@ -4211,7 +4389,11 @@ impl RoleManagementPolicyExpirationRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyListResult {
     #[doc = "Role management policy list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoleManagementPolicy>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4243,7 +4425,12 @@ pub struct RoleManagementPolicyNotificationRule {
     #[serde(rename = "recipientType", default, skip_serializing_if = "Option::is_none")]
     pub recipient_type: Option<role_management_policy_notification_rule::RecipientType>,
     #[doc = "The list notification recipients."]
-    #[serde(rename = "notificationRecipients", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationRecipients",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_recipients: Vec<String>,
     #[doc = "Its value determine if the notification need to be sent to the recipient type specified in policy rule."]
     #[serde(rename = "isDefaultRecipientsEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -4399,10 +4586,19 @@ pub struct RoleManagementPolicyProperties {
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "The rule applied to the policy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<RoleManagementPolicyRule>,
     #[doc = "The readonly computed rule applied to the policy."]
-    #[serde(rename = "effectiveRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "effectiveRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub effective_rules: Vec<RoleManagementPolicyRule>,
     #[serde(rename = "policyProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_properties: Option<PolicyProperties>,
@@ -4441,19 +4637,38 @@ pub struct RoleManagementPolicyRuleTarget {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caller: Option<String>,
     #[doc = "The type of operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<String>,
     #[doc = "The assignment level to which it is applied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
     #[doc = "The list of target objects."]
-    #[serde(rename = "targetObjects", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetObjects",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_objects: Vec<String>,
     #[doc = "The list of inheritable settings."]
-    #[serde(rename = "inheritableSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inheritableSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inheritable_settings: Vec<String>,
     #[doc = "The list of enforced settings."]
-    #[serde(rename = "enforcedSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enforcedSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enforced_settings: Vec<String>,
 }
 impl RoleManagementPolicyRuleTarget {

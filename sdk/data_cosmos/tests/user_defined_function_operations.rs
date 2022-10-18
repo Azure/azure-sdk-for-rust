@@ -26,17 +26,14 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
 
     log::info!("creating database");
     // create a temp database
-    let _ = client.create_database(DATABASE_NAME).into_future().await?;
+    let _ = client.create_database(DATABASE_NAME).await?;
     log::info!("created database");
 
     let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
     log::info!("creating collection");
-    let _ = database
-        .create_collection(COLLECTION_NAME, "/id")
-        .into_future()
-        .await?;
+    let _ = database.create_collection(COLLECTION_NAME, "/id").await?;
     log::info!("created collection");
 
     let collection = database.collection_client(COLLECTION_NAME);
@@ -45,7 +42,6 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
     log::info!("creating user defined function");
     let ret = user_defined_function
         .create_user_defined_function("body")
-        .into_future()
         .await?;
     log::info!("created user defined function");
 
@@ -64,7 +60,6 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
     let ret = user_defined_function
         .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
-        .into_future()
         .await?;
     log::info!("replaced user defined functions");
 
@@ -115,11 +110,10 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
     let _ret = user_defined_function
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .into_future()
         .await?;
 
     // delete the database
-    database.delete_database().into_future().await?;
+    database.delete_database().await?;
     log::info!("deleted test resources");
 
     Ok(())

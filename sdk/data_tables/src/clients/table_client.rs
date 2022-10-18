@@ -101,7 +101,7 @@ mod integration_tests {
         );
 
         println!("Create the table");
-        let _ = table.create().into_future().await.unwrap();
+        let _ = table.create().await.unwrap();
 
         println!("Validate that the table was created");
         let mut stream = table_client.list().into_stream();
@@ -118,7 +118,6 @@ mod integration_tests {
         println!("Delete the table");
         table
             .delete()
-            .into_future()
             .await
             .expect("we should be able to delete the table");
 
@@ -149,14 +148,10 @@ mod integration_tests {
         );
 
         println!("Delete the table (if it exists)");
-        let _ = table.delete().into_future().await;
+        let _ = table.delete().await;
 
         println!("Create the table");
-        table
-            .create()
-            .into_future()
-            .await
-            .expect("the table should be created");
+        table.create().await.expect("the table should be created");
 
         let entity = TestEntity {
             city: "Milan".to_owned(),
@@ -169,7 +164,6 @@ mod integration_tests {
             .insert(&entity)
             .unwrap()
             .return_entity(true)
-            .into_future()
             .await
             .expect("the insert operation should succeed");
 

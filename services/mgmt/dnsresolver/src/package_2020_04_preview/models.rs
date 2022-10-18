@@ -34,7 +34,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Extra error information"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -71,7 +75,11 @@ impl DnsForwardingRuleset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsForwardingRulesetListResult {
     #[doc = "Enumeration of the DNS forwarding rulesets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DnsForwardingRuleset>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -104,7 +112,12 @@ impl DnsForwardingRulesetPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsForwardingRulesetProperties {
     #[doc = "The reference to the DNS resolver outbound endpoints that are used to route DNS queries matching the forwarding rules in the ruleset to the target DNS servers."]
-    #[serde(rename = "dnsResolverOutboundEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsResolverOutboundEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_resolver_outbound_endpoints: Vec<SubResource>,
     #[doc = "The current provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -147,7 +160,11 @@ impl DnsResolver {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsResolverListResult {
     #[doc = "Enumeration of the DNS resolvers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DnsResolver>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -266,7 +283,11 @@ impl ForwardingRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ForwardingRuleListResult {
     #[doc = "Enumeration of the forwarding rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ForwardingRule>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -299,7 +320,12 @@ impl ForwardingRulePatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ForwardingRulePatchProperties {
     #[doc = "DNS servers to forward the DNS query to."]
-    #[serde(rename = "targetDnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetDnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_dns_servers: Vec<TargetDnsServer>,
     #[doc = "Metadata attached to the forwarding rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -457,7 +483,11 @@ impl InboundEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundEndpointListResult {
     #[doc = "Enumeration of the inbound endpoints for a DNS resolver."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<InboundEndpoint>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -490,7 +520,12 @@ impl InboundEndpointPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundEndpointProperties {
     #[doc = "IP configurations for the inbound endpoint."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<IpConfiguration>,
     #[doc = "The current provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -596,7 +631,11 @@ impl OutboundEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutboundEndpointListResult {
     #[doc = "Enumeration of the outbound endpoints for a DNS resolver."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OutboundEndpoint>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -734,7 +773,11 @@ impl SubResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResourceListResult {
     #[doc = "Enumeration of the sub-resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubResource>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -805,7 +848,11 @@ impl VirtualNetworkDnsForwardingRuleset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkDnsForwardingRulesetListResult {
     #[doc = "Enumeration of the Virtual Network DNS Forwarding Ruleset."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkDnsForwardingRuleset>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -846,7 +893,11 @@ impl VirtualNetworkLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkLinkListResult {
     #[doc = "Enumeration of the virtual network links."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkLink>,
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

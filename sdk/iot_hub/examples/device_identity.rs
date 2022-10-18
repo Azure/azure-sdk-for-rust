@@ -23,7 +23,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
             ),
         )
-        .into_future()
         .await?;
     let device: DeviceIdentityResponse = device.try_into()?;
 
@@ -44,21 +43,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             device.etag,
         )
         .device_capability(DesiredCapability::IotEdge)
-        .into_future()
         .await?;
 
     println!("Getting device identity of '{}'", device.device_id);
-    let device = service_client
-        .get_device_identity(device.device_id)
-        .into_future()
-        .await?;
+    let device = service_client.get_device_identity(device.device_id).await?;
     let device: DeviceIdentityResponse = device.try_into()?;
     println!("Identity is: {:?}", device);
 
     println!("Deleting device '{}'", device.device_id);
     service_client
         .delete_device_identity(device.device_id, device.etag)
-        .into_future()
         .await?;
 
     Ok(())

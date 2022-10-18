@@ -15,17 +15,11 @@ async fn main() -> azure_core::Result<()> {
     let queue_service = QueueServiceClient::new(account, storage_credentials);
 
     println!("getting service stats");
-    let response = queue_service
-        .get_queue_service_stats()
-        .into_future()
-        .await?;
+    let response = queue_service.get_queue_service_stats().await?;
     println!("get_queue_service_properties.response == {:#?}", response);
 
     println!("getting service properties");
-    let response = queue_service
-        .get_queue_service_properties()
-        .into_future()
-        .await?;
+    let response = queue_service.get_queue_service_properties().await?;
     println!("get_queue_service_stats.response == {:#?}", response);
 
     println!("enumerating queues starting with a");

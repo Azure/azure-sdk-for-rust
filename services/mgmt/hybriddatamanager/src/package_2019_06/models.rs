@@ -61,7 +61,11 @@ impl AvailableProviderOperationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperations {
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailableProviderOperation>,
     #[doc = "Link for the next set of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -130,7 +134,11 @@ impl DataManager {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerList {
     #[doc = "List of data manager resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataManager>,
     #[doc = "Link for the next set of data stores."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -182,7 +190,11 @@ impl DataService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataServiceList {
     #[doc = "List of data services."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataService>,
     #[doc = "Link for the next set of data services."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -205,10 +217,20 @@ pub struct DataServiceProperties {
     #[doc = "State of the data service."]
     pub state: data_service_properties::State,
     #[doc = "Supported data store types which can be used as a sink."]
-    #[serde(rename = "supportedDataSinkTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedDataSinkTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_data_sink_types: Vec<String>,
     #[doc = "Supported data store types which can be used as a source."]
-    #[serde(rename = "supportedDataSourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedDataSourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_data_source_types: Vec<String>,
 }
 impl DataServiceProperties {
@@ -262,7 +284,11 @@ impl DataStoreFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataStoreList {
     #[doc = "List of data stores."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataStore>,
     #[doc = "Link for the next set of data stores."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -294,7 +320,12 @@ pub struct DataStoreProperties {
     #[serde(rename = "dataStoreTypeId")]
     pub data_store_type_id: String,
     #[doc = "List of customer secrets containing a key identifier and key value. The key identifier is a way for the specific data source to understand the key. Value contains customer secret encrypted by the encryptionKeys."]
-    #[serde(rename = "customerSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customerSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub customer_secrets: Vec<CustomerSecret>,
 }
 impl DataStoreProperties {
@@ -338,7 +369,11 @@ impl DataStoreType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataStoreTypeList {
     #[doc = "List of DataStoreType."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataStoreType>,
     #[doc = "Link for the next set of data store types."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -364,10 +399,20 @@ pub struct DataStoreTypeProperties {
     #[doc = "State of the data store type."]
     pub state: data_store_type_properties::State,
     #[doc = "Supported data services where it can be used as a sink."]
-    #[serde(rename = "supportedDataServicesAsSink", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedDataServicesAsSink",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_data_services_as_sink: Vec<String>,
     #[doc = "Supported data services where it can be used as a source."]
-    #[serde(rename = "supportedDataServicesAsSource", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedDataServicesAsSource",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_data_services_as_source: Vec<String>,
 }
 impl DataStoreTypeProperties {
@@ -540,7 +585,11 @@ pub mod job_definition_filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDefinitionList {
     #[doc = "List of job definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobDefinition>,
     #[doc = "Link for the next set of job definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -567,7 +616,11 @@ pub struct JobDefinitionProperties {
     #[serde(rename = "dataSinkId")]
     pub data_sink_id: String,
     #[doc = "Schedule for running the job definition"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schedules: Vec<Schedule>,
     #[doc = "State of the job definition."]
     pub state: job_definition_properties::State,
@@ -584,7 +637,12 @@ pub struct JobDefinitionProperties {
     #[serde(rename = "dataServiceInput", default, skip_serializing_if = "Option::is_none")]
     pub data_service_input: Option<serde_json::Value>,
     #[doc = "List of customer secrets containing a key identifier and key value. The key identifier is a way for the specific data source to understand the key. Value contains customer secret encrypted by the encryptionKeys."]
-    #[serde(rename = "customerSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customerSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub customer_secrets: Vec<CustomerSecret>,
 }
 impl JobDefinitionProperties {
@@ -685,13 +743,23 @@ pub mod job_definition_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDetails {
     #[doc = "List of stages that ran in the job"]
-    #[serde(rename = "jobStages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "jobStages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub job_stages: Vec<JobStages>,
     #[doc = "Job Definition."]
     #[serde(rename = "jobDefinition", default, skip_serializing_if = "Option::is_none")]
     pub job_definition: Option<JobDefinition>,
     #[doc = "Error details for failure. This is optional."]
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_details: Vec<ErrorDetails>,
     #[doc = "Item Details Link to download files or see details"]
     #[serde(rename = "itemDetailsLink", default, skip_serializing_if = "Option::is_none")]
@@ -735,7 +803,11 @@ pub mod job_filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobList {
     #[doc = "List of jobs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Job>,
     #[doc = "Link for the next set of jobs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -816,7 +888,12 @@ pub struct JobStages {
     #[serde(rename = "jobStageDetails", default, skip_serializing_if = "Option::is_none")]
     pub job_stage_details: Option<serde_json::Value>,
     #[doc = "Error details for the stage. This is optional"]
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_details: Vec<ErrorDetails>,
 }
 impl JobStages {
@@ -886,7 +963,11 @@ impl PublicKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicKeyList {
     #[doc = "List of public keys."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PublicKey>,
     #[doc = "Link for the next set of public keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -964,7 +1045,12 @@ pub struct RunParameters {
     #[serde(rename = "dataServiceInput", default, skip_serializing_if = "Option::is_none")]
     pub data_service_input: Option<serde_json::Value>,
     #[doc = "List of customer secrets containing a key identifier and key value. The key identifier is a way for the specific data source to understand the key. Value contains customer secret encrypted by the encryptionKeys."]
-    #[serde(rename = "customerSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customerSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub customer_secrets: Vec<CustomerSecret>,
 }
 impl RunParameters {
@@ -993,7 +1079,12 @@ pub struct Schedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "A list of repetition intervals in ISO 8601 format."]
-    #[serde(rename = "policyList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_list: Vec<String>,
 }
 impl Schedule {

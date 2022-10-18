@@ -286,13 +286,28 @@ pub mod alert_properties {
         #[serde(rename = "triggeredBy", default, skip_serializing_if = "Option::is_none")]
         pub triggered_by: Option<String>,
         #[doc = "array of resourceGroups to filter by"]
-        #[serde(rename = "resourceGroupFilter", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceGroupFilter",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_group_filter: Vec<serde_json::Value>,
         #[doc = "array of resources to filter by"]
-        #[serde(rename = "resourceFilter", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceFilter",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_filter: Vec<serde_json::Value>,
         #[doc = "array of meters to filter by"]
-        #[serde(rename = "meterFilter", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "meterFilter",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub meter_filter: Vec<serde_json::Value>,
         #[doc = "tags to filter by"]
         #[serde(rename = "tagFilter", default, skip_serializing_if = "Option::is_none")]
@@ -313,13 +328,28 @@ pub mod alert_properties {
         #[serde(rename = "currentSpend", default, skip_serializing_if = "Option::is_none")]
         pub current_spend: Option<f64>,
         #[doc = "list of emails to contact"]
-        #[serde(rename = "contactEmails", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "contactEmails",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub contact_emails: Vec<String>,
         #[doc = "list of action groups to broadcast to"]
-        #[serde(rename = "contactGroups", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "contactGroups",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub contact_groups: Vec<String>,
         #[doc = "list of contact roles"]
-        #[serde(rename = "contactRoles", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "contactRoles",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub contact_roles: Vec<String>,
         #[doc = "overriding alert"]
         #[serde(rename = "overridingAlert", default, skip_serializing_if = "Option::is_none")]
@@ -491,7 +521,11 @@ pub mod alert_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsResult {
     #[doc = "List of alerts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Alert>,
     #[doc = "URL to get the next set of alerts results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -720,7 +754,11 @@ pub struct DimensionProperties {
     #[serde(rename = "groupingEnabled", default, skip_serializing_if = "Option::is_none")]
     pub grouping_enabled: Option<bool>,
     #[doc = "Dimension data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data: Vec<String>,
     #[doc = "Total number of data for the dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -747,7 +785,11 @@ impl DimensionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DimensionsListResult {
     #[doc = "The list of dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Dimension>,
 }
 impl azure_core::Continuable for DimensionsListResult {
@@ -877,7 +919,11 @@ pub mod export_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportDatasetConfiguration {
     #[doc = "Array of column names to be included in the export. If not provided then the export will include all available columns. The available columns can vary by customer channel (see examples)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
 }
 impl ExportDatasetConfiguration {
@@ -1055,7 +1101,11 @@ impl ExportExecution {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportExecutionListResult {
     #[doc = "A list of export executions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExportExecution>,
 }
 impl ExportExecutionListResult {
@@ -1190,7 +1240,11 @@ pub mod export_execution_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportListResult {
     #[doc = "The list of exports."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Export>,
 }
 impl ExportListResult {
@@ -1348,7 +1402,12 @@ impl ExportTimePeriod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileDestination {
     #[doc = "Destination of the view data. Currently only csv format is supported."]
-    #[serde(rename = "fileFormats", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fileFormats",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub file_formats: Vec<FileFormat>,
 }
 impl FileDestination {
@@ -1693,7 +1752,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of cost management operations supported by the Microsoft.CostManagement resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2012,7 +2075,11 @@ pub struct QueryDataset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
     #[doc = "Array of group by expression to use in the query. Query can have up to 2 group by clauses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub grouping: Vec<QueryGrouping>,
     #[doc = "The filter expression to be used in the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2065,7 +2132,11 @@ pub mod query_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryDatasetConfiguration {
     #[doc = "Array of column names to be included in the query. Any valid query column name is allowed. If not provided, then query includes all columns."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
 }
 impl QueryDatasetConfiguration {
@@ -2188,10 +2259,18 @@ pub mod query_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryFilter {
     #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub and: Vec<QueryFilter>,
     #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub or: Vec<QueryFilter>,
     #[doc = "The comparison expression to be used in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2226,10 +2305,18 @@ pub struct QueryProperties {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of columns"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<QueryColumn>,
     #[doc = "Array of rows"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rows: Vec<Vec<serde_json::Value>>,
 }
 impl QueryProperties {
@@ -2422,10 +2509,18 @@ pub struct ReportConfigDataset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
     #[doc = "Array of group by expression to use in the report. Report can have up to 2 group by clauses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub grouping: Vec<ReportConfigGrouping>,
     #[doc = "Array of order by expression to use in the report."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sorting: Vec<ReportConfigSorting>,
     #[doc = "The filter expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2480,7 +2575,11 @@ pub mod report_config_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigDatasetConfiguration {
     #[doc = "Array of column names to be included in the report. Any valid report column name is allowed. If not provided, then report includes all columns."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
 }
 impl ReportConfigDatasetConfiguration {
@@ -2600,10 +2699,18 @@ pub mod report_config_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigFilter {
     #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub and: Vec<ReportConfigFilter>,
     #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub or: Vec<ReportConfigFilter>,
     #[doc = "The comparison expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2852,10 +2959,20 @@ pub struct ScheduleProperties {
     #[serde(rename = "hourOfDay", default, skip_serializing_if = "Option::is_none")]
     pub hour_of_day: Option<i32>,
     #[doc = "Day names in english on which cost analysis data will be emailed. This property is applicable when frequency is Weekly or Monthly."]
-    #[serde(rename = "daysOfWeek", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "daysOfWeek",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub days_of_week: Vec<DaysOfWeek>,
     #[doc = "Weeks in which cost analysis data will be emailed. This property is applicable when frequency is Monthly and used in combination with daysOfWeek."]
-    #[serde(rename = "weeksOfMonth", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "weeksOfMonth",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub weeks_of_month: Vec<WeeksOfMonth>,
     #[doc = "UTC day on which cost analysis data will be emailed. Must be between 1 and 31. This property is applicable when frequency is Monthly and overrides weeksOfMonth or daysOfWeek."]
     #[serde(rename = "dayOfMonth", default, skip_serializing_if = "Option::is_none")]
@@ -2935,7 +3052,11 @@ impl Serialize for ScheduledActionKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledActionListResult {
     #[doc = "The list of scheduled actions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScheduledAction>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3075,7 +3196,11 @@ impl View {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViewListResult {
     #[doc = "The list of views."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<View>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3126,10 +3251,18 @@ pub struct ViewProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metric: Option<view_properties::Metric>,
     #[doc = "List of KPIs to show in Cost Analysis UI."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub kpis: Vec<KpiProperties>,
     #[doc = "Configuration of 3 sub-views in the Cost Analysis UI."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pivots: Vec<PivotProperties>,
 }
 impl ViewProperties {

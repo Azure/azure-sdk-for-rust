@@ -38,6 +38,21 @@ impl BlobClient {
         }
     }
 
+    pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
+        let container_client = ContainerClient::from_sas_url(url)?;
+        // TODO: this currently only works for cloud locations Public and China
+        let path: Vec<_> = url.path().split_terminator('/').skip(2).collect();
+        if path.is_empty() {
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                || "unable to find blob path",
+            ))
+        } else {
+            let path = path.join("/");
+            Ok(container_client.blob_client(path))
+        }
+    }
+
     /// Stream a blob in chunks.
     ///
     /// By default, blobs are downloaded in 1MB chunks to reduce the impact of
@@ -240,15 +255,18 @@ impl BlobClient {
 
     /// Check whether blob exists.
     pub async fn exists(&self) -> azure_core::Result<bool> {
-        let result = self.get_properties().into_future().await.map(|_| true);
-        if let Err(err) = result {
-            if let ErrorKind::HttpResponse { status, .. } = err.kind() {
-                return Ok(status != &StatusCode::NotFound);
-            } else {
-                return Err(err);
+        match self.get_properties().await {
+            Ok(_) => Ok(true),
+            Err(err)
+                if err
+                    .as_http_error()
+                    .map(|e| e.status() == StatusCode::NotFound)
+                    .unwrap_or_default() =>
+            {
+                Ok(false)
             }
+            Err(err) => Err(err),
         }
-        result
     }
 
     /// Create a blob snapshot
@@ -302,6 +320,42 @@ impl BlobClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_from_url() -> azure_core::Result<()> {
+        let path = "my/complex/nested/path/here";
+        let container = "mycontainer";
+        let account = "accountname";
+
+        let example = format!("https://{account}.blob.core.windows.net/{container}/{path}?token=1");
+        let url = Url::parse(&example)?;
+        let blob_client = BlobClient::from_sas_url(&url)?;
+
+        assert_eq!(blob_client.blob_name(), path);
+        assert_eq!(blob_client.container_client().container_name(), container);
+
+        let creds = blob_client.container_client.credentials();
+        assert!(matches!(creds, StorageCredentials::SASToken(_)));
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer/myblob")?;
+        assert!(BlobClient::from_sas_url(&url).is_err(), "missing token");
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer?token=1")?;
+        assert!(BlobClient::from_sas_url(&url).is_err(), "missing path");
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/?token=1")?;
+        assert!(BlobClient::from_sas_url(&url).is_err(), "missing container");
+
+        let example =
+            format!("https://{account}.blob.core.chinacloudapi.cn/{container}/{path}?token=1");
+        let url = Url::parse(&example)?;
+        let blob_client = BlobClient::from_sas_url(&url)?;
+
+        assert_eq!(blob_client.blob_name(), path);
+        assert_eq!(blob_client.container_client().container_name(), container);
+
+        Ok(())
+    }
 
     struct FakeSas {
         token: String,

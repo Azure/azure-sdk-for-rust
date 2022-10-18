@@ -279,10 +279,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -361,7 +370,11 @@ pub mod extension {
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningStateDefinition>,
         #[doc = "Status from this extension."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub statuses: Vec<ExtensionStatus>,
         #[doc = "The error detail."]
         #[serde(rename = "errorInfo", default, skip_serializing_if = "Option::is_none")]
@@ -487,7 +500,11 @@ pub mod extension_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionsList {
     #[doc = "List of Extensions within a Kubernetes cluster."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Extension>,
     #[doc = "URL to get the next set of extension objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -603,7 +620,11 @@ pub mod flux_configuration {
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
         #[doc = "Statuses of the Flux Kubernetes resources created by the fluxConfiguration or created by the managed objects provisioned by the fluxConfiguration."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub statuses: Vec<ObjectStatusDefinition>,
         #[doc = "Public Key associated with this fluxConfiguration (either generated within the cluster or provided by the user)."]
         #[serde(rename = "repositoryPublicKey", default, skip_serializing_if = "Option::is_none")]
@@ -682,7 +703,11 @@ pub mod flux_configuration_patch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfigurationsList {
     #[doc = "List of Flux Configurations within a Kubernetes cluster."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FluxConfiguration>,
     #[doc = "URL to get the next set of configuration objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -840,7 +865,12 @@ pub struct KustomizationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "Specifies other Kustomizations that this Kustomization depends on. This Kustomization will not reconcile until all dependencies have completed their reconciliation."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
     #[doc = "The maximum time to attempt to reconcile the Kustomization on the cluster."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -870,7 +900,12 @@ pub struct KustomizationPatchDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "Specifies other Kustomizations that this Kustomization depends on. This Kustomization will not reconcile until all dependencies have completed their reconciliation."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
     #[doc = "The maximum time to attempt to reconcile the Kustomization on the cluster."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1022,7 +1057,12 @@ pub struct ObjectStatusDefinition {
     #[serde(rename = "appliedBy", default, skip_serializing_if = "Option::is_none")]
     pub applied_by: Option<ObjectReferenceDefinition>,
     #[doc = "List of Kubernetes object status conditions present on the cluster"]
-    #[serde(rename = "statusConditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusConditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_conditions: Vec<ObjectStatusConditionDefinition>,
     #[doc = "Properties for HelmRelease objects"]
     #[serde(rename = "helmReleaseProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1037,7 +1077,11 @@ impl ObjectStatusDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusList {
     #[doc = "List of async operations in progress, in the cluster."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationStatusResult>,
     #[doc = "URL to get the next set of Operation Result objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1306,7 +1350,11 @@ pub mod resource_provider_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
     #[doc = "URL to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1578,7 +1626,11 @@ pub mod source_control_configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControlConfigurationList {
     #[doc = "List of Source Control Configurations within a Kubernetes cluster."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SourceControlConfiguration>,
     #[doc = "URL to get the next set of configuration objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

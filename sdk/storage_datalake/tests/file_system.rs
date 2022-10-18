@@ -21,7 +21,6 @@ async fn file_system_create_delete() -> azure_core::Result<()> {
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-        .into_future()
         .await?;
     assert!(
         create_fs_response.namespace_enabled,
@@ -44,7 +43,7 @@ async fn file_system_create_delete() -> azure_core::Result<()> {
     }
     assert!(found, "did not find created file system");
 
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     let added_via_option = get_fs_props_response.properties.get("AddedVia");
     assert!(
         added_via_option.is_some(),
@@ -57,12 +56,9 @@ async fn file_system_create_delete() -> azure_core::Result<()> {
     );
 
     fs_properties.insert("ModifiedBy", "Iota");
-    file_system_client
-        .set_properties(fs_properties)
-        .into_future()
-        .await?;
+    file_system_client.set_properties(fs_properties).await?;
 
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     let modified_by_option = get_fs_props_response.properties.get("ModifiedBy");
     assert!(
         modified_by_option.is_some(),
@@ -74,7 +70,7 @@ async fn file_system_create_delete() -> azure_core::Result<()> {
         "did not find expected property value for: ModifiedBy"
     );
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }
@@ -90,19 +86,19 @@ async fn file_system_list_paths() -> azure_core::Result<()> {
         .clone()
         .file_system_client(file_system_name.to_string());
 
-    file_system_client.create().into_future().await?;
+    file_system_client.create().await?;
 
     let file_path = "some/path/file1.txt";
     let file_client = file_system_client.get_file_client(file_path);
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
     let file_path = "some/path/file2.txt";
     let file_client = file_system_client.get_file_client(file_path);
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
     let file_path = "some/other_path/file3.txt";
     let file_client = file_system_client.get_file_client(file_path);
-    file_client.create().into_future().await?;
+    file_client.create().await?;
 
     // by default all paths are listed
     let paths = file_system_client
@@ -134,7 +130,7 @@ async fn file_system_list_paths() -> azure_core::Result<()> {
         .unwrap()?;
     assert_eq!(paths.paths.len(), 2);
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }
