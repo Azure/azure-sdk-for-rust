@@ -25,7 +25,7 @@ impl BlobExpiry {
                 headers.insert(EXPIRY_TIME, duration.to_string());
             }
             BlobExpiry::Absolute(date) => {
-                headers.insert(EXPIRY_OPTION, "Abosolute");
+                headers.insert(EXPIRY_OPTION, "Absolute");
                 headers.insert(EXPIRY_TIME, date::to_rfc1123(date));
             }
             BlobExpiry::NeverExpire => {
