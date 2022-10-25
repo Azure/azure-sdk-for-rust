@@ -8,7 +8,7 @@ use super::shared_access_credential::SharedAccessCredential;
 ///
 /// <seealso cref="Azure.Core.TokenCredential" />
 #[derive(Debug)]
-pub(crate) enum ServiceBusTokenCredential<TC>
+pub enum ServiceBusTokenCredential<TC>
 where
     TC: TokenCredential,
 {

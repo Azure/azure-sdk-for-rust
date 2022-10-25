@@ -5,8 +5,9 @@ use time::OffsetDateTime;
 
 use super::shared_access_signature::{SasSignatureError, SharedAccessSignature};
 
+/// TODO: visibility?
 #[derive(Debug)]
-pub(crate) struct AzureNamedKeyCredential {
+pub struct AzureNamedKeyCredential {
     name: String,
     key: String,
 }
@@ -56,8 +57,9 @@ impl AzureSasCredential {
     }
 }
 
+/// TODO: visibility?
 #[derive(Debug)]
-pub(crate) struct SharedAccessCredential {
+pub struct SharedAccessCredential {
     source_key_credential: Option<AzureNamedKeyCredential>,
     source_sas_credential: Option<AzureSasCredential>,
     shared_access_signature: Mutex<SharedAccessSignature>,

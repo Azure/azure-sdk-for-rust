@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use azure_core::auth::TokenCredential;
+
 use crate::{
     amqp::amqp_client::AmqpClient,
     authorization::{
@@ -32,7 +34,7 @@ use super::{
 /// Calling <see cref="DisposeAsync" /> as the application is shutting down will ensure that network
 /// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
-pub struct ServiceBusClient {
+pub struct ServiceBusClient<TC: TokenCredential> {
     /// Indicates whether or not this instance has been closed.
     ///
     /// TODO: use `ServiceBusConnection::is_closed`?
@@ -42,10 +44,10 @@ pub struct ServiceBusClient {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<AmqpClient<SharedAccessCredential>>, // TODO: use trait objects?
+    connection: ServiceBusConnection<AmqpClient<TC>>, // TODO: use trait objects?
 }
 
-impl ServiceBusClient {
+impl ServiceBusClient<SharedAccessCredential> {
     /// The fully qualified Service Bus namespace that the connection is associated with. This is
     /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
     ///
@@ -126,24 +128,44 @@ impl ServiceBusClient {
         let connection_string = connection_string.into();
         let identifier = options.identifier.clone();
         let connection = ServiceBusConnection::new(connection_string, options).await?;
-        let identifier = match identifier {
-            Some(id) => id,
-            None => {
-                diagnostics::utilities::generate_identifier(connection.fully_qualified_namespace())
-            }
-        };
+        let identifier = identifier.unwrap_or(diagnostics::utilities::generate_identifier(
+            connection.fully_qualified_namespace(),
+        ));
         Ok(Self {
             closed: false,
             identifier,
             connection,
         })
     }
+}
 
-    pub async fn new_with_credential_and_options<C>(
+impl<TC> ServiceBusClient<TC>
+where
+    TC: TokenCredential + Into<ServiceBusTokenCredential<TC>>,
+{
+    pub async fn new_with_credential_and_options(
         fully_qualified_namespace: impl Into<String>,
-        credential: C,
+        credential: TC,
         options: ServiceBusClientOptions,
     ) -> Result<Self, super::Error> {
-        todo!()
+        let fully_qualified_namespace = fully_qualified_namespace.into();
+        let identifier =
+            options
+                .identifier
+                .clone()
+                .unwrap_or(diagnostics::utilities::generate_identifier(
+                    &fully_qualified_namespace,
+                ));
+        let connection = ServiceBusConnection::new_with_credential(
+            fully_qualified_namespace,
+            credential,
+            options,
+        )
+        .await?;
+        Ok(Self {
+            closed: false,
+            identifier,
+            connection,
+        })
     }
 }
