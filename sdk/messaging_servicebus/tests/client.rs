@@ -22,17 +22,3 @@ async fn client_can_connect_with_connection_string() {
 
     client.dispose().await.unwrap();
 }
-
-#[tokio::test]
-async fn anonymous_amqp_connection() {
-    let addr = "amqps://fe2o3-amqp-example.servicebus.windows.net:5671";
-    let mut connection = Connection::builder()
-        .container_id("test")
-        .alt_tls_establishment(true)
-        .sasl_profile(SaslProfile::Anonymous)
-        .open(addr)
-        .await
-        .unwrap();
-
-    connection.close().await.unwrap();
-}
