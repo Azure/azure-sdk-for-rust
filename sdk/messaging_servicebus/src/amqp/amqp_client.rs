@@ -15,7 +15,7 @@ use crate::{
         service_bus_client_options::ServiceBusClientOptions,
         service_bus_transport_metrics::ServiceBusTransportMetrics,
     },
-    core::TransportClient,
+    core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_retry_policy::ServiceBusRetryPolicy,
@@ -29,6 +29,7 @@ use super::{
     amqp_receiver::AmqpReceiver,
     amqp_rule_manager::AmqpRuleManager,
     amqp_sender::AmqpSender,
+    error::DisposeError,
 };
 
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
@@ -55,6 +56,12 @@ pub enum AmqpClientError {
 
     #[error(transparent)]
     Rng(#[from] rand::Error),
+
+    #[error("Cancelled")]
+    Cancelled,
+
+    #[error(transparent)]
+    Dispose(#[from] DisposeError),
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -164,7 +171,7 @@ impl<C: TokenCredential> AmqpClient<C> {
 
 #[async_trait]
 impl<C: TokenCredential> TransportClient for AmqpClient<C> {
-    type Error = ();
+    type Error = AmqpClientError;
 
     type Sender = AmqpSender;
 
@@ -250,6 +257,29 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
         &mut self,
         cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
-        todo!()
+        if self.closed {
+            Ok(())
+        } else {
+            match cancellation_token.into() {
+                Some(token) => {
+                    tokio::select! {
+                        _cancel = token.cancelled() => Err(Self::Error::Cancelled),
+                        result = self.connection_scope.dispose() => {
+                            self.closed = true;
+                            result.map_err(Into::into)
+                        }
+                    }
+                }
+                None => self
+                    .connection_scope
+                    .dispose()
+                    .await
+                    .and_then(|_| {
+                        self.closed = true;
+                        Ok(())
+                    })
+                    .map_err(Into::into),
+            }
+        }
     }
 }

@@ -18,7 +18,7 @@ use crate::{
 
 use super::{
     service_bus_client_options::ServiceBusClientOptions,
-    service_bus_transport_metrics::ServiceBusTransportMetrics,
+    service_bus_transport_metrics::ServiceBusTransportMetrics, Error,
 };
 
 /// The [`ServiceBusClient`] is the top-level client through which all Service Bus entities can be
@@ -76,36 +76,6 @@ impl ServiceBusClient<SharedAccessCredential> {
     }
 
     /// <summary>
-    ///   Performs the task needed to clean up resources used by the <see cref="ServiceBusClient" />,
-    ///   including ensuring that the client itself has been closed.
-    /// </summary>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
-    // [SuppressMessage("Usage", "AZC0002:Ensure all service methods take an optional CancellationToken parameter.", Justification = "This signature must match the IAsyncDisposable interface.")]
-    // public virtual async ValueTask DisposeAsync()
-    // {
-    //     Logger.ClientCloseStart(typeof(ServiceBusClient), Identifier);
-    //     IsClosed = true;
-    //     try
-    //     {
-    //         await Connection.CloseAsync(CancellationToken.None).ConfigureAwait(false);
-    //         GC.SuppressFinalize(this);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Logger.ClientCloseException(typeof(ServiceBusClient), Identifier, ex);
-    //         throw;
-    //     }
-    //     finally
-    //     {
-    //         Logger.ClientCloseComplete(typeof(ServiceBusClient), Identifier);
-    //     }
-    // }
-    pub async fn dispose(&mut self) {
-        todo!()
-    }
-
-    /// <summary>
     /// Gets the metrics associated with this <see cref="ServiceBusClient"/> instance. The metrics returned represent a snapshot and will not be updated.
     /// To get updated metrics, this method should be called again.
     /// In order to use this property, <see cref="ServiceBusClientOptions.EnableTransportMetrics"/> must be set to <value>true</value>.
@@ -147,7 +117,7 @@ where
         fully_qualified_namespace: impl Into<String>,
         credential: TC,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, super::Error> {
+    ) -> Result<Self, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier =
             options
@@ -167,5 +137,23 @@ where
             identifier,
             connection,
         })
+    }
+}
+
+impl<TC> ServiceBusClient<TC>
+where
+    TC: TokenCredential,
+{
+    /// <summary>
+    ///   Performs the task needed to clean up resources used by the <see cref="ServiceBusClient" />,
+    ///   including ensuring that the client itself has been closed.
+    /// </summary>
+    ///
+    /// <returns>A task to be resolved on when the operation has completed.</returns>
+    pub async fn dispose(&mut self) -> Result<(), Error> {
+        self.closed = true;
+
+        self.connection.dispose().await?;
+        Ok(())
     }
 }

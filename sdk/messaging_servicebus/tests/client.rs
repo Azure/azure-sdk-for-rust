@@ -18,7 +18,9 @@ async fn client_can_connect_with_connection_string() {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     println!("{:?}", connection_string);
-    let client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+
+    client.dispose().await.unwrap();
 }
 
 #[tokio::test]

@@ -4,6 +4,8 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub(crate) trait TransportConnectionScope {
+    type Error;
+
     /// Indicates whether this <see cref="TransportConnectionScope"/> has been disposed.
     ///
     /// # Returns
@@ -19,5 +21,5 @@ pub(crate) trait TransportConnectionScope {
     }
 
     /// Disposes of the connection scope.
-    async fn dispose(&mut self);
+    async fn dispose(&mut self) -> Result<(), Self::Error>;
 }

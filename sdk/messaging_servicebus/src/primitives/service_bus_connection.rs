@@ -3,9 +3,13 @@ use std::borrow::Cow;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 use tokio::time::error::Elapsed;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
-    amqp::amqp_client::{AmqpClient, AmqpClientError},
+    amqp::{
+        amqp_client::{AmqpClient, AmqpClientError},
+        error::DisposeError,
+    },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,
@@ -54,6 +58,12 @@ pub enum Error {
 
     #[error(transparent)]
     Rng(#[from] rand::Error),
+
+    #[error("Cancelled")]
+    Cancelled,
+
+    #[error(transparent)]
+    Dispose(#[from] DisposeError),
 }
 
 impl From<AmqpClientError> for Error {
@@ -66,6 +76,8 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::Begin(err) => Self::Begin(err),
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpClientError::Rng(err) => Self::Rng(err),
+            AmqpClientError::Cancelled => Self::Cancelled,
+            AmqpClientError::Dispose(err) => Self::Dispose(err),
         }
     }
 }
@@ -276,5 +288,22 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
             retry_options: options.retry_options,
             inner_client,
         })
+    }
+}
+
+impl<C> ServiceBusConnection<C>
+where
+    C: TransportClient + Send,
+    Error: From<C::Error>,
+{
+    pub async fn close(&mut self, cancellation_token: CancellationToken) -> Result<(), Error> {
+        self.inner_client
+            .close(cancellation_token)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn dispose(&mut self) -> Result<(), Error> {
+        self.inner_client.dispose().await.map_err(Into::into)
     }
 }

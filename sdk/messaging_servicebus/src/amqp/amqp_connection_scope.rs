@@ -3,10 +3,10 @@ use std::{collections::HashMap, time::Duration as StdDuration};
 use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
-    connection::{ConnectionHandle, OpenError},
+    connection::{self, ConnectionHandle, OpenError},
     link::SenderAttachError,
     sasl_profile::SaslProfile,
-    session::{BeginError, SessionHandle},
+    session::{self, BeginError, SessionHandle},
     transaction::Controller,
     transport::protocol_header::{ProtocolHeader, ProtocolId},
     Connection, Session,
@@ -28,7 +28,7 @@ use crate::{
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };
 
-use super::{amqp_constants, cbs_token_provider::CbsTokenProvider};
+use super::{amqp_constants, cbs_token_provider::CbsTokenProvider, error::DisposeError};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
@@ -304,6 +304,8 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
 
 #[async_trait]
 impl<TC: TokenCredential> TransportConnectionScope for AmqpConnectionScope<TC> {
+    type Error = DisposeError;
+
     fn is_disposed(&self) -> bool {
         self.is_disposed
     }
@@ -312,7 +314,11 @@ impl<TC: TokenCredential> TransportConnectionScope for AmqpConnectionScope<TC> {
         self.is_disposed = value;
     }
 
-    async fn dispose(&mut self) {
-        todo!()
+    async fn dispose(&mut self) -> Result<(), Self::Error> {
+        // TODO: handle link close?
+
+        self.session_handle.close().await?;
+        self.connection_handle.close().await?;
+        Ok(())
     }
 }
