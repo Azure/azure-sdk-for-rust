@@ -52,6 +52,9 @@ pub enum AmqpClientError {
 
     #[error(transparent)]
     SenderAttach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    Rng(#[from] rand::Error),
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -62,6 +65,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
             AmqpConnectionScopeError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
             AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
+            AmqpConnectionScopeError::Rng(err) => Self::Rng(err),
         }
     }
 }

@@ -37,13 +37,14 @@ urlencoding = "2"
 uuid = "1"
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.7.1", features = ["transaction"]}
+fe2o3-amqp = {version = "0.7.2", features = ["transaction", "rustls"]}
 fe2o3-amqp-cbs = "0.0.2"
 fe2o3-amqp-management = "0.0.3"
 fe2o3-amqp-types = "0.6.0"
 fe2o3-amqp-ws = "0.1.2"
 
 [dev-dependencies]
+dotenv = "0.15"
 env_logger = "0.9"
 futures = "0.3"
 tokio = {version = "1.0", features = ["macros", "rt-multi-thread"]}

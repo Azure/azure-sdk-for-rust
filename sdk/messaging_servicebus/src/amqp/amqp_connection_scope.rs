@@ -5,6 +5,7 @@ use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
     connection::{ConnectionHandle, OpenError},
     link::SenderAttachError,
+    sasl_profile::SaslProfile,
     session::{BeginError, SessionHandle},
     transaction::Controller,
     transport::protocol_header::{ProtocolHeader, ProtocolId},
@@ -14,7 +15,7 @@ use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_management::error::AttachError;
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
-use rand::rngs::StdRng;
+use rand::{rngs::StdRng, SeedableRng};
 use serde_amqp::Value;
 use time::Duration as TimeSpan;
 use tokio::time::{error::Elapsed, timeout, Interval};
@@ -47,6 +48,9 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     SenderAttach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    Rng(#[from] rand::Error),
 }
 
 #[derive(Debug)]
@@ -210,7 +214,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             operation_cancellation_source.child_token(),
         );
 
-        let fut = Self::open_connection(connection_endpoint, transport_type, &id);
+        let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
         let mut connection_handle = timeout(operation_timeout, fut).await??;
 
         // TODO: should timeout account for time used previously?
@@ -224,8 +228,11 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         )
         .await??;
 
+        let rng = rand::thread_rng();
+        let rng = StdRng::from_rng(rng)?;
+
         Ok(Self {
-            random_number_generator: todo!(),
+            random_number_generator: rng,
             is_disposed: false,
             operation_cancellation_source,
             active_links: HashMap::new(),
@@ -242,8 +249,8 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
 
     async fn open_connection(
         // service_endpoint: Url,
-        connection_endpoint: Url,
-        transport_type: ServiceBusTransportType,
+        connection_endpoint: &Url,
+        transport_type: &ServiceBusTransportType,
         scope_identifier: &str,
         // timeout: TimeSpan, // FIXME: do timeout outside?
     ) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
@@ -256,13 +263,17 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         let max_frame_size = amqp_constants::DEFAULT_MAX_FRAME_SIZE;
         let container_id = scope_identifier;
 
+        println!("{:?}", connection_endpoint);
+
         let connection_builder = Connection::builder()
             .container_id(container_id)
+            .alt_tls_establishment(true)
+            .sasl_profile(SaslProfile::Anonymous)
             .max_frame_size(max_frame_size)
             .idle_time_out(idle_time_out);
         let connection = match transport_type {
             ServiceBusTransportType::AmqpTcp => {
-                connection_builder.open(connection_endpoint).await?
+                connection_builder.open(connection_endpoint.clone()).await?
             }
             ServiceBusTransportType::AmqpWebSockets => {
                 let (ws_stream, _) = WebSocketStream::connect(connection_endpoint).await?;

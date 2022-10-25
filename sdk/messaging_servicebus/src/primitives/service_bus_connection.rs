@@ -24,7 +24,7 @@ use super::{
 };
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum Error {
+pub enum Error {
     #[error("Argument error: {}", .0)]
     ArgumentError(String),
 
@@ -51,6 +51,9 @@ pub(crate) enum Error {
 
     #[error(transparent)]
     SenderAttach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    Rng(#[from] rand::Error),
 }
 
 impl From<AmqpClientError> for Error {
@@ -62,6 +65,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
             AmqpClientError::Begin(err) => Self::Begin(err),
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
+            AmqpClientError::Rng(err) => Self::Rng(err),
         }
     }
 }
@@ -212,6 +216,12 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
     ) -> Result<Self, Error> {
         let connection_string_properties =
             ServiceBusConnectionStringProperties::parse(connection_string.as_ref())?;
+
+        println!("connection_string: {:?}", connection_string);
+        println!(
+            "connection_string_properties: {:?}",
+            connection_string_properties
+        );
 
         let fully_qualified_namespace = connection_string_properties
             .endpoint()
