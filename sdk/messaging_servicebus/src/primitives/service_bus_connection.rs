@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 use tokio::time::error::Elapsed;
@@ -22,7 +24,7 @@ use super::{
 };
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub(crate) enum Error {
     #[error("Argument error: {}", .0)]
     ArgumentError(String),
 
@@ -179,8 +181,18 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
         &self.inner_client.transport_type()
     }
 
+    pub(crate) async fn new_with_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: TC,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        todo!()
+    }
+}
+
+impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
     pub(crate) async fn new<'a>(
-        connection_string: impl AsRef<str> + 'a,
+        connection_string: Cow<'a, str>,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         let connection_string_properties =
@@ -220,7 +232,7 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
 
         let shared_access_credential =
             SharedAccessCredential::from_signature(shared_access_signature);
-        let token_credential: ServiceBusTokenCredential<TC> =
+        let token_credential: ServiceBusTokenCredential<_> =
             ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 
         let host = fully_qualified_namespace.unwrap_or("");
@@ -241,3 +253,11 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
         })
     }
 }
+
+// impl<TC> ServiceBusConnection<AmqpClient<TC>> {
+//     pub(crate) async fn new_with_credential(
+//         fully_qualified_namespace: String,
+//         credential: TC,
+
+//     )
+// }

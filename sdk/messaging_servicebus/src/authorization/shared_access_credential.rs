@@ -36,7 +36,7 @@ impl AzureNamedKeyCredential {
 impl AzureNamedKeyCredential {}
 
 #[derive(Debug)]
-pub(crate) struct AzureSasCredential(String);
+pub struct AzureSasCredential(String);
 
 impl AzureSasCredential {
     pub fn new(signature: impl Into<String>) -> Self {

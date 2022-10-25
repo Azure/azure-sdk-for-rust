@@ -1,10 +1,13 @@
+use std::borrow::Cow;
+
 use crate::{
     amqp::amqp_client::AmqpClient,
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
-        shared_access_credential::SharedAccessCredential,
+        shared_access_credential::{AzureSasCredential, SharedAccessCredential},
     },
     core::TransportClient,
+    diagnostics,
     primitives::{
         inner_client::InnerClient, service_bus_connection::ServiceBusConnection,
         service_bus_transport_type::ServiceBusTransportType,
@@ -30,8 +33,6 @@ use super::{
 /// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
 pub struct ServiceBusClient {
-    options: ServiceBusClientOptions,
-
     /// Indicates whether or not this instance has been closed.
     ///
     /// TODO: use `ServiceBusConnection::is_closed`?
@@ -41,7 +42,7 @@ pub struct ServiceBusClient {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<AmqpClient<ServiceBusTokenCredential<SharedAccessCredential>>>, // TODO: use trait objects?
+    connection: ServiceBusConnection<AmqpClient<SharedAccessCredential>>, // TODO: use trait objects?
 }
 
 impl ServiceBusClient {
@@ -111,6 +112,38 @@ impl ServiceBusClient {
     //     => Connection.InnerClient.TransportMetrics?.Clone() ??
     //         throw new InvalidOperationException("Transport metrics are not enabled. To enable transport metrics, set the EnableTransportMetrics property on the ServiceBusClientOptions.");
     pub(crate) fn transport_metrics(&self) -> Option<ServiceBusTransportMetrics> {
+        todo!()
+    }
+
+    pub async fn new<'a>(connection_string: impl Into<Cow<'a, str>>) -> Result<Self, super::Error> {
+        Self::new_with_options(connection_string, ServiceBusClientOptions::default()).await
+    }
+
+    pub async fn new_with_options<'a>(
+        connection_string: impl Into<Cow<'a, str>>,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, super::Error> {
+        let connection_string = connection_string.into();
+        let identifier = options.identifier.clone();
+        let connection = ServiceBusConnection::new(connection_string, options).await?;
+        let identifier = match identifier {
+            Some(id) => id,
+            None => {
+                diagnostics::utilities::generate_identifier(connection.fully_qualified_namespace())
+            }
+        };
+        Ok(Self {
+            closed: false,
+            identifier,
+            connection,
+        })
+    }
+
+    pub async fn new_with_credential_and_options<C>(
+        fully_qualified_namespace: impl Into<String>,
+        credential: C,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, super::Error> {
         todo!()
     }
 }
