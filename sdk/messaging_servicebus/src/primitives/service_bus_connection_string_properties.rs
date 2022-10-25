@@ -184,20 +184,23 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
         for token_value_pair in token_value_pairs {
             let mut split = token_value_pair.split(Self::TOKEN_VALUE_SEPARATOR);
-            let token = split
-                .next()
-                .ok_or(FormatError::InvalidConnectionString)?
-                .trim();
+            let token = match split.next().and_then(|s| match s.trim() {
+                "" => None,
+                s => Some(s),
+            }) {
+                Some(token) => token,
+                None => continue,
+            };
+
             let value = split
                 .next()
-                .ok_or(FormatError::InvalidConnectionString)?
-                .trim();
-
-            // If there was no value for a key, then consider the connection string to
-            // be malformed.
-            if token.is_empty() || value.is_empty() {
-                return Err(FormatError::InvalidConnectionString);
-            }
+                .and_then(|s| match s.trim() {
+                    "" => None,
+                    s => Some(s),
+                })
+                // If there was no value for a key, then consider the connection string to
+                // be malformed.
+                .ok_or(FormatError::InvalidConnectionString)?;
 
             // Compare the token against the known connection string properties and capture the
             // pair if they are a known attribute.
