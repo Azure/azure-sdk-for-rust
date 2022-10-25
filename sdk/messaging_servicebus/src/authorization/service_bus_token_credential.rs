@@ -16,6 +16,12 @@ where
     Other(TC),
 }
 
+impl From<SharedAccessCredential> for ServiceBusTokenCredential<SharedAccessCredential> {
+    fn from(source: SharedAccessCredential) -> Self {
+        Self::SharedAccessCredential(source)
+    }
+}
+
 impl<TC> ServiceBusTokenCredential<TC>
 where
     TC: TokenCredential,

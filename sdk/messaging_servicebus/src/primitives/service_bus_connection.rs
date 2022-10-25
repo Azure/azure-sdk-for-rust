@@ -88,7 +88,7 @@ macro_rules! ok_if_not_none_or_empty {
 #[derive(Debug)]
 pub(crate) struct ServiceBusConnection<C> {
     fully_qualified_namespace: String,
-    entity_path: String,
+    entity_path: Option<String>,
     retry_options: ServiceBusRetryOptions,
 
     pub(crate) inner_client: C,
@@ -114,8 +114,8 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     /// The entity path that the connection is bound to.
     /// </summary>
     // public string EntityPath { get; }
-    pub fn entity_path(&self) -> &str {
-        &self.entity_path
+    pub fn entity_path(&self) -> Option<&str> {
+        self.entity_path.as_ref().map(|s| s.as_str())
     }
 
     /// The endpoint for the Service Bus service to which the connection is associated.
@@ -182,11 +182,26 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
     }
 
     pub(crate) async fn new_with_credential(
-        fully_qualified_namespace: impl Into<String>,
-        credential: TC,
+        fully_qualified_namespace: String,
+        credential: impl Into<ServiceBusTokenCredential<TC>>,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
-        todo!()
+        let token_credential: ServiceBusTokenCredential<_> = credential.into();
+        let inner_client = AmqpClient::new(
+            &fully_qualified_namespace,
+            token_credential,
+            options.transport_type,
+            options.custom_endpoint_address,
+            options.retry_options.try_timeout,
+        )
+        .await?;
+
+        Ok(Self {
+            fully_qualified_namespace,
+            entity_path: None,
+            retry_options: options.retry_options,
+            inner_client,
+        })
     }
 }
 
@@ -247,17 +262,9 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
 
         Ok(Self {
             fully_qualified_namespace: host.to_string(),
-            entity_path: entity_path.unwrap_or("").to_string(),
+            entity_path: entity_path.map(|s| s.to_string()),
             retry_options: options.retry_options,
             inner_client,
         })
     }
 }
-
-// impl<TC> ServiceBusConnection<AmqpClient<TC>> {
-//     pub(crate) async fn new_with_credential(
-//         fully_qualified_namespace: String,
-//         credential: TC,
-
-//     )
-// }
