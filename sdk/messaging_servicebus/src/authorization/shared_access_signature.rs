@@ -1,8 +1,6 @@
-use std::{borrow::Cow, num::ParseIntError, string::FromUtf8Error, time::Duration};
+use std::{borrow::Cow, time::Duration};
 
-use azure_core::error::ResultExt;
-use const_format::formatcp;
-use digest::{Digest, InvalidLength, KeyInit, Mac};
+use digest::{InvalidLength, KeyInit, Mac};
 use hmac::Hmac;
 use sha2::Sha256;
 use time::OffsetDateTime;

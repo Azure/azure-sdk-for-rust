@@ -6,12 +6,11 @@ use crate::{
     amqp::amqp_client::AmqpClient,
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
-        shared_access_credential::{AzureSasCredential, SharedAccessCredential},
+        shared_access_credential::SharedAccessCredential,
     },
-    core::TransportClient,
     diagnostics,
     primitives::{
-        inner_client::InnerClient, service_bus_connection::ServiceBusConnection,
+        service_bus_connection::ServiceBusConnection,
         service_bus_transport_type::ServiceBusTransportType,
     },
 };

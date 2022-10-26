@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_core::{
-    auth::{AccessToken, TokenCredential, TokenResponse},
+    auth::{AccessToken, TokenCredential},
     Url,
 };
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
@@ -11,13 +11,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
-    client::{
-        service_bus_client_options::ServiceBusClientOptions,
-        service_bus_transport_metrics::ServiceBusTransportMetrics,
-    },
     core::{TransportClient, TransportConnectionScope},
     primitives::{
-        service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },

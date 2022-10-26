@@ -20,9 +20,7 @@ use crate::{
 };
 
 use super::{
-    inner_client::InnerClient,
     service_bus_connection_string_properties::{FormatError, ServiceBusConnectionStringProperties},
-    service_bus_error::ServiceBusError,
     service_bus_retry_options::ServiceBusRetryOptions,
     service_bus_transport_type::ServiceBusTransportType,
 };

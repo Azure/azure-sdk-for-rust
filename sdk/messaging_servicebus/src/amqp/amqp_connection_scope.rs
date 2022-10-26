@@ -3,16 +3,14 @@ use std::{collections::HashMap, time::Duration as StdDuration};
 use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
-    connection::{self, ConnectionHandle, OpenError},
+    connection::{ConnectionHandle, OpenError},
     link::SenderAttachError,
     sasl_profile::SaslProfile,
-    session::{self, BeginError, SessionHandle},
+    session::{BeginError, SessionHandle},
     transaction::Controller,
-    transport::protocol_header::{ProtocolHeader, ProtocolId},
     Connection, Session,
 };
-use fe2o3_amqp_cbs::client::CbsClient;
-use fe2o3_amqp_management::error::AttachError;
+
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
@@ -23,7 +21,6 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
-    client::service_bus_transport_metrics::ServiceBusTransportMetrics,
     core::TransportConnectionScope,
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };

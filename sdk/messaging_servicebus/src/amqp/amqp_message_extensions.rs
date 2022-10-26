@@ -4,10 +4,9 @@ use time::Duration as TimeSpan; // To avoid confusion with std::time::Duration
 
 use fe2o3_amqp_types::{
     messaging::{
-        annotations::AnnotationKey, Body, Data, Header, Message, MessageAnnotations, MessageId,
-        Properties,
+        annotations::AnnotationKey, Header, Message, MessageAnnotations, MessageId, Properties,
     },
-    primitives::{Binary, BinaryRef, Symbol, Value},
+    primitives::{BinaryRef, Symbol, Value},
 };
 use time::OffsetDateTime;
 
@@ -18,7 +17,7 @@ use crate::constants::{
 
 use super::{
     amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
-    error::{not_supported_error, Error},
+    error::Error,
 };
 
 pub(crate) trait AmqpMessageExt {

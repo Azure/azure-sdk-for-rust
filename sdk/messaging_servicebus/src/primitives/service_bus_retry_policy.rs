@@ -1,8 +1,6 @@
 use std::hash::Hash;
 use std::time::Duration;
 
-use crate::diagnostics::ServiceBusEventSource;
-
 pub static SERVER_BUSY_BASE_SLEEP_TIME: Duration = Duration::from_secs(10);
 
 pub enum RetryError<E> {

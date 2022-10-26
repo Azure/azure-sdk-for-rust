@@ -1,7 +1,6 @@
 use std::env;
 
 use azure_messaging_servicebus::client::service_bus_client::ServiceBusClient;
-use fe2o3_amqp::{sasl_profile::SaslProfile, Connection};
 
 fn setup_dotenv() {
     dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
