@@ -17,7 +17,7 @@ pub struct AzureDataExplorerConnectionProperties {
     #[doc = "The name of the Azure Data Explorer database."]
     #[serde(rename = "adxDatabaseName")]
     pub adx_database_name: String,
-    #[doc = "The name of the Azure Data Explorer table."]
+    #[doc = "The name of the Azure Data Explorer table. Defaults to AdtPropertyEvents."]
     #[serde(rename = "adxTableName", default, skip_serializing_if = "Option::is_none")]
     pub adx_table_name: Option<String>,
     #[doc = "The URL of the EventHub namespace for identity-based authentication. It must include the protocol sb://"]

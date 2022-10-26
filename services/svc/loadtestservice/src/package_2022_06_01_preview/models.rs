@@ -208,6 +208,12 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
+impl azure_core::Continuable for ErrorResponseBody {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
 impl ErrorResponseBody {
     pub fn new() -> Self {
         Self::default()
@@ -250,6 +256,12 @@ pub struct FileUrlList {
     #[doc = "Link for the next list of file URLs, if applicable"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FileUrlList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
 }
 impl FileUrlList {
     pub fn new(value: Vec<FileUrl>) -> Self {
@@ -601,6 +613,12 @@ pub struct TestModelResourceList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TestModelResourceList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
 impl TestModelResourceList {
     pub fn new(value: Vec<TestModel>) -> Self {
         Self { value, next_link: None }
@@ -694,6 +712,12 @@ pub struct TestRunModelResourceList {
     #[doc = "Link for the next list of resources in case of paginated results, if applicable"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TestRunModelResourceList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
 }
 impl TestRunModelResourceList {
     pub fn new(value: Vec<TestRunModel>) -> Self {

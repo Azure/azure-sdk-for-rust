@@ -156,6 +156,18 @@ pub mod web_pub_sub {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Close the connections in the hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        pub fn close_all_connections(&self, hub: impl Into<String>) -> close_all_connections::RequestBuilder {
+            close_all_connections::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                excluded: Vec::new(),
+                reason: None,
+            }
+        }
         #[doc = "Generate token for the client to connect Azure Web PubSub service."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -167,18 +179,6 @@ pub mod web_pub_sub {
                 user_id: None,
                 role: Vec::new(),
                 minutes_to_expire: None,
-            }
-        }
-        #[doc = "Close the connections in the hub."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        pub fn close_all_connections(&self, hub: impl Into<String>) -> close_all_connections::RequestBuilder {
-            close_all_connections::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                excluded: Vec::new(),
-                reason: None,
             }
         }
         #[doc = "Broadcast content inside request body to all the connected client connections."]
@@ -322,105 +322,6 @@ pub mod web_pub_sub {
                 connection_id: connection_id.into(),
             }
         }
-        #[doc = "Check if there are any client connections connected for the given user."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        #[doc = "* `user_id`: Target user Id."]
-        pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::RequestBuilder {
-            user_exists::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                user_id: user_id.into(),
-            }
-        }
-        #[doc = "Close connections for the specific user."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        #[doc = "* `user_id`: The user Id."]
-        pub fn close_user_connections(&self, hub: impl Into<String>, user_id: impl Into<String>) -> close_user_connections::RequestBuilder {
-            close_user_connections::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                user_id: user_id.into(),
-                excluded: Vec::new(),
-                reason: None,
-            }
-        }
-        #[doc = "Send content inside request body to the specific user."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        #[doc = "* `user_id`: The user Id."]
-        #[doc = "* `message`: The payload body."]
-        pub fn send_to_user(
-            &self,
-            hub: impl Into<String>,
-            user_id: impl Into<String>,
-            message: impl Into<String>,
-        ) -> send_to_user::RequestBuilder {
-            send_to_user::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                user_id: user_id.into(),
-                message: message.into(),
-            }
-        }
-        #[doc = "Add a user to the target group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
-        #[doc = "* `user_id`: Target user Id."]
-        pub fn add_user_to_group(
-            &self,
-            hub: impl Into<String>,
-            group: impl Into<String>,
-            user_id: impl Into<String>,
-        ) -> add_user_to_group::RequestBuilder {
-            add_user_to_group::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                group: group.into(),
-                user_id: user_id.into(),
-            }
-        }
-        #[doc = "Remove a user from the target group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
-        #[doc = "* `user_id`: Target user Id."]
-        pub fn remove_user_from_group(
-            &self,
-            hub: impl Into<String>,
-            group: impl Into<String>,
-            user_id: impl Into<String>,
-        ) -> remove_user_from_group::RequestBuilder {
-            remove_user_from_group::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                group: group.into(),
-                user_id: user_id.into(),
-            }
-        }
-        #[doc = "Remove a user from all groups."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
-        #[doc = "* `user_id`: Target user Id."]
-        pub fn remove_user_from_all_groups(
-            &self,
-            hub: impl Into<String>,
-            user_id: impl Into<String>,
-        ) -> remove_user_from_all_groups::RequestBuilder {
-            remove_user_from_all_groups::RequestBuilder {
-                client: self.0.clone(),
-                hub: hub.into(),
-                user_id: user_id.into(),
-            }
-        }
         #[doc = "Grant permission to the connection."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -479,6 +380,158 @@ pub mod web_pub_sub {
                 permission: permission.into(),
                 connection_id: connection_id.into(),
                 target_name: None,
+            }
+        }
+        #[doc = "Check if there are any client connections connected for the given user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: Target user Id."]
+        pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::RequestBuilder {
+            user_exists::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                user_id: user_id.into(),
+            }
+        }
+        #[doc = "Close connections for the specific user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: The user Id."]
+        pub fn close_user_connections(&self, hub: impl Into<String>, user_id: impl Into<String>) -> close_user_connections::RequestBuilder {
+            close_user_connections::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                user_id: user_id.into(),
+                excluded: Vec::new(),
+                reason: None,
+            }
+        }
+        #[doc = "Send content inside request body to the specific user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: The user Id."]
+        #[doc = "* `message`: The payload body."]
+        pub fn send_to_user(
+            &self,
+            hub: impl Into<String>,
+            user_id: impl Into<String>,
+            message: impl Into<String>,
+        ) -> send_to_user::RequestBuilder {
+            send_to_user::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                user_id: user_id.into(),
+                message: message.into(),
+            }
+        }
+        #[doc = "Remove a user from all groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: Target user Id."]
+        pub fn remove_user_from_all_groups(
+            &self,
+            hub: impl Into<String>,
+            user_id: impl Into<String>,
+        ) -> remove_user_from_all_groups::RequestBuilder {
+            remove_user_from_all_groups::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                user_id: user_id.into(),
+            }
+        }
+        #[doc = "Add a user to the target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `user_id`: Target user Id."]
+        pub fn add_user_to_group(
+            &self,
+            hub: impl Into<String>,
+            group: impl Into<String>,
+            user_id: impl Into<String>,
+        ) -> add_user_to_group::RequestBuilder {
+            add_user_to_group::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                group: group.into(),
+                user_id: user_id.into(),
+            }
+        }
+        #[doc = "Remove a user from the target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `user_id`: Target user Id."]
+        pub fn remove_user_from_group(
+            &self,
+            hub: impl Into<String>,
+            group: impl Into<String>,
+            user_id: impl Into<String>,
+        ) -> remove_user_from_group::RequestBuilder {
+            remove_user_from_group::RequestBuilder {
+                client: self.0.clone(),
+                hub: hub.into(),
+                group: group.into(),
+                user_id: user_id.into(),
+            }
+        }
+    }
+    pub mod close_all_connections {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) excluded: Vec<String>,
+            pub(crate) reason: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Exclude these connectionIds when closing the connections in the hub."]
+            pub fn excluded(mut self, excluded: Vec<String>) -> Self {
+                self.excluded = excluded;
+                self
+            }
+            #[doc = "The reason closing the client connection."]
+            pub fn reason(mut self, reason: impl Into<String>) -> Self {
+                self.reason = Some(reason.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!("{}/api/hubs/{}/:closeConnections", this.client.endpoint(), &this.hub))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        let excluded = &this.excluded;
+                        for value in &this.excluded {
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
+                        }
+                        if let Some(reason) = &this.reason {
+                            req.url_mut().query_pairs_mut().append_pair("reason", reason);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
             }
         }
     }
@@ -570,59 +623,6 @@ pub mod web_pub_sub {
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClientTokenResponse>> {
                 Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod close_all_connections {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) excluded: Vec<String>,
-            pub(crate) reason: Option<String>,
-        }
-        impl RequestBuilder {
-            #[doc = "Exclude these connectionIds when closing the connections in the hub."]
-            pub fn excluded(mut self, excluded: Vec<String>) -> Self {
-                self.excluded = excluded;
-                self
-            }
-            #[doc = "The reason closing the client connection."]
-            pub fn reason(mut self, reason: impl Into<String>) -> Self {
-                self.reason = Some(reason.into());
-                self
-            }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!("{}/api/hubs/{}/:closeConnections", this.client.endpoint(), &this.hub))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        let excluded = &this.excluded;
-                        for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
-                        }
-                        if let Some(reason) = &this.reason {
-                            req.url_mut().query_pairs_mut().append_pair("reason", reason);
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
             }
         }
     }
@@ -1026,266 +1026,6 @@ pub mod web_pub_sub {
             }
         }
     }
-    pub mod user_exists {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) user_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/api/hubs/{}/users/{}",
-                            this.client.endpoint(),
-                            &this.hub,
-                            &this.user_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Head);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod close_user_connections {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) user_id: String,
-            pub(crate) excluded: Vec<String>,
-            pub(crate) reason: Option<String>,
-        }
-        impl RequestBuilder {
-            #[doc = "Exclude these connectionIds when closing the connections for the user."]
-            pub fn excluded(mut self, excluded: Vec<String>) -> Self {
-                self.excluded = excluded;
-                self
-            }
-            #[doc = "The reason closing the client connection."]
-            pub fn reason(mut self, reason: impl Into<String>) -> Self {
-                self.reason = Some(reason.into());
-                self
-            }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/api/hubs/{}/users/{}/:closeConnections",
-                            this.client.endpoint(),
-                            &this.hub,
-                            &this.user_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        let excluded = &this.excluded;
-                        for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
-                        }
-                        if let Some(reason) = &this.reason {
-                            req.url_mut().query_pairs_mut().append_pair("reason", reason);
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod send_to_user {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) user_id: String,
-            pub(crate) message: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/api/hubs/{}/users/{}/:send",
-                            this.client.endpoint(),
-                            &this.hub,
-                            &this.user_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.message)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod add_user_to_group {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) group: String,
-            pub(crate) user_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/api/hubs/{}/users/{}/groups/{}",
-                            this.client.endpoint(),
-                            &this.hub,
-                            &this.user_id,
-                            &this.group
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod remove_user_from_group {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) group: String,
-            pub(crate) user_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/api/hubs/{}/users/{}/groups/{}",
-                            this.client.endpoint(),
-                            &this.hub,
-                            &this.user_id,
-                            &this.group
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod remove_user_from_all_groups {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) hub: String,
-            pub(crate) user_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/api/hubs/{}/users/{}/groups",
-                            this.client.endpoint(),
-                            &this.hub,
-                            &this.user_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
     pub mod grant_permission {
         use super::models;
         pub struct Response(azure_core::Response);
@@ -1428,6 +1168,266 @@ pub mod web_pub_sub {
                         if let Some(target_name) = &this.target_name {
                             req.url_mut().query_pairs_mut().append_pair("targetName", target_name);
                         }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod user_exists {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) user_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/api/hubs/{}/users/{}",
+                            this.client.endpoint(),
+                            &this.hub,
+                            &this.user_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Head);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod close_user_connections {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) user_id: String,
+            pub(crate) excluded: Vec<String>,
+            pub(crate) reason: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Exclude these connectionIds when closing the connections for the user."]
+            pub fn excluded(mut self, excluded: Vec<String>) -> Self {
+                self.excluded = excluded;
+                self
+            }
+            #[doc = "The reason closing the client connection."]
+            pub fn reason(mut self, reason: impl Into<String>) -> Self {
+                self.reason = Some(reason.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/api/hubs/{}/users/{}/:closeConnections",
+                            this.client.endpoint(),
+                            &this.hub,
+                            &this.user_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        let excluded = &this.excluded;
+                        for value in &this.excluded {
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
+                        }
+                        if let Some(reason) = &this.reason {
+                            req.url_mut().query_pairs_mut().append_pair("reason", reason);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod send_to_user {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) user_id: String,
+            pub(crate) message: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/api/hubs/{}/users/{}/:send",
+                            this.client.endpoint(),
+                            &this.hub,
+                            &this.user_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.message)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod remove_user_from_all_groups {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) user_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/api/hubs/{}/users/{}/groups",
+                            this.client.endpoint(),
+                            &this.hub,
+                            &this.user_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod add_user_to_group {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) group: String,
+            pub(crate) user_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/api/hubs/{}/users/{}/groups/{}",
+                            this.client.endpoint(),
+                            &this.hub,
+                            &this.user_id,
+                            &this.group
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod remove_user_from_group {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) hub: String,
+            pub(crate) group: String,
+            pub(crate) user_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/api/hubs/{}/users/{}/groups/{}",
+                            this.client.endpoint(),
+                            &this.hub,
+                            &this.user_id,
+                            &this.group
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))

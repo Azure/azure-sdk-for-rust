@@ -49,6 +49,23 @@ impl AppliedReservationsProperties {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AppliedScopeProperties {
+    #[doc = "Tenant ID of the applied scope type"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Management group ID of the format /providers/Microsoft.Management/managementGroups/{managementGroupId}"]
+    #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub management_group_id: Option<String>,
+    #[doc = "Management group display name"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+impl AppliedScopeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Type of the Applied Scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AppliedScopeType")]
@@ -2416,6 +2433,20 @@ impl ReservationSummary {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ReservationSwapProperties {
+    #[doc = "Resource Id of the Source Reservation that gets swapped. Format of the resource Id is /providers/microsoft.capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
+    #[serde(rename = "swapSource", default, skip_serializing_if = "Option::is_none")]
+    pub swap_source: Option<String>,
+    #[doc = "Reservation Resource Id that the original resource gets swapped to. Format of the resource Id is /providers/microsoft.capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
+    #[serde(rename = "swapDestination", default, skip_serializing_if = "Option::is_none")]
+    pub swap_destination: Option<String>,
+}
+impl ReservationSwapProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Represent the term of Reservation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ReservationTerm")]
@@ -2663,6 +2694,10 @@ pub struct ReservationsProperties {
     pub split_properties: Option<ReservationSplitProperties>,
     #[serde(rename = "mergeProperties", default, skip_serializing_if = "Option::is_none")]
     pub merge_properties: Option<ReservationMergeProperties>,
+    #[serde(rename = "swapProperties", default, skip_serializing_if = "Option::is_none")]
+    pub swap_properties: Option<ReservationSwapProperties>,
+    #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scope_properties: Option<AppliedScopeProperties>,
     #[doc = "Subscription that will be charged for purchasing Reservation"]
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,

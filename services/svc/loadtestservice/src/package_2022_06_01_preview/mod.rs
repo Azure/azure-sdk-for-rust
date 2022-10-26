@@ -1139,55 +1139,84 @@ pub mod test {
                 self.max_page_size = Some(max_page_size);
                 self
             }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::TestModelResourceList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/loadtests/sortAndFilter", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
-                        if let Some(order_by) = &this.order_by {
-                            req.url_mut().query_pairs_mut().append_pair("orderBy", order_by);
-                        }
-                        if let Some(search) = &this.search {
-                            req.url_mut().query_pairs_mut().append_pair("search", search);
-                        }
-                        if let Some(last_updated_start_time) = &this.last_updated_start_time {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("lastUpdatedStartTime", &last_updated_start_time.to_string());
-                        }
-                        if let Some(last_updated_end_time) = &this.last_updated_end_time {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("lastUpdatedEndTime", &last_updated_end_time.to_string());
-                        }
-                        if let Some(continuation_token) = &this.continuation_token {
-                            req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
-                        }
-                        if let Some(max_page_size) = &this.max_page_size {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("maxPageSize", &max_page_size.to_string());
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let mut url = azure_core::Url::parse(&format!("{}/loadtests/sortAndFilter", this.client.endpoint(),))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                if let Some(order_by) = &this.order_by {
+                                    req.url_mut().query_pairs_mut().append_pair("orderBy", order_by);
+                                }
+                                if let Some(search) = &this.search {
+                                    req.url_mut().query_pairs_mut().append_pair("search", search);
+                                }
+                                if let Some(last_updated_start_time) = &this.last_updated_start_time {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("lastUpdatedStartTime", &last_updated_start_time.to_string());
+                                }
+                                if let Some(last_updated_end_time) = &this.last_updated_end_time {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("lastUpdatedEndTime", &last_updated_end_time.to_string());
+                                }
+                                if let Some(continuation_token) = &this.continuation_token {
+                                    req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
+                                }
+                                if let Some(max_page_size) = &this.max_page_size {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("maxPageSize", &max_page_size.to_string());
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TestModelResourceList>> {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -1411,34 +1440,63 @@ pub mod test {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::FileUrlList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/loadtests/{}/files", this.client.endpoint(), &this.test_id))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
-                        if let Some(continuation_token) = &this.continuation_token {
-                            req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let mut url = azure_core::Url::parse(&format!("{}/loadtests/{}/files", this.client.endpoint(), &this.test_id))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                if let Some(continuation_token) = &this.continuation_token {
+                                    req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FileUrlList>> {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -1859,61 +1917,90 @@ pub mod test_run {
                 self.test_id = Some(test_id.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::TestRunModelResourceList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/testruns/sortAndFilter", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
-                        if let Some(order_by) = &this.order_by {
-                            req.url_mut().query_pairs_mut().append_pair("orderBy", order_by);
-                        }
-                        if let Some(continuation_token) = &this.continuation_token {
-                            req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
-                        }
-                        if let Some(search) = &this.search {
-                            req.url_mut().query_pairs_mut().append_pair("search", search);
-                        }
-                        if let Some(execution_from) = &this.execution_from {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("executionFrom", &execution_from.to_string());
-                        }
-                        if let Some(execution_to) = &this.execution_to {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("executionTo", &execution_to.to_string());
-                        }
-                        if let Some(status) = &this.status {
-                            req.url_mut().query_pairs_mut().append_pair("status", status);
-                        }
-                        if let Some(max_page_size) = &this.max_page_size {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("maxPageSize", &max_page_size.to_string());
-                        }
-                        if let Some(test_id) = &this.test_id {
-                            req.url_mut().query_pairs_mut().append_pair("testId", test_id);
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let mut url = azure_core::Url::parse(&format!("{}/testruns/sortAndFilter", this.client.endpoint(),))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                if let Some(order_by) = &this.order_by {
+                                    req.url_mut().query_pairs_mut().append_pair("orderBy", order_by);
+                                }
+                                if let Some(continuation_token) = &this.continuation_token {
+                                    req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
+                                }
+                                if let Some(search) = &this.search {
+                                    req.url_mut().query_pairs_mut().append_pair("search", search);
+                                }
+                                if let Some(execution_from) = &this.execution_from {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("executionFrom", &execution_from.to_string());
+                                }
+                                if let Some(execution_to) = &this.execution_to {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("executionTo", &execution_to.to_string());
+                                }
+                                if let Some(status) = &this.status {
+                                    req.url_mut().query_pairs_mut().append_pair("status", status);
+                                }
+                                if let Some(max_page_size) = &this.max_page_size {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("maxPageSize", &max_page_size.to_string());
+                                }
+                                if let Some(test_id) = &this.test_id {
+                                    req.url_mut().query_pairs_mut().append_pair("testId", test_id);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TestRunModelResourceList>> {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }

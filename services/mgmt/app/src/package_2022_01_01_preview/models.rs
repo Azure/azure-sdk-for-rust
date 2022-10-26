@@ -741,7 +741,7 @@ pub mod container_app {
         pub template: Option<Template>,
         #[doc = "Outbound IP Addresses for container app."]
         #[serde(
-            rename = "outboundIPAddresses",
+            rename = "outboundIpAddresses",
             default,
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
@@ -1136,6 +1136,9 @@ pub struct CustomHostnameAnalysisResult {
     #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment; otherwise, <code>false</code>."]
     #[serde(rename = "hasConflictOnManagedEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub has_conflict_on_managed_environment: Option<bool>,
+    #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment level custom domain; otherwise, <code>false</code>."]
+    #[serde(rename = "conflictWithEnvironmentCustomDomain", default, skip_serializing_if = "Option::is_none")]
+    pub conflict_with_environment_custom_domain: Option<bool>,
     #[doc = "Name of the conflicting Container App on the Managed Environment if it's within the same subscription."]
     #[serde(rename = "conflictingContainerAppResourceId", default, skip_serializing_if = "Option::is_none")]
     pub conflicting_container_app_resource_id: Option<String>,

@@ -397,9 +397,6 @@ pub struct RecommendationProperties {
     #[doc = "The recommendation-type GUID."]
     #[serde(rename = "recommendationTypeId", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_type_id: Option<String>,
-    #[doc = "The potential risk of not implementing the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub risk: Option<recommendation_properties::Risk>,
     #[doc = "A summary of the recommendation."]
     #[serde(rename = "shortDescription", default, skip_serializing_if = "Option::is_none")]
     pub short_description: Option<ShortDescription>,
@@ -532,45 +529,6 @@ pub mod recommendation_properties {
             }
         }
     }
-    #[doc = "The potential risk of not implementing the recommendation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Risk")]
-    pub enum Risk {
-        Error,
-        Warning,
-        None,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Risk {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Risk {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Risk {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Error => serializer.serialize_unit_variant("Risk", 0u32, "Error"),
-                Self::Warning => serializer.serialize_unit_variant("Risk", 1u32, "Warning"),
-                Self::None => serializer.serialize_unit_variant("Risk", 2u32, "None"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
 }
 #[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -656,10 +614,10 @@ impl ResourceRecommendationBaseListResult {
 #[doc = "A summary of the recommendation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShortDescription {
-    #[doc = "The issue or opportunity identified by the recommendation."]
+    #[doc = "The issue or opportunity identified by the recommendation and proposed solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub problem: Option<String>,
-    #[doc = "The remediation action suggested by the recommendation."]
+    #[doc = "The issue or opportunity identified by the recommendation and proposed solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub solution: Option<String>,
 }

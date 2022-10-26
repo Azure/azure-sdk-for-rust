@@ -127,6 +127,7 @@ pub enum EnterprisePolicyKind {
     PrivateEndpoint,
     Encryption,
     NetworkInjection,
+    Identity,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -156,6 +157,7 @@ impl Serialize for EnterprisePolicyKind {
             Self::PrivateEndpoint => serializer.serialize_unit_variant("EnterprisePolicyKind", 1u32, "PrivateEndpoint"),
             Self::Encryption => serializer.serialize_unit_variant("EnterprisePolicyKind", 2u32, "Encryption"),
             Self::NetworkInjection => serializer.serialize_unit_variant("EnterprisePolicyKind", 3u32, "NetworkInjection"),
+            Self::Identity => serializer.serialize_unit_variant("EnterprisePolicyKind", 4u32, "Identity"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

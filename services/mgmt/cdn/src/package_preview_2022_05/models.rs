@@ -1342,15 +1342,17 @@ pub mod cache_key_query_string_action_parameters {
     }
 }
 #[doc = "Request body for CanMigrate operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CanMigrateParameters {
     #[doc = "Reference to another resource."]
-    #[serde(rename = "classicResourceReference", default, skip_serializing_if = "Option::is_none")]
-    pub classic_resource_reference: Option<ResourceReference>,
+    #[serde(rename = "classicResourceReference")]
+    pub classic_resource_reference: ResourceReference,
 }
 impl CanMigrateParameters {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(classic_resource_reference: ResourceReference) -> Self {
+        Self {
+            classic_resource_reference,
+        }
     }
 }
 #[doc = "Result for canMigrate operation."]
@@ -1362,9 +1364,12 @@ pub struct CanMigrateResult {
     #[doc = "Recommended sku for the migration"]
     #[serde(rename = "defaultSku", default, skip_serializing_if = "Option::is_none")]
     pub default_sku: Option<can_migrate_result::DefaultSku>,
-    #[doc = "Error response indicates CDN service is not able to process the incoming request. The reason is provided in the error message."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errors: Option<MigrationErrorsListResponse>,
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub errors: Vec<MigrationErrorType>,
 }
 impl CanMigrateResult {
     pub fn new() -> Self {
@@ -5021,9 +5026,12 @@ pub struct MigrateResult {
     #[doc = "Reference to another resource."]
     #[serde(rename = "migratedProfileResourceId", default, skip_serializing_if = "Option::is_none")]
     pub migrated_profile_resource_id: Option<ResourceReference>,
-    #[doc = "Error response indicates CDN service is not able to process the incoming request. The reason is provided in the error message."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errors: Option<MigrationErrorsListResponse>,
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub errors: Vec<MigrationErrorType>,
 }
 impl MigrateResult {
     pub fn new() -> Self {
@@ -5051,33 +5059,17 @@ impl MigrationErrorType {
         Self::default()
     }
 }
-#[doc = "Error response indicates CDN service is not able to process the incoming request. The reason is provided in the error message."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct MigrationErrorsListResponse {
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub errors: Vec<MigrationErrorType>,
-}
-impl MigrationErrorsListResponse {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Request body for Migrate operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrationParameters {
     #[doc = "Standard_Verizon = The SKU name for a Standard Verizon CDN profile.\nPremium_Verizon = The SKU name for a Premium Verizon CDN profile.\nCustom_Verizon = The SKU name for a Custom Verizon CDN profile.\nStandard_Akamai = The SKU name for an Akamai CDN profile.\nStandard_ChinaCdn = The SKU name for a China CDN profile for VOD, Web and download scenarios using GB based billing model.\nStandard_Microsoft = The SKU name for a Standard Microsoft CDN profile.\nStandard_AzureFrontDoor =  The SKU name for an Azure Front Door Standard profile.\nPremium_AzureFrontDoor = The SKU name for an Azure Front Door Premium profile.\nStandard_955BandWidth_ChinaCdn = The SKU name for a China CDN profile for VOD, Web and download scenarios using 95-5 peak bandwidth billing model.\nStandard_AvgBandWidth_ChinaCdn = The SKU name for a China CDN profile for VOD, Web and download scenarios using monthly average peak bandwidth billing model.\nStandardPlus_ChinaCdn = The SKU name for a China CDN profile for live-streaming using GB based billing model.\nStandardPlus_955BandWidth_ChinaCdn = The SKU name for a China CDN live-streaming profile using 95-5 peak bandwidth billing model.\nStandardPlus_AvgBandWidth_ChinaCdn = The SKU name for a China CDN live-streaming profile using monthly average peak bandwidth billing model.\n"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub sku: Sku,
     #[doc = "Reference to another resource."]
-    #[serde(rename = "classicResourceReference", default, skip_serializing_if = "Option::is_none")]
-    pub classic_resource_reference: Option<ResourceReference>,
+    #[serde(rename = "classicResourceReference")]
+    pub classic_resource_reference: ResourceReference,
     #[doc = "Name of the new profile that need to be created."]
-    #[serde(rename = "profileName", default, skip_serializing_if = "Option::is_none")]
-    pub profile_name: Option<String>,
+    #[serde(rename = "profileName")]
+    pub profile_name: String,
     #[doc = "Waf mapping for the migrated profile"]
     #[serde(
         rename = "migrationWebApplicationFirewallMappings",
@@ -5088,8 +5080,13 @@ pub struct MigrationParameters {
     pub migration_web_application_firewall_mappings: Vec<MigrationWebApplicationFirewallMapping>,
 }
 impl MigrationParameters {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(sku: Sku, classic_resource_reference: ResourceReference, profile_name: String) -> Self {
+        Self {
+            sku,
+            classic_resource_reference,
+            profile_name,
+            migration_web_application_firewall_mappings: Vec::new(),
+        }
     }
 }
 #[doc = "Web Application Firewall Mapping "]

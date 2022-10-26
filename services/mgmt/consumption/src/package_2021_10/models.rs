@@ -419,14 +419,14 @@ impl BudgetsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChargeSummary {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub resource: Resource,
     #[doc = "Specifies the kind of charge summary."]
     pub kind: charge_summary::Kind,
 }
 impl ChargeSummary {
     pub fn new(kind: charge_summary::Kind) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
+            resource: Resource::default(),
             kind,
         }
     }
@@ -863,8 +863,8 @@ pub struct LegacyChargeSummaryProperties {
     #[serde(rename = "chargesBilledSeparately", default, skip_serializing_if = "Option::is_none")]
     pub charges_billed_separately: Option<f64>,
     #[doc = "Marketplace Charges."]
-    #[serde(rename = "marketplaceCharges", default, skip_serializing_if = "Option::is_none")]
-    pub marketplace_charges: Option<f64>,
+    #[serde(rename = "azureMarketplaceCharges", default, skip_serializing_if = "Option::is_none")]
+    pub azure_marketplace_charges: Option<f64>,
     #[doc = "Currency Code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
@@ -2794,28 +2794,28 @@ pub mod reservation_recommendation {
         }
     }
 }
-#[doc = "Details of estimated savings."]
+#[doc = "Details of estimated savings. The costs and savings are estimated for the term."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationRecommendationDetailsCalculatedSavingsProperties {
-    #[doc = "The cost without reservation."]
+    #[doc = "The cost without reservation. Includes hardware and software cost."]
     #[serde(rename = "onDemandCost", default, skip_serializing_if = "Option::is_none")]
     pub on_demand_cost: Option<f64>,
-    #[doc = "The difference between total reservation cost and reservation cost."]
+    #[doc = "Hardware and software cost of the resources not covered by the reservation."]
     #[serde(rename = "overageCost", default, skip_serializing_if = "Option::is_none")]
     pub overage_cost: Option<f64>,
     #[doc = "The quantity for calculated savings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<f64>,
-    #[doc = "The exact cost of the estimated usage using reservation."]
+    #[doc = "Hardware cost of the resources covered by the reservation."]
     #[serde(rename = "reservationCost", default, skip_serializing_if = "Option::is_none")]
     pub reservation_cost: Option<f64>,
-    #[doc = "The cost of the suggested quantity."]
+    #[doc = "Reservation cost + software cost of the resources covered by the reservation + overage cost."]
     #[serde(rename = "totalReservationCost", default, skip_serializing_if = "Option::is_none")]
     pub total_reservation_cost: Option<f64>,
     #[doc = "The number of reserved units used to calculate savings. Always 1 for virtual machines."]
     #[serde(rename = "reservedUnitCount", default, skip_serializing_if = "Option::is_none")]
     pub reserved_unit_count: Option<f64>,
-    #[doc = "The amount saved by purchasing the recommended quantity of reservation."]
+    #[doc = "The amount saved by purchasing the recommended quantity of reservation. This is equal to onDemandCost - totalReservationCost."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub savings: Option<f64>,
 }
@@ -2882,7 +2882,7 @@ pub struct ReservationRecommendationDetailsResourceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub applied_scopes: Vec<String>,
-    #[doc = "On demand rate of the resource."]
+    #[doc = "Hourly on-demand rate of the resource. Includes only hardware rate i.e, software rate is not included."]
     #[serde(rename = "onDemandRate", default, skip_serializing_if = "Option::is_none")]
     pub on_demand_rate: Option<f64>,
     #[doc = "Azure product ex: Standard_E8s_v3 etc."]
@@ -2891,7 +2891,7 @@ pub struct ReservationRecommendationDetailsResourceProperties {
     #[doc = "Azure resource region ex:EastUS, WestUS etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
-    #[doc = "Reservation rate of the resource."]
+    #[doc = "Hourly reservation rate of the resource. Varies based on the term."]
     #[serde(rename = "reservationRate", default, skip_serializing_if = "Option::is_none")]
     pub reservation_rate: Option<f64>,
     #[doc = "The azure resource type."]

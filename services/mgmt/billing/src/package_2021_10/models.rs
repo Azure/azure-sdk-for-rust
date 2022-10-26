@@ -349,6 +349,9 @@ pub struct BillingSubscriptionsListResult {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<BillingSubscription>,
+    #[doc = "Total number of records."]
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<f64>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

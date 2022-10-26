@@ -2776,8 +2776,6 @@ pub mod system_data {
 #[doc = "Vault information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vault {
-    #[doc = "Resource location"]
-    pub location: String,
     #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -2791,9 +2789,8 @@ pub struct Vault {
     pub properties: VaultProperties,
 }
 impl Vault {
-    pub fn new(location: String, properties: VaultProperties) -> Self {
+    pub fn new(properties: VaultProperties) -> Self {
         Self {
-            location,
             id: None,
             name: None,
             type_: None,
@@ -3167,7 +3164,7 @@ pub struct VolumePatchProperties {
     #[doc = "The service level of the file system"]
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
     pub service_level: Option<ServiceLevel>,
-    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB. Specified in bytes."]
+    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 500 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
     #[serde(rename = "usageThreshold", default, skip_serializing_if = "Option::is_none")]
     pub usage_threshold: Option<i64>,
     #[doc = "Set of export policy rules"]
@@ -3242,7 +3239,7 @@ pub struct VolumeProperties {
     #[doc = "The service level of the file system"]
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
     pub service_level: Option<ServiceLevel>,
-    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB. Specified in bytes."]
+    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 500 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
     #[serde(rename = "usageThreshold")]
     pub usage_threshold: i64,
     #[doc = "Set of export policy rules"]

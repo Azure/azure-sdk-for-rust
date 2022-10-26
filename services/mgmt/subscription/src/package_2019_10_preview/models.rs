@@ -427,6 +427,12 @@ pub struct Subscription {
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription::State>,
+    #[doc = "The tenant ID. For example, 00000000-0000-0000-0000-000000000000."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Tags for the subscription"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
     #[doc = "Subscription policies."]
     #[serde(rename = "subscriptionPolicies", default, skip_serializing_if = "Option::is_none")]
     pub subscription_policies: Option<SubscriptionPolicies>,
@@ -607,6 +613,27 @@ pub struct TenantIdDescription {
     #[doc = "The tenant ID. For example, 00000000-0000-0000-0000-000000000000."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The category of the tenant. Possible values are TenantCategoryHome,TenantCategoryProjectedBy,TenantCategoryManagedBy"]
+    #[serde(rename = "tenantCategory", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_category: Option<String>,
+    #[doc = "The country/region name of the address for the tenant."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+    #[doc = "The Country/region abbreviation for the tenant."]
+    #[serde(rename = "countryCode", default, skip_serializing_if = "Option::is_none")]
+    pub country_code: Option<String>,
+    #[doc = "The display name of the tenant."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "The list of domains for the tenant."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domains: Option<String>,
+    #[doc = "The default domain for the tenant."]
+    #[serde(rename = "defaultDomain", default, skip_serializing_if = "Option::is_none")]
+    pub default_domain: Option<String>,
+    #[doc = "The tenant type. Only available for Home tenant category."]
+    #[serde(rename = "tenantType", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_type: Option<String>,
 }
 impl TenantIdDescription {
     pub fn new() -> Self {

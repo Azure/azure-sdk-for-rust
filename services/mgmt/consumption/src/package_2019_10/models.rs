@@ -422,14 +422,14 @@ impl BudgetsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChargeSummary {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub revised_resource: RevisedResource,
     #[doc = "Specifies the kind of charge summary."]
     pub kind: charge_summary::Kind,
 }
 impl ChargeSummary {
     pub fn new(kind: charge_summary::Kind) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
+            revised_resource: RevisedResource::default(),
             kind,
         }
     }
@@ -993,8 +993,8 @@ pub struct LegacyChargeSummaryProperties {
     #[serde(rename = "chargesBilledSeparately", default, skip_serializing_if = "Option::is_none")]
     pub charges_billed_separately: Option<f64>,
     #[doc = "Marketplace Charges."]
-    #[serde(rename = "marketplaceCharges", default, skip_serializing_if = "Option::is_none")]
-    pub marketplace_charges: Option<f64>,
+    #[serde(rename = "azureMarketplaceCharges", default, skip_serializing_if = "Option::is_none")]
+    pub azure_marketplace_charges: Option<f64>,
     #[doc = "Currency Code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
@@ -1738,6 +1738,9 @@ pub struct ModernChargeSummaryProperties {
     #[doc = "Is charge Invoiced"]
     #[serde(rename = "isInvoiced", default, skip_serializing_if = "Option::is_none")]
     pub is_invoiced: Option<bool>,
+    #[doc = "Subscription guid."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 impl ModernChargeSummaryProperties {
     pub fn new() -> Self {

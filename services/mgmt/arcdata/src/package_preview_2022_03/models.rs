@@ -1366,11 +1366,16 @@ pub mod sql_server_instance_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "LicenseType")]
     pub enum LicenseType {
-        Paid,
+        Undefined,
         Free,
         #[serde(rename = "HADR")]
         Hadr,
-        Undefined,
+        #[serde(rename = "ServerCAL")]
+        ServerCal,
+        LicenseOnly,
+        #[serde(rename = "PAYG")]
+        Payg,
+        Paid,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1396,10 +1401,13 @@ pub mod sql_server_instance_properties {
             S: Serializer,
         {
             match self {
-                Self::Paid => serializer.serialize_unit_variant("LicenseType", 0u32, "Paid"),
+                Self::Undefined => serializer.serialize_unit_variant("LicenseType", 0u32, "Undefined"),
                 Self::Free => serializer.serialize_unit_variant("LicenseType", 1u32, "Free"),
                 Self::Hadr => serializer.serialize_unit_variant("LicenseType", 2u32, "HADR"),
-                Self::Undefined => serializer.serialize_unit_variant("LicenseType", 3u32, "Undefined"),
+                Self::ServerCal => serializer.serialize_unit_variant("LicenseType", 3u32, "ServerCAL"),
+                Self::LicenseOnly => serializer.serialize_unit_variant("LicenseType", 4u32, "LicenseOnly"),
+                Self::Payg => serializer.serialize_unit_variant("LicenseType", 5u32, "PAYG"),
+                Self::Paid => serializer.serialize_unit_variant("LicenseType", 6u32, "Paid"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

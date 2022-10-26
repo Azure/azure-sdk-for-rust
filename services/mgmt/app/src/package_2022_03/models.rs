@@ -710,6 +710,11 @@ pub mod configuration {
             }
         }
     }
+    impl Default for ActiveRevisionsMode {
+        fn default() -> Self {
+            Self::Single
+        }
+    }
 }
 #[doc = "Container App container definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -814,7 +819,7 @@ pub mod container_app {
         pub template: Option<Template>,
         #[doc = "Outbound IP Addresses for container app."]
         #[serde(
-            rename = "outboundIPAddresses",
+            rename = "outboundIpAddresses",
             default,
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
@@ -1197,6 +1202,9 @@ pub struct CustomHostnameAnalysisResult {
     #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment; otherwise, <code>false</code>."]
     #[serde(rename = "hasConflictOnManagedEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub has_conflict_on_managed_environment: Option<bool>,
+    #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment level custom domain; otherwise, <code>false</code>."]
+    #[serde(rename = "conflictWithEnvironmentCustomDomain", default, skip_serializing_if = "Option::is_none")]
+    pub conflict_with_environment_custom_domain: Option<bool>,
     #[doc = "Name of the conflicting Container App on the Managed Environment if it's within the same subscription."]
     #[serde(rename = "conflictingContainerAppResourceId", default, skip_serializing_if = "Option::is_none")]
     pub conflicting_container_app_resource_id: Option<String>,
@@ -1383,6 +1391,11 @@ pub mod dapr {
             }
         }
     }
+    impl Default for AppProtocol {
+        fn default() -> Self {
+            Self::Http
+        }
+    }
 }
 #[doc = "Dapr Component."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1481,14 +1494,29 @@ impl DaprMetadata {
         Self::default()
     }
 }
-#[doc = "Dapr component Secrets Collection ARM resource."]
+#[doc = "Dapr component Secret for ListSecrets Action"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DaprSecret {
+    #[doc = "Secret Name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Secret Value."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+impl DaprSecret {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Dapr component Secrets Collection for ListSecrets Action"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DaprSecretsCollection {
-    #[doc = "Collection of secrets used by a Dapr component"]
-    pub value: Vec<Secret>,
+    #[doc = "Collection of secrets for ListSecrets Action"]
+    pub value: Vec<DaprSecret>,
 }
 impl DaprSecretsCollection {
-    pub fn new(value: Vec<Secret>) -> Self {
+    pub fn new(value: Vec<DaprSecret>) -> Self {
         Self { value }
     }
 }
@@ -1897,6 +1925,11 @@ pub mod ingress {
                 Self::Http2 => serializer.serialize_unit_variant("Transport", 2u32, "http2"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for Transport {
+        fn default() -> Self {
+            Self::Auto
         }
     }
 }
@@ -2523,6 +2556,12 @@ pub struct ReplicaContainer {
     #[doc = "The container restart count"]
     #[serde(rename = "restartCount", default, skip_serializing_if = "Option::is_none")]
     pub restart_count: Option<i32>,
+    #[doc = "Log Stream endpoint"]
+    #[serde(rename = "logStreamEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub log_stream_endpoint: Option<String>,
+    #[doc = "Container exec endpoint"]
+    #[serde(rename = "execEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub exec_endpoint: Option<String>,
 }
 impl ReplicaContainer {
     pub fn new() -> Self {

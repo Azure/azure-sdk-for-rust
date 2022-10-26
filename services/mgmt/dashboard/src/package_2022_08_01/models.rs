@@ -914,6 +914,11 @@ impl Serialize for PublicNetworkAccess {
         }
     }
 }
+impl Default for PublicNetworkAccess {
+    fn default() -> Self {
+        Self::Enabled
+    }
+}
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {

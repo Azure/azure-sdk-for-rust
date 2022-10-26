@@ -4074,6 +4074,23 @@ impl KustoPoolListResult {
         Self::default()
     }
 }
+#[doc = "Class representing a Private Link Resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KustoPoolPrivateLinkResources {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Private Link Resources Properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkResourcesProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl KustoPoolPrivateLinkResources {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Class representing the Kusto pool properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KustoPoolProperties {
@@ -5545,6 +5562,59 @@ pub struct PrivateLinkResourceProperties {
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list Kusto Private Link Resources operation response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkResources {
+    #[doc = "The list of Kusto Private Link Resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<KustoPoolPrivateLinkResources>,
+}
+impl azure_core::Continuable for PrivateLinkResources {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl PrivateLinkResources {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Private Link Resources Properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkResourcesProperties {
+    #[doc = "The Private link resources GroupId"]
+    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub required_members: Vec<String>,
+    #[doc = "The private link resource required zone names."]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub required_zone_names: Vec<String>,
+    #[doc = "The provisioned state of the resource."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ResourceProvisioningState>,
+}
+impl PrivateLinkResourcesProperties {
     pub fn new() -> Self {
         Self::default()
     }

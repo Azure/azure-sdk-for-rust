@@ -906,6 +906,22 @@ impl DataWarehouseQueries {
         Self::default()
     }
 }
+#[doc = "The response to a list datawarehouse queries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesList {
+    #[doc = "The response to a list datawarehouse queries."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<DataWarehouseQueries>,
+}
+impl DataWarehouseQueriesList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The response to a list datawarehouse queries.steps"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataWarehouseQueriesSteps {
@@ -916,6 +932,25 @@ pub struct DataWarehouseQueriesSteps {
     pub properties: Option<DataWarehouseQueriesStepsProperties>,
 }
 impl DataWarehouseQueriesSteps {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list datawarehouse queries.steps"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesStepsList {
+    #[doc = "Link to the next page of results"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Resource properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<DataWarehouseQueriesSteps>,
+}
+impl DataWarehouseQueriesStepsList {
     pub fn new() -> Self {
         Self::default()
     }
@@ -3064,18 +3099,83 @@ pub mod managed_identity_sql_control_settings_model {
             use super::*;
             #[doc = "Desired state"]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(remote = "DesiredState")]
             pub enum DesiredState {
                 Enabled,
                 Disabled,
+                #[serde(skip_deserializing)]
+                UnknownValue(String),
+            }
+            impl FromStr for DesiredState {
+                type Err = value::Error;
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+            impl<'de> Deserialize<'de> for DesiredState {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                    Ok(deserialized)
+                }
+            }
+            impl Serialize for DesiredState {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        Self::Enabled => serializer.serialize_unit_variant("DesiredState", 0u32, "Enabled"),
+                        Self::Disabled => serializer.serialize_unit_variant("DesiredState", 1u32, "Disabled"),
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
             }
             #[doc = "Actual state"]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(remote = "ActualState")]
             pub enum ActualState {
                 Enabling,
                 Enabled,
                 Disabling,
                 Disabled,
                 Unknown,
+                #[serde(skip_deserializing)]
+                UnknownValue(String),
+            }
+            impl FromStr for ActualState {
+                type Err = value::Error;
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+            impl<'de> Deserialize<'de> for ActualState {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                    Ok(deserialized)
+                }
+            }
+            impl Serialize for ActualState {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        Self::Enabling => serializer.serialize_unit_variant("ActualState", 0u32, "Enabling"),
+                        Self::Enabled => serializer.serialize_unit_variant("ActualState", 1u32, "Enabled"),
+                        Self::Disabling => serializer.serialize_unit_variant("ActualState", 2u32, "Disabling"),
+                        Self::Disabled => serializer.serialize_unit_variant("ActualState", 3u32, "Disabled"),
+                        Self::Unknown => serializer.serialize_unit_variant("ActualState", 4u32, "Unknown"),
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
             }
         }
     }
