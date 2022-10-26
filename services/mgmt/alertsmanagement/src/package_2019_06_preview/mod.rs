@@ -1599,11 +1599,11 @@ pub mod alerts {
             pub(crate) subscription_id: String,
             pub(crate) alert_id: String,
             pub(crate) new_state: String,
-            pub(crate) comment: Option<String>,
+            pub(crate) comment: Option<models::Comments>,
         }
         impl RequestBuilder {
             #[doc = "reason of change alert state"]
-            pub fn comment(mut self, comment: impl Into<String>) -> Self {
+            pub fn comment(mut self, comment: impl Into<models::Comments>) -> Self {
                 self.comment = Some(comment.into());
                 self
             }

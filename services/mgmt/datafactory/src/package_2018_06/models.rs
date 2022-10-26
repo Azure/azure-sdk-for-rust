@@ -3954,12 +3954,16 @@ pub struct AzureSynapseArtifactsLinkedServiceTypeProperties {
     #[doc = "Required to specify MSI, if using system assigned managed identity as authentication method. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<serde_json::Value>,
+    #[doc = "The resource ID of the Synapse workspace. The format should be: /subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.Synapse/workspaces/{workspaceName}. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_resource_id: Option<serde_json::Value>,
 }
 impl AzureSynapseArtifactsLinkedServiceTypeProperties {
     pub fn new(endpoint: serde_json::Value) -> Self {
         Self {
             endpoint,
             authentication: None,
+            workspace_resource_id: None,
         }
     }
 }
@@ -8949,6 +8953,9 @@ pub struct FactoryRepoConfiguration {
     #[doc = "Last commit id."]
     #[serde(rename = "lastCommitId", default, skip_serializing_if = "Option::is_none")]
     pub last_commit_id: Option<String>,
+    #[doc = "Disable manual publish operation in ADF studio to favor automated publish."]
+    #[serde(rename = "disablePublish", default, skip_serializing_if = "Option::is_none")]
+    pub disable_publish: Option<bool>,
 }
 impl FactoryRepoConfiguration {
     pub fn new(type_: String, account_name: String, repository_name: String, collaboration_branch: String, root_folder: String) -> Self {
@@ -8959,6 +8966,7 @@ impl FactoryRepoConfiguration {
             collaboration_branch,
             root_folder,
             last_commit_id: None,
+            disable_publish: None,
         }
     }
 }
@@ -20860,6 +20868,9 @@ pub mod script_activity_script_block {
 #[doc = "Script activity properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptActivityTypeProperties {
+    #[doc = "ScriptBlock execution timeout. Type: string (or Expression with resultType string), pattern: ((\\d+)\\.)?(\\d\\d):(60|([0-5][0-9])):(60|([0-5][0-9]))."]
+    #[serde(rename = "scriptBlockExecutionTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub script_block_execution_timeout: Option<serde_json::Value>,
     #[doc = "Array of script blocks. Type: array."]
     #[serde(
         default,
@@ -23939,13 +23950,29 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[doc = "The fully-qualified identifier or the main class that is in the main definition file, which will override the 'className' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
     #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
     pub class_name: Option<serde_json::Value>,
-    #[doc = "Additional files used for reference in the main definition file, which will override the 'files' of the spark job definition you provide."]
+    #[doc = "(Deprecated. Please use pythonCodeReference and filesV2) Additional files used for reference in the main definition file, which will override the 'files' of the spark job definition you provide."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub files: Vec<serde_json::Value>,
+    #[doc = "Additional python code files used for reference in the main definition file, which will override the 'pyFiles' of the spark job definition you provide."]
+    #[serde(
+        rename = "pythonCodeReference",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub python_code_reference: Vec<serde_json::Value>,
+    #[doc = "Additional files used for reference in the main definition file, which will override the 'jars' and 'files' of the spark job definition you provide."]
+    #[serde(
+        rename = "filesV2",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub files_v2: Vec<serde_json::Value>,
     #[doc = "Big data pool reference type."]
     #[serde(rename = "targetBigDataPool", default, skip_serializing_if = "Option::is_none")]
     pub target_big_data_pool: Option<BigDataPoolParametrizationReference>,
@@ -23970,6 +23997,8 @@ impl SynapseSparkJobActivityTypeProperties {
             file: None,
             class_name: None,
             files: Vec::new(),
+            python_code_reference: Vec::new(),
+            files_v2: Vec::new(),
             target_big_data_pool: None,
             executor_size: None,
             conf: None,
@@ -24001,12 +24030,12 @@ pub struct SynapseSparkJobReference {
     #[doc = "Synapse spark job reference type."]
     #[serde(rename = "type")]
     pub type_: synapse_spark_job_reference::Type,
-    #[doc = "Reference spark job name."]
+    #[doc = "Reference spark job name. Expression with resultType string."]
     #[serde(rename = "referenceName")]
-    pub reference_name: String,
+    pub reference_name: serde_json::Value,
 }
 impl SynapseSparkJobReference {
-    pub fn new(type_: synapse_spark_job_reference::Type, reference_name: String) -> Self {
+    pub fn new(type_: synapse_spark_job_reference::Type, reference_name: serde_json::Value) -> Self {
         Self { type_, reference_name }
     }
 }

@@ -890,9 +890,9 @@ pub struct DataBoxDiskGranularCopyLogDetails {
     #[doc = "Disk Serial Number."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
-    #[doc = "Account name."]
-    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
-    pub account_name: Option<String>,
+    #[doc = "Account id."]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
     #[doc = "Link for copy error logs."]
     #[serde(rename = "errorLogLink", default, skip_serializing_if = "Option::is_none")]
     pub error_log_link: Option<String>,
@@ -905,7 +905,7 @@ impl DataBoxDiskGranularCopyLogDetails {
         Self {
             granular_copy_log_details,
             serial_number: None,
-            account_name: None,
+            account_id: None,
             error_log_link: None,
             verbose_log_link: None,
         }
@@ -1080,7 +1080,7 @@ impl DataBoxDiskJobSecrets {
 pub struct DataBoxHeavyAccountCopyLogDetails {
     #[serde(flatten)]
     pub copy_log_details: CopyLogDetails,
-    #[doc = "Account name."]
+    #[doc = "Account id."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
     #[doc = "Link for copy logs."]

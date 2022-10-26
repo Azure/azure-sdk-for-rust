@@ -883,6 +883,17 @@ impl AlertsSummaryGroupItem {
         Self::default()
     }
 }
+#[doc = "Change alert state reason"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Comments {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comments: Option<String>,
+}
+impl Comments {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Config which would be used for displaying the data in portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EgressConfig {}

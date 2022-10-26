@@ -3696,27 +3696,6 @@ impl DistributedAvailabilityGroupsListResult {
         Self::default()
     }
 }
-#[doc = "DNS refresh configuration properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DnsRefreshConfigurationProperties {
-    #[doc = "The status of the DNS refresh operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<dns_refresh_configuration_properties::Status>,
-}
-impl DnsRefreshConfigurationProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod dns_refresh_configuration_properties {
-    use super::*;
-    #[doc = "The status of the DNS refresh operation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Succeeded,
-        Failed,
-    }
-}
 #[doc = "The edition capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EditionCapability {
@@ -8163,6 +8142,187 @@ impl ManagedDatabaseMoveDefinition {
         }
     }
 }
+#[doc = "List of managed database move operations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseMoveOperationListResult {
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ManagedDatabaseMoveOperationResult>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedDatabaseMoveOperationListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedDatabaseMoveOperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A managed database move operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseMoveOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Contains the operation result properties for managed database move operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedDatabaseMoveOperationResultProperties>,
+}
+impl ManagedDatabaseMoveOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Contains the operation result properties for managed database move operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseMoveOperationResultProperties {
+    #[doc = "The name of operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[doc = "The friendly name of operation."]
+    #[serde(rename = "operationFriendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub operation_friendly_name: Option<String>,
+    #[doc = "The operation start time."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The operation state."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<managed_database_move_operation_result_properties::State>,
+    #[doc = "Operation mode."]
+    #[serde(rename = "operationMode", default, skip_serializing_if = "Option::is_none")]
+    pub operation_mode: Option<managed_database_move_operation_result_properties::OperationMode>,
+    #[doc = "Source Managed Instance name."]
+    #[serde(rename = "sourceManagedInstanceName", default, skip_serializing_if = "Option::is_none")]
+    pub source_managed_instance_name: Option<String>,
+    #[doc = "Target Managed Instance name."]
+    #[serde(rename = "targetManagedInstanceName", default, skip_serializing_if = "Option::is_none")]
+    pub target_managed_instance_name: Option<String>,
+    #[doc = "Source Managed Instance resource id."]
+    #[serde(rename = "sourceManagedInstanceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_managed_instance_id: Option<String>,
+    #[doc = "Target Managed instance resource id."]
+    #[serde(rename = "targetManagedInstanceId", default, skip_serializing_if = "Option::is_none")]
+    pub target_managed_instance_id: Option<String>,
+    #[doc = "Source database name."]
+    #[serde(rename = "sourceDatabaseName", default, skip_serializing_if = "Option::is_none")]
+    pub source_database_name: Option<String>,
+    #[doc = "Target database name."]
+    #[serde(rename = "targetDatabaseName", default, skip_serializing_if = "Option::is_none")]
+    pub target_database_name: Option<String>,
+    #[doc = "Is move operation cancellable."]
+    #[serde(rename = "isCancellable", default, skip_serializing_if = "Option::is_none")]
+    pub is_cancellable: Option<bool>,
+    #[doc = "The operation error code."]
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<i32>,
+    #[doc = "The operation error description."]
+    #[serde(rename = "errorDescription", default, skip_serializing_if = "Option::is_none")]
+    pub error_description: Option<String>,
+    #[doc = "The operation error severity."]
+    #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
+    pub error_severity: Option<i32>,
+    #[doc = "Whether or not the error is a user error."]
+    #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
+    pub is_user_error: Option<bool>,
+}
+impl ManagedDatabaseMoveOperationResultProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod managed_database_move_operation_result_properties {
+    use super::*;
+    #[doc = "The operation state."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Pending,
+        InProgress,
+        Succeeded,
+        Failed,
+        CancelInProgress,
+        Cancelled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Pending => serializer.serialize_unit_variant("State", 0u32, "Pending"),
+                Self::InProgress => serializer.serialize_unit_variant("State", 1u32, "InProgress"),
+                Self::Succeeded => serializer.serialize_unit_variant("State", 2u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("State", 3u32, "Failed"),
+                Self::CancelInProgress => serializer.serialize_unit_variant("State", 4u32, "CancelInProgress"),
+                Self::Cancelled => serializer.serialize_unit_variant("State", 5u32, "Cancelled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Operation mode."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "OperationMode")]
+    pub enum OperationMode {
+        Move,
+        Copy,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for OperationMode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for OperationMode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for OperationMode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Move => serializer.serialize_unit_variant("OperationMode", 0u32, "Move"),
+                Self::Copy => serializer.serialize_unit_variant("OperationMode", 1u32, "Copy"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "The managed database's properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseProperties {
@@ -8975,9 +9135,15 @@ pub struct ManagedInstanceDtcSecuritySettings {
     #[doc = "Allow XA Transactions to managed instance DTC."]
     #[serde(rename = "xaTransactionsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub xa_transactions_enabled: Option<bool>,
-    #[doc = "Allow SNA LU 6.2 to managed instance DTC."]
+    #[doc = "Allow SNA LU 6.2 Transactions to managed instance DTC."]
     #[serde(rename = "snaLu6point2TransactionsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub sna_lu6point2_transactions_enabled: Option<bool>,
+    #[doc = "Default timeout for XA Transactions (in seconds)."]
+    #[serde(rename = "xaTransactionsDefaultTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub xa_transactions_default_timeout: Option<i32>,
+    #[doc = "Maximum timeout for XA Transactions (in seconds)."]
+    #[serde(rename = "xaTransactionsMaximumTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub xa_transactions_maximum_timeout: Option<i32>,
 }
 impl ManagedInstanceDtcSecuritySettings {
     pub fn new() -> Self {
@@ -13990,6 +14156,9 @@ pub struct ServerDevOpsAuditSettingsProperties {
     #[doc = "Specifies whether DevOps audit events are sent to Azure Monitor. \r\nIn order to send the events to Azure Monitor, specify 'State' as 'Enabled' and 'IsAzureMonitorTargetEnabled' as true.\r\n\r\nWhen using REST API to configure DevOps audit, Diagnostic Settings with 'DevOpsOperationsAudit' diagnostic logs category on the master database should be also created.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/master/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
     #[serde(rename = "isAzureMonitorTargetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_azure_monitor_target_enabled: Option<bool>,
+    #[doc = "Specifies whether Managed Identity is used to access blob storage"]
+    #[serde(rename = "isManagedIdentityInUse", default, skip_serializing_if = "Option::is_none")]
+    pub is_managed_identity_in_use: Option<bool>,
     #[doc = "Specifies the state of the audit. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     pub state: server_dev_ops_audit_settings_properties::State,
     #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled is required."]
@@ -14006,6 +14175,7 @@ impl ServerDevOpsAuditSettingsProperties {
     pub fn new(state: server_dev_ops_audit_settings_properties::State) -> Self {
         Self {
             is_azure_monitor_target_enabled: None,
+            is_managed_identity_in_use: None,
             state,
             storage_endpoint: None,
             storage_account_access_key: None,
@@ -15941,6 +16111,76 @@ impl SubscriptionUsageProperties {
         Self::default()
     }
 }
+#[doc = "Synapse link workspace resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SynapseLinkWorkspace {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a Synapse link workspaces"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SynapseLinkWorkspaceProperties>,
+}
+impl SynapseLinkWorkspace {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a Synapse link workspaces"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SynapseLinkWorkspaceInfoProperties {
+    #[doc = "Synapse link workspace id."]
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[doc = "Link connection name."]
+    #[serde(rename = "linkConnectionName", default, skip_serializing_if = "Option::is_none")]
+    pub link_connection_name: Option<String>,
+}
+impl SynapseLinkWorkspaceInfoProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of synapselink workspaces"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SynapseLinkWorkspaceListResult {
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<SynapseLinkWorkspace>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SynapseLinkWorkspaceListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl SynapseLinkWorkspaceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a Synapse link workspaces"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SynapseLinkWorkspaceProperties {
+    #[doc = "List of all synapselink workspaces"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub workspaces: Vec<SynapseLinkWorkspaceInfoProperties>,
+}
+impl SynapseLinkWorkspaceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "An Azure SQL Database sync agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgent {
@@ -17158,16 +17398,16 @@ pub mod update_long_term_retention_backup_parameters_properties {
         }
     }
 }
-#[doc = "A recoverable managed database resource."]
+#[doc = "A refresh DNS servers operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UpdateManagedInstanceDnsServersOperation {
+pub struct UpdateVirtualClusterDnsServersOperation {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "DNS refresh configuration properties."]
+    #[doc = "The properties of dns servers on virtual cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DnsRefreshConfigurationProperties>,
+    pub properties: Option<VirtualClusterDnsServersProperties>,
 }
-impl UpdateManagedInstanceDnsServersOperation {
+impl UpdateVirtualClusterDnsServersOperation {
     pub fn new() -> Self {
         Self::default()
     }
@@ -17429,6 +17669,60 @@ impl VirtualCluster {
         }
     }
 }
+#[doc = "The properties of dns servers on virtual cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VirtualClusterDnsServersProperties {
+    #[doc = "The status of the DNS refresh operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<virtual_cluster_dns_servers_properties::Status>,
+}
+impl VirtualClusterDnsServersProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod virtual_cluster_dns_servers_properties {
+    use super::*;
+    #[doc = "The status of the DNS refresh operation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Succeeded,
+        Failed,
+        InProgress,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 1u32, "Failed"),
+                Self::InProgress => serializer.serialize_unit_variant("Status", 2u32, "InProgress"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "A list of virtual clusters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualClusterListResult {
@@ -17460,9 +17754,9 @@ pub struct VirtualClusterProperties {
     #[doc = "Subnet resource ID for the virtual cluster."]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
-    #[doc = "If the service has different generations of hardware, for the same SKU, then that can be captured here."]
+    #[doc = "Virtual cluster version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
+    pub version: Option<String>,
     #[doc = "List of resources in this virtual cluster."]
     #[serde(
         rename = "childResources",
@@ -17471,16 +17765,13 @@ pub struct VirtualClusterProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub child_resources: Vec<String>,
-    #[doc = "Specifies maintenance configuration id to apply to this virtual cluster."]
-    #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_configuration_id: Option<String>,
 }
 impl VirtualClusterProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "An update request for an Azure SQL Database virtual cluster."]
+#[doc = "An update request for virtual cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualClusterUpdate {
     #[doc = "The properties of a virtual cluster."]

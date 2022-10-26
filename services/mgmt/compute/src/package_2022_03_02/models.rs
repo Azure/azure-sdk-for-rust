@@ -11567,9 +11567,9 @@ pub struct VirtualMachineExtensionProperties {
     #[doc = "Indicates whether failures stemming from the extension will be suppressed (Operational failures such as not connecting to the VM will not be suppressed regardless of this value). The default is false."]
     #[serde(rename = "suppressFailures", default, skip_serializing_if = "Option::is_none")]
     pub suppress_failures: Option<bool>,
-    #[doc = "The extensions protected settings that are passed by reference, and consumed from key vault"]
+    #[doc = "Describes a reference to Key Vault Secret"]
     #[serde(rename = "protectedSettingsFromKeyVault", default, skip_serializing_if = "Option::is_none")]
-    pub protected_settings_from_key_vault: Option<serde_json::Value>,
+    pub protected_settings_from_key_vault: Option<KeyVaultSecretReference>,
 }
 impl VirtualMachineExtensionProperties {
     pub fn new() -> Self {
@@ -11620,9 +11620,9 @@ pub struct VirtualMachineExtensionUpdateProperties {
     #[doc = "Indicates whether failures stemming from the extension will be suppressed (Operational failures such as not connecting to the VM will not be suppressed regardless of this value). The default is false."]
     #[serde(rename = "suppressFailures", default, skip_serializing_if = "Option::is_none")]
     pub suppress_failures: Option<bool>,
-    #[doc = "The extensions protected settings that are passed by reference, and consumed from key vault"]
+    #[doc = "Describes a reference to Key Vault Secret"]
     #[serde(rename = "protectedSettingsFromKeyVault", default, skip_serializing_if = "Option::is_none")]
-    pub protected_settings_from_key_vault: Option<serde_json::Value>,
+    pub protected_settings_from_key_vault: Option<KeyVaultSecretReference>,
 }
 impl VirtualMachineExtensionUpdateProperties {
     pub fn new() -> Self {
@@ -13048,9 +13048,9 @@ pub struct VirtualMachineScaleSetExtensionProperties {
     #[doc = "Indicates whether failures stemming from the extension will be suppressed (Operational failures such as not connecting to the VM will not be suppressed regardless of this value). The default is false."]
     #[serde(rename = "suppressFailures", default, skip_serializing_if = "Option::is_none")]
     pub suppress_failures: Option<bool>,
-    #[doc = "The extensions protected settings that are passed by reference, and consumed from key vault"]
+    #[doc = "Describes a reference to Key Vault Secret"]
     #[serde(rename = "protectedSettingsFromKeyVault", default, skip_serializing_if = "Option::is_none")]
-    pub protected_settings_from_key_vault: Option<serde_json::Value>,
+    pub protected_settings_from_key_vault: Option<KeyVaultSecretReference>,
 }
 impl VirtualMachineScaleSetExtensionProperties {
     pub fn new() -> Self {

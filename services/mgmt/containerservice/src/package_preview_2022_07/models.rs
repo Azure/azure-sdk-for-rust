@@ -2654,9 +2654,11 @@ pub mod managed_cluster_pod_identity {
     #[serde(remote = "ProvisioningState")]
     pub enum ProvisioningState {
         Assigned,
-        Updating,
+        Canceled,
         Deleting,
         Failed,
+        Succeeded,
+        Updating,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2683,9 +2685,11 @@ pub mod managed_cluster_pod_identity {
         {
             match self {
                 Self::Assigned => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Assigned"),
-                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Updating"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Canceled"),
                 Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
                 Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Succeeded"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Updating"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -4297,10 +4301,11 @@ pub mod private_endpoint_connection_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
     pub enum ProvisioningState {
-        Succeeded,
+        Canceled,
         Creating,
         Deleting,
         Failed,
+        Succeeded,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -4326,10 +4331,11 @@ pub mod private_endpoint_connection_properties {
             S: Serializer,
         {
             match self {
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Canceled"),
                 Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Creating"),
                 Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
                 Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Succeeded"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -5019,10 +5025,11 @@ pub mod trusted_access_role_binding_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
     pub enum ProvisioningState {
-        Succeeded,
-        Failed,
-        Updating,
+        Canceled,
         Deleting,
+        Failed,
+        Succeeded,
+        Updating,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -5048,10 +5055,11 @@ pub mod trusted_access_role_binding_properties {
             S: Serializer,
         {
             match self {
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
-                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
-                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Deleting"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Canceled"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Deleting"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Failed"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Succeeded"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Updating"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

@@ -937,10 +937,10 @@ impl ResourceRecommendationBaseListResult {
 #[doc = "A summary of the recommendation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShortDescription {
-    #[doc = "The issue or opportunity identified by the recommendation."]
+    #[doc = "The issue or opportunity identified by the recommendation and proposed solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub problem: Option<String>,
-    #[doc = "The remediation action suggested by the recommendation."]
+    #[doc = "The issue or opportunity identified by the recommendation and proposed solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub solution: Option<String>,
 }

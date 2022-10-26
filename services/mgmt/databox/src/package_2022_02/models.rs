@@ -890,9 +890,9 @@ pub struct DataBoxDiskGranularCopyLogDetails {
     #[doc = "Disk Serial Number."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
-    #[doc = "Account name."]
-    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
-    pub account_name: Option<String>,
+    #[doc = "Account id."]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
     #[doc = "Link for copy error logs."]
     #[serde(rename = "errorLogLink", default, skip_serializing_if = "Option::is_none")]
     pub error_log_link: Option<String>,
@@ -905,7 +905,7 @@ impl DataBoxDiskGranularCopyLogDetails {
         Self {
             granular_copy_log_details,
             serial_number: None,
-            account_name: None,
+            account_id: None,
             error_log_link: None,
             verbose_log_link: None,
         }
@@ -1026,6 +1026,14 @@ pub struct DataBoxDiskJobDetails {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub granular_copy_progress: Vec<DataBoxDiskGranularCopyProgress>,
+    #[doc = "Copy progress per disk."]
+    #[serde(
+        rename = "granularCopyLogDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub granular_copy_log_details: Vec<DataBoxDiskGranularCopyLogDetails>,
     #[doc = "Contains the map of disk serial number to the disk size being used for the job. Is returned only after the disks are shipped to the customer."]
     #[serde(rename = "disksAndSizeDetails", default, skip_serializing_if = "Option::is_none")]
     pub disks_and_size_details: Option<serde_json::Value>,
@@ -1040,6 +1048,7 @@ impl DataBoxDiskJobDetails {
             preferred_disks: None,
             copy_progress: Vec::new(),
             granular_copy_progress: Vec::new(),
+            granular_copy_log_details: Vec::new(),
             disks_and_size_details: None,
             passkey: None,
         }

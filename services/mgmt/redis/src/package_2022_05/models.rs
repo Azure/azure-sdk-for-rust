@@ -651,7 +651,7 @@ pub mod redis_common_properties {
         #[doc = "Specifies whether the rdb backup is enabled"]
         #[serde(rename = "rdb-backup-enabled", default, skip_serializing_if = "Option::is_none")]
         pub rdb_backup_enabled: Option<String>,
-        #[doc = "Specifies the frequency for creating rdb backup"]
+        #[doc = "Specifies the frequency for creating rdb backup in minutes. Valid values: (15, 30, 60, 360, 720, 1440)"]
         #[serde(rename = "rdb-backup-frequency", default, skip_serializing_if = "Option::is_none")]
         pub rdb_backup_frequency: Option<String>,
         #[doc = "Specifies the maximum number of snapshots for rdb backup"]
