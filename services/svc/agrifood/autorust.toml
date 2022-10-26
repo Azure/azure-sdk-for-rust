@@ -1,4 +1,6 @@
 [tags]
 deny = [
-    "package-2021-03-31-preview", # duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
+    # duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
+    "package_2021-07-31-preview",
+    "package-2021-03-31-preview",
   ]
