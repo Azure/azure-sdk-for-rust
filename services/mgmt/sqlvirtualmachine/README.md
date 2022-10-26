@@ -6,7 +6,7 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/sqlvirtual
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-preview-2022-07`.
+The default tag is `package-2022-02`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
