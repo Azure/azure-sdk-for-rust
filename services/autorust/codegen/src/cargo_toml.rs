@@ -27,14 +27,7 @@ pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a T
     match (default_tag, is_preview, stable_tag) {
         (Some(default_tag), false, _) => default_tag,
         (Some(default_tag), true, None) => default_tag,
-        (Some(default_tag), true, Some(stable_tag)) => {
-            println!(
-                "  WARN preview tag `{}` used instead of stable tag `{}`",
-                default_tag.name(),
-                stable_tag.name()
-            );
-            default_tag
-        }
+        (Some(_default_tag), true, Some(stable_tag)) => stable_tag,
         (_, _, Some(tag)) => tag,
         _ => tags[0],
     }
