@@ -3,10 +3,6 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
-#[cfg(feature = "package-2022-10")]
-pub mod package_2022_10;
-#[cfg(all(feature = "package-2022-10", not(feature = "no-default-tag")))]
-pub use package_2022_10::*;
 #[cfg(feature = "package-2021-12-01-preview")]
 pub mod package_2021_12_01_preview;
 #[cfg(all(feature = "package-2021-12-01-preview", not(feature = "no-default-tag")))]
@@ -23,3 +19,7 @@ pub use package_2020_10::*;
 pub mod package_2020_08;
 #[cfg(all(feature = "package-2020-08", not(feature = "no-default-tag")))]
 pub use package_2020_08::*;
+#[cfg(feature = "package-2020-03-preview")]
+pub mod package_2020_03_preview;
+#[cfg(all(feature = "package-2020-03-preview", not(feature = "no-default-tag")))]
+pub use package_2020_03_preview::*;
