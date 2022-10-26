@@ -13,6 +13,7 @@ use crate::{
         service_bus_connection::ServiceBusConnection,
         service_bus_transport_type::ServiceBusTransportType,
     },
+    ServiceBusSender, ServiceBusSenderOptions,
 };
 
 use super::{
@@ -52,7 +53,7 @@ impl ServiceBusClient<SharedAccessCredential> {
     ///
     // public virtual string FullyQualifiedNamespace => Connection.FullyQualifiedNamespace;
     pub fn fully_qualified_namespace(&self) -> &str {
-        todo!()
+        self.connection.fully_qualified_namespace()
     }
 
     /// Indicates whether or not this [`ServiceBusClient`] has been closed.
@@ -139,6 +140,10 @@ where
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                   Dispose                                  */
+/* -------------------------------------------------------------------------- */
+
 impl<TC> ServiceBusClient<TC>
 where
     TC: TokenCredential,
@@ -154,5 +159,29 @@ where
 
         self.connection.dispose().await?;
         Ok(())
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                Create Sender                               */
+/* -------------------------------------------------------------------------- */
+
+impl<TC> ServiceBusClient<TC>
+where
+    TC: TokenCredential,
+{
+    pub async fn create_sender(
+        &mut self,
+        queue_or_topic_name: impl Into<String>,
+    ) -> Result<ServiceBusSender, Error> {
+        todo!()
+    }
+
+    pub async fn create_sender_with_options(
+        &mut self,
+        queue_or_topic_name: impl Into<String>,
+        options: ServiceBusSenderOptions,
+    ) -> Result<ServiceBusSender, Error> {
+        todo!()
     }
 }

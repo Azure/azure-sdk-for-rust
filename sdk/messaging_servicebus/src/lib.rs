@@ -16,9 +16,14 @@ pub mod service_bus;
 pub mod utils;
 
 pub use primitives::service_bus_message::ServiceBusMessage;
+pub use receiver::{
+    service_bus_receive_mode::ServiceBusReceiveMode, service_bus_receiver::ServiceBusReceiver,
+    service_bus_receiver_options::ServiceBusReceiverOptions,
+};
 pub use sender::{
     create_message_batch_options::CreateMessageBatchOptions,
-    service_bus_message_batch::ServiceBusMessageBatch,
+    service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
+    service_bus_sender_options::ServiceBusSenderOptions,
 };
 
 pub(crate) mod authorization;
