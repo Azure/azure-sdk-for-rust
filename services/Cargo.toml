@@ -218,7 +218,6 @@ members = [
   "mgmt/windowsiot",
   "mgmt/workloadmonitor",
   "mgmt/workloads",
-  "svc/agrifood",
   "svc/appconfiguration",
   "svc/applicationinsights",
   "svc/attestation",
