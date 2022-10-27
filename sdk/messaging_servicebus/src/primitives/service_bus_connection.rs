@@ -55,6 +55,9 @@ pub enum Error {
     SenderAttach(#[from] SenderAttachError),
 
     #[error(transparent)]
+    ReceiverAttach(#[from] fe2o3_amqp::link::ReceiverAttachError),
+
+    #[error(transparent)]
     Rng(#[from] rand::Error),
 
     #[error("Cancelled")]
@@ -76,6 +79,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::Rng(err) => Self::Rng(err),
             AmqpClientError::Cancelled => Self::Cancelled,
             AmqpClientError::Dispose(err) => Self::Dispose(err),
+            AmqpClientError::ReceiverAttach(err) => Self::ReceiverAttach(err),
         }
     }
 }

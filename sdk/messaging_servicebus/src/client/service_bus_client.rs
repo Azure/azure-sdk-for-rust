@@ -13,7 +13,7 @@ use crate::{
         service_bus_connection::ServiceBusConnection,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    ServiceBusSender, ServiceBusSenderOptions,
+    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
 
 use super::{
@@ -182,6 +182,30 @@ where
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
     ) -> Result<ServiceBusSender, Error> {
+        todo!()
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Create Receiver                              */
+/* -------------------------------------------------------------------------- */
+
+impl<TC> ServiceBusClient<TC>
+where
+    TC: TokenCredential,
+{
+    pub async fn create_receiver(
+        &mut self,
+        queue_or_topic_name: impl Into<String>,
+    ) -> Result<ServiceBusReceiver, Error> {
+        todo!()
+    }
+
+    pub async fn create_receiver_with_options(
+        &mut self,
+        queue_or_topic_name: impl Into<String>,
+        options: ServiceBusReceiverOptions,
+    ) -> Result<ServiceBusReceiver, Error> {
         todo!()
     }
 }

@@ -69,8 +69,10 @@ where
     ///
     /// <returns>The token to use for authorization.</returns>
     ///
-    pub async fn get_token(&mut self) -> azure_core::error::Result<TokenResponse> {
-        match &mut self.token_type {
+    pub async fn get_token(
+        &mut self,
+    ) -> azure_core::error::Result<(TokenResponse, &TokenType<TC>)> {
+        let token_result = match &mut self.token_type {
             TokenType::SharedAccessToken { credential } => {
                 // GetTokenUsingDefaultScopeAsync
                 credential.get_token("").await
@@ -102,7 +104,9 @@ where
                     Ok(token)
                 }
             },
-        }
+        };
+
+        token_result.map(|token| (token, &self.token_type))
     }
 }
 

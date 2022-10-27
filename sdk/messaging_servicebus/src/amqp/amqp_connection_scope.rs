@@ -4,13 +4,14 @@ use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
     connection::{ConnectionHandle, OpenError},
-    link::SenderAttachError,
+    link::{ReceiverAttachError, SenderAttachError},
     sasl_profile::SaslProfile,
     session::{BeginError, SessionHandle},
     transaction::Controller,
     Connection, Session,
 };
 
+use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
@@ -25,7 +26,11 @@ use crate::{
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };
 
-use super::{amqp_constants, cbs_token_provider::CbsTokenProvider, error::DisposeError};
+use super::{
+    amqp_constants,
+    cbs_token_provider::CbsTokenProvider,
+    error::{DisposeError, OpenSenderError},
+};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
@@ -47,10 +52,12 @@ pub(crate) enum AmqpConnectionScopeError {
     SenderAttach(#[from] SenderAttachError),
 
     #[error(transparent)]
+    ReceiverAttach(#[from] ReceiverAttachError),
+
+    #[error(transparent)]
     Rng(#[from] rand::Error),
 }
 
-#[derive(Debug)]
 pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
     /// <summary>The seed to use for initializing random number generated for a given thread-specific instance.</summary>
     // private static int s_randomSeed = Environment.TickCount;
@@ -103,7 +110,32 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
 
     /// The controller responsible for managing transactions.
     transaction_controller: Controller,
-    // use_single_session: bool,
+
+    /// CBS client
+    cbs_client: CbsClient,
+}
+
+impl<TC: TokenCredential + std::fmt::Debug> std::fmt::Debug for AmqpConnectionScope<TC> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AmqpConnectionScope")
+            .field("random_number_generator", &self.random_number_generator)
+            .field("is_disposed", &self.is_disposed)
+            .field(
+                "operation_cancellation_source",
+                &self.operation_cancellation_source,
+            )
+            .field("active_links", &self.active_links)
+            .field("id", &self.id)
+            .field("service_endpoint", &self.service_endpoint)
+            .field("connection_endpoint", &self.connection_endpoint)
+            .field("cbs_token_provider", &self.cbs_token_provider)
+            .field("transport_type", &self.transport_type)
+            .field("connection_handle", &self.connection_handle)
+            .field("session_handle", &self.session_handle)
+            .field("transaction_controller", &self.transaction_controller)
+            .field("cbs_client", &"CbsClient")
+            .finish()
+    }
 }
 
 impl<TC: TokenCredential> AmqpConnectionScope<TC> {
@@ -218,12 +250,22 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         let mut session_handle =
             timeout(operation_timeout, Session::begin(&mut connection_handle)).await??;
 
-        // TODO: it looks like CBS auth does not happen until attacing links
         let transaction_controller = timeout(
             operation_timeout,
             Self::attach_txn_controller(&mut session_handle, &id),
         )
         .await??;
+
+        let cbs_client = CbsClient::attach(&mut session_handle)
+            .await
+            .map_err(|err| match err {
+                fe2o3_amqp_management::error::AttachError::Sender(err) => {
+                    AmqpConnectionScopeError::SenderAttach(err)
+                }
+                fe2o3_amqp_management::error::AttachError::Receiver(err) => {
+                    AmqpConnectionScopeError::ReceiverAttach(err)
+                }
+            })?;
 
         let rng = rand::thread_rng();
         let rng = StdRng::from_rng(rng)?;
@@ -241,6 +283,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             connection_handle,
             session_handle,
             transaction_controller,
+            cbs_client,
         })
     }
 
@@ -295,6 +338,17 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         tokoen_provider: &CbsTokenProvider<TC>,
         endpoint: &Url,
     ) -> Result<(), ()> {
+        todo!()
+    }
+
+    async fn open_sender_link(
+        &mut self,
+        entity_path: &str,
+        identifier: &str,
+    ) -> Result<fe2o3_amqp::Sender, OpenSenderError> {
+        if self.is_disposed {
+            return Err(OpenSenderError::ScopeIsDisposed);
+        }
         todo!()
     }
 }

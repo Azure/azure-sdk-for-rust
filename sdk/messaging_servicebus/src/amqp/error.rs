@@ -1,4 +1,4 @@
-use fe2o3_amqp::{connection, session};
+use fe2o3_amqp::{connection, link::SenderAttachError, session};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -23,4 +23,13 @@ pub enum DisposeError {
 
     #[error(transparent)]
     ConnectionCloseError(#[from] connection::Error),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum OpenSenderError {
+    #[error("The connection scope is disposed")]
+    ScopeIsDisposed,
+
+    #[error(transparent)]
+    Attach(#[from] SenderAttachError),
 }

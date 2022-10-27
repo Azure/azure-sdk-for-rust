@@ -5,7 +5,11 @@ use azure_core::{
     auth::{AccessToken, TokenCredential},
     Url,
 };
-use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
+use fe2o3_amqp::{
+    connection::OpenError,
+    link::{ReceiverAttachError, SenderAttachError},
+    session::BeginError,
+};
 use tokio::time::error::Elapsed;
 use tokio_util::sync::CancellationToken;
 
@@ -50,6 +54,9 @@ pub enum AmqpClientError {
     SenderAttach(#[from] SenderAttachError),
 
     #[error(transparent)]
+    ReceiverAttach(#[from] ReceiverAttachError),
+
+    #[error(transparent)]
     Rng(#[from] rand::Error),
 
     #[error("Cancelled")]
@@ -68,6 +75,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
             AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpConnectionScopeError::Rng(err) => Self::Rng(err),
+            AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
         }
     }
 }
