@@ -3,7 +3,7 @@ use azure_core::Url;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    primitives::service_bus_retry_policy::ServiceBusRetryPolicy,
+    primitives::service_bus_retry_options::ServiceBusRetryOptions,
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
 };
 
@@ -46,14 +46,14 @@ pub(crate) trait TransportClient {
     fn create_sender(
         &mut self,
         entity_path: impl Into<String>, // TODO: AsRef<str> or AsRef<Path>?
-        retry_policy: impl ServiceBusRetryPolicy,
+        retry_policy: ServiceBusRetryOptions,
         identifier: impl Into<String>,
     ) -> Result<Self::Sender, Self::Error>;
 
     fn create_receiver(
         &mut self,
         entity_path: impl Into<String>,
-        retry_policy: impl ServiceBusRetryPolicy,
+        retry_policy: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         identifier: impl Into<String>,
@@ -78,7 +78,7 @@ pub(crate) trait TransportClient {
     fn create_rule_manager(
         &mut self,
         subscription_path: impl Into<String>,
-        retry_policy: impl ServiceBusRetryPolicy,
+        retry_policy: ServiceBusRetryOptions,
         identifier: impl Into<String>,
     ) -> Result<Self::RuleManager, Self::Error>;
 

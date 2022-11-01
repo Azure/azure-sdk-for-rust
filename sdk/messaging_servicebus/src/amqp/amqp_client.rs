@@ -17,7 +17,7 @@ use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
     core::{TransportClient, TransportConnectionScope},
     primitives::{
-        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
@@ -209,7 +209,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     fn create_sender(
         &mut self,
         entity_path: impl Into<String>, // TODO: AsRef<str> or AsRef<Path>?
-        retry_policy: impl ServiceBusRetryPolicy,
+        retry_policy: ServiceBusRetryOptions,
         identifier: impl Into<String>,
     ) -> Result<Self::Sender, Self::Error> {
         todo!()
@@ -218,7 +218,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     fn create_receiver(
         &mut self,
         entity_path: impl Into<String>,
-        retry_policy: impl ServiceBusRetryPolicy,
+        retry_policy: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         identifier: impl Into<String>,
@@ -245,7 +245,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     fn create_rule_manager(
         &mut self,
         subscription_path: impl Into<String>,
-        retry_policy: impl ServiceBusRetryPolicy,
+        retry_policy: ServiceBusRetryOptions,
         identifier: impl Into<String>,
     ) -> Result<Self::RuleManager, Self::Error> {
         todo!()
