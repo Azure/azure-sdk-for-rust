@@ -1,4 +1,5 @@
 use fe2o3_amqp::{connection, link::SenderAttachError, session};
+use fe2o3_amqp_management::error::Error as MgmtError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -32,4 +33,13 @@ pub enum OpenSenderError {
 
     #[error(transparent)]
     Attach(#[from] SenderAttachError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CbsAuthError {
+    #[error(transparent)]
+    TokenCredential(#[from] azure_core::Error),
+
+    #[error(transparent)]
+    Cbs(#[from] MgmtError),
 }

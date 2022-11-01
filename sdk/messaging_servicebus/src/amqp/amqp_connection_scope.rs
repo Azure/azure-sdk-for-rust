@@ -29,7 +29,7 @@ use crate::{
 use super::{
     amqp_constants,
     cbs_token_provider::CbsTokenProvider,
-    error::{DisposeError, OpenSenderError},
+    error::{CbsAuthError, DisposeError, OpenSenderError},
 };
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
@@ -56,9 +56,6 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     Rng(#[from] rand::Error),
-
-    #[error(transparent)]
-    TokenCredential(#[from] azure_core::Error),
 }
 
 pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
@@ -341,15 +338,16 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         endpoint: &str,
         audience: &[&str],
         required_claims: &[&str],
-    ) -> Result<(), AmqpConnectionScopeError> {
+    ) -> Result<(), CbsAuthError> {
         for resource in audience {
             let token = self
                 .cbs_token_provider
                 .get_token_async(endpoint, resource, required_claims)
                 .await?;
+            self.cbs_client.put_token(*resource, token).await?;
         }
 
-        todo!()
+        Ok(())
     }
 
     async fn open_sender_link(

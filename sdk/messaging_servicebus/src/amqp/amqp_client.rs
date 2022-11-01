@@ -64,9 +64,6 @@ pub enum AmqpClientError {
 
     #[error(transparent)]
     Dispose(#[from] DisposeError),
-
-    #[error(transparent)]
-    TokenCredential(#[from] azure_core::Error),
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -79,7 +76,6 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpConnectionScopeError::Rng(err) => Self::Rng(err),
             AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
-            AmqpConnectionScopeError::TokenCredential(err) => Self::TokenCredential(err),
         }
     }
 }
