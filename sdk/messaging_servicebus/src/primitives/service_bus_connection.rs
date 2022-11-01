@@ -231,12 +231,6 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
         let connection_string_properties =
             ServiceBusConnectionStringProperties::parse(connection_string.as_ref())?;
 
-        println!("connection_string: {:?}", connection_string);
-        println!(
-            "connection_string_properties: {:?}",
-            connection_string_properties
-        );
-
         let fully_qualified_namespace = connection_string_properties
             .endpoint()
             .and_then(|url| url.host_str());

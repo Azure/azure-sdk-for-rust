@@ -9,14 +9,13 @@ fn setup_dotenv() {
 #[test]
 fn hello_world() {
     setup_dotenv();
-    println!("{:?}", env::var("HELLO").unwrap());
+    assert_eq!(env::var("HELLO").unwrap(), "hello");
 }
 
 #[tokio::test]
 async fn client_can_connect_with_connection_string() {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    println!("{:?}", connection_string);
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
 
     client.dispose().await.unwrap();

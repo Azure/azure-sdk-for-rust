@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration as StdDuration};
+use std::{collections::HashMap, sync::atomic::Ordering, time::Duration as StdDuration};
 
 use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
@@ -16,20 +16,24 @@ use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
 use serde_amqp::Value;
-use time::Duration as TimeSpan;
+use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::time::{error::Elapsed, timeout, Interval};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };
 
 use super::{
+    amqp_connection::AmqpConnection,
     amqp_constants,
+    amqp_sender::AmqpSender,
+    amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
     error::{CbsAuthError, DisposeError, OpenSenderError},
+    LINK_IDENTIFIER,
 };
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
@@ -101,12 +105,12 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
 
     //
     /// A handle to the AMQP connection that is active for the current scope.
-    connection_handle: ConnectionHandle<()>,
+    connection: AmqpConnection,
 
     /// A handle to the AMQP session that is active for the current connection
     ///
     /// TODO: a single session?
-    session_handle: SessionHandle<()>,
+    session: AmqpSession,
 
     /// The controller responsible for managing transactions.
     transaction_controller: Controller,
@@ -118,22 +122,22 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
 impl<TC: TokenCredential + std::fmt::Debug> std::fmt::Debug for AmqpConnectionScope<TC> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AmqpConnectionScope")
-            .field("random_number_generator", &self.random_number_generator)
-            .field("is_disposed", &self.is_disposed)
-            .field(
-                "operation_cancellation_source",
-                &self.operation_cancellation_source,
-            )
-            .field("active_links", &self.active_links)
-            .field("id", &self.id)
-            .field("service_endpoint", &self.service_endpoint)
-            .field("connection_endpoint", &self.connection_endpoint)
-            .field("cbs_token_provider", &self.cbs_token_provider)
-            .field("transport_type", &self.transport_type)
-            .field("connection_handle", &self.connection_handle)
-            .field("session_handle", &self.session_handle)
-            .field("transaction_controller", &self.transaction_controller)
-            .field("cbs_client", &"CbsClient")
+            // .field("random_number_generator", &self.random_number_generator)
+            // .field("is_disposed", &self.is_disposed)
+            // .field(
+            //     "operation_cancellation_source",
+            //     &self.operation_cancellation_source,
+            // )
+            // .field("active_links", &self.active_links)
+            // .field("id", &self.id)
+            // .field("service_endpoint", &self.service_endpoint)
+            // .field("connection_endpoint", &self.connection_endpoint)
+            // .field("cbs_token_provider", &self.cbs_token_provider)
+            // .field("transport_type", &self.transport_type)
+            // .field("connection", &self.connection_handle)
+            // .field("session_handle", &self.session_handle)
+            // .field("transaction_controller", &self.transaction_controller)
+            // .field("cbs_client", &"CbsClient")
             .finish()
     }
 }
@@ -244,19 +248,21 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         );
 
         let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
-        let mut connection_handle = timeout(operation_timeout, fut).await??;
+        let connection_handle = timeout(operation_timeout, fut).await??;
+        let mut connection = AmqpConnection::new(connection_handle);
 
         // TODO: should timeout account for time used previously?
-        let mut session_handle =
-            timeout(operation_timeout, Session::begin(&mut connection_handle)).await??;
+        let session_handle =
+            timeout(operation_timeout, Session::begin(&mut connection.handle)).await??;
+        let mut session = AmqpSession::new(session_handle);
 
         let transaction_controller = timeout(
             operation_timeout,
-            Self::attach_txn_controller(&mut session_handle, &id),
+            Self::attach_txn_controller(&mut session.handle, &id),
         )
         .await??;
 
-        let cbs_client = CbsClient::attach(&mut session_handle)
+        let cbs_client = CbsClient::attach(&mut session.handle)
             .await
             .map_err(|err| match err {
                 fe2o3_amqp_management::error::AttachError::Sender(err) => {
@@ -280,8 +286,8 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             connection_endpoint,
             cbs_token_provider,
             transport_type,
-            connection_handle,
-            session_handle,
+            connection,
+            session,
             transaction_controller,
             cbs_client,
         })
@@ -302,8 +308,6 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         let idle_time_out = Self::CONNECTION_IDLE_TIMEOUT.as_millis() as u32; // FIXME: bound check?
         let max_frame_size = amqp_constants::DEFAULT_MAX_FRAME_SIZE;
         let container_id = scope_identifier;
-
-        println!("{:?}", connection_endpoint);
 
         let connection_builder = Connection::builder()
             .container_id(container_id)
@@ -338,27 +342,75 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         endpoint: &str,
         audience: &[&str],
         required_claims: &[&str],
-    ) -> Result<(), CbsAuthError> {
+    ) -> Result<Option<OffsetDateTime>, CbsAuthError> {
+        let mut cbs_token_expires_at_utc = None;
+
         for resource in audience {
             let token = self
                 .cbs_token_provider
                 .get_token_async(endpoint, resource, required_claims)
                 .await?;
+
+            // find the smallest timeout
+            let expires_at = match token.expires_at_utc() {
+                Some(timestamp) => match OffsetDateTime::try_from(timestamp.clone()) {
+                    Ok(datetime) => Some(datetime),
+                    Err(_) => todo!(),
+                },
+                None => None,
+            };
+
+            match (cbs_token_expires_at_utc, expires_at) {
+                (Some(existing), Some(new)) => {
+                    if new < existing {
+                        cbs_token_expires_at_utc = Some(new);
+                    }
+                }
+                (None, Some(new)) => {
+                    cbs_token_expires_at_utc = Some(new);
+                }
+                _ => {}
+            }
+
             self.cbs_client.put_token(*resource, token).await?;
         }
 
-        Ok(())
+        Ok(cbs_token_expires_at_utc)
     }
 
     async fn open_sender_link(
         &mut self,
         entity_path: &str,
         identifier: &str,
-    ) -> Result<fe2o3_amqp::Sender, OpenSenderError> {
+    ) -> Result<AmqpSender, OpenSenderError> {
         if self.is_disposed {
             return Err(OpenSenderError::ScopeIsDisposed);
         }
-        todo!()
+
+        let endpoint = format!("{}/{}", self.service_endpoint, entity_path);
+        let audience = vec![&endpoint[..]];
+        let required_claims = vec![service_bus_claim::SEND];
+
+        // TODO: what to do about auto-renewal?
+        let auth_expiration_utc = self
+            .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
+            .await?;
+        let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+        let link_name = format!(
+            "{};{}:{}:{}",
+            self.id, self.connection.identifier, self.session.identifier, link_identifier
+        );
+        let sender = fe2o3_amqp::Sender::builder()
+            .name(link_name)
+            .source(identifier)
+            .target(endpoint)
+            .attach(&mut self.session.handle)
+            .await?;
+        let amqp_sender = AmqpSender {
+            identifier: link_identifier,
+            sender,
+        };
+        Ok(amqp_sender)
     }
 }
 
@@ -377,8 +429,8 @@ impl<TC: TokenCredential> TransportConnectionScope for AmqpConnectionScope<TC> {
     async fn dispose(&mut self) -> Result<(), Self::Error> {
         // TODO: handle link close?
 
-        self.session_handle.close().await?;
-        self.connection_handle.close().await?;
+        self.session.handle.close().await?;
+        self.connection.handle.close().await?;
         Ok(())
     }
 }

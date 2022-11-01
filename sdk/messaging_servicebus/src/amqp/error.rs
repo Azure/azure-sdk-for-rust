@@ -33,12 +33,18 @@ pub enum OpenSenderError {
 
     #[error(transparent)]
     Attach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum CbsAuthError {
     #[error(transparent)]
     TokenCredential(#[from] azure_core::Error),
+
+    #[error(transparent)]
+    ExpirationDateTimeRange(#[from] time::error::ComponentRange),
 
     #[error(transparent)]
     Cbs(#[from] MgmtError),

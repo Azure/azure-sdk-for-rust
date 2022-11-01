@@ -5,7 +5,21 @@ use crate::{
     core::TransportSender, CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
-pub struct AmqpSender {}
+use super::LINK_IDENTIFIER;
+
+pub(crate) struct AmqpSender {
+    pub identifier: u32,
+    pub sender: fe2o3_amqp::Sender,
+}
+
+// impl AmqpSender {
+//     pub(crate) fn new(sender: fe2o3_amqp::Sender) -> Self {
+//         Self {
+//             identifier: LINK_IDENTIFIER.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
+//             sender,
+//         }
+//     }
+// }
 
 #[async_trait]
 impl TransportSender for AmqpSender {
