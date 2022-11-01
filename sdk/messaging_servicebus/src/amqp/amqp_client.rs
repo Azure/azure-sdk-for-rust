@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{future::Future, pin::Pin, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::{
@@ -28,7 +28,7 @@ use super::{
     amqp_receiver::AmqpReceiver,
     amqp_rule_manager::AmqpRuleManager,
     amqp_sender::AmqpSender,
-    error::DisposeError,
+    error::{DisposeError, OpenSenderError},
 };
 
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
@@ -172,9 +172,12 @@ impl<C: TokenCredential> AmqpClient<C> {
     }
 }
 
-#[async_trait]
+// #[async_trait]
 impl<C: TokenCredential> TransportClient for AmqpClient<C> {
-    type Error = AmqpClientError;
+    type CreateSenderError = OpenSenderError;
+    type CreateReceiverError = AmqpClientError;
+    type CreateRuleManagerError = AmqpClientError;
+    type DisposeError = AmqpClientError;
 
     type Sender = AmqpSender;
 
@@ -200,7 +203,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     /// # Arguments
     ///
     /// * `entity_path` - The entity path to send the message to.
-    /// * `retry_policy` - The policy which governs retry behavior and try timeouts
+    /// * `retry_options` - The policy which governs retry behavior and try timeouts
     /// * `identifier` - The identifier for the sender.
     ///
     /// # Returns
@@ -208,24 +211,36 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     /// A [TransportSender] configured in the requested manner.
     fn create_sender(
         &mut self,
-        entity_path: impl Into<String>, // TODO: AsRef<str> or AsRef<Path>?
-        retry_policy: ServiceBusRetryOptions,
-        identifier: impl Into<String>,
-    ) -> Result<Self::Sender, Self::Error> {
-        todo!()
+        entity_path: String,
+        identifier: String,
+        retry_options: ServiceBusRetryOptions,
+    ) -> Pin<Box<dyn Future<Output = Result<Self::Sender, Self::CreateSenderError>> + '_>> {
+        Box::pin(async {
+            // TODO: this will be updated once GAT is stablized
+            let (identifier, sender) = self
+                .connection_scope
+                .open_sender_link(entity_path, identifier)
+                .await?;
+
+            Ok(AmqpSender {
+                identifier,
+                retry_options,
+                sender,
+            })
+        })
     }
 
     fn create_receiver(
         &mut self,
         entity_path: impl Into<String>,
-        retry_policy: ServiceBusRetryOptions,
+        retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         identifier: impl Into<String>,
         session_id: impl Into<String>,
         is_session_receiver: bool,
         is_processor: bool,
-    ) -> Result<Self::Receiver, Self::Error> {
+    ) -> Result<Self::Receiver, Self::CreateReceiverError> {
         todo!()
     }
 
@@ -236,7 +251,7 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     ///
     /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
     ///   is bound.
-    /// * `retry_policy` - The policy which governs retry behavior and try timeouts.
+    /// * `retry_options` - The policy which governs retry behavior and try timeouts.
     /// * `identifier` - The identifier for the rule manager.
     ///
     /// # Returns
@@ -245,9 +260,9 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     fn create_rule_manager(
         &mut self,
         subscription_path: impl Into<String>,
-        retry_policy: ServiceBusRetryOptions,
+        retry_options: ServiceBusRetryOptions,
         identifier: impl Into<String>,
-    ) -> Result<Self::RuleManager, Self::Error> {
+    ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
         todo!()
     }
 
@@ -256,33 +271,35 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
     /// # Arguments
     ///
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
-    async fn close(
+    fn close(
         &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error> {
-        if self.closed {
-            Ok(())
-        } else {
-            match cancellation_token.into() {
-                Some(token) => {
-                    tokio::select! {
-                        _cancel = token.cancelled() => Err(Self::Error::Cancelled),
-                        result = self.connection_scope.dispose() => {
-                            self.closed = true;
-                            result.map_err(Into::into)
+        cancellation_token: Option<CancellationToken>,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Self::DisposeError>> + '_>> {
+        Box::pin(async move {
+            if self.closed {
+                Ok(())
+            } else {
+                match cancellation_token {
+                    Some(token) => {
+                        tokio::select! {
+                            _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
+                            result = self.connection_scope.dispose() => {
+                                self.closed = true;
+                                result.map_err(Into::into)
+                            }
                         }
                     }
+                    None => self
+                        .connection_scope
+                        .dispose()
+                        .await
+                        .and_then(|_| {
+                            self.closed = true;
+                            Ok(())
+                        })
+                        .map_err(Into::into),
                 }
-                None => self
-                    .connection_scope
-                    .dispose()
-                    .await
-                    .and_then(|_| {
-                        self.closed = true;
-                        Ok(())
-                    })
-                    .map_err(Into::into),
             }
-        }
+        })
     }
 }

@@ -1,3 +1,6 @@
+use std::future::Future;
+use std::pin::Pin;
+
 use async_trait::async_trait;
 use azure_core::Url;
 use tokio_util::sync::CancellationToken;
@@ -16,9 +19,13 @@ use super::{
 /// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended
 /// that the public [ServiceBusConnection] employ a transport client via containment and delegate
 /// operations to it rather than understanding protocol-specific details for different transports.
-#[async_trait]
+// #[async_trait]
 pub(crate) trait TransportClient {
-    type Error: Send;
+    type CreateSenderError: Send;
+    type CreateReceiverError: Send;
+    type CreateRuleManagerError: Send;
+    type DisposeError: Send;
+
     type Sender: TransportSender;
     type Receiver: TransportReceiver;
     type RuleManager: TransportRuleManager;
@@ -45,10 +52,10 @@ pub(crate) trait TransportClient {
     /// A [TransportSender] configured in the requested manner.
     fn create_sender(
         &mut self,
-        entity_path: impl Into<String>, // TODO: AsRef<str> or AsRef<Path>?
+        entity_path: String,
+        identifier: String,
         retry_policy: ServiceBusRetryOptions,
-        identifier: impl Into<String>,
-    ) -> Result<Self::Sender, Self::Error>;
+    ) -> Pin<Box<dyn Future<Output = Result<Self::Sender, Self::CreateSenderError>> + '_>>;
 
     fn create_receiver(
         &mut self,
@@ -60,7 +67,7 @@ pub(crate) trait TransportClient {
         session_id: impl Into<String>,
         is_session_receiver: bool,
         is_processor: bool,
-    ) -> Result<Self::Receiver, Self::Error>;
+    ) -> Result<Self::Receiver, Self::CreateReceiverError>;
 
     /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
     /// for adding, removing and getting rules from the Service Bus subscription.
@@ -80,22 +87,24 @@ pub(crate) trait TransportClient {
         subscription_path: impl Into<String>,
         retry_policy: ServiceBusRetryOptions,
         identifier: impl Into<String>,
-    ) -> Result<Self::RuleManager, Self::Error>;
+    ) -> Result<Self::RuleManager, Self::CreateRuleManagerError>;
 
     /// Closes the connection to the transport client instance.
     ///
     /// # Arguments
     ///
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
-    async fn close(
+    fn close(
         &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+        cancellation_token: Option<CancellationToken>,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Self::DisposeError>> + '_>>;
 
     /// Performs the task needed to clean up resources used by the client,
     /// including ensuring that the client itself has been closed.
-    async fn dispose(&mut self) -> Result<(), Self::Error> {
-        // TODO: Is this right?
-        self.close(None).await
+    fn dispose(&mut self) -> Pin<Box<dyn Future<Output = Result<(), Self::DisposeError>> + '_>> {
+        Box::pin(async move {
+            self.close(None).await?;
+            Ok(())
+        })
     }
 }

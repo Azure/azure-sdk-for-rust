@@ -8,7 +8,8 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     amqp::{
         amqp_client::{AmqpClient, AmqpClientError},
-        error::DisposeError,
+        amqp_sender::AmqpSender,
+        error::{DisposeError, OpenSenderError},
     },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
@@ -221,6 +222,20 @@ impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
             inner_client,
         })
     }
+
+    pub(crate) async fn create_transport_sender(
+        &mut self,
+        entity_path: String,
+        identifier: String,
+        retry_options: ServiceBusRetryOptions,
+    ) -> Result<AmqpSender, OpenSenderError> {
+        let sender = self
+            .inner_client
+            .create_sender(entity_path, identifier, retry_options)
+            .await?;
+
+        Ok(sender)
+    }
 }
 
 impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
@@ -290,11 +305,11 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
 impl<C> ServiceBusConnection<C>
 where
     C: TransportClient + Send,
-    Error: From<C::Error>,
+    Error: From<C::DisposeError>,
 {
     pub async fn close(&mut self, cancellation_token: CancellationToken) -> Result<(), Error> {
         self.inner_client
-            .close(cancellation_token)
+            .close(Some(cancellation_token))
             .await
             .map_err(Into::into)
     }

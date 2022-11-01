@@ -1,11 +1,15 @@
 use crate::{
-    core::TransportClient, primitives::service_bus_connection::ServiceBusConnection,
-    ServiceBusSenderOptions,
+    amqp::amqp_sender::AmqpSender, core::TransportClient,
+    primitives::service_bus_connection::ServiceBusConnection, ServiceBusSenderOptions,
 };
 
 use super::error::ServiceBusSenderError;
 
-pub struct ServiceBusSender {}
+pub struct ServiceBusSender {
+    pub(crate) inner: AmqpSender,
+    pub(crate) entity_path: String,
+    pub(crate) identifier: String,
+}
 
 impl ServiceBusSender {
     /// <summary>

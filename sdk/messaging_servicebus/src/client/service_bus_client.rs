@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use azure_core::auth::TokenCredential;
 
 use crate::{
-    amqp::amqp_client::AmqpClient,
+    amqp::{amqp_client::AmqpClient, error::OpenSenderError},
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,
@@ -173,16 +173,31 @@ where
     pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
-    ) -> Result<ServiceBusSender, Error> {
-        todo!()
+    ) -> Result<ServiceBusSender, OpenSenderError> {
+        self.create_sender_with_options(queue_or_topic_name, ServiceBusSenderOptions::default())
+            .await
     }
 
     pub async fn create_sender_with_options(
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
-    ) -> Result<ServiceBusSender, Error> {
-        todo!()
+    ) -> Result<ServiceBusSender, OpenSenderError> {
+        let entity_path = queue_or_topic_name.into();
+        let identifier = options
+            .identifier
+            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+        let retry_options = self.connection.retry_options().clone();
+        let inner = self
+            .connection
+            .create_transport_sender(entity_path.clone(), identifier.clone(), retry_options) // TODO: remove clone once GAT is stablized
+            .await?;
+
+        Ok(ServiceBusSender {
+            inner,
+            entity_path,
+            identifier,
+        })
     }
 }
 

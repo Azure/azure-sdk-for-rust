@@ -378,11 +378,11 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         Ok(cbs_token_expires_at_utc)
     }
 
-    async fn open_sender_link(
+    pub(crate) async fn open_sender_link(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
-    ) -> Result<AmqpSender, OpenSenderError> {
+        entity_path: String,
+        identifier: String,
+    ) -> Result<(u32, fe2o3_amqp::Sender), OpenSenderError> {
         if self.is_disposed {
             return Err(OpenSenderError::ScopeIsDisposed);
         }
@@ -406,11 +406,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             .target(endpoint)
             .attach(&mut self.session.handle)
             .await?;
-        let amqp_sender = AmqpSender {
-            identifier: link_identifier,
-            sender,
-        };
-        Ok(amqp_sender)
+        Ok((link_identifier, sender))
     }
 }
 

@@ -2,13 +2,15 @@ use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    core::TransportSender, CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
+    core::TransportSender, primitives::service_bus_retry_options::ServiceBusRetryOptions,
+    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
 use super::LINK_IDENTIFIER;
 
 pub(crate) struct AmqpSender {
     pub identifier: u32,
+    pub retry_options: ServiceBusRetryOptions,
     pub sender: fe2o3_amqp::Sender,
 }
 

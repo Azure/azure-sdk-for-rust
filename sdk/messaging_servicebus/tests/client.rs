@@ -20,3 +20,13 @@ async fn client_can_connect_with_connection_string() {
 
     client.dispose().await.unwrap();
 }
+
+#[tokio::test]
+async fn client_can_create_sender() {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let sender = client.create_sender("q1").await.unwrap();
+
+    client.dispose().await.unwrap();
+}
