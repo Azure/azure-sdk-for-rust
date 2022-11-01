@@ -46,7 +46,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
     #[doc = "A more specific error description than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -100,7 +104,11 @@ impl EventRoute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventRouteCollection {
     #[doc = "The EventRoute objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EventRoute>,
     #[doc = "A URI to retrieve the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -141,7 +149,11 @@ impl IncomingRelationship {
 #[doc = "A collection of incoming relationships which relate digital twins together."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncomingRelationshipCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IncomingRelationship>,
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -178,7 +190,11 @@ pub type NonPagedDigitalTwinsModelDataCollection = Vec<DigitalTwinsModelData>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedDigitalTwinsModelDataCollection {
     #[doc = "The DigitalTwinsModelData objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DigitalTwinsModelData>,
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -199,7 +215,11 @@ impl PagedDigitalTwinsModelDataCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryResult {
     #[doc = "The query results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<serde_json::Value>,
     #[doc = "A token which can be used to construct a new QuerySpecification to retrieve the next set of results."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
@@ -229,7 +249,11 @@ impl QuerySpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipCollection {
     #[doc = "The relationship objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<serde_json::Value>,
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

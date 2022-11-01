@@ -135,10 +135,20 @@ pub mod availability_status {
         #[serde(rename = "recentlyResolved", default, skip_serializing_if = "Option::is_none")]
         pub recently_resolved: Option<properties::RecentlyResolved>,
         #[doc = "Lists actions the user can take based on the current availabilityState of the resource."]
-        #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "recommendedActions",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub recommended_actions: Vec<RecommendedAction>,
         #[doc = "Lists the service impacting events that may be affecting the health of the resource."]
-        #[serde(rename = "serviceImpactingEvents", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "serviceImpactingEvents",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
     }
     impl Properties {
@@ -291,7 +301,12 @@ pub struct Impact {
     #[serde(rename = "impactedService", default, skip_serializing_if = "Option::is_none")]
     pub impacted_service: Option<String>,
     #[doc = "List regions impacted by the service health event."]
-    #[serde(rename = "impactedRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "impactedRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub impacted_regions: Vec<ImpactedServiceRegion>,
 }
 impl Impact {
@@ -462,13 +477,22 @@ pub struct ImpactedServiceRegion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<impacted_service_region::Status>,
     #[doc = "List subscription impacted by the service health event."]
-    #[serde(rename = "impactedSubscriptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "impactedSubscriptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub impacted_subscriptions: Vec<String>,
     #[doc = "It provides the Timestamp for when the last update for the service health event."]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_time: Option<time::OffsetDateTime>,
     #[doc = "List of updates for given service health event."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub updates: Vec<Update>,
 }
 impl ImpactedServiceRegion {

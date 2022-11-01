@@ -22,7 +22,11 @@ pub struct ErrorDetail {
     #[doc = "Brief description of error."]
     pub message: String,
     #[doc = "Error message details to help user understand/debug failure."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
 }
 impl ErrorDetail {
@@ -39,7 +43,12 @@ pub type SchemaGroup = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaGroups {
     #[doc = "Array of schema groups."]
-    #[serde(rename = "schemaGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "schemaGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schema_groups: Vec<SchemaGroup>,
 }
 impl SchemaGroups {
@@ -64,7 +73,12 @@ pub type SchemaVersion = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaVersions {
     #[doc = "Array of schema groups."]
-    #[serde(rename = "schemaVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "schemaVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schema_versions: Vec<SchemaVersion>,
 }
 impl SchemaVersions {

@@ -121,10 +121,20 @@ pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "Support metric aggregation type."]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "The supported time grain types for the metrics."]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
     #[doc = "The internal metric name."]
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
@@ -139,7 +149,11 @@ pub struct MetricSpecification {
     #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_namespace: Option<String>,
     #[doc = "Dimensions of blobs, including blob type and access tier."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<Dimension>,
     #[doc = "Aggregation type could be Average."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
@@ -211,7 +225,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Storage operations supported by the Storage resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
@@ -423,10 +441,20 @@ pub mod resource_name_availability_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "Metric specifications of operation."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
     #[doc = "Log specification of operation."]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
 }
 impl ServiceSpecification {
@@ -452,7 +480,11 @@ impl SubscriptionQuotaItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionQuotaItemList {
     #[doc = "A list of SubscriptionQuotaItems"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubscriptionQuotaItem>,
 }
 impl azure_core::Continuable for SubscriptionQuotaItemList {
@@ -520,7 +552,12 @@ pub struct AccountProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "Active Directories"]
-    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "activeDirectories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub active_directories: Vec<ActiveDirectory>,
     #[doc = "Encryption settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -565,10 +602,19 @@ pub struct ActiveDirectory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub site: Option<String>,
     #[doc = "Users to be added to the Built-in Backup Operator active directory group. A list of unique usernames without domain specifier"]
-    #[serde(rename = "backupOperators", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backupOperators",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backup_operators: Vec<String>,
     #[doc = "Users to be added to the Built-in Administrators active directory group. A list of unique usernames without domain specifier"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub administrators: Vec<String>,
     #[doc = "kdc server IP addresses for the active directory machine. This optional parameter is used only while creating kerberos volume."]
     #[serde(rename = "kdcIP", default, skip_serializing_if = "Option::is_none")]
@@ -586,7 +632,12 @@ pub struct ActiveDirectory {
     #[serde(rename = "ldapSigning", default, skip_serializing_if = "Option::is_none")]
     pub ldap_signing: Option<bool>,
     #[doc = "Domain Users in the Active directory to be given SeSecurityPrivilege privilege (Needed for SMB Continuously available shares for SQL). A list of unique usernames without domain specifier"]
-    #[serde(rename = "securityOperators", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "securityOperators",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub security_operators: Vec<String>,
     #[doc = "Specifies whether or not the LDAP traffic needs to be secured via TLS."]
     #[serde(rename = "ldapOverTLS", default, skip_serializing_if = "Option::is_none")]
@@ -711,7 +762,11 @@ impl BackupPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupPoliciesList {
     #[doc = "A list of backup policies"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BackupPolicy>,
 }
 impl azure_core::Continuable for BackupPoliciesList {
@@ -824,7 +879,12 @@ pub struct BackupPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "A list of volumes assigned to this policy"]
-    #[serde(rename = "volumeBackups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "volumeBackups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub volume_backups: Vec<VolumeBackups>,
 }
 impl BackupPolicyProperties {
@@ -1024,7 +1084,11 @@ pub mod backup_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupsList {
     #[doc = "A list of Backups"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Backup>,
 }
 impl azure_core::Continuable for BackupsList {
@@ -1074,7 +1138,11 @@ impl CapacityPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapacityPoolList {
     #[doc = "List of Capacity pools"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CapacityPool>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1305,7 +1373,11 @@ impl LdapSearchScopeOpt {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListReplications {
     #[doc = "A list of replications"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Replication>,
 }
 impl azure_core::Continuable for ListReplications {
@@ -1426,7 +1498,11 @@ impl NetAppAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetAppAccountList {
     #[doc = "Multiple NetApp accounts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetAppAccount>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2260,7 +2336,11 @@ impl SnapshotPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotPoliciesList {
     #[doc = "A list of snapshot policies"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SnapshotPolicy>,
 }
 impl azure_core::Continuable for SnapshotPoliciesList {
@@ -2379,7 +2459,11 @@ impl SnapshotPolicyProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotPolicyVolumeList {
     #[doc = "List of volumes"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Volume>,
 }
 impl SnapshotPolicyVolumeList {
@@ -2427,7 +2511,11 @@ impl SnapshotRestoreFiles {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotsList {
     #[doc = "A list of Snapshots"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Snapshot>,
 }
 impl azure_core::Continuable for SnapshotsList {
@@ -2567,7 +2655,11 @@ impl SubvolumeProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubvolumesList {
     #[doc = "A list of Subvolumes"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubvolumeInfo>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2699,8 +2791,6 @@ pub mod system_data {
 #[doc = "Vault information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vault {
-    #[doc = "Resource location"]
-    pub location: String,
     #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -2714,9 +2804,8 @@ pub struct Vault {
     pub properties: VaultProperties,
 }
 impl Vault {
-    pub fn new(location: String, properties: VaultProperties) -> Self {
+    pub fn new(properties: VaultProperties) -> Self {
         Self {
-            location,
             id: None,
             name: None,
             type_: None,
@@ -2728,7 +2817,11 @@ impl Vault {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultList {
     #[doc = "A list of vaults"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Vault>,
 }
 impl azure_core::Continuable for VaultList {
@@ -2763,7 +2856,11 @@ pub struct Volume {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "Availability Zone"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "Volume properties"]
     pub properties: VolumeProperties,
@@ -2869,7 +2966,11 @@ impl VolumeGroupDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroupList {
     #[doc = "List of volume Groups"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VolumeGroup>,
 }
 impl azure_core::Continuable for VolumeGroupList {
@@ -2911,7 +3012,12 @@ pub struct VolumeGroupMetaData {
     #[serde(rename = "applicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub application_identifier: Option<String>,
     #[doc = "Application specific placement rules for the volume group"]
-    #[serde(rename = "globalPlacementRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "globalPlacementRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub global_placement_rules: Vec<PlacementKeyValuePairs>,
     #[doc = "Application specific identifier of deployment rules for the volume group"]
     #[serde(rename = "deploymentSpecId", default, skip_serializing_if = "Option::is_none")]
@@ -2974,7 +3080,11 @@ pub struct VolumeGroupProperties {
     #[serde(rename = "groupMetaData", default, skip_serializing_if = "Option::is_none")]
     pub group_meta_data: Option<VolumeGroupMetaData>,
     #[doc = "List of volumes from group"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub volumes: Vec<VolumeGroupVolumeProperties>,
 }
 impl VolumeGroupProperties {
@@ -3015,7 +3125,11 @@ impl VolumeGroupVolumeProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeList {
     #[doc = "List of volumes"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Volume>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3065,7 +3179,7 @@ pub struct VolumePatchProperties {
     #[doc = "The service level of the file system"]
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
     pub service_level: Option<ServiceLevel>,
-    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB. Specified in bytes."]
+    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 500 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
     #[serde(rename = "usageThreshold", default, skip_serializing_if = "Option::is_none")]
     pub usage_threshold: Option<i64>,
     #[doc = "Set of export policy rules"]
@@ -3106,7 +3220,11 @@ pub mod volume_patch_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ExportPolicy {
         #[doc = "Export policy rule"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub rules: Vec<ExportPolicyRule>,
     }
     impl ExportPolicy {
@@ -3142,14 +3260,19 @@ pub struct VolumeProperties {
     #[doc = "The service level of the file system"]
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
     pub service_level: Option<ServiceLevel>,
-    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB. Specified in bytes."]
+    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 500 GiB, 500 GiB for large volumes. Upper limit is 100TiB. Specified in bytes."]
     #[serde(rename = "usageThreshold")]
     pub usage_threshold: i64,
     #[doc = "Set of export policy rules"]
     #[serde(rename = "exportPolicy", default, skip_serializing_if = "Option::is_none")]
     pub export_policy: Option<volume_properties::ExportPolicy>,
     #[doc = "Set of protocol types, default NFSv3, CIFS for SMB protocol"]
-    #[serde(rename = "protocolTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "protocolTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protocol_types: Vec<String>,
     #[doc = "Azure lifecycle management"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3176,7 +3299,12 @@ pub struct VolumeProperties {
     #[serde(rename = "storageToNetworkProximity", default, skip_serializing_if = "Option::is_none")]
     pub storage_to_network_proximity: Option<volume_properties::StorageToNetworkProximity>,
     #[doc = "List of mount targets"]
-    #[serde(rename = "mountTargets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "mountTargets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mount_targets: Vec<MountTargetProperties>,
     #[doc = "What type of volume is this. For destination volumes in Cross Region Replication, set type to DataProtection"]
     #[serde(rename = "volumeType", default, skip_serializing_if = "Option::is_none")]
@@ -3259,7 +3387,12 @@ pub struct VolumeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encrypted: Option<bool>,
     #[doc = "Application specific placement rules for the particular volume"]
-    #[serde(rename = "placementRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "placementRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub placement_rules: Vec<PlacementKeyValuePairs>,
     #[doc = "Flag indicating whether subvolume operations are enabled on the volume"]
     #[serde(rename = "enableSubvolumes", default, skip_serializing_if = "Option::is_none")]
@@ -3321,7 +3454,11 @@ pub mod volume_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ExportPolicy {
         #[doc = "Export policy rule"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub rules: Vec<ExportPolicyRule>,
     }
     impl ExportPolicy {
@@ -3634,7 +3771,11 @@ impl VolumeQuotaRulePatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeQuotaRulesList {
     #[doc = "A list of Volume Quota Rules"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VolumeQuotaRule>,
 }
 impl azure_core::Continuable for VolumeQuotaRulesList {

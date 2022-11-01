@@ -3,7 +3,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Body, Method, Request, Response, Url,
+    Body, Method, Request, Response, StatusCode, Url,
 };
 use azure_storage::{
     prelude::BlobSasPermissions,
@@ -11,7 +11,7 @@ use azure_storage::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
-    StorageCredentials,
+    CloudLocation, StorageCredentials,
 };
 use time::OffsetDateTime;
 
@@ -28,6 +28,19 @@ impl ContainerClient {
             service_client,
             container_name,
         }
+    }
+
+    pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
+        let cloud_location: CloudLocation = url.try_into()?;
+
+        let container = url.path().split_terminator('/').nth(1).ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                "unable to find storage container from url"
+            })
+        })?;
+
+        let client = ClientBuilder::with_location(cloud_location).container_client(container);
+        Ok(client)
     }
 
     /// Create a container
@@ -71,6 +84,22 @@ impl ContainerClient {
     /// Break the lease on a container
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self.clone())
+    }
+
+    /// Check whether the container exists.
+    pub async fn exists(&self) -> azure_core::Result<bool> {
+        match self.get_properties().await {
+            Ok(_) => Ok(true),
+            Err(err)
+                if err
+                    .as_http_error()
+                    .map(|e| e.status() == StatusCode::NotFound)
+                    .unwrap_or_default() =>
+            {
+                Ok(false)
+            }
+            Err(err) => Err(err),
+        }
     }
 
     pub fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient {

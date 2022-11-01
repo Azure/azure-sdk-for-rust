@@ -286,13 +286,28 @@ pub mod alert_properties {
         #[serde(rename = "triggeredBy", default, skip_serializing_if = "Option::is_none")]
         pub triggered_by: Option<String>,
         #[doc = "array of resourceGroups to filter by"]
-        #[serde(rename = "resourceGroupFilter", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceGroupFilter",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_group_filter: Vec<serde_json::Value>,
         #[doc = "array of resources to filter by"]
-        #[serde(rename = "resourceFilter", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "resourceFilter",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub resource_filter: Vec<serde_json::Value>,
         #[doc = "array of meters to filter by"]
-        #[serde(rename = "meterFilter", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "meterFilter",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub meter_filter: Vec<serde_json::Value>,
         #[doc = "tags to filter by"]
         #[serde(rename = "tagFilter", default, skip_serializing_if = "Option::is_none")]
@@ -313,13 +328,28 @@ pub mod alert_properties {
         #[serde(rename = "currentSpend", default, skip_serializing_if = "Option::is_none")]
         pub current_spend: Option<f64>,
         #[doc = "list of emails to contact"]
-        #[serde(rename = "contactEmails", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "contactEmails",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub contact_emails: Vec<String>,
         #[doc = "list of action groups to broadcast to"]
-        #[serde(rename = "contactGroups", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "contactGroups",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub contact_groups: Vec<String>,
         #[doc = "list of contact roles"]
-        #[serde(rename = "contactRoles", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "contactRoles",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub contact_roles: Vec<String>,
         #[doc = "overriding alert"]
         #[serde(rename = "overridingAlert", default, skip_serializing_if = "Option::is_none")]
@@ -491,7 +521,11 @@ pub mod alert_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsResult {
     #[doc = "List of alerts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Alert>,
     #[doc = "URL to get the next set of alerts results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -720,7 +754,11 @@ pub struct DimensionProperties {
     #[serde(rename = "groupingEnabled", default, skip_serializing_if = "Option::is_none")]
     pub grouping_enabled: Option<bool>,
     #[doc = "Dimension data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data: Vec<String>,
     #[doc = "Total number of data for the dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -747,7 +785,11 @@ impl DimensionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DimensionsListResult {
     #[doc = "The list of dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Dimension>,
 }
 impl azure_core::Continuable for DimensionsListResult {
@@ -877,7 +919,11 @@ pub mod export_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportDatasetConfiguration {
     #[doc = "Array of column names to be included in the export. If not provided then the export will include all available columns. The available columns can vary by customer channel (see examples)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
 }
 impl ExportDatasetConfiguration {
@@ -1055,7 +1101,11 @@ impl ExportExecution {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportExecutionListResult {
     #[doc = "A list of export executions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExportExecution>,
 }
 impl ExportExecutionListResult {
@@ -1190,7 +1240,11 @@ pub mod export_execution_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportListResult {
     #[doc = "The list of exports."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Export>,
 }
 impl ExportListResult {
@@ -1348,7 +1402,12 @@ impl ExportTimePeriod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileDestination {
     #[doc = "Destination of the view data. Currently only csv format is supported."]
-    #[serde(rename = "fileFormats", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fileFormats",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub file_formats: Vec<FileFormat>,
 }
 impl FileDestination {
@@ -1391,44 +1450,41 @@ impl Serialize for FileFormat {
         }
     }
 }
-#[doc = "The definition of data present in the forecast."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ForecastDataset {
-    #[doc = "The granularity of rows in the forecast."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub granularity: Option<forecast_dataset::Granularity>,
-    #[doc = "The configuration of dataset in the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub configuration: Option<QueryDatasetConfiguration>,
-    #[doc = "Dictionary of aggregation expression to use in the forecast. The key of each item in the dictionary is the alias for the aggregated column. forecast can have up to 2 aggregation clauses."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub aggregation: Option<serde_json::Value>,
-    #[doc = "The filter expression to be used in the export."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<QueryFilter>,
+#[doc = "The aggregation expression to be used in the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastAggregation {
+    #[doc = "The name of the column to aggregate."]
+    pub name: forecast_aggregation::Name,
+    #[doc = "The name of the aggregation function to use."]
+    pub function: forecast_aggregation::Function,
 }
-impl ForecastDataset {
-    pub fn new() -> Self {
-        Self::default()
+impl ForecastAggregation {
+    pub fn new(name: forecast_aggregation::Name, function: forecast_aggregation::Function) -> Self {
+        Self { name, function }
     }
 }
-pub mod forecast_dataset {
+pub mod forecast_aggregation {
     use super::*;
-    #[doc = "The granularity of rows in the forecast."]
+    #[doc = "The name of the column to aggregate."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Granularity")]
-    pub enum Granularity {
-        Daily,
+    #[serde(remote = "Name")]
+    pub enum Name {
+        #[serde(rename = "PreTaxCostUSD")]
+        PreTaxCostUsd,
+        Cost,
+        #[serde(rename = "CostUSD")]
+        CostUsd,
+        PreTaxCost,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
-    impl FromStr for Granularity {
+    impl FromStr for Name {
         type Err = value::Error;
         fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
             Self::deserialize(s.into_deserializer())
         }
     }
-    impl<'de> Deserialize<'de> for Granularity {
+    impl<'de> Deserialize<'de> for Name {
         fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1438,16 +1494,163 @@ pub mod forecast_dataset {
             Ok(deserialized)
         }
     }
-    impl Serialize for Granularity {
+    impl Serialize for Name {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
             match self {
-                Self::Daily => serializer.serialize_unit_variant("Granularity", 0u32, "Daily"),
+                Self::PreTaxCostUsd => serializer.serialize_unit_variant("Name", 0u32, "PreTaxCostUSD"),
+                Self::Cost => serializer.serialize_unit_variant("Name", 1u32, "Cost"),
+                Self::CostUsd => serializer.serialize_unit_variant("Name", 2u32, "CostUSD"),
+                Self::PreTaxCost => serializer.serialize_unit_variant("Name", 3u32, "PreTaxCost"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+    #[doc = "The name of the aggregation function to use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Function")]
+    pub enum Function {
+        Sum,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Function {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Function {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Function {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sum => serializer.serialize_unit_variant("Function", 0u32, "Sum"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Forecast column properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ForecastColumn {
+    #[doc = "The name of column."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of column."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl ForecastColumn {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The comparison expression to be used in the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastComparisonExpression {
+    #[doc = "The name of the column to use in comparison."]
+    pub name: String,
+    #[doc = "The operator to use for comparison."]
+    pub operator: forecast_comparison_expression::Operator,
+    #[doc = "Array of values to use for comparison"]
+    pub values: Vec<String>,
+}
+impl ForecastComparisonExpression {
+    pub fn new(name: String, operator: forecast_comparison_expression::Operator, values: Vec<String>) -> Self {
+        Self { name, operator, values }
+    }
+}
+pub mod forecast_comparison_expression {
+    use super::*;
+    #[doc = "The operator to use for comparison."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Operator")]
+    pub enum Operator {
+        In,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Operator {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Operator {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Operator {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::In => serializer.serialize_unit_variant("Operator", 0u32, "In"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The definition of data present in the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastDataset {
+    #[doc = "The granularity of rows in the forecast."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub granularity: Option<GranularityType>,
+    #[doc = "The configuration of dataset in the forecast."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configuration: Option<ForecastDatasetConfiguration>,
+    #[doc = "Dictionary of aggregation expression to use in the forecast. The key of each item in the dictionary is the alias for the aggregated column. forecast can have up to 2 aggregation clauses."]
+    pub aggregation: serde_json::Value,
+    #[doc = "The filter expression to be used in the export."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<ForecastFilter>,
+}
+impl ForecastDataset {
+    pub fn new(aggregation: serde_json::Value) -> Self {
+        Self {
+            granularity: None,
+            configuration: None,
+            aggregation,
+            filter: None,
+        }
+    }
+}
+#[doc = "The configuration of dataset in the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ForecastDatasetConfiguration {
+    #[doc = "Array of column names to be included in the forecast. Any valid forecast column name is allowed. If not provided, then forecast includes all columns."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub columns: Vec<String>,
+}
+impl ForecastDatasetConfiguration {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The definition of a forecast."]
@@ -1455,23 +1658,23 @@ pub mod forecast_dataset {
 pub struct ForecastDefinition {
     #[doc = "The type of the forecast."]
     #[serde(rename = "type")]
-    pub type_: forecast_definition::Type,
-    #[doc = "The time frame for pulling data for the forecast. If custom, then a specific time period must be provided."]
-    pub timeframe: forecast_definition::Timeframe,
-    #[doc = "The start and end date for pulling data for the query."]
+    pub type_: ForecastType,
+    #[doc = "The time frame for pulling data for the forecast."]
+    pub timeframe: ForecastTimeframe,
+    #[doc = "Has time period for pulling data for the forecast."]
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
-    pub time_period: Option<QueryTimePeriod>,
+    pub time_period: Option<ForecastTimePeriod>,
     #[doc = "The definition of data present in the forecast."]
     pub dataset: ForecastDataset,
-    #[doc = "a boolean determining if actualCost will be included"]
+    #[doc = "A boolean determining if actualCost will be included."]
     #[serde(rename = "includeActualCost", default, skip_serializing_if = "Option::is_none")]
     pub include_actual_cost: Option<bool>,
-    #[doc = "a boolean determining if FreshPartialCost will be included"]
+    #[doc = "A boolean determining if FreshPartialCost will be included."]
     #[serde(rename = "includeFreshPartialCost", default, skip_serializing_if = "Option::is_none")]
     pub include_fresh_partial_cost: Option<bool>,
 }
 impl ForecastDefinition {
-    pub fn new(type_: forecast_definition::Type, timeframe: forecast_definition::Timeframe, dataset: ForecastDataset) -> Self {
+    pub fn new(type_: ForecastType, timeframe: ForecastTimeframe, dataset: ForecastDataset) -> Self {
         Self {
             type_,
             timeframe,
@@ -1482,90 +1685,196 @@ impl ForecastDefinition {
         }
     }
 }
-pub mod forecast_definition {
-    use super::*;
-    #[doc = "The type of the forecast."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Usage,
-        ActualCost,
-        AmortizedCost,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "The filter expression to be used in the export."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ForecastFilter {
+    #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub and: Vec<ForecastFilter>,
+    #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub or: Vec<ForecastFilter>,
+    #[doc = "The comparison expression to be used in the forecast."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<ForecastComparisonExpression>,
+    #[doc = "The comparison expression to be used in the forecast."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<ForecastComparisonExpression>,
+}
+impl ForecastFilter {
+    pub fn new() -> Self {
+        Self::default()
     }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
+}
+#[doc = "Forecast properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ForecastProperties {
+    #[doc = "The link (url) to the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Array of columns"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub columns: Vec<ForecastColumn>,
+    #[doc = "Array of rows"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub rows: Vec<Vec<serde_json::Value>>,
+}
+impl ForecastProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Result of forecast. It contains all columns listed under groupings and aggregation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ForecastResult {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Forecast properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ForecastProperties>,
+}
+impl ForecastResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Has time period for pulling data for the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastTimePeriod {
+    #[doc = "The start date to pull data from."]
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub from: time::OffsetDateTime,
+    #[doc = "The end date to pull data to."]
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub to: time::OffsetDateTime,
+}
+impl ForecastTimePeriod {
+    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+        Self { from, to }
+    }
+}
+#[doc = "The time frame for pulling data for the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ForecastTimeframe")]
+pub enum ForecastTimeframe {
+    Custom,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ForecastTimeframe {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ForecastTimeframe {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ForecastTimeframe {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Custom => serializer.serialize_unit_variant("ForecastTimeframe", 0u32, "Custom"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
+}
+#[doc = "The type of the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ForecastType")]
+pub enum ForecastType {
+    Usage,
+    ActualCost,
+    AmortizedCost,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ForecastType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ForecastType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ForecastType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Usage => serializer.serialize_unit_variant("ForecastType", 0u32, "Usage"),
+            Self::ActualCost => serializer.serialize_unit_variant("ForecastType", 1u32, "ActualCost"),
+            Self::AmortizedCost => serializer.serialize_unit_variant("ForecastType", 2u32, "AmortizedCost"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Usage => serializer.serialize_unit_variant("Type", 0u32, "Usage"),
-                Self::ActualCost => serializer.serialize_unit_variant("Type", 1u32, "ActualCost"),
-                Self::AmortizedCost => serializer.serialize_unit_variant("Type", 2u32, "AmortizedCost"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+}
+#[doc = "The granularity of rows in the forecast."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "GranularityType")]
+pub enum GranularityType {
+    Daily,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for GranularityType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    #[doc = "The time frame for pulling data for the forecast. If custom, then a specific time period must be provided."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Timeframe")]
-    pub enum Timeframe {
-        MonthToDate,
-        BillingMonthToDate,
-        TheLastMonth,
-        TheLastBillingMonth,
-        WeekToDate,
-        Custom,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+}
+impl<'de> Deserialize<'de> for GranularityType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl FromStr for Timeframe {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Timeframe {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Timeframe {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::MonthToDate => serializer.serialize_unit_variant("Timeframe", 0u32, "MonthToDate"),
-                Self::BillingMonthToDate => serializer.serialize_unit_variant("Timeframe", 1u32, "BillingMonthToDate"),
-                Self::TheLastMonth => serializer.serialize_unit_variant("Timeframe", 2u32, "TheLastMonth"),
-                Self::TheLastBillingMonth => serializer.serialize_unit_variant("Timeframe", 3u32, "TheLastBillingMonth"),
-                Self::WeekToDate => serializer.serialize_unit_variant("Timeframe", 4u32, "WeekToDate"),
-                Self::Custom => serializer.serialize_unit_variant("Timeframe", 5u32, "Custom"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for GranularityType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Daily => serializer.serialize_unit_variant("GranularityType", 0u32, "Daily"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -1693,7 +2002,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of cost management operations supported by the Microsoft.CostManagement resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2012,7 +2325,11 @@ pub struct QueryDataset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
     #[doc = "Array of group by expression to use in the query. Query can have up to 2 group by clauses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub grouping: Vec<QueryGrouping>,
     #[doc = "The filter expression to be used in the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2065,7 +2382,11 @@ pub mod query_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryDatasetConfiguration {
     #[doc = "Array of column names to be included in the query. Any valid query column name is allowed. If not provided, then query includes all columns."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
 }
 impl QueryDatasetConfiguration {
@@ -2188,10 +2509,18 @@ pub mod query_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryFilter {
     #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub and: Vec<QueryFilter>,
     #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub or: Vec<QueryFilter>,
     #[doc = "The comparison expression to be used in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2226,10 +2555,18 @@ pub struct QueryProperties {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of columns"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<QueryColumn>,
     #[doc = "Array of rows"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rows: Vec<Vec<serde_json::Value>>,
 }
 impl QueryProperties {
@@ -2422,10 +2759,18 @@ pub struct ReportConfigDataset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
     #[doc = "Array of group by expression to use in the report. Report can have up to 2 group by clauses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub grouping: Vec<ReportConfigGrouping>,
     #[doc = "Array of order by expression to use in the report."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sorting: Vec<ReportConfigSorting>,
     #[doc = "The filter expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2480,7 +2825,11 @@ pub mod report_config_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigDatasetConfiguration {
     #[doc = "Array of column names to be included in the report. Any valid report column name is allowed. If not provided, then report includes all columns."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
 }
 impl ReportConfigDatasetConfiguration {
@@ -2600,10 +2949,18 @@ pub mod report_config_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigFilter {
     #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub and: Vec<ReportConfigFilter>,
     #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub or: Vec<ReportConfigFilter>,
     #[doc = "The comparison expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2852,10 +3209,20 @@ pub struct ScheduleProperties {
     #[serde(rename = "hourOfDay", default, skip_serializing_if = "Option::is_none")]
     pub hour_of_day: Option<i32>,
     #[doc = "Day names in english on which cost analysis data will be emailed. This property is applicable when frequency is Weekly or Monthly."]
-    #[serde(rename = "daysOfWeek", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "daysOfWeek",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub days_of_week: Vec<DaysOfWeek>,
     #[doc = "Weeks in which cost analysis data will be emailed. This property is applicable when frequency is Monthly and used in combination with daysOfWeek."]
-    #[serde(rename = "weeksOfMonth", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "weeksOfMonth",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub weeks_of_month: Vec<WeeksOfMonth>,
     #[doc = "UTC day on which cost analysis data will be emailed. Must be between 1 and 31. This property is applicable when frequency is Monthly and overrides weeksOfMonth or daysOfWeek."]
     #[serde(rename = "dayOfMonth", default, skip_serializing_if = "Option::is_none")]
@@ -2935,7 +3302,11 @@ impl Serialize for ScheduledActionKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledActionListResult {
     #[doc = "The list of scheduled actions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScheduledAction>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3075,7 +3446,11 @@ impl View {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViewListResult {
     #[doc = "The list of views."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<View>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3126,10 +3501,18 @@ pub struct ViewProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metric: Option<view_properties::Metric>,
     #[doc = "List of KPIs to show in Cost Analysis UI."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub kpis: Vec<KpiProperties>,
     #[doc = "Configuration of 3 sub-views in the Cost Analysis UI."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pivots: Vec<PivotProperties>,
 }
 impl ViewProperties {

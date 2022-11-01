@@ -144,7 +144,11 @@ pub struct CatalogItemAction {
     #[serde(rename = "parametersSchema", default, skip_serializing_if = "Option::is_none")]
     pub parameters_schema: Option<String>,
     #[doc = "Input parameters passed to the action"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<CatalogItemParameter>,
     #[doc = "The type of action."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -206,7 +210,11 @@ pub struct CatalogItemParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
     #[doc = "An array of allowed values"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed: Vec<serde_json::Value>,
 }
 impl CatalogItemParameter {
@@ -242,10 +250,18 @@ pub struct CatalogItemVersion {
     #[serde(rename = "parametersSchema", default, skip_serializing_if = "Option::is_none")]
     pub parameters_schema: Option<String>,
     #[doc = "Input parameters passed to actions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<CatalogItemParameter>,
     #[doc = "Custom actions for the catalog item."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<CatalogItemAction>,
     #[doc = "The default container image to use to execute actions"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -310,7 +326,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {

@@ -103,7 +103,11 @@ impl AgentPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AgentPool>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -888,7 +892,11 @@ impl ConnectedRegistry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedRegistryListResult {
     #[doc = "The list of connected registries. Since this list may be incomplete, the nextLink field should be used to request the next list of connected registries."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConnectedRegistry>,
     #[doc = "The URI that can be used to request the next list of connected registries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -928,7 +936,12 @@ pub struct ConnectedRegistryProperties {
     #[doc = "The properties of the connected registry parent."]
     pub parent: ParentProperties,
     #[doc = "The list of the ACR token resource IDs used to authenticate clients to the connected registry."]
-    #[serde(rename = "clientTokenIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clientTokenIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub client_token_ids: Vec<String>,
     #[doc = "The login server properties of the connected registry."]
     #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
@@ -937,10 +950,20 @@ pub struct ConnectedRegistryProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<LoggingProperties>,
     #[doc = "The list of current statuses of the connected registry."]
-    #[serde(rename = "statusDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_details: Vec<StatusDetailProperties>,
     #[doc = "The list of notifications subscription information for the connected registry."]
-    #[serde(rename = "notificationsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notifications_list: Vec<String>,
 }
 impl ConnectedRegistryProperties {
@@ -1113,10 +1136,20 @@ pub struct ConnectedRegistryUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<LoggingProperties>,
     #[doc = "The list of the ACR token resource IDs used to authenticate clients to the connected registry."]
-    #[serde(rename = "clientTokenIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clientTokenIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub client_token_ids: Vec<String>,
     #[doc = "The list of notifications subscription information for the connected registry."]
-    #[serde(rename = "notificationsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notifications_list: Vec<String>,
 }
 impl ConnectedRegistryUpdateProperties {
@@ -1163,7 +1196,12 @@ pub struct DockerBuildRequest {
     #[serde(flatten)]
     pub run_request: RunRequest,
     #[doc = "The fully qualified image names including the repository and tag."]
-    #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "imageNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub image_names: Vec<String>,
     #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -1178,7 +1216,11 @@ pub struct DockerBuildRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The collection of override arguments to be used when executing the run."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub arguments: Vec<Argument>,
     #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1219,7 +1261,12 @@ pub struct DockerBuildStep {
     #[serde(flatten)]
     pub task_step_properties: TaskStepProperties,
     #[doc = "The fully qualified image names including the repository and tag."]
-    #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "imageNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub image_names: Vec<String>,
     #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -1234,7 +1281,11 @@ pub struct DockerBuildStep {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The collection of override arguments to be used when executing this build step."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub arguments: Vec<Argument>,
 }
 impl DockerBuildStep {
@@ -1256,7 +1307,12 @@ pub struct DockerBuildStepUpdateParameters {
     #[serde(flatten)]
     pub task_step_update_parameters: TaskStepUpdateParameters,
     #[doc = "The fully qualified image names including the repository and tag."]
-    #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "imageNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub image_names: Vec<String>,
     #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -1268,7 +1324,11 @@ pub struct DockerBuildStepUpdateParameters {
     #[serde(rename = "dockerFilePath", default, skip_serializing_if = "Option::is_none")]
     pub docker_file_path: Option<String>,
     #[doc = "The collection of override arguments to be used when executing this build step."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub arguments: Vec<Argument>,
     #[doc = "The name of the target build stage for the docker build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1299,7 +1359,11 @@ pub struct EncodedTaskRunRequest {
     #[serde(rename = "encodedValuesContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_values_content: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
     #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1343,7 +1407,11 @@ pub struct EncodedTaskStep {
     #[serde(rename = "encodedValuesContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_values_content: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
 }
 impl EncodedTaskStep {
@@ -1368,7 +1436,11 @@ pub struct EncodedTaskStepUpdateParameters {
     #[serde(rename = "encodedValuesContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_values_content: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
 }
 impl EncodedTaskStepUpdateParameters {
@@ -1465,7 +1537,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "an array of additional nested error response info objects, as described by this contract."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<InnerErrorDescription>,
 }
 impl ErrorResponseBody {
@@ -1541,7 +1617,11 @@ impl EventInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventListResult {
     #[doc = "The list of events. Since this list may be incomplete, the nextLink field should be used to request the next list of events."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Event>,
     #[doc = "The URI that can be used to request the next list of events."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1630,7 +1710,11 @@ impl ExportPipeline {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportPipelineListResult {
     #[doc = "The list of export pipelines. Since this list may be incomplete, the nextLink field should be used to request the next list of export pipelines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExportPipeline>,
     #[doc = "The URI that can be used to request the next list of pipeline runs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1653,7 +1737,11 @@ pub struct ExportPipelineProperties {
     #[doc = "The properties of the export pipeline target."]
     pub target: ExportPipelineTargetProperties,
     #[doc = "The list of all options configured for the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub options: Vec<String>,
     #[doc = "The provisioning state of the pipeline at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1809,7 +1897,11 @@ pub struct FileTaskRunRequest {
     #[serde(rename = "valuesFilePath", default, skip_serializing_if = "Option::is_none")]
     pub values_file_path: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
     #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1853,7 +1945,11 @@ pub struct FileTaskStep {
     #[serde(rename = "valuesFilePath", default, skip_serializing_if = "Option::is_none")]
     pub values_file_path: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
 }
 impl FileTaskStep {
@@ -1878,7 +1974,11 @@ pub struct FileTaskStepUpdateParameters {
     #[serde(rename = "valuesFilePath", default, skip_serializing_if = "Option::is_none")]
     pub values_file_path: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
 }
 impl FileTaskStepUpdateParameters {
@@ -1958,7 +2058,11 @@ pub struct GenerateCredentialsResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[doc = "The list of passwords for a container registry."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub passwords: Vec<TokenPassword>,
 }
 impl GenerateCredentialsResult {
@@ -2087,7 +2191,11 @@ pub struct ImageUpdateTrigger {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The list of image updates that caused the build."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub images: Vec<ImageDescriptor>,
 }
 impl ImageUpdateTrigger {
@@ -2099,10 +2207,20 @@ impl ImageUpdateTrigger {
 pub struct ImportImageParameters {
     pub source: ImportSource,
     #[doc = "List of strings of the form repo[:tag]. When tag is omitted the source will be used (or 'latest' if source tag is also omitted)."]
-    #[serde(rename = "targetTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_tags: Vec<String>,
     #[doc = "List of strings of repository names to do a manifest only copy. No tag will be created."]
-    #[serde(rename = "untaggedTargetRepositories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "untaggedTargetRepositories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub untagged_target_repositories: Vec<String>,
     #[doc = "When Force, any existing target tags will be overwritten. When NoForce, any existing target tags will fail the operation before any copying begins."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2187,7 +2305,11 @@ impl ImportPipeline {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportPipelineListResult {
     #[doc = "The list of import pipelines. Since this list may be incomplete, the nextLink field should be used to request the next list of import pipelines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ImportPipeline>,
     #[doc = "The URI that can be used to request the next list of pipeline runs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2212,7 +2334,11 @@ pub struct ImportPipelineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<PipelineTriggerProperties>,
     #[doc = "The list of all options configured for the pipeline."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub options: Vec<String>,
     #[doc = "The provisioning state of the pipeline at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2551,7 +2677,12 @@ pub struct NetworkRuleSet {
     #[serde(rename = "defaultAction")]
     pub default_action: network_rule_set::DefaultAction,
     #[doc = "The IP ACL rules."]
-    #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_rules: Vec<IpRule>,
 }
 impl NetworkRuleSet {
@@ -2656,7 +2787,11 @@ impl OperationDisplayDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of container registry operations. Since this list may be incomplete, the nextLink field should be used to request the next list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationDefinition>,
     #[doc = "The URI that can be used to request the next list of container registry operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2734,10 +2869,20 @@ impl OperationPropertiesDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationServiceSpecificationDefinition {
     #[doc = "A list of Azure Monitoring metrics definition."]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<OperationMetricSpecificationDefinition>,
     #[doc = "A list of Azure Monitoring log definitions."]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<OperationLogSpecificationDefinition>,
 }
 impl OperationServiceSpecificationDefinition {
@@ -2754,13 +2899,21 @@ pub struct OverrideTaskStepProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
     #[doc = "Gets or sets the collection of override arguments to be used when\r\nexecuting a build step."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub arguments: Vec<Argument>,
     #[doc = "The name of the target build stage for the docker build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The collection of overridable values that can be passed when running a Task."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<SetValue>,
     #[doc = "Base64 encoded update trigger token that will be attached with the base image trigger webhook."]
     #[serde(rename = "updateTriggerToken", default, skip_serializing_if = "Option::is_none")]
@@ -2819,7 +2972,11 @@ impl PipelineRun {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRunListResult {
     #[doc = "The list of pipeline runs. Since this list may be incomplete, the nextLink field should be used to request the next list of pipeline runs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PipelineRun>,
     #[doc = "The URI that can be used to request the next list of pipeline runs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2912,7 +3069,11 @@ pub struct PipelineRunRequest {
     #[serde(rename = "pipelineResourceId", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_resource_id: Option<String>,
     #[doc = "List of source artifacts to be transferred by the pipeline. \r\nSpecify an image by repository ('hello-world'). This will use the 'latest' tag.\r\nSpecify an image by tag ('hello-world:latest').\r\nSpecify an image by sha256-based manifest digest ('hello-world@sha256:abc123')."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub artifacts: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<PipelineRunSourceProperties>,
@@ -2934,7 +3095,12 @@ pub struct PipelineRunResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The artifacts imported in the pipeline run."]
-    #[serde(rename = "importedArtifacts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "importedArtifacts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub imported_artifacts: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<ProgressProperties>,
@@ -3520,7 +3686,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "The list of private endpoint connections. Since this list may be incomplete, the nextLink field should be used to request the next list of private endpoint connections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "The URI that can be used to request the next list of private endpoint connections."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3628,7 +3798,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "The list of private link resources. Since this list may be incomplete, the nextLink field should be used to request the next list of private link resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "The URI that can be used to request the next list of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3652,10 +3826,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource Private link DNS zone name."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -3906,7 +4090,11 @@ pub struct RegistryListCredentialsResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[doc = "The list of passwords for a container registry."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub passwords: Vec<RegistryPassword>,
 }
 impl RegistryListCredentialsResult {
@@ -3918,7 +4106,11 @@ impl RegistryListCredentialsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListResult {
     #[doc = "The list of container registries. Since this list may be incomplete, the nextLink field should be used to request the next list of container registries."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Registry>,
     #[doc = "The URI that can be used to request the next list of container registries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4032,10 +4224,20 @@ pub struct RegistryProperties {
     #[serde(rename = "dataEndpointEnabled", default, skip_serializing_if = "Option::is_none")]
     pub data_endpoint_enabled: Option<bool>,
     #[doc = "List of host names that will serve data when dataEndpointEnabled is true."]
-    #[serde(rename = "dataEndpointHostNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataEndpointHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_endpoint_host_names: Vec<String>,
     #[doc = "List of private endpoint connections for a container registry."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Whether or not public network access is allowed for the container registry."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
@@ -4429,7 +4631,11 @@ pub mod registry_usage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUsageListResult {
     #[doc = "The list of container registry quota usages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RegistryUsage>,
 }
 impl RegistryUsageListResult {
@@ -4458,7 +4664,11 @@ impl Replication {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationListResult {
     #[doc = "The list of replications. Since this list may be incomplete, the nextLink field should be used to request the next list of replications."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Replication>,
     #[doc = "The URI that can be used to request the next list of replications."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4895,7 +5105,11 @@ impl RunGetLogResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Run>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4940,7 +5154,12 @@ pub struct RunProperties {
     #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
     pub finish_time: Option<time::OffsetDateTime>,
     #[doc = "The list of all images that were generated from the run. This is applicable if the run generates base image dependencies."]
-    #[serde(rename = "outputImages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outputImages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub output_images: Vec<ImageDescriptor>,
     #[doc = "The task against which run was scheduled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4963,7 +5182,12 @@ pub struct RunProperties {
     #[serde(rename = "sourceRegistryAuth", default, skip_serializing_if = "Option::is_none")]
     pub source_registry_auth: Option<String>,
     #[doc = "The list of custom registries that were logged in during this run."]
-    #[serde(rename = "customRegistries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customRegistries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_registries: Vec<String>,
     #[doc = "The error message received from backend systems after the run is scheduled."]
     #[serde(rename = "runErrorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -5180,7 +5404,11 @@ impl ScopeMap {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMapListResult {
     #[doc = "The list of scope maps. Since this list may be incomplete, the nextLink field should be used to request the next list of scope maps."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScopeMap>,
     #[doc = "The URI that can be used to request the next list of scope maps."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5281,7 +5509,11 @@ pub struct ScopeMapPropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The list of scope permissions for registry artifacts.\r\nE.g. repositories/repository-name/pull, \r\nrepositories/repository-name/delete"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
 }
 impl ScopeMapPropertiesUpdateParameters {
@@ -5780,7 +6012,12 @@ pub struct SourceTriggerUpdateParameters {
     #[serde(rename = "sourceRepository", default, skip_serializing_if = "Option::is_none")]
     pub source_repository: Option<SourceUpdateParameters>,
     #[doc = "The source event corresponding to the trigger."]
-    #[serde(rename = "sourceTriggerEvents", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceTriggerEvents",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_trigger_events: Vec<String>,
     #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6197,7 +6434,11 @@ impl Task {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Task>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6444,7 +6685,11 @@ impl TaskRun {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRunListResult {
     #[doc = "The collection value."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TaskRun>,
     #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6593,7 +6838,12 @@ pub struct TaskStepProperties {
     #[serde(rename = "type")]
     pub type_: task_step_properties::Type,
     #[doc = "List of base image dependencies for a step."]
-    #[serde(rename = "baseImageDependencies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "baseImageDependencies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub base_image_dependencies: Vec<BaseImageDependency>,
     #[doc = "The URL(absolute or relative) of the source context for the task step."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
@@ -7067,9 +7317,17 @@ pub mod token_certificate {
 #[doc = "The properties of the credentials that can be used for authenticating the token."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenCredentialsProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub certificates: Vec<TokenCertificate>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub passwords: Vec<TokenPassword>,
 }
 impl TokenCredentialsProperties {
@@ -7081,7 +7339,11 @@ impl TokenCredentialsProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenListResult {
     #[doc = "The list of tokens. Since this list may be incomplete, the nextLink field should be used to request the next list of tokens."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Token>,
     #[doc = "The URI that can be used to request the next list of tokens."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7348,10 +7610,20 @@ pub mod token_update_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerProperties {
     #[doc = "The collection of timer triggers."]
-    #[serde(rename = "timerTriggers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "timerTriggers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub timer_triggers: Vec<TimerTrigger>,
     #[doc = "The collection of triggers based on source code repository."]
-    #[serde(rename = "sourceTriggers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceTriggers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_triggers: Vec<SourceTrigger>,
     #[doc = "The trigger based on base image dependency."]
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
@@ -7366,10 +7638,20 @@ impl TriggerProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerUpdateParameters {
     #[doc = "The collection of timer triggers."]
-    #[serde(rename = "timerTriggers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "timerTriggers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub timer_triggers: Vec<TimerTriggerUpdateParameters>,
     #[doc = "The collection of triggers based on source code repository."]
-    #[serde(rename = "sourceTriggers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceTriggers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_triggers: Vec<SourceTriggerUpdateParameters>,
     #[doc = "The properties for updating base image dependency trigger."]
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
@@ -7538,7 +7820,11 @@ impl WebhookCreateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookListResult {
     #[doc = "The list of webhooks. Since this list may be incomplete, the nextLink field should be used to request the next list of webhooks."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Webhook>,
     #[doc = "The URI that can be used to request the next list of webhooks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7754,7 +8040,11 @@ pub struct WebhookPropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[doc = "The list of actions that trigger the webhook to post notifications."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
 }
 impl WebhookPropertiesUpdateParameters {

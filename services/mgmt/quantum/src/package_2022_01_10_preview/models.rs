@@ -64,10 +64,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -97,7 +106,11 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfferingsListResult {
     #[doc = "Result of a list Providers operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProviderDescription>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Providers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -259,16 +272,34 @@ pub struct ProviderProperties {
     #[serde(rename = "managedApplication", default, skip_serializing_if = "Option::is_none")]
     pub managed_application: Option<provider_properties::ManagedApplication>,
     #[doc = "The list of targets available from this provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub targets: Vec<TargetDescription>,
     #[doc = "The list of skus available from this provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub skus: Vec<SkuDescription>,
     #[doc = "The list of quota dimensions from the provider."]
-    #[serde(rename = "quotaDimensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "quotaDimensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub quota_dimensions: Vec<QuotaDimension>,
     #[doc = "The list of pricing dimensions from the provider."]
-    #[serde(rename = "pricingDimensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pricingDimensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pricing_dimensions: Vec<PricingDimension>,
 }
 impl ProviderProperties {
@@ -468,13 +499,27 @@ pub struct SkuDescription {
     #[serde(rename = "autoAdd", default, skip_serializing_if = "Option::is_none")]
     pub auto_add: Option<bool>,
     #[doc = "The list of targets available for this sku."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub targets: Vec<String>,
     #[doc = "The list of quota dimensions for this sku."]
-    #[serde(rename = "quotaDimensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "quotaDimensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub quota_dimensions: Vec<QuotaDimension>,
     #[doc = "The list of pricing details for the sku."]
-    #[serde(rename = "pricingDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pricingDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pricing_details: Vec<PricingDetail>,
 }
 impl SkuDescription {
@@ -507,10 +552,20 @@ pub struct TargetDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of data formats accepted by this target."]
-    #[serde(rename = "acceptedDataFormats", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "acceptedDataFormats",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub accepted_data_formats: Vec<String>,
     #[doc = "List of content encodings accepted by this target."]
-    #[serde(rename = "acceptedContentEncodings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "acceptedContentEncodings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub accepted_content_encodings: Vec<String>,
 }
 impl TargetDescription {
@@ -542,7 +597,11 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
     #[doc = "Result of a list Workspaces operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QuantumWorkspace>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Workspaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -563,7 +622,11 @@ impl WorkspaceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceResourceProperties {
     #[doc = "List of Providers selected for this Workspace"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub providers: Vec<Provider>,
     #[doc = "Whether the current workspace is ready to accept Jobs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

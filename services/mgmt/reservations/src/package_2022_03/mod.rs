@@ -225,6 +225,32 @@ pub mod reservation {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Archive a `Reservation`."]
+        #[doc = "Archiving a `Reservation` moves it to `Archived` state."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `reservation_id`: Id of the Reservation Item"]
+        pub fn archive(&self, reservation_order_id: impl Into<String>, reservation_id: impl Into<String>) -> archive::RequestBuilder {
+            archive::RequestBuilder {
+                client: self.0.clone(),
+                reservation_order_id: reservation_order_id.into(),
+                reservation_id: reservation_id.into(),
+            }
+        }
+        #[doc = "Unarchive a `Reservation`."]
+        #[doc = "Unarchiving a `Reservation` moves it to the state it was before archiving.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `reservation_id`: Id of the Reservation Item"]
+        pub fn unarchive(&self, reservation_order_id: impl Into<String>, reservation_id: impl Into<String>) -> unarchive::RequestBuilder {
+            unarchive::RequestBuilder {
+                client: self.0.clone(),
+                reservation_order_id: reservation_order_id.into(),
+                reservation_id: reservation_id.into(),
+            }
+        }
         #[doc = "Get `Reservation` revisions."]
         #[doc = "List of all the revisions for the `Reservation`."]
         #[doc = ""]
@@ -692,6 +718,86 @@ pub mod reservation {
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReservationResponse>> {
                 Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod archive {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) reservation_order_id: String,
+            pub(crate) reservation_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/archive",
+                            this.client.endpoint(),
+                            &this.reservation_order_id,
+                            &this.reservation_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod unarchive {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) reservation_order_id: String,
+            pub(crate) reservation_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/unarchive",
+                            this.client.endpoint(),
+                            &this.reservation_order_id,
+                            &this.reservation_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
             }
         }
     }
@@ -1672,10 +1778,16 @@ pub mod calculate_refund {
         #[doc = "Calculate price for returning `Reservations` if there are no policy errors.\n"]
         #[doc = ""]
         #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         #[doc = "* `body`: Information needed for calculating refund of a reservation."]
-        pub fn post(&self, body: impl Into<models::CalculateRefundRequest>) -> post::RequestBuilder {
+        pub fn post(
+            &self,
+            reservation_order_id: impl Into<String>,
+            body: impl Into<models::CalculateRefundRequest>,
+        ) -> post::RequestBuilder {
             post::RequestBuilder {
                 client: self.0.clone(),
+                reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
             }
         }
@@ -1709,6 +1821,7 @@ pub mod calculate_refund {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
+            pub(crate) reservation_order_id: String,
             pub(crate) body: models::CalculateRefundRequest,
         }
         impl RequestBuilder {
@@ -1717,8 +1830,11 @@ pub mod calculate_refund {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url =
-                            azure_core::Url::parse(&format!("{}/providers/Microsoft.Capacity/calculateRefund", this.client.endpoint(),))?;
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Capacity/reservationOrders/{}/calculateRefund",
+                            this.client.endpoint(),
+                            &this.reservation_order_id
+                        ))?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1751,10 +1867,12 @@ pub mod return_ {
         #[doc = "Return a reservation."]
         #[doc = ""]
         #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         #[doc = "* `body`: Information needed for returning reservation."]
-        pub fn post(&self, body: impl Into<models::RefundRequest>) -> post::RequestBuilder {
+        pub fn post(&self, reservation_order_id: impl Into<String>, body: impl Into<models::RefundRequest>) -> post::RequestBuilder {
             post::RequestBuilder {
                 client: self.0.clone(),
+                reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
             }
         }
@@ -1797,6 +1915,7 @@ pub mod return_ {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
+            pub(crate) reservation_order_id: String,
             pub(crate) body: models::RefundRequest,
         }
         impl RequestBuilder {
@@ -1805,7 +1924,11 @@ pub mod return_ {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Capacity/return", this.client.endpoint(),))?;
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Capacity/reservationOrders/{}/return",
+                            this.client.endpoint(),
+                            &this.reservation_order_id
+                        ))?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;

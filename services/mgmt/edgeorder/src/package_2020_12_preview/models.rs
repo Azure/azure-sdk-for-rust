@@ -63,7 +63,11 @@ impl AddressResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressResourceList {
     #[doc = "List of address resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AddressResource>,
     #[doc = "Link for the next set of job resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -235,7 +239,12 @@ pub struct BasicInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<Description>,
     #[doc = "Image information for the product system."]
-    #[serde(rename = "imageInformation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "imageInformation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub image_information: Vec<ImageInformation>,
     #[doc = "Cost information for the product system"]
     #[serde(rename = "costInformation", default, skip_serializing_if = "Option::is_none")]
@@ -332,7 +341,12 @@ pub struct CommonProperties {
     #[serde(flatten)]
     pub basic_information: BasicInformation,
     #[doc = "list of filters supported for a product"]
-    #[serde(rename = "filterableProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filterableProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filterable_properties: Vec<FilterableProperty>,
 }
 impl CommonProperties {
@@ -359,7 +373,12 @@ pub struct ConfigurationFilters {
     #[serde(rename = "hierarchyInformation")]
     pub hierarchy_information: HierarchyInformation,
     #[doc = "Filters specific to product"]
-    #[serde(rename = "filterableProperty", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filterableProperty",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filterable_property: Vec<FilterableProperty>,
 }
 impl ConfigurationFilters {
@@ -376,7 +395,11 @@ pub struct ConfigurationProperties {
     #[serde(flatten)]
     pub common_properties: CommonProperties,
     #[doc = "Specifications of the configuration"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub specifications: Vec<Specification>,
     #[doc = "Dimensions of a configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -391,7 +414,11 @@ impl ConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Configurations {
     #[doc = "List of configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Configuration>,
     #[doc = "Link for the next set of configurations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -459,7 +486,12 @@ impl ContactDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CostInformation {
     #[doc = "Details on the various billing aspects for the product system."]
-    #[serde(rename = "billingMeterDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "billingMeterDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub billing_meter_details: Vec<BillingMeterDetails>,
     #[doc = "Default url to display billing information"]
     #[serde(rename = "billingInfoUrl", default, skip_serializing_if = "Option::is_none")]
@@ -474,7 +506,12 @@ impl CostInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomerSubscriptionDetails {
     #[doc = "List of registered feature flags for subscription"]
-    #[serde(rename = "registeredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "registeredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub registered_features: Vec<CustomerSubscriptionRegisteredFeatures>,
     #[doc = "Location placement Id of a subscription"]
     #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
@@ -520,13 +557,25 @@ pub struct Description {
     #[serde(rename = "longDescription", default, skip_serializing_if = "Option::is_none")]
     pub long_description: Option<String>,
     #[doc = "Keywords for the product system."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub keywords: Vec<String>,
     #[doc = "Attributes for the product system."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attributes: Vec<String>,
     #[doc = "Links for the product system."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub links: Vec<Link>,
 }
 impl Description {
@@ -796,10 +845,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -1340,7 +1398,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1370,7 +1432,12 @@ pub struct OrderItemDetails {
     #[serde(rename = "currentStage", default, skip_serializing_if = "Option::is_none")]
     pub current_stage: Option<StageDetails>,
     #[doc = "Order item status history"]
-    #[serde(rename = "orderItemStageHistory", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "orderItemStageHistory",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub order_item_stage_history: Vec<StageDetails>,
     #[doc = "Preferences related to the order"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1382,7 +1449,12 @@ pub struct OrderItemDetails {
     #[serde(rename = "reverseShippingDetails", default, skip_serializing_if = "Option::is_none")]
     pub reverse_shipping_details: Option<ReverseShippingDetails>,
     #[doc = "Additional notification email list"]
-    #[serde(rename = "notificationEmailList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationEmailList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_email_list: Vec<String>,
     #[doc = "Cancellation reason."]
     #[serde(rename = "cancellationReason", default, skip_serializing_if = "Option::is_none")]
@@ -1403,7 +1475,12 @@ pub struct OrderItemDetails {
     #[serde(rename = "managementRpDetails", default, skip_serializing_if = "Option::is_none")]
     pub management_rp_details: Option<ResourceProviderDetails>,
     #[doc = "List of parent RP details supported for configuration."]
-    #[serde(rename = "managementRpDetailsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managementRpDetailsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub management_rp_details_list: Vec<ResourceProviderDetails>,
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1636,7 +1713,11 @@ impl OrderItemResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrderItemResourceList {
     #[doc = "List of order item resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OrderItemResource>,
     #[doc = "Link for the next set of order item resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1678,7 +1759,12 @@ pub struct OrderItemUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preferences: Option<Preferences>,
     #[doc = "Additional notification email list."]
-    #[serde(rename = "notificationEmailList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationEmailList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_email_list: Vec<String>,
 }
 impl OrderItemUpdateProperties {
@@ -1690,13 +1776,23 @@ impl OrderItemUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrderProperties {
     #[doc = "List of order item ARM Ids which are part of an order."]
-    #[serde(rename = "orderItemIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "orderItemIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub order_item_ids: Vec<String>,
     #[doc = "Resource stage details."]
     #[serde(rename = "currentStage", default, skip_serializing_if = "Option::is_none")]
     pub current_stage: Option<StageDetails>,
     #[doc = "Order status history."]
-    #[serde(rename = "orderStageHistory", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "orderStageHistory",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub order_stage_history: Vec<StageDetails>,
 }
 impl OrderProperties {
@@ -1728,7 +1824,11 @@ impl OrderResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrderResourceList {
     #[doc = "List of order resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OrderResource>,
     #[doc = "Link for the next set of order resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1766,7 +1866,12 @@ impl Pav2MeterDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Preferences {
     #[doc = "Notification preferences."]
-    #[serde(rename = "notificationPreferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationPreferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_preferences: Vec<NotificationPreference>,
     #[doc = "Preferences related to the shipment logistics of the sku"]
     #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
@@ -1811,7 +1916,12 @@ pub struct ProductDetails {
     #[serde(rename = "productDoubleEncryptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub product_double_encryption_status: Option<product_details::ProductDoubleEncryptionStatus>,
     #[doc = "list of device details"]
-    #[serde(rename = "deviceDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "deviceDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub device_details: Vec<DeviceDetails>,
 }
 impl ProductDetails {
@@ -1869,7 +1979,11 @@ pub mod product_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductFamilies {
     #[doc = "List of product families."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProductFamily>,
     #[doc = "Link for the next set of product families."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1890,7 +2004,11 @@ impl ProductFamilies {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductFamiliesMetadata {
     #[doc = "List of product family metadata details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProductFamiliesMetadataDetails>,
     #[doc = "Link for the next set of product families."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1955,10 +2073,20 @@ pub struct ProductFamilyProperties {
     #[serde(flatten)]
     pub common_properties: CommonProperties,
     #[doc = "List of product lines supported in the product family"]
-    #[serde(rename = "productLines", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "productLines",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub product_lines: Vec<ProductLine>,
     #[doc = "Contains details related to resource provider"]
-    #[serde(rename = "resourceProviderDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceProviderDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_provider_details: Vec<ResourceProviderDetails>,
 }
 impl ProductFamilyProperties {
@@ -1984,7 +2112,11 @@ pub struct ProductLineProperties {
     #[serde(flatten)]
     pub common_properties: CommonProperties,
     #[doc = "List of products in the product line"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub products: Vec<Product>,
 }
 impl ProductLineProperties {
@@ -1998,7 +2130,11 @@ pub struct ProductProperties {
     #[serde(flatten)]
     pub common_properties: CommonProperties,
     #[doc = "List of configurations for the product"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub configurations: Vec<Configuration>,
 }
 impl ProductProperties {

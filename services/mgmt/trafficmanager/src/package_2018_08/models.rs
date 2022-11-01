@@ -90,7 +90,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Error details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -176,13 +180,27 @@ pub struct EndpointProperties {
     #[serde(rename = "minChildEndpointsIPv6", default, skip_serializing_if = "Option::is_none")]
     pub min_child_endpoints_i_pv6: Option<i64>,
     #[doc = "The list of countries/regions mapped to this endpoint when using the 'Geographic' traffic routing method. Please consult Traffic Manager Geographic documentation for a full list of accepted values."]
-    #[serde(rename = "geoMapping", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "geoMapping",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub geo_mapping: Vec<String>,
     #[doc = "The list of subnets, IP addresses, and/or address ranges mapped to this endpoint when using the 'Subnet' traffic routing method. An empty list will match all ranges not covered by other endpoints."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<serde_json::Value>,
     #[doc = "List of custom headers."]
-    #[serde(rename = "customHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_headers: Vec<serde_json::Value>,
 }
 impl EndpointProperties {
@@ -326,10 +344,19 @@ pub struct HeatMapProperties {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The endpoints used in this HeatMap calculation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<HeatMapEndpoint>,
     #[doc = "The traffic flows produced in this HeatMap calculation."]
-    #[serde(rename = "trafficFlows", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trafficFlows",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub traffic_flows: Vec<TrafficFlow>,
 }
 impl HeatMapProperties {
@@ -362,10 +389,20 @@ pub struct MonitorConfig {
     #[serde(rename = "toleratedNumberOfFailures", default, skip_serializing_if = "Option::is_none")]
     pub tolerated_number_of_failures: Option<i64>,
     #[doc = "List of custom headers."]
-    #[serde(rename = "customHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_headers: Vec<serde_json::Value>,
     #[doc = "List of expected status code ranges."]
-    #[serde(rename = "expectedStatusCodeRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "expectedStatusCodeRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub expected_status_code_ranges: Vec<serde_json::Value>,
 }
 impl MonitorConfig {
@@ -479,7 +516,11 @@ impl Profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
     #[doc = "Gets the list of Traffic manager profiles."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Profile>,
 }
 impl azure_core::Continuable for ProfileListResult {
@@ -509,13 +550,22 @@ pub struct ProfileProperties {
     #[serde(rename = "monitorConfig", default, skip_serializing_if = "Option::is_none")]
     pub monitor_config: Option<MonitorConfig>,
     #[doc = "The list of endpoints in the Traffic Manager profile."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<Endpoint>,
     #[doc = "Indicates whether Traffic View is 'Enabled' or 'Disabled' for the Traffic Manager profile. Null, indicates 'Disabled'. Enabling this feature will increase the cost of the Traffic Manage profile."]
     #[serde(rename = "trafficViewEnrollmentStatus", default, skip_serializing_if = "Option::is_none")]
     pub traffic_view_enrollment_status: Option<profile_properties::TrafficViewEnrollmentStatus>,
     #[doc = "The list of allowed endpoint record types."]
-    #[serde(rename = "allowedEndpointRecordTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedEndpointRecordTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_endpoint_record_types: Vec<AllowedEndpointRecordType>,
     #[doc = "Maximum number of endpoints to be returned for MultiValue routing type."]
     #[serde(rename = "maxReturn", default, skip_serializing_if = "Option::is_none")]
@@ -691,7 +741,11 @@ pub struct Region {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The list of Regions grouped under this Region in the Geographic Hierarchy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub regions: Vec<Region>,
 }
 impl Region {
@@ -747,7 +801,12 @@ pub struct TrafficFlow {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub longitude: Option<f64>,
     #[doc = "The query experiences produced in this HeatMap calculation."]
-    #[serde(rename = "queryExperiences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "queryExperiences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub query_experiences: Vec<QueryExperience>,
 }
 impl TrafficFlow {

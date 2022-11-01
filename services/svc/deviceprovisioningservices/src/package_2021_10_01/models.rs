@@ -99,7 +99,11 @@ impl BulkEnrollmentGroupOperationError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentGroupOperationResult {
     #[doc = "Registration errors"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<BulkEnrollmentGroupOperationError>,
     #[doc = "Indicates if the operation was successful in its entirety."]
     #[serde(rename = "isSuccessful")]
@@ -167,7 +171,11 @@ impl BulkEnrollmentOperationError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentOperationResult {
     #[doc = "Registration errors"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<BulkEnrollmentOperationError>,
     #[doc = "Indicates if the operation was successful in its entirety."]
     #[serde(rename = "isSuccessful")]
@@ -315,7 +323,12 @@ pub struct EnrollmentGroup {
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<enrollment_group::AllocationPolicy>,
     #[doc = "The list of IoT Hub hostnames the device(s) in this resource can be allocated to. Must be a subset of tenant level list of IoT hubs."]
-    #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "iotHubs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub iot_hubs: Vec<String>,
     #[doc = "This tells DPS which webhook to call when using custom allocation."]
     #[serde(rename = "customAllocationDefinition", default, skip_serializing_if = "Option::is_none")]
@@ -413,7 +426,12 @@ pub struct IndividualEnrollment {
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<individual_enrollment::AllocationPolicy>,
     #[doc = "The list of IoT Hub hostnames the device(s) in this resource can be allocated to. Must be a subset of tenant level list of IoT hubs."]
-    #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "iotHubs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub iot_hubs: Vec<String>,
     #[doc = "This tells DPS which webhook to call when using custom allocation."]
     #[serde(rename = "customAllocationDefinition", default, skip_serializing_if = "Option::is_none")]
