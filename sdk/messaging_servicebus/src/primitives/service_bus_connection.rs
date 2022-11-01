@@ -65,6 +65,9 @@ pub enum Error {
 
     #[error(transparent)]
     Dispose(#[from] DisposeError),
+
+    #[error(transparent)]
+    TokenCredential(#[from] azure_core::Error),
 }
 
 impl From<AmqpClientError> for Error {
@@ -80,6 +83,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::Cancelled => Self::Cancelled,
             AmqpClientError::Dispose(err) => Self::Dispose(err),
             AmqpClientError::ReceiverAttach(err) => Self::ReceiverAttach(err),
+            AmqpClientError::TokenCredential(err) => Self::TokenCredential(err),
         }
     }
 }

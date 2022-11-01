@@ -1,4 +1,7 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
+use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
+use fe2o3_amqp_types::primitives::Timestamp;
+use std::future::Future;
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
@@ -69,9 +72,7 @@ where
     ///
     /// <returns>The token to use for authorization.</returns>
     ///
-    pub async fn get_token(
-        &mut self,
-    ) -> azure_core::error::Result<(TokenResponse, &TokenType<TC>)> {
+    async fn get_token_inner(&mut self) -> azure_core::error::Result<CbsToken<'_>> {
         let token_result = match &mut self.token_type {
             TokenType::SharedAccessToken { credential } => {
                 // GetTokenUsingDefaultScopeAsync
@@ -106,10 +107,31 @@ where
             },
         };
 
-        token_result.map(|token| (token, &self.token_type))
+        token_result.map(|token| {
+            CbsToken::new(
+                token.token.secret().to_owned(),
+                self.token_type.entity_type(),
+                Some(Timestamp::from(token.expires_on)),
+            )
+        })
     }
 }
 
 fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpan) -> bool {
     token.expires_on - token_expiration_buffer <= OffsetDateTime::now_utc()
+}
+
+impl<TC: TokenCredential> AsyncCbsTokenProvider for CbsTokenProvider<TC> {
+    type Error = azure_core::error::Error;
+
+    fn get_token_async(
+        &mut self,
+        _container_id: impl AsRef<str>,
+        _resource_id: impl AsRef<str>,
+        _claims: impl IntoIterator<Item = impl AsRef<str>>,
+    ) -> std::pin::Pin<
+        Box<dyn Future<Output = Result<fe2o3_amqp_cbs::token::CbsToken, Self::Error>> + '_>,
+    > {
+        Box::pin(async { self.get_token_inner().await })
+    }
 }

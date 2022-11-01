@@ -22,6 +22,15 @@ pub(crate) enum TokenType<TC: TokenCredential> {
     },
 }
 
+impl<TC: TokenCredential> TokenType<TC> {
+    pub(crate) fn entity_type(&self) -> &str {
+        match self {
+            TokenType::SharedAccessToken { .. } => "servicebus.windows.net:sastoken",
+            TokenType::JsonWebToken { .. } => "jwt",
+        }
+    }
+}
+
 impl<TC: TokenCredential> ToString for TokenType<TC> {
     fn to_string(&self) -> String {
         match self {

@@ -11,7 +11,7 @@ use fe2o3_amqp::{
     Connection, Session,
 };
 
-use fe2o3_amqp_cbs::client::CbsClient;
+use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
@@ -56,6 +56,9 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     Rng(#[from] rand::Error),
+
+    #[error(transparent)]
+    TokenCredential(#[from] azure_core::Error),
 }
 
 pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
@@ -334,10 +337,18 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     }
 
     async fn request_authorization_using_cbs(
-        connection: &mut ConnectionHandle<()>,
-        tokoen_provider: &CbsTokenProvider<TC>,
-        endpoint: &Url,
-    ) -> Result<(), ()> {
+        &mut self,
+        endpoint: &str,
+        audience: &[&str],
+        required_claims: &[&str],
+    ) -> Result<(), AmqpConnectionScopeError> {
+        for resource in audience {
+            let token = self
+                .cbs_token_provider
+                .get_token_async(endpoint, resource, required_claims)
+                .await?;
+        }
+
         todo!()
     }
 
