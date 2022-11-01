@@ -13,14 +13,10 @@ impl PopReceipt {
         }
     }
 
-    /// These fields are opaque so they should not
-    /// be handled by the SDK user.
     pub fn message_id(&self) -> &str {
         &self.message_id
     }
 
-    /// These fields are opaque so they should not
-    /// be handled by the SDK user.
     pub fn pop_receipt(&self) -> &str {
         &self.pop_receipt
     }
