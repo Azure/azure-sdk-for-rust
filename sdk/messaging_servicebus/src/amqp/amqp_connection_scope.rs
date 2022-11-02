@@ -12,7 +12,11 @@ use fe2o3_amqp::{
 };
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
-use fe2o3_amqp_types::definitions::{MAJOR, MINOR, REVISION};
+use fe2o3_amqp_types::{
+    definitions::{ReceiverSettleMode, SenderSettleMode, MAJOR, MINOR, REVISION},
+    messaging::Source,
+    primitives::OrderedMap,
+};
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
 use serde_amqp::Value;
@@ -23,7 +27,11 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
-    primitives::service_bus_transport_type::ServiceBusTransportType,
+    primitives::{
+        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_transport_type::ServiceBusTransportType,
+    },
+    ServiceBusReceiveMode,
 };
 
 use super::{
@@ -32,7 +40,7 @@ use super::{
     amqp_sender::AmqpSender,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
-    error::{CbsAuthError, DisposeError, OpenSenderError},
+    error::{CbsAuthError, DisposeError, OpenReceiverError, OpenSenderError},
     LINK_IDENTIFIER,
 };
 
@@ -404,6 +412,86 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             .attach(&mut self.session.handle)
             .await?;
         Ok((link_identifier, sender))
+    }
+
+    pub(crate) async fn open_receiver_link(
+        &mut self,
+        entity_path: String,
+        identifier: String,
+        receive_mode: ServiceBusReceiveMode,
+        prefetch_count: u32,
+    ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
+        if self.is_disposed {
+            return Err(OpenReceiverError::ScopeIsDisposed);
+        }
+
+        let endpoint = format!("{}/{}", self.service_endpoint, entity_path);
+        let audience = vec![&endpoint[..]];
+        let required_claims = vec![service_bus_claim::SEND];
+
+        let auth_expiration_utc = self
+            .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
+            .await?;
+
+        // linkSettings.LinkName = $"{connection.Settings.ContainerId};{connection.Identifier}:{session.Identifier}:{link.Identifier}:{linkSettings.Source.ToString()}";
+        // connection container id is the scope identifier
+        let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+        let source = Source::builder()
+            .address(endpoint)
+            .filter(OrderedMap::with_capacity(0)) // TODO: regular receiver link has an empty filter
+            .build();
+        let (snd_settle_mode, rcv_settle_mode) = service_bus_receive_mode_to_amqp(receive_mode);
+        let link_name = format!(
+            "{};{}:{}:{}:{:?}",
+            self.id, self.connection.identifier, self.session.identifier, link_identifier, source
+        );
+
+        let mut builder = fe2o3_amqp::Receiver::builder()
+            .name(link_name)
+            .source(source)
+            .target(identifier);
+        if let Some(snd_settle_mode) = snd_settle_mode {
+            builder = builder.sender_settle_mode(snd_settle_mode);
+        }
+        if let Some(rcv_settle_mode) = rcv_settle_mode {
+            builder = builder.receiver_settle_mode(rcv_settle_mode);
+        }
+
+        let receiver = builder.attach(&mut self.session.handle).await?;
+        Ok((link_identifier, receiver))
+    }
+
+    pub(crate) async fn open_session_receiver(
+        &mut self,
+        entity_path: String,
+        identifier: String,
+        session_id: String,
+    ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
+        todo!()
+    }
+}
+
+// Reference:
+// https://github.com/Azure/azure-amqp/blob/c6242a5dad1a1638dfee53282e08c8440913e8f7/src/AmqpLinkSettings.cs#L88
+fn service_bus_receive_mode_to_amqp(
+    mode: ServiceBusReceiveMode,
+) -> (Option<SenderSettleMode>, Option<ReceiverSettleMode>) {
+    // switch (value)
+    // {
+    //     case SettleMode.SettleOnSend:
+    //         this.SndSettleMode = (byte)SenderSettleMode.Settled;
+    //         break;
+    //     case SettleMode.SettleOnReceive:
+    //         break;
+    //     case SettleMode.SettleOnDispose:
+    //         this.RcvSettleMode = (byte)ReceiverSettleMode.Second;
+    //         break;
+    // }
+    match mode {
+        // SettleOnDispose
+        ServiceBusReceiveMode::PeekLock => (None, Some(ReceiverSettleMode::Second)),
+        // SettleOnSend
+        ServiceBusReceiveMode::ReceiveAndDelete => (Some(SenderSettleMode::Settled), None),
     }
 }
 

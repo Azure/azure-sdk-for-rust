@@ -1,6 +1,6 @@
 use fe2o3_amqp::{
     connection,
-    link::{DetachError, SenderAttachError},
+    link::{DetachError, ReceiverAttachError, SenderAttachError},
     session,
 };
 use fe2o3_amqp_management::error::Error as MgmtError;
@@ -37,6 +37,18 @@ pub enum OpenSenderError {
 
     #[error(transparent)]
     Attach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum OpenReceiverError {
+    #[error("The connection scope is disposed")]
+    ScopeIsDisposed,
+
+    #[error(transparent)]
+    Attach(#[from] ReceiverAttachError),
 
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
