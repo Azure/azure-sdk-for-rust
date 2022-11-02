@@ -183,11 +183,15 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
         let token_value_pairs = connection_string.split(Self::TOKEN_VALUE_PAIR_DELIMITER);
 
         for token_value_pair in token_value_pairs {
-            let mut split = token_value_pair.split(Self::TOKEN_VALUE_SEPARATOR);
-            let token = match split.next().and_then(|s| match s.trim() {
-                "" => None,
-                s => Some(s),
-            }) {
+            // Do not remove the separator if it is part of the value.
+            let mut split = token_value_pair.split_inclusive(Self::TOKEN_VALUE_SEPARATOR);
+            let token = match split
+                .next()
+                .and_then(|s| s.split(Self::TOKEN_VALUE_SEPARATOR).next())
+                .and_then(|s| match s.trim() {
+                    "" => None,
+                    s => Some(s),
+                }) {
                 Some(token) => token,
                 None => continue,
             };
@@ -234,10 +238,6 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::format;
-
-    use azure_core::Url;
-
     use super::ServiceBusConnectionStringProperties;
 
     const ENDPOINT: &str = "test.endpoint.com";
@@ -477,7 +477,7 @@ mod tests {
     #[test]
     fn parse_correctly_parses_a_namespace_connection_string() {
         let endpoint = "test.endpoint.com";
-        let sas_key = "sasKey";
+        let sas_key = "sasKey=";
         let sas_key_name = "sasName";
         let shared_access_signature = "fakeSAS";
         let connection_string = format!("Endpoint=sb://{endpoint};SharedAccessKeyName={sas_key_name};SharedAccessKey={sas_key};SharedAccessSignature={shared_access_signature}");

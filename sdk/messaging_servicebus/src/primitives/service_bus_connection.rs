@@ -261,14 +261,17 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
                     fully_qualified_namespace,
                     entity_path,
                 )?;
+                println!("resource: {}", resource);
                 let shared_access_key_name = ok_if_not_none_or_empty!(
                     connection_string_properties.shared_access_key_name(),
                     "shared_access_key_name"
                 )?;
+                println!("shared_access_key_name: {}", shared_access_key_name);
                 let shared_access_key = ok_if_not_none_or_empty!(
                     connection_string_properties.shared_access_key(),
                     "shared_access_key"
                 )?;
+                println!("shared_access_key: {}", shared_access_key);
                 SharedAccessSignature::try_from_parts(
                     resource,
                     shared_access_key_name,
@@ -277,6 +280,8 @@ impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
                 )?
             }
         };
+
+        println!("{:?}", shared_access_signature);
 
         let shared_access_credential =
             SharedAccessCredential::from_signature(shared_access_signature);

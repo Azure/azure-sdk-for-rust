@@ -134,36 +134,20 @@ impl SharedAccessSignature {
         shared_access_key: impl Into<String>,
         signature_validity_duration: Option<Duration>,
     ) -> Result<Self, SasSignatureError> {
-        let service_bus_resource = service_bus_resource.into();
-        let shared_access_key_name = shared_access_key_name.into();
-        let shared_access_key = shared_access_key.into();
-
         let signature_validity_duration =
             signature_validity_duration.unwrap_or(Self::DEFAULT_SIGNATURE_VALIDITY_DURATION);
-        if shared_access_key_name.len() > Self::MAXIMUM_KEY_NAME_LENGTH {
-            return Err(SasSignatureError::SasKeyNameTooLong);
-        }
-        if shared_access_key.len() > Self::MAXIMUM_KEY_LENGTH {
-            return Err(SasSignatureError::SasKeyTooLong);
-        }
 
-        let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
+        let now = OffsetDateTime::now_utc().replace_millisecond(0).unwrap(); // This won't fail
+        let signature_expiration = now + signature_validity_duration;
 
-        let resource = service_bus_resource;
-        let value = Self::build_signature(
-            &resource,
-            &shared_access_key_name,
-            &shared_access_key,
-            signature_expiration,
-        )?;
+        println!("signature_expiration: {:?}", signature_expiration);
 
-        Ok(Self {
+        Self::try_new(
+            service_bus_resource,
             shared_access_key_name,
             shared_access_key,
             signature_expiration,
-            resource,
-            value,
-        })
+        )
     }
 
     /// <summary>
@@ -215,22 +199,19 @@ impl SharedAccessSignature {
     /// <param name="eventHubResource">The Service Bus resource to which the token is intended to serve as authorization.</param>
     /// <param name="sharedAccessKeyName">The name of the shared access key that the signature should be based on.</param>
     /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
-    /// <param name="value">The shared access signature to be used for authorization.</param>
     /// <param name="signatureExpiration">The date and time that the shared access signature expires, in UTC.</param>
     ///
     pub fn try_new(
-        event_hub_resource: impl Into<String>,
+        resource: impl Into<String>,
         shared_access_key_name: impl Into<String>,
         shared_access_key: impl Into<String>,
-        value: impl Into<String>,
         signature_expiration: OffsetDateTime,
     ) -> Result<Self, SasSignatureError> {
-        let event_hub_resource = event_hub_resource.into();
+        let resource = resource.into();
         let shared_access_key_name = shared_access_key_name.into();
         let shared_access_key = shared_access_key.into();
-        let value = value.into();
 
-        if event_hub_resource.is_empty() {
+        if resource.is_empty() {
             return Err(SasSignatureError::ArgumentIsEmpty);
         }
         if shared_access_key_name.is_empty() {
@@ -247,11 +228,22 @@ impl SharedAccessSignature {
             return Err(SasSignatureError::SasKeyTooLong);
         }
 
+        let expiry = convert_to_unix_time(signature_expiration).to_string();
+
+        println!("expiry {:?}", expiry);
+
+        let value = Self::build_signature(
+            &resource,
+            &shared_access_key_name,
+            &shared_access_key,
+            &expiry,
+        )?;
+
         Ok(Self {
             shared_access_key_name,
             shared_access_key,
             signature_expiration,
-            resource: event_hub_resource,
+            resource,
             value,
         })
     }
@@ -297,6 +289,12 @@ impl SharedAccessSignature {
         }
         let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
         self.signature_expiration = signature_expiration;
+        self.value = Self::build_signature(
+            &self.resource,
+            &self.shared_access_key_name,
+            &self.shared_access_key,
+            &convert_to_unix_time(signature_expiration).to_string(),
+        )?;
         Ok(())
     }
 
@@ -378,30 +376,30 @@ impl SharedAccessSignature {
         audience: &str,
         shared_access_key_name: &str,
         shared_access_key: &str,
-        expiration_time: OffsetDateTime,
+        expiry: &str,
     ) -> Result<String, InvalidLength> {
         let encoded_audience: String =
             url::form_urlencoded::byte_serialize(audience.as_bytes()).collect();
-        let expiration = convert_to_unix_time(expiration_time).to_string();
-        let message = format!("{encoded_audience}\n{expiration}");
+        // let expiration = convert_to_unix_time(expiration_time).to_string();
+        let message = format!("{encoded_audience}\n{expiry}");
         let mac = mac::<Hmac<Sha256>>(shared_access_key.as_bytes(), message.as_bytes())?;
         let signature = base64::encode(mac.as_ref());
 
         let encoded_signature = urlencoding::encode(&signature);
-        let encoded_expiration = urlencoding::encode(&expiration);
+        let encoded_expiration = urlencoding::encode(expiry);
         let encoded_shared_access_key_name = urlencoding::encode(&shared_access_key_name);
 
         let s = format!(
             "{} {}={}&{}={}&{}={}&{}={}",
             Self::AUTHENTICATION_TYPE_TOKEN,
-            Self::SIGNED_RESOURCE_TOKEN,
-            encoded_audience,
             Self::SIGNATURE_TOKEN,
             encoded_signature,
             Self::SIGNED_EXPIRY_TOKEN,
             encoded_expiration,
             Self::SIGNED_KEY_NAME_TOKEN,
-            encoded_shared_access_key_name
+            encoded_shared_access_key_name,
+            Self::SIGNED_RESOURCE_TOKEN,
+            encoded_audience,
         );
         Ok(s)
     }
@@ -434,4 +432,19 @@ fn mac<M: Mac + KeyInit>(key: &[u8], input: &[u8]) -> Result<impl AsRef<[u8]>, I
     let mut mac = <M as Mac>::new_from_slice(key)?;
     mac.update(input);
     Ok(mac.finalize().into_bytes())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_build_signature() {
+        let built_signature = super::SharedAccessSignature::build_signature(
+            "amqps://fe2o3-amqp-example.servicebus.windows.net",
+            "RootManageSharedAccessKey",
+            "r9rdIglXNiIPN2Lgj/HyhgOuq+aGht0qH3n+/lYQhfo=",
+            "1667344375",
+        )
+        .unwrap();
+        assert_eq!("SharedAccessSignature sig=WOVqJi%2B2fowHpCC2g3ztxEQrYAU173BGWrkVaPlvPj4%3D&se=1667344375&skn=RootManageSharedAccessKey&sr=amqps%3A%2F%2Ffe2o3-amqp-example.servicebus.windows.net", built_signature);
+    }
 }

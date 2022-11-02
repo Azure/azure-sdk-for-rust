@@ -353,10 +353,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
 
             // find the smallest timeout
             let expires_at = match token.expires_at_utc() {
-                Some(timestamp) => match OffsetDateTime::try_from(timestamp.clone()) {
-                    Ok(datetime) => Some(datetime),
-                    Err(_) => todo!(),
-                },
+                Some(timestamp) => Some(OffsetDateTime::try_from(timestamp.clone())?),
                 None => None,
             };
 
