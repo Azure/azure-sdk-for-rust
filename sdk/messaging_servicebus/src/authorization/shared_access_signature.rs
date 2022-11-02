@@ -140,8 +140,6 @@ impl SharedAccessSignature {
         let now = OffsetDateTime::now_utc().replace_millisecond(0).unwrap(); // This won't fail
         let signature_expiration = now + signature_validity_duration;
 
-        println!("signature_expiration: {:?}", signature_expiration);
-
         Self::try_new(
             service_bus_resource,
             shared_access_key_name,
@@ -229,8 +227,6 @@ impl SharedAccessSignature {
         }
 
         let expiry = convert_to_unix_time(signature_expiration).to_string();
-
-        println!("expiry {:?}", expiry);
 
         let value = Self::build_signature(
             &resource,

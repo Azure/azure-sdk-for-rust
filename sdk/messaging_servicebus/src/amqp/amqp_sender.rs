@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use fe2o3_amqp::link::DetachError;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -26,6 +27,7 @@ pub(crate) struct AmqpSender {
 #[async_trait]
 impl TransportSender for AmqpSender {
     type Error = ();
+    type CloseError = DetachError;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -110,10 +112,7 @@ impl TransportSender for AmqpSender {
     ///
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
     ///   cancel the operation.
-    async fn close(
-        &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error> {
-        todo!()
+    async fn close(self) -> Result<(), Self::CloseError> {
+        self.sender.close().await
     }
 }

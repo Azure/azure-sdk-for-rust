@@ -10,6 +10,7 @@ use crate::{CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch
 #[async_trait]
 pub trait TransportSender {
     type Error: Send;
+    type CloseError: Send;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -84,8 +85,5 @@ pub trait TransportSender {
     ///
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
     ///   cancel the operation.
-    async fn close(
-        &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    async fn close(self) -> Result<(), Self::CloseError>;
 }

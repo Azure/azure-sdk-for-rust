@@ -1,6 +1,10 @@
+use fe2o3_amqp::link::DetachError;
+
 use crate::{
-    amqp::amqp_sender::AmqpSender, core::TransportClient,
-    primitives::service_bus_connection::ServiceBusConnection, ServiceBusSenderOptions,
+    amqp::amqp_sender::AmqpSender,
+    core::{TransportClient, TransportSender},
+    primitives::service_bus_connection::ServiceBusConnection,
+    ServiceBusSenderOptions,
 };
 
 use super::error::ServiceBusSenderError;
@@ -61,5 +65,9 @@ impl ServiceBusSender {
         C: TransportClient,
     {
         todo!()
+    }
+
+    pub async fn dispose(self) -> Result<(), DetachError> {
+        self.inner.close().await
     }
 }

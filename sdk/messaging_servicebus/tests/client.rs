@@ -28,5 +28,6 @@ async fn client_can_create_sender() {
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let sender = client.create_sender("q1").await.unwrap();
 
+    sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
 }
