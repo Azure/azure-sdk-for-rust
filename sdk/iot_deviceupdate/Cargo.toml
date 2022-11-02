@@ -11,6 +11,7 @@ categories = ["api-bindings"]
 readme = "README.md"
 license = "MIT"
 edition = "2021"
+publish = false
 
 [dependencies]
 base64 = "0.13"
