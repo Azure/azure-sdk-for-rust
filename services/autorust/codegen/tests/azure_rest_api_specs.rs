@@ -68,7 +68,7 @@ fn test_resolve_parameter_ref() -> Result<()> {
     let file = VMWARE_SPEC;
     let spec = &Spec::read_files(&[&file])?;
     spec.resolve_parameter_ref(
-        &file,
+        file,
         Reference::parse("../../../../../common-types/resource-management/v1/types.json#/parameters/ApiVersionParameter").unwrap(),
     )?;
     Ok(())
@@ -85,10 +85,10 @@ fn test_resolve_all_refs() -> Result<()> {
                 TypedReference::PathItem(_) => {}
                 TypedReference::Example(_) => {}
                 TypedReference::Parameter(reference) => {
-                    spec.resolve_parameter_ref(&doc_file, reference)?;
+                    spec.resolve_parameter_ref(doc_file, reference)?;
                 }
                 TypedReference::Schema(reference) => {
-                    spec.resolve_schema_ref(&doc_file, &reference)?;
+                    spec.resolve_schema_ref(doc_file, &reference)?;
                 }
             }
         }

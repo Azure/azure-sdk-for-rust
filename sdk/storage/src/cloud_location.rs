@@ -139,9 +139,8 @@ mod tests {
 
     #[test]
     fn test_from_url() -> azure_core::Result<()> {
-        let public_without_token = Url::parse(&format!("https://test.blob.core.windows.net"))?;
-        let public_with_token =
-            Url::parse(&format!("https://test.blob.core.windows.net/?token=1"))?;
+        let public_without_token = Url::parse("https://test.blob.core.windows.net")?;
+        let public_with_token = Url::parse("https://test.blob.core.windows.net/?token=1")?;
 
         let cloud_location: CloudLocation = (&public_with_token).try_into()?;
         assert_eq!(public_without_token, cloud_location.url(ServiceType::Blob)?);
@@ -149,21 +148,20 @@ mod tests {
         let creds = cloud_location.credentials();
         assert!(matches!(creds, &StorageCredentials::SASToken(_)));
 
-        let file_url = Url::parse(&format!("file://tmp/test.txt"))?;
+        let file_url = Url::parse("file://tmp/test.txt")?;
         let result: azure_core::Result<CloudLocation> = (&file_url).try_into();
         assert!(result.is_err());
 
-        let missing_account = Url::parse(&format!("https://blob.core.windows.net?token=1"))?;
+        let missing_account = Url::parse("https://blob.core.windows.net?token=1")?;
         let result: azure_core::Result<CloudLocation> = (&missing_account).try_into();
         assert!(result.is_err());
 
-        let missing_service_type = Url::parse(&format!("https://core.windows.net?token=1"))?;
+        let missing_service_type = Url::parse("https://core.windows.net?token=1")?;
         let result: azure_core::Result<CloudLocation> = (&missing_service_type).try_into();
         assert!(result.is_err());
 
-        let china_cloud = Url::parse(&format!("https://test.blob.core.chinacloudapi.cn/?token=1"))?;
-        let china_cloud_without_token =
-            Url::parse(&format!("https://test.blob.core.chinacloudapi.cn"))?;
+        let china_cloud = Url::parse("https://test.blob.core.chinacloudapi.cn/?token=1")?;
+        let china_cloud_without_token = Url::parse("https://test.blob.core.chinacloudapi.cn")?;
 
         let cloud_location: CloudLocation = (&china_cloud).try_into()?;
         assert_eq!(

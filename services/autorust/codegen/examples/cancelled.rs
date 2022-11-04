@@ -36,7 +36,7 @@ fn check(plane: &str, readmes: &[SpecReadme]) -> Result<()> {
                 Ok(spec) => {
                     if let Ok(schemas) = all_schemas_resolved(&spec) {
                         for (_ref_key, schema) in &schemas {
-                            if has_cancelled_enum_value(&schema) {
+                            if has_cancelled_enum_value(schema) {
                                 services.insert(readme.spec());
                             }
                         }

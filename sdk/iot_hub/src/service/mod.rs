@@ -131,7 +131,7 @@ impl ServiceClient {
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
-        let sas_token: &str = &encode_config(&result.into_bytes(), base64::STANDARD);
+        let sas_token: &str = &encode_config(result.into_bytes(), base64::STANDARD);
 
         let encoded: String = url::form_urlencoded::Serializer::new(String::new())
             .append_pair("sr", &format!("{}.azure-devices.net", iot_hub_name))
