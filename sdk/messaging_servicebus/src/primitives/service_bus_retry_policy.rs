@@ -1,6 +1,8 @@
 use std::hash::Hash;
 use std::time::Duration;
 
+use super::service_bus_retry_options::ServiceBusRetryOptions;
+
 pub static SERVER_BUSY_BASE_SLEEP_TIME: Duration = Duration::from_secs(10);
 
 pub enum RetryError<E> {
@@ -18,6 +20,8 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     type Error: std::error::Error + Send + Sync;
     type State: ServiceBusRetryPolicyState;
 
+    fn new(options: ServiceBusRetryOptions) -> Self;
+
     fn state(&self) -> &Self::State;
 
     fn state_mut(&mut self) -> &mut Self::State;
@@ -32,7 +36,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     /// # Returns
     ///
     /// The amount of time to allow for an operation to complete.
-    fn calculate_try_timeout(&self, attempt_count: i32) -> Duration;
+    fn calculate_try_timeout(&self, attempt_count: u32) -> Duration;
 
     /// Calculates the amount of time to wait before another attempt should be made.
     ///
@@ -49,7 +53,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     fn calculate_retry_delay(
         &self,
         last_error: &Self::Error,
-        attempt_count: i32,
+        attempt_count: u32,
     ) -> Option<Duration>;
 }
 
@@ -57,12 +61,12 @@ pub trait ServiceBusRetryPolicyState {
     /// Determines whether or not the server returned a busy error.
     fn is_server_busy(&self) -> bool;
 
-    fn is_server_busy_mut(&mut self) -> &mut bool;
+    fn set_server_busy(&mut self, error_message: String);
+
+    fn reset_server_busy(&mut self);
 
     /// Gets the exception message when a server busy error is returned.
-    fn server_busy_error_message(&self) -> &String;
-
-    fn server_busy_error_message_mut(&mut self) -> &mut String;
+    fn server_busy_error_message(&self) -> Option<&str>;
 }
 
 pub(crate) mod private {
@@ -140,12 +144,11 @@ pub(crate) mod private {
         fn set_server_busy(&mut self, error_message: String) {
             let state = self.state_mut();
 
-            *state.is_server_busy_mut() = true;
-            *state.server_busy_error_message_mut() = error_message;
+            state.set_server_busy(error_message);
         }
 
         fn reset_server_busy(&mut self) {
-            *self.state_mut().is_server_busy_mut() = false;
+            self.state_mut().reset_server_busy();
         }
 
         async fn schedule_reset_server_busy(&mut self) {

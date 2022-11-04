@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, marker::PhantomData};
 
 use azure_core::auth::TokenCredential;
 
@@ -53,7 +53,7 @@ pub struct ServiceBusClient<TC: TokenCredential, R: ServiceBusRetryPolicy> {
     connection: ServiceBusConnection<AmqpClient<TC>>, // TODO: use trait objects?
 
     /// Retry policy
-    retry_policy: R,
+    retry_policy_marker: PhantomData<R>,
 }
 
 impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
@@ -75,7 +75,7 @@ impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
             closed: false,
             identifier,
             connection,
-            retry_policy: BasicRetryPolicy {},
+            retry_policy_marker: PhantomData,
         })
     }
 }
@@ -126,7 +126,7 @@ where
     TC: TokenCredential + Into<ServiceBusTokenCredential<TC>> + 'static,
     R: ServiceBusRetryPolicy + 'static,
 {
-    pub fn retry_policy<RP>(self, retry_policy: RP) -> ServiceBusClient<TC, RP>
+    pub fn retry_policy<RP>(self) -> ServiceBusClient<TC, RP>
     where
         RP: ServiceBusRetryPolicy,
     {
@@ -134,7 +134,7 @@ where
             closed: self.closed,
             identifier: self.identifier,
             connection: self.connection,
-            retry_policy,
+            retry_policy_marker: PhantomData,
         }
     }
 
@@ -142,7 +142,6 @@ where
         fully_qualified_namespace: impl Into<String>,
         credential: TC,
         options: ServiceBusClientOptions,
-        retry_policy: R,
     ) -> Result<Self, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier =
@@ -162,7 +161,7 @@ where
             closed: false,
             identifier,
             connection,
-            retry_policy,
+            retry_policy_marker: PhantomData,
         })
     }
 }
