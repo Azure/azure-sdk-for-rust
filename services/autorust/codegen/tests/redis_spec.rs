@@ -67,10 +67,10 @@ fn test_redis_resolve_all_refs() -> Result<()> {
                 TypedReference::PathItem(_) => {}
                 TypedReference::Example(_) => {}
                 TypedReference::Parameter(reference) => {
-                    spec.resolve_parameter_ref(&doc_file, reference)?;
+                    spec.resolve_parameter_ref(doc_file, reference)?;
                 }
                 TypedReference::Schema(reference) => {
-                    spec.resolve_schema_ref(&doc_file, &reference)?;
+                    spec.resolve_schema_ref(doc_file, &reference)?;
                 }
             }
         }

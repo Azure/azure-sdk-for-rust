@@ -201,7 +201,7 @@ async fn file_get_properties() -> azure_core::Result<()> {
 
     // Get status (ie: only system-defined properties)
     let file_properties = file_client.get_status().await?;
-    assert!(!file_properties.properties.is_some());
+    assert!(file_properties.properties.is_none());
 
     // Get access control list for the file
     let file_acl = file_client.get_access_control_list().await?;

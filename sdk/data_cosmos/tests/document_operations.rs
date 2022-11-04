@@ -135,7 +135,7 @@ async fn document_operations() {
     // Ensure that the documents stream can be sent to a task
     let result = tokio::spawn(async move {
         let documents = documents.next().await.unwrap().unwrap().documents;
-        documents.len() == 0
+        documents.is_empty()
     })
     .await
     .unwrap();

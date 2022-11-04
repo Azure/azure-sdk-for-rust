@@ -31,7 +31,7 @@ fn main() -> Result<()> {
                     create_dir_all(&dir_out)?;
                     let mut file_out = Utf8PathBuf::new();
                     file_out.push(&dir_out);
-                    file_out.push(&file_in.file_name().unwrap());
+                    file_out.push(file_in.file_name().unwrap());
                     let mut file = File::create(file_out)?;
                     file.write_all(json.as_bytes())?;
                 }

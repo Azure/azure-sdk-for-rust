@@ -16,7 +16,7 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
     let service_name = &spec.service_name();
     let package_name = &package_name(spec, run_config);
     let output_folder = &io::join(output_folder, service_name)?;
-    let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    let mut package_config = autorust_toml::read(&io::join(output_folder, "autorust.toml")?)?;
     if package_config.tags.sort.is_none() {
         package_config.tags.sort = Some(true);
     }

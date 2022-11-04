@@ -43,7 +43,7 @@ mod tests {
         pub app_settings: Vec<NameValuePair>,
     }
 
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
     pub struct NameValuePair {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,

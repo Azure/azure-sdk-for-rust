@@ -129,7 +129,7 @@ fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_f
         println!("writing file {}", &file);
     }
     let code = tokens.to_string();
-    let mut buffer = File::create(&file).with_context(ErrorKind::Io, || format!("create file {file}"))?;
+    let mut buffer = File::create(file).with_context(ErrorKind::Io, || format!("create file {file}"))?;
     buffer
         .write_all(code.as_bytes())
         .with_context(ErrorKind::Io, || format!("write file {file}"))?;
@@ -227,7 +227,7 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
 }
 
 fn get_service_name(spec_name: &str) -> String {
-    spec_name.replace("azure", "").replace('_', "").replace('-', "").to_lowercase()
+    spec_name.replace("azure", "").replace(['_', '-'], "").to_lowercase()
 }
 
 #[cfg(test)]
