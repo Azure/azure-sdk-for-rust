@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use fe2o3_amqp::link::DetachError;
+use fe2o3_amqp::link::{DetachError, SendError};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
-use super::LINK_IDENTIFIER;
+use super::{amqp_message_converter::batch_service_bus_messages_as_amqp_message, LINK_IDENTIFIER};
 
 pub(crate) struct AmqpSender {
     pub identifier: u32,
@@ -27,6 +27,7 @@ pub(crate) struct AmqpSender {
 #[async_trait]
 impl TransportSender for AmqpSender {
     type Error = ();
+    type SendError = SendError;
     type CloseError = DetachError;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
@@ -48,7 +49,6 @@ impl TransportSender for AmqpSender {
     async fn create_message_batch(
         &mut self,
         options: CreateMessageBatchOptions,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -65,9 +65,10 @@ impl TransportSender for AmqpSender {
     ///   request to cancel the operation.
     async fn send(
         &mut self,
-        messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error> {
+        messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
+    ) -> Result<(), Self::SendError> {
+        // TODO: retry policy
+        // let batch_envelope = batch_service_bus_messages_as_amqp_message(messages, force_batch)
         todo!()
     }
 
@@ -85,7 +86,6 @@ impl TransportSender for AmqpSender {
     async fn send_batch(
         &mut self,
         message_batch: ServiceBusMessageBatch,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -93,7 +93,6 @@ impl TransportSender for AmqpSender {
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<Vec<i64>, Self::Error> {
         todo!()
     }
@@ -101,7 +100,6 @@ impl TransportSender for AmqpSender {
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: &[i64],
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }

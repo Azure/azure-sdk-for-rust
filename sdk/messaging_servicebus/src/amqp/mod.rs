@@ -5,6 +5,7 @@ pub(crate) mod amqp_connection;
 pub(crate) mod amqp_connection_scope;
 pub(crate) mod amqp_constants;
 pub(crate) mod amqp_message_constants;
+pub(crate) mod amqp_message_converter;
 pub(crate) mod amqp_message_extensions;
 pub(crate) mod amqp_receiver;
 pub(crate) mod amqp_rule_manager;

@@ -10,6 +10,7 @@ use crate::{CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch
 #[async_trait]
 pub trait TransportSender {
     type Error: Send;
+    type SendError: Send;
     type CloseError: Send;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
@@ -31,7 +32,6 @@ pub trait TransportSender {
     async fn create_message_batch(
         &mut self,
         options: CreateMessageBatchOptions,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error>;
 
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
@@ -46,9 +46,8 @@ pub trait TransportSender {
     ///   request to cancel the operation.
     async fn send(
         &mut self,
-        messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+        messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
+    ) -> Result<(), Self::SendError>;
 
     /// Sends a <see cref="ServiceBusMessageBatch"/> to the associated Queue/Topic.
     ///
@@ -64,19 +63,16 @@ pub trait TransportSender {
     async fn send_batch(
         &mut self,
         message_batch: ServiceBusMessageBatch,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error>;
 
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<Vec<i64>, Self::Error>;
 
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: &[i64],
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error>;
 
     /// Closes the connection to the transport producer instance.

@@ -6,7 +6,7 @@ use fe2o3_amqp_types::{
     messaging::{
         annotations::OwnedKey, ApplicationProperties, Body, Data, Message, MessageAnnotations,
     },
-    primitives::{Binary, Value},
+    primitives::Binary,
 };
 use time::OffsetDateTime;
 
