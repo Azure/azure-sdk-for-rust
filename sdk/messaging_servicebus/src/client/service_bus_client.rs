@@ -3,12 +3,16 @@ use std::borrow::Cow;
 use azure_core::auth::TokenCredential;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, error::OpenSenderError},
+    amqp::{
+        amqp_client::AmqpClient,
+        error::{OpenReceiverError, OpenSenderError},
+    },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,
     },
     diagnostics,
+    entity_name_formatter::format_entity_path,
     primitives::{
         service_bus_connection::ServiceBusConnection,
         service_bus_transport_type::ServiceBusTransportType,
@@ -207,20 +211,46 @@ where
 
 impl<TC> ServiceBusClient<TC>
 where
-    TC: TokenCredential,
+    TC: TokenCredential + 'static,
 {
     pub async fn create_receiver(
         &mut self,
         queue_or_topic_name: impl Into<String>,
-    ) -> Result<ServiceBusReceiver, Error> {
-        todo!()
+    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
+        self.create_receiver_with_options(queue_or_topic_name, ServiceBusReceiverOptions::default())
+            .await
     }
 
+    // This cannot be used to create a session receiver or proces
     pub async fn create_receiver_with_options(
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusReceiverOptions,
-    ) -> Result<ServiceBusReceiver, Error> {
-        todo!()
+    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
+        let entity_path = queue_or_topic_name.into();
+        let identifier = options
+            .identifier
+            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+        let retry_options = self.connection.retry_options().clone();
+        let receive_mode = options.receive_mode;
+        let prefetch_count = options.prefetch_count;
+        let entity_path = format_entity_path(entity_path, options.sub_queue);
+
+        let inner = self
+            .connection
+            .create_transport_receiver(
+                entity_path.clone(),
+                identifier.clone(),
+                retry_options,
+                receive_mode,
+                prefetch_count,
+                false,
+            )
+            .await?;
+        Ok(ServiceBusReceiver {
+            inner,
+            entity_path,
+            identifier,
+        })
     }
 }

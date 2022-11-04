@@ -31,3 +31,14 @@ async fn client_can_create_sender() {
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
 }
+
+#[tokio::test]
+async fn client_can_create_receiver() {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let receiver = client.create_receiver("q1").await.unwrap();
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}

@@ -27,3 +27,4 @@ pub use sender::{
 };
 
 pub(crate) mod authorization;
+pub(crate) mod entity_name_formatter;

@@ -8,8 +8,9 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     amqp::{
         amqp_client::{AmqpClient, AmqpClientError},
+        amqp_receiver::AmqpReceiver,
         amqp_sender::AmqpSender,
-        error::{DisposeError, OpenSenderError},
+        error::{DisposeError, OpenReceiverError, OpenSenderError},
     },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
@@ -18,6 +19,7 @@ use crate::{
     },
     client::service_bus_client_options::ServiceBusClientOptions,
     core::TransportClient,
+    ServiceBusReceiveMode,
 };
 
 use super::{
@@ -238,6 +240,30 @@ where
             .await?;
 
         Ok(sender)
+    }
+
+    pub(crate) async fn create_transport_receiver(
+        &mut self,
+        entity_path: String,
+        identifier: String,
+        retry_options: ServiceBusRetryOptions,
+        receive_mode: ServiceBusReceiveMode,
+        prefetch_count: u32,
+        is_processor: bool,
+    ) -> Result<AmqpReceiver, OpenReceiverError> {
+        let receiver = self
+            .inner_client
+            .create_receiver(
+                entity_path,
+                identifier,
+                retry_options,
+                receive_mode,
+                prefetch_count,
+                is_processor,
+            )
+            .await?;
+
+        Ok(receiver)
     }
 }
 

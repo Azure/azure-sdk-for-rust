@@ -28,7 +28,7 @@ use super::{
     amqp_receiver::AmqpReceiver,
     amqp_rule_manager::AmqpRuleManager,
     amqp_sender::AmqpSender,
-    error::{DisposeError, OpenSenderError},
+    error::{DisposeError, OpenReceiverError, OpenSenderError},
 };
 
 const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
@@ -181,7 +181,7 @@ where
     C: TokenCredential + 'static,
 {
     type CreateSenderError = OpenSenderError;
-    type CreateReceiverError = AmqpClientError;
+    type CreateReceiverError = OpenReceiverError;
     type CreateRuleManagerError = AmqpClientError;
     type DisposeError = AmqpClientError;
 
@@ -221,7 +221,7 @@ where
         identifier: String,
         retry_options: ServiceBusRetryOptions,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Sender, Self::CreateSenderError>> + '_>> {
-        Box::pin(async {
+        Box::pin(async move {
             // TODO: this will be updated once GAT is stablized
             let (identifier, sender) = self
                 .connection_scope
@@ -245,9 +245,18 @@ where
         prefetch_count: u32,
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
-        Box::pin(async {
-            // let (identifier, receiver) = self.connection_scope.open_receiver_link(entity_path, identifier, receive_mode, prefetch_count).
-            todo!()
+        Box::pin(async move {
+            let (identifier, receiver) = self
+                .connection_scope
+                .open_receiver_link(entity_path, identifier, receive_mode, prefetch_count)
+                .await?;
+
+            Ok(AmqpReceiver {
+                identifier,
+                retry_options,
+                receiver,
+                is_processor,
+            })
         })
     }
 
