@@ -120,7 +120,10 @@ where
     // transport_metrics: Option<ServiceBusTransportMetrics>,
 }
 
-impl<C: TokenCredential> AmqpClient<C> {
+impl<C> AmqpClient<C>
+where
+    C: TokenCredential + 'static,
+{
     pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
         self.connection_scope.transport_type()
     }
@@ -173,7 +176,10 @@ impl<C: TokenCredential> AmqpClient<C> {
 }
 
 // #[async_trait]
-impl<C: TokenCredential> TransportClient for AmqpClient<C> {
+impl<C> TransportClient for AmqpClient<C>
+where
+    C: TokenCredential + 'static,
+{
     type CreateSenderError = OpenSenderError;
     type CreateReceiverError = AmqpClientError;
     type CreateRuleManagerError = AmqpClientError;
@@ -239,7 +245,10 @@ impl<C: TokenCredential> TransportClient for AmqpClient<C> {
         prefetch_count: u32,
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
-        Box::pin(async { todo!() })
+        Box::pin(async {
+            // let (identifier, receiver) = self.connection_scope.open_receiver_link(entity_path, identifier, receive_mode, prefetch_count).
+            todo!()
+        })
     }
 
     fn create_session_receiver(

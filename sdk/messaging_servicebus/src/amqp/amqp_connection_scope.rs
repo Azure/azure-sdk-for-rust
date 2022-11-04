@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{
     connection::{ConnectionHandle, OpenError},
-    link::{ReceiverAttachError, SenderAttachError},
+    link::{receiver::CreditMode, ReceiverAttachError, SenderAttachError},
     sasl_profile::SaslProfile,
     session::{BeginError, SessionHandle},
     transaction::Controller,
@@ -207,7 +207,10 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     }
 }
 
-impl<TC: TokenCredential> AmqpConnectionScope<TC> {
+impl<TC> AmqpConnectionScope<TC>
+where
+    TC: TokenCredential + 'static,
+{
     pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
         &self.transport_type
     }
@@ -249,11 +252,8 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
         let uuid = uuid::Uuid::new_v4();
         let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
         let operation_cancellation_source = CancellationToken::new();
-        let cbs_token_provider = CbsTokenProvider::new(
-            credential,
-            Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
-            operation_cancellation_source.child_token(),
-        );
+        let cbs_token_provider =
+            CbsTokenProvider::new(credential, Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
 
         let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
         let connection_handle = timeout(operation_timeout, fut).await??;
@@ -450,11 +450,15 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
             .name(link_name)
             .source(source)
             .target(identifier);
+
         if let Some(snd_settle_mode) = snd_settle_mode {
             builder = builder.sender_settle_mode(snd_settle_mode);
         }
         if let Some(rcv_settle_mode) = rcv_settle_mode {
             builder = builder.receiver_settle_mode(rcv_settle_mode);
+        }
+        if prefetch_count > 0 {
+            builder = builder.credit_mode(CreditMode::Auto(prefetch_count));
         }
 
         let receiver = builder.attach(&mut self.session.handle).await?;

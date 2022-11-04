@@ -1,7 +1,8 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
-use std::future::Future;
+use futures_util::{pin_mut, ready};
+use std::{future::Future, task::Poll};
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
@@ -20,9 +21,6 @@ pub(crate) struct CbsTokenProvider<TC: TokenCredential> {
     /// The amount of buffer to when evaluating token expiration; the token's expiration date will
     /// be adjusted earlier by this amount.
     token_expiration_buffer: TimeSpan,
-
-    /// The cancellation token to consider when making requests.
-    cancellation_token: CancellationToken,
 }
 
 impl<TC> CbsTokenProvider<TC>
@@ -39,7 +37,6 @@ where
     pub fn new(
         credential: ServiceBusTokenCredential<TC>,
         token_expiration_buffer: TimeSpan,
-        cancellation_token: CancellationToken,
     ) -> Self {
         let token_type = if credential.is_shared_access_credential() {
             TokenType::SharedAccessToken { credential }
@@ -57,63 +54,7 @@ where
             token_type,
             // credential,
             token_expiration_buffer,
-            cancellation_token,
         }
-    }
-
-    /// <summary>
-    ///   Asynchronously requests a CBS token to be used for authorization within an AMQP
-    ///   scope.
-    /// </summary>
-    ///
-    /// <param name="namespaceAddress">The address of the namespace to be authorized.</param>
-    /// <param name="appliesTo">The resource to which the token should apply.</param>
-    /// <param name="requiredClaims">The set of claims that are required for authorization.</param>
-    ///
-    /// <returns>The token to use for authorization.</returns>
-    ///
-    async fn get_token_inner(&mut self) -> azure_core::error::Result<CbsToken<'_>> {
-        let token_result = match &mut self.token_type {
-            TokenType::SharedAccessToken { credential } => {
-                // GetTokenUsingDefaultScopeAsync
-                credential.get_token("").await
-            }
-            TokenType::JsonWebToken {
-                credential,
-                semaphore,
-                cached_token,
-            } => match cached_token {
-                Some(cached) => {
-                    let _permit = semaphore.acquire().await.map_err(|e| {
-                        azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
-                    })?;
-
-                    if is_nearing_expiration(cached, self.token_expiration_buffer) {
-                        *cached = credential.get_token("").await?;
-                    }
-
-                    Ok(cached.clone())
-                }
-                None => {
-                    let _permit = semaphore.acquire().await.map_err(|e| {
-                        azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
-                    })?;
-
-                    // GetTokenUsingDefaultScopeAsync
-                    let token = credential.get_token("").await?;
-                    *cached_token = Some(token.clone());
-                    Ok(token)
-                }
-            },
-        };
-
-        token_result.map(|token| {
-            CbsToken::new(
-                token.token.secret().to_owned(),
-                self.token_type.entity_type(),
-                Some(Timestamp::from(token.expires_on)),
-            )
-        })
     }
 }
 
@@ -121,7 +62,83 @@ fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpa
     token.expires_on - token_expiration_buffer <= OffsetDateTime::now_utc()
 }
 
-impl<TC: TokenCredential> AsyncCbsTokenProvider for CbsTokenProvider<TC> {
+pub struct CbsTokenFut<'a, TC>
+where
+    TC: TokenCredential,
+{
+    provider: &'a mut CbsTokenProvider<TC>,
+}
+
+impl<'a, TC> Future for CbsTokenFut<'a, TC>
+where
+    TC: TokenCredential,
+{
+    type Output = Result<CbsToken<'a>, azure_core::error::Error>;
+
+    fn poll(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Self::Output> {
+        let expiration_buffer = self.provider.token_expiration_buffer.clone();
+        let entity_type = self.provider.token_type.entity_type().to_owned(); // TODO: fix lifetime
+        let result = match &mut self.provider.token_type {
+            TokenType::SharedAccessToken { credential } => {
+                let fut = credential.get_token("");
+                pin_mut!(fut);
+                ready!(fut.poll(cx))
+            }
+            TokenType::JsonWebToken {
+                credential,
+                semaphore,
+                cached_token,
+            } => match cached_token {
+                Some(cached) => {
+                    let fut = semaphore.acquire();
+                    pin_mut!(fut);
+                    let _permit = ready!(fut.poll(cx)).map_err(|e| {
+                        azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
+                    })?;
+                    if is_nearing_expiration(cached, expiration_buffer) {
+                        let fut = credential.get_token("");
+                        pin_mut!(fut);
+                        let token = ready!(fut.poll(cx))?;
+                        *cached = token;
+                    }
+                    Ok(cached.clone())
+                }
+                None => {
+                    let fut = semaphore.acquire();
+                    pin_mut!(fut);
+                    let _permit = ready!(fut.poll(cx)).map_err(|e| {
+                        azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
+                    })?;
+
+                    // GetTokenUsingDefaultScopeAsync
+                    let fut = credential.get_token("");
+                    pin_mut!(fut);
+                    let token = ready!(fut.poll(cx))?;
+                    *cached_token = Some(token.clone());
+                    Ok(token)
+                }
+            },
+        };
+
+        match result {
+            Ok(token) => Poll::Ready(Ok(CbsToken::new(
+                token.token.secret().to_owned(),
+                entity_type,
+                Some(Timestamp::from(token.expires_on)),
+            ))),
+            Err(err) => Poll::Ready(Err(err)),
+        }
+    }
+}
+
+impl<TC> AsyncCbsTokenProvider for CbsTokenProvider<TC>
+where
+    TC: TokenCredential + 'static,
+{
+    type Fut<'a> = CbsTokenFut<'a, TC>;
     type Error = azure_core::error::Error;
 
     fn get_token_async(
@@ -129,9 +146,7 @@ impl<TC: TokenCredential> AsyncCbsTokenProvider for CbsTokenProvider<TC> {
         _container_id: impl AsRef<str>,
         _resource_id: impl AsRef<str>,
         _claims: impl IntoIterator<Item = impl AsRef<str>>,
-    ) -> std::pin::Pin<
-        Box<dyn Future<Output = Result<fe2o3_amqp_cbs::token::CbsToken, Self::Error>> + '_>,
-    > {
-        Box::pin(async { self.get_token_inner().await })
+    ) -> Self::Fut<'_> {
+        CbsTokenFut { provider: self }
     }
 }

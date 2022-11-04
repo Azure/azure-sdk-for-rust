@@ -111,7 +111,7 @@ impl ServiceBusClient<SharedAccessCredential> {
 
 impl<TC> ServiceBusClient<TC>
 where
-    TC: TokenCredential + Into<ServiceBusTokenCredential<TC>>,
+    TC: TokenCredential + Into<ServiceBusTokenCredential<TC>> + 'static,
 {
     pub async fn new_with_credential_and_options(
         fully_qualified_namespace: impl Into<String>,
@@ -146,7 +146,7 @@ where
 
 impl<TC> ServiceBusClient<TC>
 where
-    TC: TokenCredential,
+    TC: TokenCredential + 'static,
 {
     /// <summary>
     ///   Performs the task needed to clean up resources used by the <see cref="ServiceBusClient" />,
@@ -168,7 +168,7 @@ where
 
 impl<TC> ServiceBusClient<TC>
 where
-    TC: TokenCredential,
+    TC: TokenCredential + 'static,
 {
     pub async fn create_sender(
         &mut self,

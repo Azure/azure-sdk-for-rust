@@ -194,7 +194,10 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     }
 }
 
-impl<TC: TokenCredential> ServiceBusConnection<AmqpClient<TC>> {
+impl<TC> ServiceBusConnection<AmqpClient<TC>>
+where
+    TC: TokenCredential + 'static, // TODO: should this allow reference to TokenCredential?
+{
     /// The transport type used for this connection.
     pub fn transport_type(&self) -> &ServiceBusTransportType {
         &self.inner_client.transport_type()
