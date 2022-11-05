@@ -65,7 +65,7 @@ impl TransportReceiver for AmqpReceiver {
     /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
     async fn receive_message(
         &mut self,
-        maximum_message_count: u32,
+        _maximum_message_count: u32,
     ) -> Result<ServiceBusReceivedMessage, Self::Error> {
         todo!()
     }
@@ -92,7 +92,7 @@ impl TransportReceiver for AmqpReceiver {
     /// </remarks>
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
-    async fn complete(&mut self, lock_token: impl AsRef<Uuid> + Send) -> Result<(), Self::Error> {
+    async fn complete(&mut self, _lock_token: impl AsRef<Uuid> + Send) -> Result<(), Self::Error> {
         todo!()
     }
 
@@ -114,8 +114,8 @@ impl TransportReceiver for AmqpReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn defer(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
-        properties_to_modify: Option<OrderedMap<String, String>>,
+        _lock_token: impl AsRef<Uuid> + Send,
+        _properties_to_modify: Option<OrderedMap<String, String>>,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -137,8 +137,8 @@ impl TransportReceiver for AmqpReceiver {
     /// <returns></returns>
     async fn peek_message(
         &mut self,
-        sequence_number: Option<u64>,
-        message_count: u32,
+        _sequence_number: Option<u64>,
+        _message_count: u32,
     ) -> Result<ServiceBusReceivedMessage, Self::Error> {
         todo!()
     }
@@ -160,8 +160,8 @@ impl TransportReceiver for AmqpReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn abandon(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
-        properties_to_modify: Option<OrderedMap<String, String>>,
+        _lock_token: impl AsRef<Uuid> + Send,
+        _properties_to_modify: Option<OrderedMap<String, String>>,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -187,10 +187,10 @@ impl TransportReceiver for AmqpReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn dead_letter(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
-        dead_letter_reason: Option<String>,
-        dead_letter_error_description: Option<String>,
-        properties_to_modify: Option<OrderedMap<String, String>>,
+        _lock_token: impl AsRef<Uuid> + Send,
+        _dead_letter_reason: Option<String>,
+        _dead_letter_error_description: Option<String>,
+        _properties_to_modify: Option<OrderedMap<String, String>>,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -205,7 +205,7 @@ impl TransportReceiver for AmqpReceiver {
     /// <seealso cref="DeferAsync"/>
     async fn receive_deferred_messages(
         &mut self,
-        sequence_numbers: impl Iterator<Item = SequenceNo> + Send,
+        _sequence_numbers: impl Iterator<Item = SequenceNo> + Send,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::Error> {
         todo!()
     }
@@ -219,7 +219,7 @@ impl TransportReceiver for AmqpReceiver {
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn renew_message_lock(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
+        _lock_token: impl AsRef<Uuid> + Send,
     ) -> Result<OffsetDateTime, Self::Error> {
         todo!()
     }
@@ -261,7 +261,7 @@ impl TransportReceiver for AmqpReceiver {
     //     CancellationToken cancellationToken);
     async fn set_session_state(
         &mut self,
-        session_state: impl AsRef<u8> + Send,
+        _session_state: impl AsRef<u8> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }

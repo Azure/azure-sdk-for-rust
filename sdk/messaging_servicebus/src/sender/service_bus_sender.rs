@@ -19,14 +19,14 @@ where
 {
     pub async fn send_message(
         &mut self,
-        message: ServiceBusMessage,
+        _message: ServiceBusMessage,
     ) -> Result<(), ServiceBusSenderError> {
         todo!()
     }
 
     pub async fn send_messages(
         &mut self,
-        messages: impl IntoIterator<Item = &ServiceBusMessage>,
+        _messages: impl IntoIterator<Item = &ServiceBusMessage>,
     ) -> Result<(), ServiceBusSenderError> {
         todo!()
     }

@@ -121,7 +121,7 @@ impl ServiceBusRetryPolicy for BasicRetryPolicy {
 
     fn calculate_retry_delay(
         &self,
-        last_error: &Self::Error,
+        _last_error: &Self::Error,
         attempt_count: u32,
     ) -> Option<std::time::Duration> {
         if self.options.max_retries == 0 {

@@ -9,7 +9,7 @@ pub struct ServiceBusReceiver {
 }
 
 impl ServiceBusReceiver {
-    pub async fn dispose(mut self) -> Result<(), DetachError> {
+    pub async fn dispose(self) -> Result<(), DetachError> {
         self.inner.close().await
     }
 }

@@ -5,7 +5,7 @@ use futures_util::{pin_mut, ready};
 use std::{future::Future, task::Poll};
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
-use tokio_util::sync::CancellationToken;
+
 
 use crate::authorization::service_bus_token_credential::ServiceBusTokenCredential;
 

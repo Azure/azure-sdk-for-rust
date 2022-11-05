@@ -28,7 +28,6 @@ use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
     primitives::{
-        service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_transport_type::ServiceBusTransportType,
     },
     ServiceBusReceiveMode,
@@ -37,7 +36,6 @@ use crate::{
 use super::{
     amqp_connection::AmqpConnection,
     amqp_constants,
-    amqp_sender::AmqpSender,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
     error::{CbsAuthError, DisposeError, OpenReceiverError, OpenSenderError},
@@ -397,7 +395,7 @@ where
         let required_claims = vec![service_bus_claim::SEND];
 
         // TODO: what to do about auto-renewal?
-        let auth_expiration_utc = self
+        let _auth_expiration_utc = self
             .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
             .await?;
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
@@ -429,7 +427,7 @@ where
         let audience = vec![&endpoint[..]];
         let required_claims = vec![service_bus_claim::SEND];
 
-        let auth_expiration_utc = self
+        let _auth_expiration_utc = self
             .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
             .await?;
 
@@ -467,9 +465,9 @@ where
 
     pub(crate) async fn open_session_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
-        session_id: String,
+        _entity_path: String,
+        _identifier: String,
+        _session_id: String,
     ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
         todo!()
     }

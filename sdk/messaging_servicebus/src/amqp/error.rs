@@ -1,6 +1,6 @@
 use fe2o3_amqp::{
     connection,
-    link::{DetachError, ReceiverAttachError, SenderAttachError},
+    link::{ReceiverAttachError, SenderAttachError},
     session,
 };
 use fe2o3_amqp_management::error::Error as MgmtError;

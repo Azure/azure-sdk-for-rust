@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use fe2o3_amqp::Sendable;
 use fe2o3_amqp_types::{
     messaging::{

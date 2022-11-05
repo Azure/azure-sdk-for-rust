@@ -270,13 +270,13 @@ where
 
     fn create_session_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
-        retry_policy: ServiceBusRetryOptions,
-        receive_mode: ServiceBusReceiveMode,
-        prefetch_count: u32,
-        session_id: String,
-        is_processor: bool,
+        _entity_path: String,
+        _identifier: String,
+        _retry_policy: ServiceBusRetryOptions,
+        _receive_mode: ServiceBusReceiveMode,
+        _prefetch_count: u32,
+        _session_id: String,
+        _is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
         todo!()
     }
@@ -296,9 +296,9 @@ where
     /// A [TransportRuleManager] configured in the requested manner.
     fn create_rule_manager(
         &mut self,
-        subscription_path: impl Into<String>,
-        retry_options: ServiceBusRetryOptions,
-        identifier: impl Into<String>,
+        _subscription_path: impl Into<String>,
+        _retry_options: ServiceBusRetryOptions,
+        _identifier: impl Into<String>,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
         todo!()
     }

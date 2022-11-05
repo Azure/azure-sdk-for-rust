@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use async_trait::async_trait;
+
 use azure_core::Url;
 use tokio_util::sync::CancellationToken;
 

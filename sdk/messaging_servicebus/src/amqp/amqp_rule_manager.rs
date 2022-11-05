@@ -32,8 +32,8 @@ impl TransportRuleManager for AmqpRuleManager {
     /// A future that represents the asynchronous add rule operation.
     async fn create_rule(
         &mut self,
-        properties: RuleProperties,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
+        _properties: RuleProperties,
+        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -51,8 +51,8 @@ impl TransportRuleManager for AmqpRuleManager {
     /// A future that represents the asynchronous remove rule operation.
     async fn delete_rule(
         &mut self,
-        rule_name: impl Into<String> + Send,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
+        _rule_name: impl Into<String> + Send,
+        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -71,9 +71,9 @@ impl TransportRuleManager for AmqpRuleManager {
     /// Returns a list of rules description
     async fn get_rules(
         &mut self,
-        skip: i32,
-        top: i32,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
+        _skip: i32,
+        _top: i32,
+        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<Vec<RuleProperties>, Self::Error> {
         todo!()
     }
@@ -86,7 +86,7 @@ impl TransportRuleManager for AmqpRuleManager {
     ///   cancel the operation.
     async fn close(
         &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
+        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
     ) -> Result<(), Self::Error> {
         todo!()
     }

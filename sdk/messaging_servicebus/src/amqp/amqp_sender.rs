@@ -62,7 +62,7 @@ where
     /// An [ServiceBusMessageBatch] with the requested `options`
     async fn create_message_batch(
         &mut self,
-        options: CreateMessageBatchOptions,
+        _options: CreateMessageBatchOptions,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -108,24 +108,24 @@ where
     /// A task to be resolved on when the operation has completed.
     async fn send_batch(
         &mut self,
-        message_batch: ServiceBusMessageBatch,
-        cancellation_token: CancellationToken,
+        _message_batch: ServiceBusMessageBatch,
+        _cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error> {
         todo!()
     }
 
     async fn schedule_messages(
         &mut self,
-        messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        cancellation_token: CancellationToken,
+        _messages: impl Iterator<Item = &ServiceBusMessage> + Send,
+        _cancellation_token: CancellationToken,
     ) -> Result<Vec<i64>, Self::Error> {
         todo!()
     }
 
     async fn cancel_scheduled_messages(
         &mut self,
-        sequence_numbers: &[i64],
-        cancellation_token: CancellationToken,
+        _sequence_numbers: &[i64],
+        _cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error> {
         todo!()
     }
