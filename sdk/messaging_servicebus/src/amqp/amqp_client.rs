@@ -1,13 +1,12 @@
-use std::{future::Future, pin::Pin, time::Duration};
+use std::{future::Future, marker::PhantomData, pin::Pin, time::Duration};
 
-use async_trait::async_trait;
 use azure_core::{
     auth::{AccessToken, TokenCredential},
     Url,
 };
 use fe2o3_amqp::{
     connection::OpenError,
-    link::{ReceiverAttachError, SenderAttachError},
+    link::{ReceiverAttachError, SendError, SenderAttachError},
     session::BeginError,
 };
 use tokio::time::error::Elapsed;
@@ -18,6 +17,7 @@ use crate::{
     core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
@@ -86,7 +86,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
 ///
 /// See also [`TransportClient`]
 #[derive(Debug)]
-pub(crate) struct AmqpClient<TC>
+pub(crate) struct AmqpClient<TC, RP>
 where
     TC: TokenCredential,
 {
@@ -115,15 +115,26 @@ where
     ///
     // private AmqpConnectionScope ConnectionScope { get; }
     connection_scope: AmqpConnectionScope<TC>,
-    // TODO: implement metrics
-    // // public override ServiceBusTransportMetrics TransportMetrics { get; }
-    // transport_metrics: Option<ServiceBusTransportMetrics>,
+
+    /// Retry policy phantom
+    retry_policy: PhantomData<RP>,
 }
 
-impl<C> AmqpClient<C>
+impl<C, RP> AmqpClient<C, RP>
 where
     C: TokenCredential + 'static,
+    RP: ServiceBusRetryPolicy,
 {
+    pub(crate) fn set_retry_policy<RP2>(self) -> AmqpClient<C, RP2> {
+        AmqpClient {
+            credential_refresh_buffer: self.credential_refresh_buffer,
+            closed: self.closed,
+            access_token: self.access_token,
+            connection_scope: self.connection_scope,
+            retry_policy: PhantomData,
+        }
+    }
+
     pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
         self.connection_scope.transport_type()
     }
@@ -149,11 +160,6 @@ where
             None => service_endpoint.clone(),
         };
 
-        // let transport_metrics = match options.enable_transport_metrics {
-        //     true => Some(ServiceBusTransportMetrics::new()),
-        //     false => None,
-        // };
-
         // Create AmqpConnectionScope
         let connection_scope = AmqpConnectionScope::new(
             service_endpoint,
@@ -170,22 +176,24 @@ where
             // service_endpoint,
             // connection_endpoint,
             connection_scope,
-            // transport_metrics,
+            retry_policy: PhantomData,
         })
     }
 }
 
 // #[async_trait]
-impl<C> TransportClient for AmqpClient<C>
+impl<C, RP> TransportClient for AmqpClient<C, RP>
 where
     C: TokenCredential + 'static,
+    RP: ServiceBusRetryPolicy + Send + Sync,
+    RP::Error: From<SendError>,
 {
     type CreateSenderError = OpenSenderError;
     type CreateReceiverError = OpenReceiverError;
     type CreateRuleManagerError = AmqpClientError;
     type DisposeError = AmqpClientError;
 
-    type Sender = AmqpSender;
+    type Sender = AmqpSender<RP>;
 
     type Receiver = AmqpReceiver;
 
@@ -227,10 +235,10 @@ where
                 .connection_scope
                 .open_sender_link(entity_path, identifier)
                 .await?;
-
+            let retry_policy = RP::new(retry_options);
             Ok(AmqpSender {
                 identifier,
-                retry_options,
+                retry_policy,
                 sender,
             })
         })

@@ -40,7 +40,7 @@ use super::{
 /// Calling <see cref="DisposeAsync" /> as the application is shutting down will ensure that network
 /// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
-pub struct ServiceBusClient<TC: TokenCredential, R: ServiceBusRetryPolicy> {
+pub struct ServiceBusClient<TC: TokenCredential, RP: ServiceBusRetryPolicy> {
     /// Indicates whether or not this instance has been closed.
     ///
     /// TODO: use `ServiceBusConnection::is_closed`?
@@ -50,10 +50,7 @@ pub struct ServiceBusClient<TC: TokenCredential, R: ServiceBusRetryPolicy> {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<AmqpClient<TC>>, // TODO: use trait objects?
-
-    /// Retry policy
-    retry_policy_marker: PhantomData<R>,
+    connection: ServiceBusConnection<AmqpClient<TC, RP>>, // TODO: use trait objects?
 }
 
 impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
@@ -75,12 +72,14 @@ impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
             closed: false,
             identifier,
             connection,
-            retry_policy_marker: PhantomData,
         })
     }
 }
 
-impl<R: ServiceBusRetryPolicy> ServiceBusClient<SharedAccessCredential, R> {
+impl<R> ServiceBusClient<SharedAccessCredential, R>
+where
+    R: ServiceBusRetryPolicy + Send + Sync,
+{
     /// The fully qualified Service Bus namespace that the connection is associated with. This is
     /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
     ///
@@ -124,17 +123,16 @@ impl<R: ServiceBusRetryPolicy> ServiceBusClient<SharedAccessCredential, R> {
 impl<TC, R> ServiceBusClient<TC, R>
 where
     TC: TokenCredential + Into<ServiceBusTokenCredential<TC>> + 'static,
-    R: ServiceBusRetryPolicy + 'static,
+    R: ServiceBusRetryPolicy + Send + Sync + 'static,
 {
-    pub fn retry_policy<RP>(self) -> ServiceBusClient<TC, RP>
+    pub fn set_retry_policy<RP>(self) -> ServiceBusClient<TC, RP>
     where
-        RP: ServiceBusRetryPolicy,
+        RP: ServiceBusRetryPolicy + Send,
     {
         ServiceBusClient {
             closed: self.closed,
             identifier: self.identifier,
-            connection: self.connection,
-            retry_policy_marker: PhantomData,
+            connection: self.connection.set_retry_policy(),
         }
     }
 
@@ -161,7 +159,6 @@ where
             closed: false,
             identifier,
             connection,
-            retry_policy_marker: PhantomData,
         })
     }
 }
@@ -173,7 +170,7 @@ where
 impl<TC, R> ServiceBusClient<TC, R>
 where
     TC: TokenCredential + 'static,
-    R: ServiceBusRetryPolicy + 'static,
+    R: ServiceBusRetryPolicy + Send + Sync + 'static,
 {
     /// <summary>
     ///   Performs the task needed to clean up resources used by the <see cref="ServiceBusClient" />,
@@ -196,12 +193,12 @@ where
 impl<TC, R> ServiceBusClient<TC, R>
 where
     TC: TokenCredential + 'static,
-    R: ServiceBusRetryPolicy + 'static,
+    R: ServiceBusRetryPolicy + Send + Sync + 'static,
 {
     pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
-    ) -> Result<ServiceBusSender, OpenSenderError> {
+    ) -> Result<ServiceBusSender<R>, OpenSenderError> {
         self.create_sender_with_options(queue_or_topic_name, ServiceBusSenderOptions::default())
             .await
     }
@@ -210,7 +207,7 @@ where
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
-    ) -> Result<ServiceBusSender, OpenSenderError> {
+    ) -> Result<ServiceBusSender<R>, OpenSenderError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
@@ -236,7 +233,7 @@ where
 impl<TC, R> ServiceBusClient<TC, R>
 where
     TC: TokenCredential + 'static,
-    R: ServiceBusRetryPolicy + 'static,
+    R: ServiceBusRetryPolicy + Send + Sync + 'static,
 {
     pub async fn create_receiver(
         &mut self,

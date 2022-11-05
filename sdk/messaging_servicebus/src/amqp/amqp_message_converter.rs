@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use fe2o3_amqp::Sendable;
 use fe2o3_amqp_types::{
     messaging::{
         annotations::{AnnotationKey, BorrowedKey},
-        Batch, Data, IntoBody, Message, MessageAnnotations, Properties,
+        Batch, Data, Message, MessageAnnotations, Properties,
     },
-    primitives::{OrderedMap, SymbolRef},
+    primitives::SymbolRef,
 };
 
 use crate::ServiceBusMessage;
@@ -19,23 +21,25 @@ const GUID_SIZE_IN_BYTES: usize = 16;
 /// <summary>The size, in bytes, to use as a buffer for stream operations.</summary>
 const STREAM_BUFFER_SIZE_IN_BYTES: usize = 512;
 
+#[derive(Clone)]
 pub(crate) enum SendableEnvelope {
     Single(Sendable<Data>),
     Batch(Sendable<Batch<Data>>),
 }
 
+#[derive(Clone)]
 pub(crate) struct BatchEnvelope {
-    batchable: bool,
-    sendable: SendableEnvelope,
+    pub batchable: bool,
+    pub sendable: SendableEnvelope,
 }
 
 #[inline]
 pub(crate) fn batch_service_bus_messages_as_amqp_message(
     source: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator,
-    force_batch: Option<bool>,
+    force_batch: bool,
 ) -> Option<BatchEnvelope> {
     let batch_messages = source.map(|m| m.amqp_message);
-    build_amqp_batch_from_messages(batch_messages, force_batch.unwrap_or(false))
+    build_amqp_batch_from_messages(batch_messages, force_batch)
 }
 
 fn filter_properties(properties: Properties) -> Properties {
@@ -79,17 +83,21 @@ fn build_amqp_batch_from_messages(
 
     match (total, force_batch) {
         (0, _) => None,
-        (1, false) => source
-            .next()
-            .map(|mut map| {
-                map.properties = map.properties.map(filter_properties);
-                map.message_annotations = map.message_annotations.map(filter_message_annotation);
-                Sendable::from(map)
-            })
-            .map(|s| BatchEnvelope {
+        (1, false) => {
+            let mut message = source.next()?;
+            message.properties = message.properties.map(filter_properties);
+            message.message_annotations =
+                message.message_annotations.map(filter_message_annotation);
+            let sendable = Sendable {
+                message,
+                message_format: Default::default(),
+                settled: Default::default(),
+            };
+            Some(BatchEnvelope {
                 batchable: false,
-                sendable: SendableEnvelope::Single(s),
-            }),
+                sendable: SendableEnvelope::Single(sendable),
+            })
+        }
         _ => {
             let mut batch_data: Batch<Data> = Batch::from(Vec::with_capacity(total));
 
@@ -107,7 +115,7 @@ fn build_amqp_batch_from_messages(
                 .map(filter_message_annotation);
 
             let message_envelop = Message::builder()
-                .data_batch(batch_data)
+                .body(batch_data)
                 .properties(properties)
                 .message_annotations(message_annotations)
                 .build();

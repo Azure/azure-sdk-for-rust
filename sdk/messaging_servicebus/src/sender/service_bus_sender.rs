@@ -1,21 +1,22 @@
 use fe2o3_amqp::link::DetachError;
 
 use crate::{
-    amqp::amqp_sender::AmqpSender,
-    core::{TransportClient, TransportSender},
-    primitives::service_bus_connection::ServiceBusConnection,
-    ServiceBusMessage, ServiceBusSenderOptions,
+    amqp::amqp_sender::AmqpSender, core::TransportSender,
+    primitives::service_bus_retry_policy::ServiceBusRetryPolicy, ServiceBusMessage,
 };
 
 use super::error::ServiceBusSenderError;
 
-pub struct ServiceBusSender {
-    pub(crate) inner: AmqpSender,
+pub struct ServiceBusSender<RP: ServiceBusRetryPolicy> {
+    pub(crate) inner: AmqpSender<RP>,
     pub(crate) entity_path: String,
     pub(crate) identifier: String,
 }
 
-impl ServiceBusSender {
+impl<RP> ServiceBusSender<RP>
+where
+    RP: ServiceBusRetryPolicy + Send + Sync,
+{
     pub async fn send_message(
         &mut self,
         message: ServiceBusMessage,

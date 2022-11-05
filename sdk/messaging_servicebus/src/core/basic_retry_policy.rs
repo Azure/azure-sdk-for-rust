@@ -1,17 +1,43 @@
-use digest::typenum::Pow;
+use fe2o3_amqp::link::{LinkStateError, SendError};
 use rand::Rng;
 use std::{fmt::Display, time::Duration};
+use tokio::time::error::Elapsed;
 
-use crate::primitives::{
-    service_bus_retry_mode::ServiceBusRetryMode,
-    service_bus_retry_options::ServiceBusRetryOptions,
-    service_bus_retry_policy::{ServiceBusRetryPolicy, ServiceBusRetryPolicyState},
+use crate::{
+    amqp::error::NotAcceptedError,
+    primitives::{
+        service_bus_retry_mode::ServiceBusRetryMode,
+        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_retry_policy::{
+            ServiceBusRetryPolicy, ServiceBusRetryPolicyError, ServiceBusRetryPolicyState,
+        },
+    },
 };
 
 const JITTER_FACTOR: f64 = 0.08;
 
 #[derive(Debug, thiserror::Error)]
-pub enum BasicRetryPolicyError {}
+pub enum BasicRetryPolicyError {
+    #[error(transparent)]
+    Send(#[from] SendError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+
+    #[error(transparent)]
+    NotAccepted(#[from] NotAcceptedError),
+}
+
+impl ServiceBusRetryPolicyError for BasicRetryPolicyError {
+    fn is_scope_disposed(&self) -> bool {
+        matches!(
+            self,
+            BasicRetryPolicyError::Send(SendError::LinkStateError(
+                LinkStateError::IllegalSessionState
+            ))
+        )
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BasicRetryPolicyState {
@@ -68,7 +94,7 @@ impl Display for BasicRetryPolicy {
 }
 
 impl ServiceBusRetryPolicy for BasicRetryPolicy {
-    type Ok = ();
+    // type Ok = ();
 
     type Error = BasicRetryPolicyError;
 

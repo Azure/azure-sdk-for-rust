@@ -4,6 +4,7 @@ use fe2o3_amqp::{
     session,
 };
 use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -12,6 +13,21 @@ pub enum Error {
 
     #[error("The message is a raw AMQP message")]
     RawAmqpMessage,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum NotAcceptedError {
+    /// 3.4.2 Rejected
+    #[error("Rejceted: {:?}", .0)]
+    Rejected(Rejected),
+
+    /// 3.4.4 Released
+    #[error("Released: {:?}", .0)]
+    Released(Released),
+
+    /// 3.4.5 Modified
+    #[error("Modified: {:?}", .0)]
+    Modified(Modified),
 }
 
 // #[inline]
@@ -65,3 +81,10 @@ pub enum CbsAuthError {
     #[error(transparent)]
     Cbs(#[from] MgmtError),
 }
+
+// #[derive(Debug, thiserror::Error)]
+// pub enum SendError {
+//     #[error(transparent)]
+//     Amqp(#[from] fe2o3_amqp::link::SendError),
+
+// }

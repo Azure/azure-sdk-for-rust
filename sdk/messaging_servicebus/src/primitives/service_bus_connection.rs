@@ -25,6 +25,7 @@ use crate::{
 use super::{
     service_bus_connection_string_properties::{FormatError, ServiceBusConnectionStringProperties},
     service_bus_retry_options::ServiceBusRetryOptions,
+    service_bus_retry_policy::ServiceBusRetryPolicy,
     service_bus_transport_type::ServiceBusTransportType,
 };
 
@@ -196,10 +197,23 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     }
 }
 
-impl<TC> ServiceBusConnection<AmqpClient<TC>>
+impl<TC, RP> ServiceBusConnection<AmqpClient<TC, RP>>
 where
     TC: TokenCredential + 'static, // TODO: should this allow reference to TokenCredential?
+    RP: ServiceBusRetryPolicy + Send + Sync,
 {
+    pub fn set_retry_policy<RP2>(self) -> ServiceBusConnection<AmqpClient<TC, RP2>>
+    where
+        RP2: ServiceBusRetryPolicy + Send,
+    {
+        ServiceBusConnection {
+            fully_qualified_namespace: self.fully_qualified_namespace,
+            entity_path: self.entity_path,
+            retry_options: self.retry_options,
+            inner_client: self.inner_client.set_retry_policy(),
+        }
+    }
+
     /// The transport type used for this connection.
     pub fn transport_type(&self) -> &ServiceBusTransportType {
         &self.inner_client.transport_type()
@@ -233,7 +247,7 @@ where
         entity_path: String,
         identifier: String,
         retry_options: ServiceBusRetryOptions,
-    ) -> Result<AmqpSender, OpenSenderError> {
+    ) -> Result<AmqpSender<RP>, OpenSenderError> {
         let sender = self
             .inner_client
             .create_sender(entity_path, identifier, retry_options)
@@ -267,7 +281,10 @@ where
     }
 }
 
-impl ServiceBusConnection<AmqpClient<SharedAccessCredential>> {
+impl<RP> ServiceBusConnection<AmqpClient<SharedAccessCredential, RP>>
+where
+    RP: ServiceBusRetryPolicy + Send + Sync,
+{
     pub(crate) async fn new<'a>(
         connection_string: Cow<'a, str>,
         options: ServiceBusClientOptions,

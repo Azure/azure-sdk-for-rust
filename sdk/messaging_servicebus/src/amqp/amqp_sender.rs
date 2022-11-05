@@ -1,33 +1,47 @@
 use async_trait::async_trait;
-use fe2o3_amqp::link::{DetachError, SendError};
+use fe2o3_amqp::link::DetachError;
+use fe2o3_amqp_types::messaging::Outcome;
 use tokio_util::sync::CancellationToken;
 
+use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
 use crate::{
-    core::TransportSender, primitives::service_bus_retry_options::ServiceBusRetryOptions,
+    core::TransportSender,
+    primitives::service_bus_retry_policy::{
+        run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
+    },
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
-use super::{amqp_message_converter::batch_service_bus_messages_as_amqp_message, LINK_IDENTIFIER};
+use super::{
+    amqp_message_converter::{
+        batch_service_bus_messages_as_amqp_message, BatchEnvelope, SendableEnvelope,
+    },
+    error::NotAcceptedError,
+};
 
-pub(crate) struct AmqpSender {
+pub(crate) struct AmqpSender<RP: ServiceBusRetryPolicy> {
     pub identifier: u32,
-    pub retry_options: ServiceBusRetryOptions,
+    pub retry_policy: RP,
     pub sender: fe2o3_amqp::Sender,
 }
 
-// impl AmqpSender {
-//     pub(crate) fn new(sender: fe2o3_amqp::Sender) -> Self {
-//         Self {
-//             identifier: LINK_IDENTIFIER.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
-//             sender,
-//         }
-//     }
-// }
+impl<RP: ServiceBusRetryPolicy> AmqpSender<RP>
+where
+    RP: ServiceBusRetryPolicy + Send + Sync,
+    RP::State: ServiceBusRetryPolicyState,
+    RP::Error: ServiceBusRetryPolicyError,
+{
+}
 
 #[async_trait]
-impl TransportSender for AmqpSender {
+impl<RP> TransportSender for AmqpSender<RP>
+where
+    RP: ServiceBusRetryPolicy + Send + Sync,
+    RP::State: ServiceBusRetryPolicyState,
+    RP::Error: ServiceBusRetryPolicyError,
+{
     type Error = ();
-    type SendError = SendError;
+    type SendError = RetryError<RP::Error>;
     type CloseError = DetachError;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
@@ -66,10 +80,19 @@ impl TransportSender for AmqpSender {
     async fn send(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
+        cancellation_token: CancellationToken,
     ) -> Result<(), Self::SendError> {
+        // ServiceBusRetryPolicyExt::run_operation(&mut , operation, t1, cancellation_token)
         // TODO: retry policy
-        // let batch_envelope = batch_service_bus_messages_as_amqp_message(messages, force_batch)
-        todo!()
+        let batch = batch_service_bus_messages_as_amqp_message(messages, false);
+        let policy = &mut self.retry_policy;
+        let sender = &mut self.sender;
+        run_operation! {
+            policy,
+            RP,
+            cancellation_token,
+            send_batch_envelope::<RP::Error>(sender, &batch).await
+        }
     }
 
     /// Sends a <see cref="ServiceBusMessageBatch"/> to the associated Queue/Topic.
@@ -86,6 +109,7 @@ impl TransportSender for AmqpSender {
     async fn send_batch(
         &mut self,
         message_batch: ServiceBusMessageBatch,
+        cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -93,6 +117,7 @@ impl TransportSender for AmqpSender {
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = &ServiceBusMessage> + Send,
+        cancellation_token: CancellationToken,
     ) -> Result<Vec<i64>, Self::Error> {
         todo!()
     }
@@ -100,6 +125,7 @@ impl TransportSender for AmqpSender {
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: &[i64],
+        cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -113,4 +139,46 @@ impl TransportSender for AmqpSender {
     async fn close(self) -> Result<(), Self::CloseError> {
         self.sender.close().await
     }
+}
+
+async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
+    sender: &mut fe2o3_amqp::Sender,
+    batch: &Option<BatchEnvelope>,
+) -> Result<(), E> {
+    if let Some(batch) = batch {
+        let outcome = match &batch.sendable {
+            SendableEnvelope::Single(sendable) => match batch.batchable {
+                true => {
+                    let fut = sender.send_batchable_ref(sendable).await?;
+                    fut.await?
+                }
+                false => sender.send_ref(sendable).await?,
+            },
+            SendableEnvelope::Batch(sendable) => match batch.batchable {
+                true => {
+                    let fut = sender.send_batchable_ref(sendable).await?;
+                    fut.await?
+                }
+                false => sender.send_ref(sendable).await?,
+            },
+        };
+
+        match outcome {
+            Outcome::Accepted(_) => return Ok(()),
+            Outcome::Rejected(rejected) => {
+                return Err(E::from(NotAcceptedError::Rejected(rejected)))
+            }
+            Outcome::Released(released) => {
+                return Err(E::from(NotAcceptedError::Released(released)))
+            }
+            Outcome::Modified(modified) => {
+                return Err(E::from(NotAcceptedError::Modified(modified)))
+            }
+            Outcome::Declared(_) => {
+                unreachable!("Declared is not expected outside txn-control links")
+            }
+        }
+    }
+
+    Ok(())
 }
