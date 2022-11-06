@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_types::messaging::Outcome;
-use tokio_util::sync::CancellationToken;
 
 use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
 use crate::{
@@ -80,7 +79,6 @@ where
     async fn send(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
-        cancellation_token: CancellationToken,
     ) -> Result<(), Self::SendError> {
         // ServiceBusRetryPolicyExt::run_operation(&mut , operation, t1, cancellation_token)
         // TODO: retry policy
@@ -90,7 +88,6 @@ where
         run_operation! {
             policy,
             RP,
-            cancellation_token,
             send_batch_envelope::<RP::Error>(sender, &batch).await
         }
     }
@@ -109,7 +106,6 @@ where
     async fn send_batch(
         &mut self,
         _message_batch: ServiceBusMessageBatch,
-        _cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error> {
         todo!()
     }
@@ -117,7 +113,6 @@ where
     async fn schedule_messages(
         &mut self,
         _messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        _cancellation_token: CancellationToken,
     ) -> Result<Vec<i64>, Self::Error> {
         todo!()
     }
@@ -125,7 +120,6 @@ where
     async fn cancel_scheduled_messages(
         &mut self,
         _sequence_numbers: &[i64],
-        _cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error> {
         todo!()
     }

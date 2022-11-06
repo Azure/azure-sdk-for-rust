@@ -25,8 +25,41 @@ async fn client_can_connect_with_connection_string() {
 async fn client_can_create_sender() {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
-    let sender = client.create_sender("q1").await.unwrap();
+    let sender = client.create_sender(queue).await.unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+#[tokio::test]
+async fn client_send_single_message() {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client.create_sender(queue).await.unwrap();
+    sender.send_message("hello world").await.unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+#[tokio::test]
+async fn client_send_multiple_messages() {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client.create_sender(queue).await.unwrap();
+    sender
+        .send_messages(vec!["hello world", "hello world 2"])
+        .await
+        .unwrap();
 
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
@@ -36,8 +69,10 @@ async fn client_can_create_sender() {
 async fn client_can_create_receiver() {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
-    let receiver = client.create_receiver("q1").await.unwrap();
+    let receiver = client.create_receiver(queue).await.unwrap();
 
     receiver.dispose().await.unwrap();
     client.dispose().await.unwrap();

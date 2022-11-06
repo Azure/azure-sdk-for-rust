@@ -2,10 +2,12 @@ use fe2o3_amqp::Sendable;
 use fe2o3_amqp_types::{
     messaging::{
         annotations::{AnnotationKey, BorrowedKey},
+        message::__private::Serializable,
         Batch, Data, Message, MessageAnnotations, Properties,
     },
     primitives::SymbolRef,
 };
+use serde_amqp::to_vec;
 
 use crate::ServiceBusMessage;
 
@@ -19,13 +21,13 @@ const GUID_SIZE_IN_BYTES: usize = 16;
 /// <summary>The size, in bytes, to use as a buffer for stream operations.</summary>
 const STREAM_BUFFER_SIZE_IN_BYTES: usize = 512;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(crate) enum SendableEnvelope {
     Single(Sendable<Data>),
     Batch(Sendable<Batch<Data>>),
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct BatchEnvelope {
     pub batchable: bool,
     pub sendable: SendableEnvelope,
@@ -100,28 +102,34 @@ fn build_amqp_batch_from_messages(
             let mut batch_data: Batch<Data> = Batch::from(Vec::with_capacity(total));
 
             let first_message = source.next()?;
-            batch_data.push(first_message.body);
 
-            while let Some(message) = source.next() {
-                batch_data.push(message.body);
-            }
-
-            let properties = first_message.properties.map(filter_properties);
-
+            // Take selected fields from the first message properties and message annotations and
+            // use it as the basis for the evelope
+            let properties = first_message.properties.clone().map(filter_properties);
             let message_annotations = first_message
                 .message_annotations
+                .clone()
                 .map(filter_message_annotation);
 
-            let message_envelop = Message::builder()
+            let data = Data::from(to_vec(&Serializable(first_message)).ok()?);
+            batch_data.push(data);
+
+            while let Some(message) = source.next() {
+                let data = Data::from(to_vec(&Serializable(message)).ok()?);
+                batch_data.push(data);
+            }
+
+            let envelop = Message::builder()
                 .body(batch_data)
                 .properties(properties)
                 .message_annotations(message_annotations)
                 .build();
 
             let sendable = Sendable::builder()
-                .message(message_envelop)
+                .message(envelop)
                 .message_format(amqp_constants::AMQP_BATCHED_MESSAGE_FORMAT)
                 .build();
+
             Some(BatchEnvelope {
                 batchable: true,
                 sendable: SendableEnvelope::Batch(sendable),

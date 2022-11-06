@@ -151,6 +151,12 @@ impl ServiceBusMessage {
     //     &self.amqp_message
     // }
 
+    pub fn new(data: impl Into<Vec<u8>>) -> Self {
+        Self {
+            amqp_message: Message::builder().data(Binary::from(data)).build(),
+        }
+    }
+
     /// Gets the body of the message
     pub fn body(&self) -> &[u8] {
         &self.amqp_message.body.0
@@ -419,5 +425,17 @@ impl ToString for ServiceBusMessage {
             }
             None => String::from(r#"{MessageId:None"#),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ServiceBusMessage;
+
+    #[test]
+    fn convert_to_service_bus_message() {
+        let src = "hello world";
+        let mesasge = ServiceBusMessage::from(src);
+        assert_eq!(mesasge.body(), src.as_bytes());
     }
 }

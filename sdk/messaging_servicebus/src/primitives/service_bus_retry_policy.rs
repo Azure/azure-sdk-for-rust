@@ -11,6 +11,7 @@ use super::service_bus_retry_options::ServiceBusRetryOptions;
 
 pub static SERVER_BUSY_BASE_SLEEP_TIME: Duration = Duration::from_secs(10);
 
+#[derive(Debug, thiserror::Error)]
 pub enum RetryError<E> {
     ServiceBusy,
     Operation(E),
@@ -159,6 +160,52 @@ pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
 impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + Sync {}
 
 macro_rules! run_operation {
+    ($policy:ident, $policy_ty:ty, $op:expr) => {{
+        let mut failed_attempt_count = 0;
+        let mut try_timeout = $policy.calculate_try_timeout(0);
+        if $policy.state().is_server_busy()
+            && try_timeout
+                < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
+        {
+            // We are in a server busy state before we start processing. Since
+            // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
+            // entire Sleep time.
+            tokio::time::sleep(try_timeout).await;
+        }
+
+        let outcome = loop {
+            if $policy.state().is_server_busy() {
+                tokio::time::sleep(
+                    crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
+                )
+                .await;
+            }
+
+            let outcome = match tokio::time::timeout(try_timeout, async { $op }).await {
+                Ok(result) => result.map_err(<$policy_ty>::Error::from),
+                Err(err) => Err(<$policy_ty>::Error::from(err)),
+            };
+            match outcome {
+                Ok(outcome) => break outcome,
+                Err(error) => {
+                    failed_attempt_count += 1;
+                    let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
+
+                    match (retry_delay, error.is_scope_disposed()) {
+                        (Some(retry_delay), false) => {
+                            log::error!("{}", &error);
+                            tokio::time::sleep(retry_delay).await;
+                            try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
+                        }
+                        _ => return Err(RetryError::Operation(error)),
+                    }
+                }
+            }
+        };
+
+        Result::<(), RetryError<<$policy_ty>::Error>>::Ok(outcome)
+    }};
+
     ($policy:ident, $policy_ty:ty, $cancellation_token:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
         let mut try_timeout = $policy.calculate_try_timeout(0);

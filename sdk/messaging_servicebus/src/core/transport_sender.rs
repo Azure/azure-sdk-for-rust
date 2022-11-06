@@ -47,7 +47,6 @@ pub trait TransportSender {
     async fn send(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
-        cancellation_token: CancellationToken,
     ) -> Result<(), Self::SendError>;
 
     /// Sends a <see cref="ServiceBusMessageBatch"/> to the associated Queue/Topic.
@@ -64,19 +63,16 @@ pub trait TransportSender {
     async fn send_batch(
         &mut self,
         message_batch: ServiceBusMessageBatch,
-        cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error>;
 
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-        cancellation_token: CancellationToken,
     ) -> Result<Vec<i64>, Self::Error>;
 
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: &[i64],
-        cancellation_token: CancellationToken,
     ) -> Result<(), Self::Error>;
 
     /// Closes the connection to the transport producer instance.

@@ -1,11 +1,11 @@
 use fe2o3_amqp::link::DetachError;
 
 use crate::{
-    amqp::amqp_sender::AmqpSender, core::TransportSender,
-    primitives::service_bus_retry_policy::ServiceBusRetryPolicy, ServiceBusMessage,
+    amqp::amqp_sender::AmqpSender,
+    core::TransportSender,
+    primitives::service_bus_retry_policy::{RetryError, ServiceBusRetryPolicy},
+    ServiceBusMessage,
 };
-
-use super::error::ServiceBusSenderError;
 
 pub struct ServiceBusSender<RP: ServiceBusRetryPolicy> {
     pub(crate) inner: AmqpSender<RP>,
@@ -19,16 +19,20 @@ where
 {
     pub async fn send_message(
         &mut self,
-        _message: ServiceBusMessage,
-    ) -> Result<(), ServiceBusSenderError> {
-        todo!()
+        message: impl Into<ServiceBusMessage>,
+    ) -> Result<(), RetryError<RP::Error>> {
+        let iter = std::iter::once(message.into());
+        self.send_messages(iter).await
     }
 
-    pub async fn send_messages(
-        &mut self,
-        _messages: impl IntoIterator<Item = &ServiceBusMessage>,
-    ) -> Result<(), ServiceBusSenderError> {
-        todo!()
+    pub async fn send_messages<M, I>(&mut self, messages: M) -> Result<(), RetryError<RP::Error>>
+    where
+        M: IntoIterator<Item = I>,
+        M::IntoIter: ExactSizeIterator + Send,
+        I: Into<ServiceBusMessage>,
+    {
+        let messages = messages.into_iter().map(|m| m.into());
+        self.inner.send(messages).await
     }
 
     pub async fn dispose(self) -> Result<(), DetachError> {
