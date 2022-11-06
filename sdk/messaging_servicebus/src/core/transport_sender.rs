@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use tokio_util::sync::CancellationToken;
 
 use crate::{CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch};
 

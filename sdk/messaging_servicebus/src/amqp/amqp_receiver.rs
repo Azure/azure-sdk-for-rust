@@ -1,6 +1,11 @@
 use async_trait::async_trait;
-use fe2o3_amqp::link::DetachError;
-use fe2o3_amqp_types::{definitions::SequenceNo, primitives::OrderedMap};
+use fe2o3_amqp::{
+    link::{delivery::DeliveryInfo, DetachError, RecvError},
+    Delivery,
+};
+use fe2o3_amqp_types::{definitions::SequenceNo, messaging::Body, primitives::OrderedMap};
+use serde_amqp::Value;
+use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -8,29 +13,64 @@ use crate::{
     core::TransportReceiver,
     primitives::{
         service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_retry_policy::{
+            run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyError,
+            ServiceBusRetryPolicyState,
+        },
     },
+    receiver::error::ServiceBusRecvError,
+    ServiceBusReceiveMode,
 };
 
-pub(crate) struct AmqpReceiver {
+use super::amqp_message_converter;
+
+pub(crate) struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub identifier: u32,
-    pub retry_options: ServiceBusRetryOptions,
+    pub retry_policy: RP,
     pub receiver: fe2o3_amqp::Receiver,
+    pub receive_mode: ServiceBusReceiveMode,
     pub is_processor: bool,
 }
 
-// impl AmqpReceiver {
-//     pub fn new(receiver: fe2o3_amqp::Receiver) -> Self {
-//         Self {
-//             identifier: LINK_IDENTIFIER.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
-//             receiver,
-//         }
-//     }
-// }
+impl<RP> AmqpReceiver<RP>
+where
+    RP: ServiceBusRetryPolicy,
+{
+    async fn receive_messages_inner(
+        &mut self,
+        buffer: &mut Vec<ServiceBusReceivedMessage>,
+        max_messages: u32,
+    ) -> Result<(), ServiceBusRecvError> {
+        for _ in 0..max_messages {
+            let delivery: Delivery<Body<Value>> = self.receiver.recv().await?;
+
+            let mut is_settled = false;
+            if self.receive_mode == ServiceBusReceiveMode::ReceiveAndDelete {
+                self.receiver
+                    .accept(&delivery)
+                    .await
+                    .map_err(RecvError::from)?;
+                is_settled = true;
+            }
+
+            let message = amqp_message_converter::amqp_delivery_as_service_bus_received_message(
+                delivery, is_settled,
+            )?;
+
+            buffer.push(message);
+        }
+        Ok(())
+    }
+}
 
 #[async_trait]
-impl TransportReceiver for AmqpReceiver {
+impl<RP> TransportReceiver for AmqpReceiver<RP>
+where
+    RP: ServiceBusRetryPolicy + Send,
+{
     type Error = ();
+    type ReceiveError = ServiceBusRecvError;
+    type CompleteError = RetryError<RP::Error>;
     type CloseError = DetachError;
 
     /// <summary>
@@ -63,11 +103,25 @@ impl TransportReceiver for AmqpReceiver {
     ///     If not specified, the <see cref="ServiceBusRetryOptions.TryTimeout"/> will be used.</param>
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
-    async fn receive_message(
+    async fn receive_messages(
         &mut self,
-        _maximum_message_count: u32,
-    ) -> Result<ServiceBusReceivedMessage, Self::Error> {
-        todo!()
+        max_messages: u32,
+        max_wait_time: Option<StdDuration>,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
+        let mut message_buffer: Vec<ServiceBusReceivedMessage> =
+            Vec::with_capacity(max_messages as usize);
+        let max_wait_time =
+            max_wait_time.unwrap_or_else(|| self.retry_policy.options().try_timeout);
+
+        tokio::select! {
+            _ = tokio::time::sleep(max_wait_time) => {
+                Ok(message_buffer)
+            }
+            result = self.receive_messages_inner(&mut message_buffer, max_messages) => {
+                result?;
+                Ok(message_buffer)
+            }
+        }
     }
 
     /// <summary>
@@ -92,8 +146,14 @@ impl TransportReceiver for AmqpReceiver {
     /// </remarks>
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
-    async fn complete(&mut self, _lock_token: impl AsRef<Uuid> + Send) -> Result<(), Self::Error> {
-        todo!()
+    async fn complete(&mut self, delivery_info: DeliveryInfo) -> Result<(), Self::CompleteError> {
+        let receiver = &mut self.receiver;
+        let policy = &mut self.retry_policy;
+        run_operation!(
+            policy,
+            RP,
+            complete_message::<RP::Error>(receiver, delivery_info.clone()).await
+        )
     }
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
@@ -265,4 +325,12 @@ impl TransportReceiver for AmqpReceiver {
     ) -> Result<(), Self::Error> {
         todo!()
     }
+}
+
+async fn complete_message<E: ServiceBusRetryPolicyError>(
+    receiver: &mut fe2o3_amqp::Receiver,
+    delivery_info: DeliveryInfo,
+) -> Result<(), E> {
+    receiver.accept(delivery_info).await?;
+    Ok(())
 }

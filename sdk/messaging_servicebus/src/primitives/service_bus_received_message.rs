@@ -1,13 +1,13 @@
 use std::borrow::Cow;
 
+use fe2o3_amqp::{link::delivery::DeliveryInfo, Delivery};
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     messaging::{
-        annotations::AnnotationKey, ApplicationProperties, Body, Header, Message,
-        MessageAnnotations,
+        annotations::AnnotationKey, ApplicationProperties, Body, Message,
     },
-    primitives::{SimpleValue, Timestamp, Uuid, Value},
+    primitives::{SimpleValue, Uuid, Value},
 };
 use time::OffsetDateTime;
 
@@ -39,11 +39,21 @@ pub struct ServiceBusReceivedMessage {
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
-    pub(crate) amqp_message: Message<Body<Value>>, // TODO: Change to generics?
+    pub(crate) delivery: Delivery<Body<Value>>, // TODO: Change to generics?
 
     pub(crate) lock_token_uuid: fe2o3_amqp_types::primitives::Uuid,
+}
 
-    pub(crate) partition_id: i16,
+impl From<ServiceBusReceivedMessage> for DeliveryInfo {
+    fn from(message: ServiceBusReceivedMessage) -> Self {
+        DeliveryInfo::from(message.delivery)
+    }
+}
+
+impl From<&ServiceBusReceivedMessage> for DeliveryInfo {
+    fn from(message: &ServiceBusReceivedMessage) -> Self {
+        DeliveryInfo::from(&message.delivery)
+    }
 }
 
 impl ServiceBusReceivedMessage {
@@ -55,12 +65,12 @@ impl ServiceBusReceivedMessage {
     ///
     /// The raw Amqp message.
     pub fn raw_amqp_message(&self) -> &Message<Body<Value>> {
-        &self.amqp_message
+        &self.delivery.message()
     }
 
     /// Gets the body of the message.
     pub fn body(&self) -> Result<&[u8], Error> {
-        match &self.amqp_message.body {
+        match &self.delivery.body() {
             Body::Data(batch) => match batch.len() {
                 1 => Ok(batch[0].0.as_ref()),
                 _ => Err(Error::RawAmqpMessage),
@@ -80,7 +90,7 @@ impl ServiceBusReceivedMessage {
     /// feature identifies and removes second and further submissions of messages with the same
     /// MessageId.
     pub fn message_id(&self) -> Option<Cow<'_, str>> {
-        self.amqp_message.message_id()
+        self.delivery.message().message_id()
     }
 
     /// Gets a partition key for sending a message to a partitioned entity.
@@ -98,7 +108,7 @@ impl ServiceBusReceivedMessage {
     /// function over this value and cannot be chosen directly. For session-aware entities, the
     /// [`session_id()`](#method.session_id) property overrides this value.
     pub fn partition_key(&self) -> Option<&str> {
-        self.amqp_message.partition_key()
+        self.delivery.message().partition_key()
     }
 
     /// Gets a partition key for sending a message into an entity via a partitioned transfer queue.
@@ -115,7 +125,7 @@ impl ServiceBusReceivedMessage {
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-viaå).
     pub fn transaction_partition_key(&self) -> Option<&str> {
-        self.amqp_message.via_partition_key()
+        self.delivery.message().via_partition_key()
     }
 
     /// Gets the session identifier for a session-aware entity.
@@ -132,7 +142,7 @@ impl ServiceBusReceivedMessage {
     /// value is ignored. See [Message
     /// Sessions](https://docs.microsoft.com/azure/service-bus-messaging/message-sessions).
     pub fn session_id(&self) -> Option<&str> {
-        self.amqp_message.session_id()
+        self.delivery.message().session_id()
     }
 
     /// Gets a session identifier augmenting the [`reply_to()`](#method.reply_to) address.
@@ -147,7 +157,7 @@ impl ServiceBusReceivedMessage {
     /// the reply when sent to the reply entity. See [Message Routing and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation)
     pub fn reply_to_session_id(&self) -> Option<&str> {
-        self.amqp_message.reply_to_session_id()
+        self.delivery.message().reply_to_session_id()
     }
 
     /// Gets the message’s "time to live" value.
@@ -165,7 +175,7 @@ impl ServiceBusReceivedMessage {
     /// longer than the entity's DefaultTimeToLive setting and it is silently adjusted if it does.
     /// See [Expiration](https://docs.microsoft.com/azure/service-bus-messaging/message-expiration)
     pub fn time_to_live(&self) -> TimeSpan {
-        match self.amqp_message.time_to_live() {
+        match self.delivery.message().time_to_live() {
             Some(ttl) => ttl,
             None => TimeSpan::MAX, // TODO: is this the same as in dotnet sdk?
         }
@@ -184,7 +194,7 @@ impl ServiceBusReceivedMessage {
     /// Routing and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation").
     pub fn correlation_id(&self) -> Option<Cow<'_, str>> {
-        self.amqp_message.correlation_id()
+        self.delivery.message().correlation_id()
     }
 
     /// Gets an application specific label.
@@ -198,7 +208,7 @@ impl ServiceBusReceivedMessage {
     /// in a standardized fashion, similar to an email subject line. The mapped AMQP property is
     /// "subject".
     pub fn subject(&self) -> Option<&str> {
-        self.amqp_message.subject()
+        self.delivery.message().subject()
     }
 
     /// Gets the "to" address.
@@ -214,7 +224,7 @@ impl ServiceBusReceivedMessage {
     /// chaining](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-auto-forwarding)
     /// scenarios to indicate the intended logical destination of the message.
     pub fn to(&self) -> Option<&str> {
-        self.amqp_message.to()
+        self.delivery.message().to()
     }
 
     /// Gets the content type descriptor.
@@ -228,7 +238,7 @@ impl ServiceBusReceivedMessage {
     /// Optionally describes the payload of the message, with a descriptor following the format of
     /// RFC2045, Section 5, for example "application/json".
     pub fn content_type(&self) -> Option<&str> {
-        self.amqp_message.content_type()
+        self.delivery.message().content_type()
     }
 
     /// Gets the address of an entity to send replies to.
@@ -245,7 +255,7 @@ impl ServiceBusReceivedMessage {
     /// and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation)
     pub fn reply_to(&self) -> Option<&str> {
-        self.amqp_message.reply_to()
+        self.delivery.message().reply_to()
     }
 
     /// Gets the date and time in UTC at which the message will be enqueued. This property returns
@@ -261,7 +271,7 @@ impl ServiceBusReceivedMessage {
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will
     /// get enqueued, but the actual sending time depends on the queue's workload and its state.
     pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
-        self.amqp_message.scheduled_enqueue_time()
+        self.delivery.message().scheduled_enqueue_time()
     }
 
     /// Gets the application properties bag, which can be used for custom message metadata.
@@ -271,7 +281,7 @@ impl ServiceBusReceivedMessage {
     /// long, ulong, float, double, decimal, bool, Guid, string, Uri, DateTime, DateTimeOffset,
     /// TimeSpan
     pub fn application_properties(&self) -> Option<&ApplicationProperties> {
-        self.amqp_message.application_properties.as_ref()
+        self.delivery.message().application_properties.as_ref()
     }
 
     /// Gets the lock token for the current message.
@@ -293,22 +303,27 @@ impl ServiceBusReceivedMessage {
     ///
     /// # Value
     ///
-    /// This value starts at 1.
+    /// This value starts at 1. This number is off by one from the raw amqp message delivery count
     ///
     /// # Remarks
     /// Number of deliveries that have been attempted for this message. The count is incremented
     /// when a message lock expires, or the message is explicitly abandoned by the receiver. This
     /// property is read-only.
     pub fn delivery_count(&self) -> Option<u32> {
-        self.amqp_message.header.as_ref().map(|h| h.delivery_count)
+        self.delivery
+            .message()
+            .header
+            .as_ref()
+            .map(|h| h.delivery_count + 1)
     }
 
-    pub(crate) fn set_delivery_count(&mut self, count: u32) {
-        self.amqp_message
-            .header
-            .get_or_insert(Header::default())
-            .delivery_count = count;
-    }
+    // pub(crate) fn set_delivery_count(&mut self, count: u32) {
+    //     self.delivery
+    //         .message()
+    //         .header
+    //         .get_or_insert(Header::default())
+    //         .delivery_count = count - 1;
+    // }
 
     /// Gets the date and time in UTC until which the message will be locked in the
     /// queue/subscription.
@@ -324,7 +339,8 @@ impl ServiceBusReceivedMessage {
     /// When the lock expires, the [`delivery_count`](#method.delivery_count) is incremented and the
     /// message is again available for retrieval. This property is read-only.
     pub fn locked_until(&self) -> Option<OffsetDateTime> {
-        self.amqp_message
+        self.delivery
+            .message()
             .message_annotations
             .as_ref()?
             .get(&LOCKED_UNTIL_NAME as &dyn AnnotationKey)
@@ -338,20 +354,21 @@ impl ServiceBusReceivedMessage {
             })
     }
 
-    /// # Panic
-    ///
-    /// Panics if timestamp exceeds the valid range of i64
-    pub(crate) fn set_locked_until(&mut self, value: OffsetDateTime) {
-        let timespan = value - OffsetDateTime::UNIX_EPOCH;
-        let millis = timespan.whole_milliseconds();
-        assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
-        let millis = Timestamp::from_milliseconds(millis as i64);
+    // /// # Panic
+    // ///
+    // /// Panics if timestamp exceeds the valid range of i64
+    // pub(crate) fn set_locked_until(&mut self, value: OffsetDateTime) {
+    //     let timespan = value - OffsetDateTime::UNIX_EPOCH;
+    //     let millis = timespan.whole_milliseconds();
+    //     assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
+    //     let millis = Timestamp::from_milliseconds(millis as i64);
 
-        self.amqp_message
-            .message_annotations
-            .get_or_insert(MessageAnnotations::default())
-            .insert(LOCKED_UNTIL_NAME.into(), millis.into());
-    }
+    //     self.delivery
+    //         .message()
+    //         .message_annotations
+    //         .get_or_insert(MessageAnnotations::default())
+    //         .insert(LOCKED_UNTIL_NAME.into(), millis.into());
+    // }
 
     /// Gets the unique number assigned to a message by Service Bus.
     ///
@@ -362,7 +379,8 @@ impl ServiceBusReceivedMessage {
     /// topmost 16 bits reflect the partition identifier. Sequence numbers monotonically increase.
     /// They roll over to 0 when the 48-64 bit range is exhausted. This property is read-only.
     pub fn sequence_number(&self) -> i64 {
-        self.amqp_message
+        self.delivery
+            .message()
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&SEQUENCE_NUMBER_NAME as &dyn AnnotationKey))
@@ -373,12 +391,13 @@ impl ServiceBusReceivedMessage {
             .unwrap_or(Default::default())
     }
 
-    pub(crate) fn set_sequence_number(&mut self, value: i64) {
-        self.amqp_message
-            .message_annotations
-            .get_or_insert(MessageAnnotations::default())
-            .insert(SEQUENCE_NUMBER_NAME.into(), value.into());
-    }
+    // pub(crate) fn set_sequence_number(&mut self, value: i64) {
+    //     self.delivery
+    //         .message()
+    //         .message_annotations
+    //         .get_or_insert(MessageAnnotations::default())
+    //         .insert(SEQUENCE_NUMBER_NAME.into(), value.into());
+    // }
 
     /// Gets the name of the queue or subscription that this message was enqueued on, before it was
     /// dead-lettered.
@@ -389,7 +408,8 @@ impl ServiceBusReceivedMessage {
     /// dead-letter queue to another entity. Indicates the entity in which the message was
     /// dead-lettered. This property is read-only.
     pub fn dead_letter_source(&self) -> Option<&str> {
-        self.amqp_message
+        self.delivery
+            .message()
             .message_annotations
             .as_ref()?
             .get(&DEAD_LETTER_SOURCE_NAME as &dyn AnnotationKey)
@@ -399,13 +419,14 @@ impl ServiceBusReceivedMessage {
             })
     }
 
-    pub(crate) fn set_dead_letter_source(&mut self, value: impl Into<String>) {
-        let value = value.into();
-        self.amqp_message
-            .message_annotations
-            .get_or_insert(MessageAnnotations::default())
-            .insert(DEAD_LETTER_SOURCE_NAME.into(), value.into());
-    }
+    // pub(crate) fn set_dead_letter_source(&mut self, value: impl Into<String>) {
+    //     let value = value.into();
+    //     self.delivery
+    //         .message()
+    //         .message_annotations
+    //         .get_or_insert(MessageAnnotations::default())
+    //         .insert(DEAD_LETTER_SOURCE_NAME.into(), value.into());
+    // }
 
     /// Gets the original sequence number of the message.
     ///
@@ -419,7 +440,8 @@ impl ServiceBusReceivedMessage {
     /// had first been assigned to the message at its original point of submission. This property is
     /// read-only.
     pub fn enqueued_sequence_number(&self) -> i64 {
-        self.amqp_message
+        self.delivery
+            .message()
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&ENQUEUE_SEQUENCE_NUMBER_NAME as &dyn AnnotationKey))
@@ -430,12 +452,13 @@ impl ServiceBusReceivedMessage {
             .unwrap_or(Default::default())
     }
 
-    pub(crate) fn set_enqueued_sequence_number(&mut self, value: i64) {
-        self.amqp_message
-            .message_annotations
-            .get_or_insert(MessageAnnotations::default())
-            .insert(ENQUEUE_SEQUENCE_NUMBER_NAME.into(), value.into());
-    }
+    // pub(crate) fn set_enqueued_sequence_number(&mut self, value: i64) {
+    //     self.delivery
+    //         .message()
+    //         .message_annotations
+    //         .get_or_insert(MessageAnnotations::default())
+    //         .insert(ENQUEUE_SEQUENCE_NUMBER_NAME.into(), value.into());
+    // }
 
     /// Gets the date and time of the sent time in UTC.
     ///
@@ -449,7 +472,8 @@ impl ServiceBusReceivedMessage {
     /// can be used as an authoritative and neutral arrival time indicator when the receiver does
     /// not want to trust the sender's clock. This property is read-only.
     pub fn enqueued_time(&self) -> OffsetDateTime {
-        self.amqp_message
+        self.delivery
+            .message()
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&ENQUEUED_TIME_UTC_NAME as &dyn AnnotationKey))
@@ -464,17 +488,18 @@ impl ServiceBusReceivedMessage {
             .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
     }
 
-    pub(crate) fn set_enqueued_time(&mut self, value: OffsetDateTime) {
-        let timespan = value - OffsetDateTime::UNIX_EPOCH;
-        let millis = timespan.whole_milliseconds();
-        assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
-        let millis = Timestamp::from_milliseconds(millis as i64);
+    // pub(crate) fn set_enqueued_time(&mut self, value: OffsetDateTime) {
+    //     let timespan = value - OffsetDateTime::UNIX_EPOCH;
+    //     let millis = timespan.whole_milliseconds();
+    //     assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
+    //     let millis = Timestamp::from_milliseconds(millis as i64);
 
-        self.amqp_message
-            .message_annotations
-            .get_or_insert(MessageAnnotations::default())
-            .insert(ENQUEUED_TIME_UTC_NAME.into(), millis.into());
-    }
+    //     self.delivery
+    //         .message()
+    //         .message_annotations
+    //         .get_or_insert(MessageAnnotations::default())
+    //         .insert(ENQUEUED_TIME_UTC_NAME.into(), millis.into());
+    // }
 
     /// Gets the date and time in UTC at which the message is set to expire.
     ///
@@ -490,7 +515,8 @@ impl ServiceBusReceivedMessage {
     /// [enqueued_time](#method.enqueued_time)
     pub fn expires_at(&self) -> OffsetDateTime {
         match self
-            .amqp_message
+            .delivery
+            .message()
             .properties
             .as_ref()
             .and_then(|p| p.absolute_expiry_time.as_ref())
@@ -514,7 +540,8 @@ impl ServiceBusReceivedMessage {
 
     /// Gets the dead letter reason for the message.
     pub fn dead_letter_reason(&self) -> Option<&str> {
-        self.amqp_message
+        self.delivery
+            .message()
             .application_properties
             .as_ref()?
             .get(DEAD_LETTER_REASON_HEADER)
@@ -526,7 +553,8 @@ impl ServiceBusReceivedMessage {
 
     /// Gets the dead letter error description for the message.
     pub fn dead_letter_error_description(&self) -> Option<&str> {
-        self.amqp_message
+        self.delivery
+            .message()
             .application_properties
             .as_ref()?
             .get(DEAD_LETTER_ERROR_DESCRIPTION_HEADER)
@@ -548,7 +576,8 @@ impl ServiceBusReceivedMessage {
     /// Deferred state, scheduled messages have Scheduled state, all other messages have Active
     /// state.
     pub fn state(&self) -> ServiceBusMessageState {
-        self.amqp_message
+        self.delivery
+            .message()
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&MESSAGE_STATE_NAME as &dyn AnnotationKey))
@@ -559,13 +588,14 @@ impl ServiceBusReceivedMessage {
             .unwrap_or_default()
     }
 
-    pub(crate) fn set_state(&mut self, state: ServiceBusMessageState) {
-        let value = state as i64;
-        self.amqp_message
-            .message_annotations
-            .get_or_insert(MessageAnnotations::default())
-            .insert(MESSAGE_STATE_NAME.into(), value.into());
-    }
+    // pub(crate) fn set_state(&mut self, state: ServiceBusMessageState) {
+    //     let value = state as i64;
+    //     self.delivery
+    //         .message()
+    //         .message_annotations
+    //         .get_or_insert(MessageAnnotations::default())
+    //         .insert(MESSAGE_STATE_NAME.into(), value.into());
+    // }
 }
 
 /// Returns a string that represents the current message.

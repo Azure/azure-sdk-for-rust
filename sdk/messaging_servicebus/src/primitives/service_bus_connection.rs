@@ -264,7 +264,7 @@ where
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         is_processor: bool,
-    ) -> Result<AmqpReceiver, OpenReceiverError> {
+    ) -> Result<AmqpReceiver<RP>, OpenReceiverError> {
         let receiver = self
             .inner_client
             .create_receiver(

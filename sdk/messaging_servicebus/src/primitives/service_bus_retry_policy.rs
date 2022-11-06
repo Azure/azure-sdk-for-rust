@@ -2,7 +2,7 @@ use std::hash::Hash;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use fe2o3_amqp::link::SendError;
+use fe2o3_amqp::link::{DispositionError, SendError};
 use tokio::time::error::Elapsed;
 
 use crate::amqp::error::NotAcceptedError;
@@ -19,7 +19,11 @@ pub enum RetryError<E> {
 
 pub trait ServiceBusRetryPolicyError
 where
-    Self: std::error::Error + From<SendError> + From<Elapsed> + From<NotAcceptedError>,
+    Self: std::error::Error
+        + From<SendError>
+        + From<Elapsed>
+        + From<NotAcceptedError>
+        + From<DispositionError>,
 {
     fn is_scope_disposed(&self) -> bool;
 }
@@ -35,6 +39,8 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     type State: ServiceBusRetryPolicyState;
 
     fn new(options: ServiceBusRetryOptions) -> Self;
+
+    fn options(&self) -> &ServiceBusRetryOptions;
 
     fn state(&self) -> &Self::State;
 
@@ -197,13 +203,13 @@ macro_rules! run_operation {
                             tokio::time::sleep(retry_delay).await;
                             try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
                         }
-                        _ => return Err(RetryError::Operation(error)),
+                        _ => return Err(crate::primitives::service_bus_retry_policy::RetryError::Operation(error)),
                     }
                 }
             }
         };
 
-        Result::<(), RetryError<<$policy_ty>::Error>>::Ok(outcome)
+        Result::<(), crate::primitives::service_bus_retry_policy::RetryError<<$policy_ty>::Error>>::Ok(outcome)
     }};
 
     ($policy:ident, $policy_ty:ty, $cancellation_token:ident, $op:expr) => {{

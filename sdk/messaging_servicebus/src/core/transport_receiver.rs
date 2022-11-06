@@ -1,5 +1,7 @@
 use async_trait::async_trait;
+use fe2o3_amqp::link::delivery::DeliveryInfo;
 use fe2o3_amqp_types::{definitions::SequenceNo, primitives::OrderedMap};
+use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -13,6 +15,8 @@ use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
 #[async_trait]
 pub trait TransportReceiver {
     type Error;
+    type ReceiveError;
+    type CompleteError;
     type CloseError;
 
     /// <summary>
@@ -39,10 +43,11 @@ pub trait TransportReceiver {
     ///     If not specified, the <see cref="ServiceBusRetryOptions.TryTimeout"/> will be used.</param>
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
-    async fn receive_message(
+    async fn receive_messages(
         &mut self,
-        maximum_message_count: u32,
-    ) -> Result<ServiceBusReceivedMessage, Self::Error>;
+        max_messages: u32,
+        max_wait_time: Option<StdDuration>,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError>;
 
     /// <summary>
     /// Closes the connection to the transport consumer instance.
@@ -64,7 +69,7 @@ pub trait TransportReceiver {
     /// </remarks>
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
-    async fn complete(&mut self, lock_token: impl AsRef<Uuid> + Send) -> Result<(), Self::Error>;
+    async fn complete(&mut self, delivery_info: DeliveryInfo) -> Result<(), Self::CompleteError>;
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
     ///

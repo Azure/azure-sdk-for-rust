@@ -1,4 +1,4 @@
-use fe2o3_amqp::link::{LinkStateError, SendError};
+use fe2o3_amqp::link::{IllegalLinkStateError, LinkStateError, SendError};
 use rand::Rng;
 use std::{fmt::Display, time::Duration};
 use tokio::time::error::Elapsed;
@@ -26,16 +26,22 @@ pub enum BasicRetryPolicyError {
 
     #[error(transparent)]
     NotAccepted(#[from] NotAcceptedError),
+
+    #[error(transparent)]
+    Disposition(#[from] IllegalLinkStateError),
 }
 
 impl ServiceBusRetryPolicyError for BasicRetryPolicyError {
     fn is_scope_disposed(&self) -> bool {
-        matches!(
-            self,
+        match self {
             BasicRetryPolicyError::Send(SendError::LinkStateError(
-                LinkStateError::IllegalSessionState
+                LinkStateError::IllegalSessionState,
             ))
-        )
+            | BasicRetryPolicyError::Disposition(IllegalLinkStateError::IllegalSessionState) => {
+                true
+            }
+            _ => false,
+        }
     }
 }
 
@@ -105,6 +111,10 @@ impl ServiceBusRetryPolicy for BasicRetryPolicy {
             options,
             state: BasicRetryPolicyState::default(),
         }
+    }
+
+    fn options(&self) -> &ServiceBusRetryOptions {
+        &self.options
     }
 
     fn state(&self) -> &Self::State {

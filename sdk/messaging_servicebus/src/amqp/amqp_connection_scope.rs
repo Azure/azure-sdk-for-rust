@@ -27,9 +27,7 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
-    primitives::{
-        service_bus_transport_type::ServiceBusTransportType,
-    },
+    primitives::service_bus_transport_type::ServiceBusTransportType,
     ServiceBusReceiveMode,
 };
 
@@ -416,7 +414,7 @@ where
         &mut self,
         entity_path: String,
         identifier: String,
-        receive_mode: ServiceBusReceiveMode,
+        receive_mode: &ServiceBusReceiveMode,
         prefetch_count: u32,
     ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
         if self.is_disposed {
@@ -476,7 +474,7 @@ where
 // Reference:
 // https://github.com/Azure/azure-amqp/blob/c6242a5dad1a1638dfee53282e08c8440913e8f7/src/AmqpLinkSettings.cs#L88
 fn service_bus_receive_mode_to_amqp(
-    mode: ServiceBusReceiveMode,
+    mode: &ServiceBusReceiveMode,
 ) -> (Option<SenderSettleMode>, Option<ReceiverSettleMode>) {
     // switch (value)
     // {

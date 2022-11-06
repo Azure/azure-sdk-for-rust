@@ -195,7 +195,7 @@ where
 
     type Sender = AmqpSender<RP>;
 
-    type Receiver = AmqpReceiver;
+    type Receiver = AmqpReceiver<RP>;
 
     type RuleManager = AmqpRuleManager;
 
@@ -256,13 +256,14 @@ where
         Box::pin(async move {
             let (identifier, receiver) = self
                 .connection_scope
-                .open_receiver_link(entity_path, identifier, receive_mode, prefetch_count)
+                .open_receiver_link(entity_path, identifier, &receive_mode, prefetch_count)
                 .await?;
-
+            let retry_policy = RP::new(retry_options);
             Ok(AmqpReceiver {
                 identifier,
-                retry_options,
+                retry_policy,
                 receiver,
+                receive_mode,
                 is_processor,
             })
         })

@@ -1,15 +1,17 @@
-use fe2o3_amqp::Sendable;
+use fe2o3_amqp::{Delivery, Sendable};
 use fe2o3_amqp_types::{
     messaging::{
         annotations::{AnnotationKey, BorrowedKey},
         message::__private::Serializable,
-        Batch, Data, Message, MessageAnnotations, Properties,
+        Batch, Body, Data, Message, MessageAnnotations, Properties,
     },
     primitives::SymbolRef,
 };
-use serde_amqp::to_vec;
+use serde_amqp::{to_vec, Value};
 
-use crate::ServiceBusMessage;
+use crate::{
+    primitives::service_bus_received_message::ServiceBusReceivedMessage, ServiceBusMessage,
+};
 
 use super::{amqp_constants, amqp_message_constants};
 
@@ -20,6 +22,8 @@ const GUID_SIZE_IN_BYTES: usize = 16;
 
 /// <summary>The size, in bytes, to use as a buffer for stream operations.</summary>
 const STREAM_BUFFER_SIZE_IN_BYTES: usize = 512;
+
+const LOCK_TOKEN_DELIVERY_ANNOTATION: &str = "x-opt-lock-token";
 
 #[derive(Debug, Clone)]
 pub(crate) enum SendableEnvelope {
@@ -136,4 +140,33 @@ fn build_amqp_batch_from_messages(
             })
         }
     }
+}
+
+pub(crate) struct InvalidLockTokenError {}
+
+pub(crate) fn amqp_delivery_as_service_bus_received_message(
+    delivery: Delivery<Body<Value>>,
+    is_settled: bool,
+) -> Result<ServiceBusReceivedMessage, InvalidLockTokenError> {
+    use fe2o3_amqp::types::primitives::Uuid;
+
+    let delivery_tag = delivery.delivery_tag().as_ref();
+    let lock_token_uuid: fe2o3_amqp::types::primitives::Uuid = match Uuid::try_from(delivery_tag) {
+        Ok(uuid) => uuid,
+        Err(_) => match delivery
+            .message()
+            .delivery_annotations
+            .as_ref()
+            .and_then(|da| da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey))
+        {
+            Some(Value::Uuid(uuid)) => uuid.clone(),
+            _ => return Err(InvalidLockTokenError {}),
+        },
+    };
+
+    Ok(ServiceBusReceivedMessage {
+        is_settled,
+        delivery,
+        lock_token_uuid,
+    })
 }

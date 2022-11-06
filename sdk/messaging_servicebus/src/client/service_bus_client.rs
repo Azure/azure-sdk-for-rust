@@ -1,4 +1,4 @@
-use std::{borrow::Cow};
+use std::borrow::Cow;
 
 use azure_core::auth::TokenCredential;
 
@@ -238,7 +238,7 @@ where
     pub async fn create_receiver(
         &mut self,
         queue_or_topic_name: impl Into<String>,
-    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
+    ) -> Result<ServiceBusReceiver<R>, OpenReceiverError> {
         self.create_receiver_with_options(queue_or_topic_name, ServiceBusReceiverOptions::default())
             .await
     }
@@ -248,7 +248,7 @@ where
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusReceiverOptions,
-    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
+    ) -> Result<ServiceBusReceiver<R>, OpenReceiverError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
