@@ -27,7 +27,7 @@ where
 
     pub async fn receive_messages(
         &mut self,
-        max_messages: u32,
+        max_messages: usize,
         max_wait_time: Option<std::time::Duration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, ServiceBusRecvError> {
         self.inner

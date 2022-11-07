@@ -57,7 +57,7 @@ async fn client_send_multiple_messages() {
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut sender = client.create_sender(queue).await.unwrap();
     sender
-        .send_messages(vec!["hello world", "hello world 2"])
+        .send_messages(vec!["Message 0", "Message 1", "Message 2"])
         .await
         .unwrap();
 
@@ -83,12 +83,13 @@ async fn client_receive_messages() {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+    let total = 3;
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client.create_receiver(queue).await.unwrap();
-    let messages = receiver.receive_messages(1, None).await.unwrap();
+    let messages = receiver.receive_messages(total, None).await.unwrap();
 
-    assert_eq!(messages.len(), 1);
+    assert_eq!(messages.len(), total);
 
     for message in messages {
         receiver.complete_message(message).await.unwrap();

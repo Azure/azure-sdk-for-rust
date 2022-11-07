@@ -45,7 +45,7 @@ pub trait TransportReceiver {
     /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
     async fn receive_messages(
         &mut self,
-        max_messages: u32,
+        max_messages: usize,
         max_wait_time: Option<StdDuration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError>;
 

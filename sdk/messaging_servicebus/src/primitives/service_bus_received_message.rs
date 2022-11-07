@@ -31,6 +31,7 @@ use super::service_bus_message_state::ServiceBusMessageState;
 ///
 /// The message structure is discussed in detail in the [product
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
+#[derive(Debug)]
 pub struct ServiceBusReceivedMessage {
     /// Indicates whether the user has settled the message as part of their callback.
     /// If they have done so, we will not autocomplete.

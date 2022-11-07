@@ -39,7 +39,7 @@ where
     async fn receive_messages_inner(
         &mut self,
         buffer: &mut Vec<ServiceBusReceivedMessage>,
-        max_messages: u32,
+        max_messages: usize,
     ) -> Result<(), ServiceBusRecvError> {
         for _ in 0..max_messages {
             let delivery: Delivery<Body<Value>> = self.receiver.recv().await?;
@@ -105,7 +105,7 @@ where
     /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
     async fn receive_messages(
         &mut self,
-        max_messages: u32,
+        max_messages: usize,
         max_wait_time: Option<StdDuration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
         let mut message_buffer: Vec<ServiceBusReceivedMessage> =
