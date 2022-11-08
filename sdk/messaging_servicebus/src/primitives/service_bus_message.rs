@@ -27,6 +27,7 @@ use super::service_bus_received_message::ServiceBusReceivedMessage;
 ///
 /// The message structure is discussed in detail in the [product
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
+#[derive(Debug, Clone)]
 pub struct ServiceBusMessage {
     // TODO: change to generics?
     pub(crate) amqp_message: Message<Data>,
@@ -146,10 +147,15 @@ impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
 }
 
 impl ServiceBusMessage {
-    // /// Gets the raw AMQP message
-    // pub fn raw_amqp_message(&self) -> &Message<Data> {
-    //     &self.amqp_message
-    // }
+    /// Creates a new [ServiceBusMessage] with a raw AMQP message.
+    pub fn from_raw_amqp_message(amqp_message: Message<Data>) -> Self {
+        Self { amqp_message }
+    }
+
+    /// Gets the raw AMQP message
+    pub fn raw_amqp_message(&self) -> &Message<Data> {
+        &self.amqp_message
+    }
 
     pub fn new(data: impl Into<Vec<u8>>) -> Self {
         Self {

@@ -43,7 +43,7 @@ fe2o3-amqp-cbs = "0.0.8"
 fe2o3-amqp-management = "0.0.3"
 fe2o3-amqp-types = "0.6.2"
 fe2o3-amqp-ws = "0.1.2"
-serde_amqp = {version = "0.5.1", features = ["time"]}
+serde_amqp = {version = "0.5.2", features = ["time"]}
 
 [dev-dependencies]
 dotenv = "0.15"

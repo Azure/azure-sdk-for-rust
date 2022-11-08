@@ -11,6 +11,8 @@ pub trait TransportSender {
     type Error: Send;
     type SendError: Send;
     type CloseError: Send;
+    type MessageBatch: Send;
+    type CreateMessageBatchError: Send;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -31,7 +33,7 @@ pub trait TransportSender {
     async fn create_message_batch(
         &mut self,
         options: CreateMessageBatchOptions,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<Self::MessageBatch, Self::CreateMessageBatchError>;
 
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
     /// the size of the messages exceed the maximum size of a single batch, an exception will be
@@ -59,10 +61,7 @@ pub trait TransportSender {
     /// # Returns
     ///
     /// A task to be resolved on when the operation has completed.
-    async fn send_batch(
-        &mut self,
-        message_batch: ServiceBusMessageBatch,
-    ) -> Result<(), Self::Error>;
+    async fn send_batch(&mut self, message_batch: Self::MessageBatch) -> Result<(), Self::Error>;
 
     async fn schedule_messages(
         &mut self,

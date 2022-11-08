@@ -3,14 +3,17 @@ use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_types::messaging::Outcome;
 
 use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
+use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
     core::TransportSender,
     primitives::service_bus_retry_policy::{
         run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
     },
-    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
+    CreateMessageBatchOptions, ServiceBusMessage,
 };
 
+use super::amqp_message_batch::AmqpMessageBatch;
+use super::error::RequestedSizeOutOfRange;
 use super::{
     amqp_message_converter::{
         batch_service_bus_messages_as_amqp_message, BatchEnvelope, SendableEnvelope,
@@ -42,6 +45,8 @@ where
     type Error = ();
     type SendError = RetryError<RP::Error>;
     type CloseError = DetachError;
+    type MessageBatch = AmqpMessageBatch;
+    type CreateMessageBatchError = RequestedSizeOutOfRange;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -61,9 +66,23 @@ where
     /// An [ServiceBusMessageBatch] with the requested `options`
     async fn create_message_batch(
         &mut self,
-        _options: CreateMessageBatchOptions,
-    ) -> Result<(), Self::Error> {
-        todo!()
+        options: CreateMessageBatchOptions,
+    ) -> Result<Self::MessageBatch, Self::CreateMessageBatchError> {
+        let link_max_message_size = self.sender.max_message_size().unwrap_or(u64::MAX);
+        let max_size_in_bytes = match options.max_size_in_bytes {
+            Some(max_size_in_bytes) => {
+                if max_size_in_bytes < MINIMUM_BATCH_SIZE_LIMIT
+                    || max_size_in_bytes > link_max_message_size
+                {
+                    return Err(RequestedSizeOutOfRange {});
+                }
+
+                max_size_in_bytes
+            }
+            // If this field is zero or unset, there is no maximum size imposed by the link endpoint.
+            None => link_max_message_size,
+        };
+        Ok(AmqpMessageBatch::new(max_size_in_bytes))
     }
 
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
@@ -103,10 +122,7 @@ where
     /// # Returns
     ///
     /// A task to be resolved on when the operation has completed.
-    async fn send_batch(
-        &mut self,
-        _message_batch: ServiceBusMessageBatch,
-    ) -> Result<(), Self::Error> {
+    async fn send_batch(&mut self, _message_batch: Self::MessageBatch) -> Result<(), Self::Error> {
         todo!()
     }
 

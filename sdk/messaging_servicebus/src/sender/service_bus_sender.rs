@@ -1,10 +1,13 @@
 use fe2o3_amqp::link::DetachError;
 
 use crate::{
-    amqp::amqp_sender::AmqpSender,
+    amqp::{
+        amqp_message_batch::AmqpMessageBatch, amqp_sender::AmqpSender,
+        error::RequestedSizeOutOfRange,
+    },
     core::TransportSender,
     primitives::service_bus_retry_policy::{RetryError, ServiceBusRetryPolicy},
-    ServiceBusMessage,
+    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
 pub struct ServiceBusSender<RP: ServiceBusRetryPolicy> {
@@ -17,6 +20,14 @@ impl<RP> ServiceBusSender<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
+    pub async fn create_message_batch(
+        &mut self,
+        options: CreateMessageBatchOptions,
+    ) -> Result<ServiceBusMessageBatch<AmqpMessageBatch>, RequestedSizeOutOfRange> {
+        let inner = self.inner.create_message_batch(options).await?;
+        Ok(ServiceBusMessageBatch { inner })
+    }
+
     pub async fn send_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,

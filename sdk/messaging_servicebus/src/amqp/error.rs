@@ -6,6 +6,8 @@ use fe2o3_amqp::{
 use fe2o3_amqp_management::error::Error as MgmtError;
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 
+use crate::ServiceBusMessage;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("PartitionKey cannot be set to a different value than SessionId")]
@@ -82,9 +84,22 @@ pub enum CbsAuthError {
     Cbs(#[from] MgmtError),
 }
 
-// #[derive(Debug, thiserror::Error)]
-// pub enum SendError {
-//     #[error(transparent)]
-//     Amqp(#[from] fe2o3_amqp::link::SendError),
+#[derive(Debug, thiserror::Error)]
+pub enum TryAddMessageError {
+    #[error("Message is too large to fit in a batch")]
+    BatchFull(ServiceBusMessage),
 
-// }
+    #[error(transparent)]
+    Codec(#[from] serde_amqp::Error),
+}
+
+#[derive(Debug)]
+pub struct RequestedSizeOutOfRange {}
+
+impl std::fmt::Display for RequestedSizeOutOfRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Requested size is out of range")
+    }
+}
+
+impl std::error::Error for RequestedSizeOutOfRange {}
