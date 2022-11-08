@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch};
+use crate::{CreateMessageBatchOptions, ServiceBusMessage};
 
 /// Provides an abstraction for generalizing an Service Bus entity Producer so that a dedicated instance may provide operations
 /// for a specific transport, such as AMQP or JMS.  It is intended that the public <see cref="ServiceBusSender" /> employ
