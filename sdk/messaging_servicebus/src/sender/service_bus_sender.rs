@@ -15,7 +15,7 @@ where
     S::MessageBatch: TransportMessageBatch,
 {
     pub async fn create_message_batch(
-        &mut self,
+        &self,
         options: CreateMessageBatchOptions,
     ) -> Result<ServiceBusMessageBatch<S::MessageBatch>, S::CreateMessageBatchError> {
         let inner = self.inner.create_message_batch(options).await?;

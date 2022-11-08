@@ -66,7 +66,7 @@ where
     ///
     /// An [ServiceBusMessageBatch] with the requested `options`
     async fn create_message_batch(
-        &mut self,
+        &self,
         options: CreateMessageBatchOptions,
     ) -> Result<Self::MessageBatch, Self::CreateMessageBatchError> {
         let link_max_message_size = self.sender.max_message_size().unwrap_or(u64::MAX);

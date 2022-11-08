@@ -31,7 +31,7 @@ pub trait TransportSender {
     ///
     /// An [ServiceBusMessageBatch] with the requested `options`
     async fn create_message_batch(
-        &mut self,
+        &self,
         options: CreateMessageBatchOptions,
     ) -> Result<Self::MessageBatch, Self::CreateMessageBatchError>;
 
