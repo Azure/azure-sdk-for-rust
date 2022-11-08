@@ -147,5 +147,6 @@ async fn client_send_and_receive_multiple_messages_with_default_options() {
 async fn client_send_message_batch_and_receive_messages_with_default_options() {
     let total = 3;
     client_send_message_batch(total, Default::default()).await;
-    client_receive_messages(total, Default::default()).await;
+    client_receive_messages(total - 1, Default::default()).await;
+    client_receive_messages(1, Default::default()).await;
 }
