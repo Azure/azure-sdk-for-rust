@@ -61,7 +61,10 @@ pub trait TransportSender {
     /// # Returns
     ///
     /// A task to be resolved on when the operation has completed.
-    async fn send_batch(&mut self, message_batch: Self::MessageBatch) -> Result<(), Self::Error>;
+    async fn send_batch(
+        &mut self,
+        message_batch: Self::MessageBatch,
+    ) -> Result<(), Self::SendError>;
 
     async fn schedule_messages(
         &mut self,

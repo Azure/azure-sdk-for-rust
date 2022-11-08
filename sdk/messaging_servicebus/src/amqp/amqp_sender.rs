@@ -13,6 +13,7 @@ use crate::{
 };
 
 use super::amqp_message_batch::AmqpMessageBatch;
+use super::amqp_message_converter::build_amqp_batch_from_messages;
 use super::error::RequestedSizeOutOfRange;
 use super::{
     amqp_message_converter::{
@@ -122,8 +123,18 @@ where
     /// # Returns
     ///
     /// A task to be resolved on when the operation has completed.
-    async fn send_batch(&mut self, _message_batch: Self::MessageBatch) -> Result<(), Self::Error> {
-        todo!()
+    async fn send_batch(
+        &mut self,
+        message_batch: Self::MessageBatch,
+    ) -> Result<(), Self::SendError> {
+        let batch = build_amqp_batch_from_messages(message_batch.messages.into_iter(), false);
+        let policy = &mut self.retry_policy;
+        let sender = &mut self.sender;
+        run_operation! {
+            policy,
+            RP,
+            send_batch_envelope::<RP::Error>(sender, &batch).await
+        }
     }
 
     async fn schedule_messages(

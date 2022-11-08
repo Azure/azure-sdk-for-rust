@@ -79,7 +79,7 @@ fn filter_message_annotation(message_annotations: MessageAnnotations) -> Message
 ///
 /// <returns>The batch <see cref="AmqpMessage" /> containing the source messages.</returns>
 ///
-fn build_amqp_batch_from_messages(
+pub(crate) fn build_amqp_batch_from_messages(
     mut source: impl Iterator<Item = Message<Data>> + ExactSizeIterator,
     force_batch: bool,
 ) -> Option<BatchEnvelope> {

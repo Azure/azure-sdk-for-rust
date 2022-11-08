@@ -38,6 +38,29 @@ async fn client_send_multiple_messages(total: usize) {
     client.dispose().await.unwrap();
 }
 
+async fn client_send_message_batch(total: usize) {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client.create_sender(queue).await.unwrap();
+
+    let mut batch = sender
+        .create_message_batch(Default::default())
+        .await
+        .unwrap();
+    (0..total)
+        .map(|i| format!("message {}", i).into_bytes())
+        .for_each(|m| {
+            batch.try_add_message(ServiceBusMessage::from(m)).unwrap();
+        });
+    sender.send_message_batch(batch).await.unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
 async fn client_receive_messages(total: usize) {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -108,5 +131,12 @@ async fn client_send_and_receive_single_message() {
 async fn client_send_and_receive_multiple_messages() {
     let total = 3;
     client_send_multiple_messages(total).await;
+    client_receive_messages(total).await;
+}
+
+#[tokio::test]
+async fn client_send_message_batch_and_receive_messages() {
+    let total = 3;
+    client_send_message_batch(total).await;
     client_receive_messages(total).await;
 }

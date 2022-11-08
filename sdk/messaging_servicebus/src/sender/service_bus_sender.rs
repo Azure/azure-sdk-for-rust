@@ -40,6 +40,13 @@ where
         self.inner.send(messages).await
     }
 
+    pub async fn send_message_batch(
+        &mut self,
+        batch: ServiceBusMessageBatch<S::MessageBatch>,
+    ) -> Result<(), S::SendError> {
+        self.inner.send_batch(batch.inner).await
+    }
+
     pub async fn dispose(self) -> Result<(), S::CloseError> {
         self.inner.close().await
     }
