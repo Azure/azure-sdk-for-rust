@@ -25,11 +25,12 @@ use crate::{
 use super::amqp_message_converter;
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
-    pub identifier: u32,
-    pub retry_policy: RP,
-    pub receiver: fe2o3_amqp::Receiver,
-    pub receive_mode: ServiceBusReceiveMode,
-    pub is_processor: bool,
+    pub(crate) identifier: u32,
+    pub(crate) prefetch_count: u32,
+    pub(crate) retry_policy: RP,
+    pub(crate) receiver: fe2o3_amqp::Receiver,
+    pub(crate) receive_mode: ServiceBusReceiveMode,
+    pub(crate) is_processor: bool,
 }
 
 impl<RP> AmqpReceiver<RP>
@@ -39,8 +40,14 @@ where
     async fn receive_messages_inner(
         &mut self,
         buffer: &mut Vec<ServiceBusReceivedMessage>,
-        max_messages: usize,
+        max_messages: u32,
     ) -> Result<(), ServiceBusRecvError> {
+        // Need to set credit
+        if self.prefetch_count == 0 {
+            // credit mode is manual
+            self.receiver.set_credit(max_messages).await?;
+        }
+
         for _ in 0..max_messages {
             let delivery: Delivery<Body<Value>> = self.receiver.recv().await?;
 
@@ -105,7 +112,7 @@ where
     /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
     async fn receive_messages(
         &mut self,
-        max_messages: usize,
+        max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
         let mut message_buffer: Vec<ServiceBusReceivedMessage> =
@@ -115,6 +122,11 @@ where
 
         tokio::select! {
             _ = tokio::time::sleep(max_wait_time) => {
+                if self.prefetch_count == 0 { // credit mode is manual
+                    if let Err(err) = self.receiver.drain().await {
+                        log::error!("{}", err);
+                    }
+                }
                 Ok(message_buffer)
             }
             result = self.receive_messages_inner(&mut message_buffer, max_messages) => {

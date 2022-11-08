@@ -455,6 +455,8 @@ where
         }
         if prefetch_count > 0 {
             builder = builder.credit_mode(CreditMode::Auto(prefetch_count));
+        } else {
+            builder = builder.credit_mode(CreditMode::Manual);
         }
 
         let receiver = builder.attach(&mut self.session.handle).await?;

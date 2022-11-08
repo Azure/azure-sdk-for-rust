@@ -267,6 +267,7 @@ where
                 receiver,
                 receive_mode,
                 is_processor,
+                prefetch_count,
             })
         })
     }

@@ -1,4 +1,4 @@
-use fe2o3_amqp::link::RecvError;
+use fe2o3_amqp::link::{IllegalLinkStateError, RecvError};
 
 use crate::amqp::amqp_message_converter::InvalidLockTokenError;
 
@@ -9,6 +9,9 @@ pub enum ServiceBusRecvError {
 
     #[error(transparent)]
     Recv(#[from] RecvError),
+
+    #[error(transparent)]
+    LinkState(#[from] IllegalLinkStateError),
 }
 
 impl From<InvalidLockTokenError> for ServiceBusRecvError {
