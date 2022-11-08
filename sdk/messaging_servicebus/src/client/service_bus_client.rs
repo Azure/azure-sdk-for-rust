@@ -16,7 +16,7 @@ use crate::{
     entity_name_formatter::format_entity_path,
     primitives::{
         service_bus_connection::ServiceBusConnection,
-        service_bus_retry_policy::{MapRetryPolicy, ServiceBusRetryPolicy},
+        service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,

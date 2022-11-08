@@ -4,9 +4,7 @@ use fe2o3_amqp::{link::delivery::DeliveryInfo, Delivery};
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
-    messaging::{
-        annotations::AnnotationKey, ApplicationProperties, Body, Message,
-    },
+    messaging::{annotations::AnnotationKey, ApplicationProperties, Body, Message},
     primitives::{SimpleValue, Uuid, Value},
 };
 use time::OffsetDateTime;

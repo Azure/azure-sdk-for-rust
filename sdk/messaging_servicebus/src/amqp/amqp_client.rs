@@ -17,7 +17,7 @@ use crate::{
     core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_retry_policy::{MapRetryPolicy, ServiceBusRetryPolicy},
+        service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,

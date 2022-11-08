@@ -6,7 +6,6 @@ use std::{future::Future, task::Poll};
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 
-
 use crate::authorization::service_bus_token_credential::ServiceBusTokenCredential;
 
 use super::token_type::TokenType;

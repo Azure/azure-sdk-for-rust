@@ -1,12 +1,7 @@
-use fe2o3_amqp::link::{delivery::DeliveryInfo, DetachError};
+use fe2o3_amqp::link::delivery::DeliveryInfo;
 
 use crate::{
-    amqp::amqp_receiver::AmqpReceiver,
-    core::TransportReceiver,
-    primitives::{
-        service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_policy::{RetryError, ServiceBusRetryPolicy},
-    },
+    core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
 };
 
 pub struct ServiceBusReceiver<R> {

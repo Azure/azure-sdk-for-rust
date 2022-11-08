@@ -1,4 +1,4 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::borrow::Cow;
 
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
@@ -6,10 +6,7 @@ use tokio::time::error::Elapsed;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    amqp::{
-        amqp_client::{AmqpClient, AmqpClientError},
-        error::DisposeError,
-    },
+    amqp::{amqp_client::AmqpClientError, error::DisposeError},
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,

@@ -1,12 +1,5 @@
-use fe2o3_amqp::link::DetachError;
-
 use crate::{
-    amqp::{
-        amqp_message_batch::AmqpMessageBatch, amqp_sender::AmqpSender,
-        error::RequestedSizeOutOfRange,
-    },
     core::{TransportMessageBatch, TransportSender},
-    primitives::service_bus_retry_policy::{RetryError, ServiceBusRetryPolicy},
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
