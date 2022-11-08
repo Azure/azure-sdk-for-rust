@@ -5,25 +5,26 @@ use crate::{
         amqp_message_batch::AmqpMessageBatch, amqp_sender::AmqpSender,
         error::RequestedSizeOutOfRange,
     },
-    core::TransportSender,
+    core::{TransportMessageBatch, TransportSender},
     primitives::service_bus_retry_policy::{RetryError, ServiceBusRetryPolicy},
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
-pub struct ServiceBusSender<RP: ServiceBusRetryPolicy> {
-    pub(crate) inner: AmqpSender<RP>,
+pub struct ServiceBusSender<S> {
+    pub(crate) inner: S,
     pub(crate) entity_path: String,
     pub(crate) identifier: String,
 }
 
-impl<RP> ServiceBusSender<RP>
+impl<S> ServiceBusSender<S>
 where
-    RP: ServiceBusRetryPolicy + Send + Sync,
+    S: TransportSender + Send + Sync,
+    S::MessageBatch: TransportMessageBatch,
 {
     pub async fn create_message_batch(
         &mut self,
         options: CreateMessageBatchOptions,
-    ) -> Result<ServiceBusMessageBatch<AmqpMessageBatch>, RequestedSizeOutOfRange> {
+    ) -> Result<ServiceBusMessageBatch<S::MessageBatch>, S::CreateMessageBatchError> {
         let inner = self.inner.create_message_batch(options).await?;
         Ok(ServiceBusMessageBatch { inner })
     }
@@ -31,12 +32,12 @@ where
     pub async fn send_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
-    ) -> Result<(), RetryError<RP::Error>> {
+    ) -> Result<(), S::SendError> {
         let iter = std::iter::once(message.into());
         self.send_messages(iter).await
     }
 
-    pub async fn send_messages<M, I>(&mut self, messages: M) -> Result<(), RetryError<RP::Error>>
+    pub async fn send_messages<M, I>(&mut self, messages: M) -> Result<(), S::SendError>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -46,7 +47,7 @@ where
         self.inner.send(messages).await
     }
 
-    pub async fn dispose(self) -> Result<(), DetachError> {
+    pub async fn dispose(self) -> Result<(), S::CloseError> {
         self.inner.close().await
     }
 }

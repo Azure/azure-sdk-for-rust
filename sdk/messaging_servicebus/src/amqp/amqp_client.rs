@@ -17,7 +17,7 @@ use crate::{
     core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_retry_policy::{MapRetryPolicy, ServiceBusRetryPolicy},
         service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
@@ -86,7 +86,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
 ///
 /// See also [`TransportClient`]
 #[derive(Debug)]
-pub(crate) struct AmqpClient<TC, RP>
+pub struct AmqpClient<TC, RP>
 where
     TC: TokenCredential,
 {
@@ -134,70 +134,72 @@ where
             retry_policy: PhantomData,
         }
     }
-
-    pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
-        self.connection_scope.transport_type()
-    }
-
-    pub async fn new(
-        host: &str,
-        credential: ServiceBusTokenCredential<C>,
-        transport_type: ServiceBusTransportType,
-        custom_endpoint: Option<Url>,
-        retry_timeout: Duration,
-    ) -> Result<Self, AmqpClientError> {
-        let service_endpoint = {
-            let scheme = transport_type.url_scheme();
-            let addr = format!("{scheme}://{host}");
-            Url::parse(&addr)?
-        };
-
-        let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str()) {
-            Some(custom_host) => {
-                let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
-                Url::parse(&addr)?
-            }
-            None => service_endpoint.clone(),
-        };
-
-        // Create AmqpConnectionScope
-        let connection_scope = AmqpConnectionScope::new(
-            service_endpoint,
-            connection_endpoint,
-            credential,
-            transport_type,
-            retry_timeout,
-        )
-        .await?;
-        Ok(Self {
-            credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
-            closed: false,
-            access_token: None,
-            // service_endpoint,
-            // connection_endpoint,
-            connection_scope,
-            retry_policy: PhantomData,
-        })
-    }
 }
 
-// #[async_trait]
 impl<C, RP> TransportClient for AmqpClient<C, RP>
 where
     C: TokenCredential + 'static,
     RP: ServiceBusRetryPolicy + Send + Sync,
     RP::Error: From<SendError>,
 {
+    type CreateClientError = AmqpClientError;
     type CreateSenderError = OpenSenderError;
     type CreateReceiverError = OpenReceiverError;
     type CreateRuleManagerError = AmqpClientError;
     type DisposeError = AmqpClientError;
 
     type Sender = AmqpSender<RP>;
-
     type Receiver = AmqpReceiver<RP>;
-
     type RuleManager = AmqpRuleManager;
+    type TokenCredential = C;
+
+    fn create_transport_client<'a>(
+        host: &'a str,
+        credential: ServiceBusTokenCredential<Self::TokenCredential>,
+        transport_type: ServiceBusTransportType,
+        custom_endpoint: Option<Url>,
+        retry_timeout: Duration,
+    ) -> Pin<Box<dyn Future<Output = Result<Self, Self::CreateClientError>> + 'a>> {
+        Box::pin(async move {
+            let service_endpoint = {
+                let scheme = transport_type.url_scheme();
+                let addr = format!("{scheme}://{host}");
+                Url::parse(&addr)?
+            };
+
+            let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str())
+            {
+                Some(custom_host) => {
+                    let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
+                    Url::parse(&addr)?
+                }
+                None => service_endpoint.clone(),
+            };
+
+            // Create AmqpConnectionScope
+            let connection_scope = AmqpConnectionScope::new(
+                service_endpoint,
+                connection_endpoint,
+                credential,
+                transport_type,
+                retry_timeout,
+            )
+            .await?;
+            Ok(Self {
+                credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
+                closed: false,
+                access_token: None,
+                // service_endpoint,
+                // connection_endpoint,
+                connection_scope,
+                retry_policy: PhantomData,
+            })
+        })
+    }
+
+    fn transport_type(&self) -> &ServiceBusTransportType {
+        self.transport_type()
+    }
 
     /// Indicates whether or not this client has been closed.
     ///

@@ -9,19 +9,17 @@ use crate::{
     },
 };
 
-use super::error::ServiceBusRecvError;
-
-pub struct ServiceBusReceiver<RP: ServiceBusRetryPolicy> {
-    pub(crate) inner: AmqpReceiver<RP>,
+pub struct ServiceBusReceiver<R> {
+    pub(crate) inner: R,
     pub(crate) entity_path: String,
     pub(crate) identifier: String,
 }
 
-impl<RP> ServiceBusReceiver<RP>
+impl<R> ServiceBusReceiver<R>
 where
-    RP: ServiceBusRetryPolicy + Send,
+    R: TransportReceiver,
 {
-    pub async fn dispose(self) -> Result<(), DetachError> {
+    pub async fn dispose(self) -> Result<(), R::CloseError> {
         self.inner.close().await
     }
 
@@ -29,7 +27,7 @@ where
         &mut self,
         max_messages: usize,
         max_wait_time: Option<std::time::Duration>,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, ServiceBusRecvError> {
+    ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
         self.inner
             .receive_messages(max_messages, max_wait_time)
             .await
@@ -38,7 +36,7 @@ where
     pub async fn complete_message(
         &mut self,
         message: impl Into<DeliveryInfo>,
-    ) -> Result<(), RetryError<RP::Error>> {
+    ) -> Result<(), R::CompleteError> {
         let delivery_info = message.into();
         self.inner.complete(delivery_info).await
     }

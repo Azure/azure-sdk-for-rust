@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, marker::PhantomData};
 
 use azure_core::{auth::TokenCredential, Url};
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
@@ -8,9 +8,7 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     amqp::{
         amqp_client::{AmqpClient, AmqpClientError},
-        amqp_receiver::AmqpReceiver,
-        amqp_sender::AmqpSender,
-        error::{DisposeError, OpenReceiverError, OpenSenderError},
+        error::DisposeError,
     },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
@@ -25,7 +23,6 @@ use crate::{
 use super::{
     service_bus_connection_string_properties::{FormatError, ServiceBusConnectionStringProperties},
     service_bus_retry_options::ServiceBusRetryOptions,
-    service_bus_retry_policy::ServiceBusRetryPolicy,
     service_bus_transport_type::ServiceBusTransportType,
 };
 
@@ -116,7 +113,10 @@ pub(crate) struct ServiceBusConnection<C> {
     pub(crate) inner_client: C,
 }
 
-impl<C: TransportClient> ServiceBusConnection<C> {
+impl<C> ServiceBusConnection<C>
+where
+    C: TransportClient,
+{
     /// Indicates whether or not this [`ServiceBusConnection`] has been closed.
     ///
     /// # Value
@@ -197,49 +197,30 @@ impl<C: TransportClient> ServiceBusConnection<C> {
     }
 }
 
-impl<TC, RP> ServiceBusConnection<AmqpClient<TC, RP>>
-where
-    TC: TokenCredential + 'static, // TODO: should this allow reference to TokenCredential?
-    RP: ServiceBusRetryPolicy + Send + Sync,
-{
-    pub fn set_retry_policy<RP2>(self) -> ServiceBusConnection<AmqpClient<TC, RP2>>
-    where
-        RP2: ServiceBusRetryPolicy + Send,
-    {
-        ServiceBusConnection {
-            fully_qualified_namespace: self.fully_qualified_namespace,
-            entity_path: self.entity_path,
-            retry_options: self.retry_options,
-            inner_client: self.inner_client.set_retry_policy(),
-        }
-    }
+// impl<C, RP1, RP2> MapRetryPolicy<RP2> for ServiceBusConnection<C, RP1>
+// where
+//     C: MapRetryPolicy<RP2>,
+// {
+//     type Output = ServiceBusConnection<C::Output, RP2>;
 
+//     fn map_retry_policy(self) -> Self::Output {
+//         ServiceBusConnection {
+//             fully_qualified_namespace: self.fully_qualified_namespace,
+//             entity_path: self.entity_path,
+//             retry_options: self.retry_options,
+//             inner_client: self.inner_client.map_retry_policy(),
+//             retry_policy_marker: PhantomData,
+//         }
+//     }
+// }
+
+impl<C> ServiceBusConnection<C>
+where
+    C: TransportClient,
+{
     /// The transport type used for this connection.
     pub fn transport_type(&self) -> &ServiceBusTransportType {
         &self.inner_client.transport_type()
-    }
-
-    pub(crate) async fn new_with_credential(
-        fully_qualified_namespace: String,
-        credential: impl Into<ServiceBusTokenCredential<TC>>,
-        options: ServiceBusClientOptions,
-    ) -> Result<Self, Error> {
-        let token_credential: ServiceBusTokenCredential<_> = credential.into();
-        let inner_client = AmqpClient::new(
-            &fully_qualified_namespace,
-            token_credential,
-            options.transport_type,
-            options.custom_endpoint_address,
-            options.retry_options.try_timeout,
-        )
-        .await?;
-
-        Ok(Self {
-            fully_qualified_namespace,
-            entity_path: None,
-            retry_options: options.retry_options,
-            inner_client,
-        })
     }
 
     pub(crate) async fn create_transport_sender(
@@ -247,7 +228,7 @@ where
         entity_path: String,
         identifier: String,
         retry_options: ServiceBusRetryOptions,
-    ) -> Result<AmqpSender<RP>, OpenSenderError> {
+    ) -> Result<C::Sender, C::CreateSenderError> {
         let sender = self
             .inner_client
             .create_sender(entity_path, identifier, retry_options)
@@ -264,7 +245,7 @@ where
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         is_processor: bool,
-    ) -> Result<AmqpReceiver<RP>, OpenReceiverError> {
+    ) -> Result<C::Receiver, C::CreateReceiverError> {
         let receiver = self
             .inner_client
             .create_receiver(
@@ -281,9 +262,10 @@ where
     }
 }
 
-impl<RP> ServiceBusConnection<AmqpClient<SharedAccessCredential, RP>>
+impl<C> ServiceBusConnection<C>
 where
-    RP: ServiceBusRetryPolicy + Send + Sync,
+    C: TransportClient,
+    Error: From<C::CreateClientError>,
 {
     pub(crate) async fn new<'a>(
         connection_string: Cow<'a, str>,
@@ -330,7 +312,7 @@ where
             ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 
         let host = fully_qualified_namespace.unwrap_or("");
-        let inner_client = AmqpClient::new(
+        let inner_client = C::create_transport_client(
             host,
             token_credential,
             options.transport_type,
@@ -342,6 +324,36 @@ where
         Ok(Self {
             fully_qualified_namespace: host.to_string(),
             entity_path: entity_path.map(|s| s.to_string()),
+            retry_options: options.retry_options,
+            inner_client,
+        })
+    }
+}
+
+impl ServiceBusConnection<()> {
+    pub(crate) async fn new_with_credential<TC, C>(
+        fully_qualified_namespace: String,
+        credential: impl Into<ServiceBusTokenCredential<TC>>,
+        options: ServiceBusClientOptions,
+    ) -> Result<ServiceBusConnection<C>, Error>
+    where
+        TC: TokenCredential,
+        C: TransportClient<TokenCredential = TC>,
+        Error: From<C::CreateClientError>,
+    {
+        let token_credential: ServiceBusTokenCredential<_> = credential.into();
+        let inner_client = C::create_transport_client(
+            &fully_qualified_namespace,
+            token_credential,
+            options.transport_type,
+            options.custom_endpoint_address,
+            options.retry_options.try_timeout,
+        )
+        .await?;
+
+        Ok(ServiceBusConnection {
+            fully_qualified_namespace,
+            entity_path: None,
             retry_options: options.retry_options,
             inner_client,
         })

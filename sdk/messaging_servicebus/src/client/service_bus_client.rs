@@ -11,12 +11,12 @@ use crate::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,
     },
-    core::BasicRetryPolicy,
+    core::{BasicRetryPolicy, TransportClient},
     diagnostics,
     entity_name_formatter::format_entity_path,
     primitives::{
         service_bus_connection::ServiceBusConnection,
-        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_retry_policy::{MapRetryPolicy, ServiceBusRetryPolicy},
         service_bus_transport_type::ServiceBusTransportType,
     },
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
@@ -40,7 +40,7 @@ use super::{
 /// Calling <see cref="DisposeAsync" /> as the application is shutting down will ensure that network
 /// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
-pub struct ServiceBusClient<TC: TokenCredential, RP: ServiceBusRetryPolicy> {
+pub struct ServiceBusClient<C> {
     /// Indicates whether or not this instance has been closed.
     ///
     /// TODO: use `ServiceBusConnection::is_closed`?
@@ -50,10 +50,10 @@ pub struct ServiceBusClient<TC: TokenCredential, RP: ServiceBusRetryPolicy> {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<AmqpClient<TC, RP>>, // TODO: use trait objects?
+    connection: ServiceBusConnection<C>, // TODO: use trait objects?
 }
 
-impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
+impl ServiceBusClient<AmqpClient<SharedAccessCredential, BasicRetryPolicy>> {
     pub async fn new<'a>(connection_string: impl Into<Cow<'a, str>>) -> Result<Self, super::Error> {
         Self::new_with_options(connection_string, ServiceBusClientOptions::default()).await
     }
@@ -61,7 +61,7 @@ impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
     pub async fn new_with_options<'a>(
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, super::Error> {
+    ) -> Result<Self, Error> {
         let connection_string = connection_string.into();
         let identifier = options.identifier.clone();
         let connection = ServiceBusConnection::new(connection_string, options).await?;
@@ -76,9 +76,9 @@ impl ServiceBusClient<SharedAccessCredential, BasicRetryPolicy> {
     }
 }
 
-impl<R> ServiceBusClient<SharedAccessCredential, R>
+impl<C> ServiceBusClient<C>
 where
-    R: ServiceBusRetryPolicy + Send + Sync,
+    C: TransportClient + Send + Sync,
 {
     /// The fully qualified Service Bus namespace that the connection is associated with. This is
     /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
@@ -120,27 +120,18 @@ where
     }
 }
 
-impl<TC, R> ServiceBusClient<TC, R>
-where
-    TC: TokenCredential + Into<ServiceBusTokenCredential<TC>> + 'static,
-    R: ServiceBusRetryPolicy + Send + Sync + 'static,
-{
-    pub fn set_retry_policy<RP>(self) -> ServiceBusClient<TC, RP>
-    where
-        RP: ServiceBusRetryPolicy + Send,
-    {
-        ServiceBusClient {
-            closed: self.closed,
-            identifier: self.identifier,
-            connection: self.connection.set_retry_policy(),
-        }
-    }
-
-    pub async fn new_with_credential_and_options(
+impl ServiceBusClient<()> {
+    pub async fn new_with_credential_and_options<TC, C>(
         fully_qualified_namespace: impl Into<String>,
         credential: TC,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, Error> {
+    ) -> Result<ServiceBusClient<C>, Error>
+    where
+        TC: TokenCredential,
+        ServiceBusTokenCredential<TC>: From<TC>,
+        C: TransportClient<TokenCredential = TC>,
+        Error: From<C::CreateClientError>,
+    {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier =
             options
@@ -149,13 +140,13 @@ where
                 .unwrap_or(diagnostics::utilities::generate_identifier(
                     &fully_qualified_namespace,
                 ));
-        let connection = ServiceBusConnection::new_with_credential(
+        let connection = ServiceBusConnection::new_with_credential::<TC, C>(
             fully_qualified_namespace,
             credential,
             options,
         )
         .await?;
-        Ok(Self {
+        Ok(ServiceBusClient {
             closed: false,
             identifier,
             connection,
@@ -167,10 +158,10 @@ where
 /*                                   Dispose                                  */
 /* -------------------------------------------------------------------------- */
 
-impl<TC, R> ServiceBusClient<TC, R>
+impl<C> ServiceBusClient<C>
 where
-    TC: TokenCredential + 'static,
-    R: ServiceBusRetryPolicy + Send + Sync + 'static,
+    C: TransportClient + Send + Sync + 'static,
+    Error: From<C::DisposeError>,
 {
     /// <summary>
     ///   Performs the task needed to clean up resources used by the <see cref="ServiceBusClient" />,
@@ -190,15 +181,15 @@ where
 /*                                Create Sender                               */
 /* -------------------------------------------------------------------------- */
 
-impl<TC, R> ServiceBusClient<TC, R>
+impl<C> ServiceBusClient<C>
 where
-    TC: TokenCredential + 'static,
-    R: ServiceBusRetryPolicy + Send + Sync + 'static,
+    C: TransportClient + Send + Sync + 'static,
+    OpenSenderError: From<C::CreateSenderError>,
 {
     pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
-    ) -> Result<ServiceBusSender<R>, OpenSenderError> {
+    ) -> Result<ServiceBusSender<C::Sender>, OpenSenderError> {
         self.create_sender_with_options(queue_or_topic_name, ServiceBusSenderOptions::default())
             .await
     }
@@ -207,7 +198,7 @@ where
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
-    ) -> Result<ServiceBusSender<R>, OpenSenderError> {
+    ) -> Result<ServiceBusSender<C::Sender>, OpenSenderError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
@@ -230,15 +221,15 @@ where
 /*                               Create Receiver                              */
 /* -------------------------------------------------------------------------- */
 
-impl<TC, R> ServiceBusClient<TC, R>
+impl<C> ServiceBusClient<C>
 where
-    TC: TokenCredential + 'static,
-    R: ServiceBusRetryPolicy + Send + Sync + 'static,
+    C: TransportClient + Send + Sync + 'static,
+    OpenReceiverError: From<C::CreateReceiverError>,
 {
     pub async fn create_receiver(
         &mut self,
         queue_or_topic_name: impl Into<String>,
-    ) -> Result<ServiceBusReceiver<R>, OpenReceiverError> {
+    ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
         self.create_receiver_with_options(queue_or_topic_name, ServiceBusReceiverOptions::default())
             .await
     }
@@ -248,7 +239,7 @@ where
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusReceiverOptions,
-    ) -> Result<ServiceBusReceiver<R>, OpenReceiverError> {
+    ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier

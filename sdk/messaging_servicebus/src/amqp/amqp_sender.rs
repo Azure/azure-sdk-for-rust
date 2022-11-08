@@ -21,7 +21,7 @@ use super::{
     error::NotAcceptedError,
 };
 
-pub(crate) struct AmqpSender<RP: ServiceBusRetryPolicy> {
+pub struct AmqpSender<RP: ServiceBusRetryPolicy> {
     pub identifier: u32,
     pub retry_policy: RP,
     pub sender: fe2o3_amqp::Sender,

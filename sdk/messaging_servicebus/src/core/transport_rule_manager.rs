@@ -4,7 +4,7 @@ use tokio_util::sync::CancellationToken;
 use crate::administration::RuleProperties;
 
 #[async_trait]
-pub(crate) trait TransportRuleManager {
+pub trait TransportRuleManager {
     type Error: Send;
 
     /// Indicates whether or not this rule manager has been closed.

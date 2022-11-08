@@ -11,6 +11,12 @@ use super::service_bus_retry_options::ServiceBusRetryOptions;
 
 pub static SERVER_BUSY_BASE_SLEEP_TIME: Duration = Duration::from_secs(10);
 
+pub trait MapRetryPolicy<P> {
+    type Output;
+
+    fn map_retry_policy(self) -> Self::Output;
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum RetryError<E> {
     ServiceBusy,

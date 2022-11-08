@@ -24,7 +24,7 @@ use crate::{
 
 use super::amqp_message_converter;
 
-pub(crate) struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
+pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub identifier: u32,
     pub retry_policy: RP,
     pub receiver: fe2o3_amqp::Receiver,

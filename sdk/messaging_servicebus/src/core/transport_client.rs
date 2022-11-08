@@ -1,12 +1,16 @@
 use std::future::Future;
 use std::pin::Pin;
+use std::time::Duration as StdDuration;
 
-
-use azure_core::Url;
+use azure_core::{auth::TokenCredential, Url};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    primitives::service_bus_retry_options::ServiceBusRetryOptions,
+    authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    primitives::{
+        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_transport_type::ServiceBusTransportType,
+    },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
 };
 
@@ -15,12 +19,29 @@ use super::{
     transport_sender::TransportSender,
 };
 
+// pub(crate) trait CreateTransportClient<TC>
+// where
+//     TC: TokenCredential,
+// {
+//     type Ok;
+//     type Error;
+
+//     fn create_transport_client(
+//         host: &str,
+//         credential: ServiceBusTokenCredential<TC>,
+//         transport_type: ServiceBusTransportType,
+//         custom_endpoint: Option<Url>,
+//         retry_timeout: StdDuration,
+//     ) -> Pin<Box<dyn Future<Output = Result<Self::Ok, Self::Error>>>>;
+// }
+
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
 /// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended
 /// that the public [ServiceBusConnection] employ a transport client via containment and delegate
 /// operations to it rather than understanding protocol-specific details for different transports.
 // #[async_trait]
-pub(crate) trait TransportClient {
+pub trait TransportClient: Sized {
+    type CreateClientError: Send;
     type CreateSenderError: Send;
     type CreateReceiverError: Send;
     type CreateRuleManagerError: Send;
@@ -29,6 +50,18 @@ pub(crate) trait TransportClient {
     type Sender: TransportSender;
     type Receiver: TransportReceiver;
     type RuleManager: TransportRuleManager;
+    type TokenCredential: TokenCredential;
+
+    fn create_transport_client<'a>(
+        host: &'a str,
+        credential: ServiceBusTokenCredential<Self::TokenCredential>,
+        transport_type: ServiceBusTransportType,
+        custom_endpoint: Option<Url>,
+        retry_timeout: StdDuration,
+    ) -> Pin<Box<dyn Future<Output = Result<Self, Self::CreateClientError>> + 'a>>;
+
+    /// Get the transport type
+    fn transport_type(&self) -> &ServiceBusTransportType;
 
     /// Indicates whether or not this client has been closed.
     ///
