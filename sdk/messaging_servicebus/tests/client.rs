@@ -1,8 +1,9 @@
 use std::env;
 
 use azure_messaging_servicebus::{
-    client::service_bus_client::ServiceBusClient, ServiceBusMessage, ServiceBusReceiverOptions,
-    ServiceBusSenderOptions,
+    client::service_bus_client::ServiceBusClient,
+    receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions, ServiceBusMessage,
+    ServiceBusReceiverOptions, ServiceBusSenderOptions,
 };
 
 fn setup_dotenv() {
@@ -83,6 +84,56 @@ async fn client_receive_messages(total: u32, options: ServiceBusReceiverOptions)
     client.dispose().await.unwrap();
 }
 
+async fn client_recv_from_session(
+    total: u32,
+    options: ServiceBusSessionReceiverOptions,
+    session_id: String,
+) {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let session_enabled_queue = env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .accept_session(session_enabled_queue, session_id, options)
+        .await
+        .unwrap();
+    let messages = receiver.receive_messages(total, None).await.unwrap();
+
+    assert_eq!(messages.len(), total as usize);
+
+    for message in messages {
+        receiver.complete_message(message).await.unwrap();
+    }
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+async fn client_send_to_session(total: u32, options: ServiceBusSenderOptions, session_id: String) {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let session_enabled_queue = env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client
+        .create_sender(session_enabled_queue, options)
+        .await
+        .unwrap();
+    let messages: Vec<ServiceBusMessage> = (0..total)
+        .map(|i| {
+            let mut message = ServiceBusMessage::from(format!("message {}", i));
+            message.set_session_id(session_id.clone());
+            message
+        })
+        .collect();
+
+    sender.send_messages(messages).await.unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
 #[test]
 fn hello_world() {
     setup_dotenv();
@@ -149,4 +200,18 @@ async fn client_send_message_batch_and_receive_messages_with_default_options() {
     client_send_message_batch(total, Default::default()).await;
     client_receive_messages(total - 1, Default::default()).await;
     client_receive_messages(1, Default::default()).await;
+}
+
+#[tokio::test]
+async fn client_can_create_session_receiver() {
+    client_recv_from_session(0, Default::default(), "session_id".to_string()).await;
+}
+
+#[tokio::test]
+async fn client_send_and_receive_single_sessionful_message() {
+    let total = 3;
+    let session_id = "session_id".to_string();
+
+    client_send_to_session(total, Default::default(), session_id.clone()).await;
+    client_recv_from_session(total, Default::default(), session_id).await;
 }

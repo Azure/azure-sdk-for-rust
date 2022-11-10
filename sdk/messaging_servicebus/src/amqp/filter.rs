@@ -1,3 +1,4 @@
+use fe2o3_amqp_types::primitives::Symbol;
 use serde_amqp::{
     described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite, Value,
 };
@@ -18,7 +19,8 @@ pub struct SessionFilter(pub String);
 impl From<SessionFilter> for Described<String> {
     fn from(filter: SessionFilter) -> Self {
         Self {
-            descriptor: Descriptor::Code((0x0000_0137 << 32) | 0x0000_000c),
+            // descriptor: Descriptor::Code((0x0000_0137 << 32) | 0x0000_000c),
+            descriptor: Descriptor::Name(Symbol::from("com.microsoft:session-filter")),
             value: filter.0,
         }
     }
