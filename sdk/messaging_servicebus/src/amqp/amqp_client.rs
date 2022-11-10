@@ -20,7 +20,10 @@ use crate::{
         service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    receiver::service_bus_receive_mode::ServiceBusReceiveMode,
+    receiver::{
+        service_bus_receive_mode::ServiceBusReceiveMode,
+        service_bus_session_receiver::IsSessionReceiver,
+    },
 };
 
 use super::{
@@ -258,7 +261,13 @@ where
         Box::pin(async move {
             let (identifier, receiver) = self
                 .connection_scope
-                .open_receiver_link(entity_path, identifier, &receive_mode, prefetch_count)
+                .open_receiver_link(
+                    entity_path,
+                    identifier,
+                    &receive_mode,
+                    IsSessionReceiver::False,
+                    prefetch_count,
+                )
                 .await?;
             let retry_policy = RP::new(retry_options);
             Ok(AmqpReceiver {
@@ -274,15 +283,35 @@ where
 
     fn create_session_receiver(
         &mut self,
-        _entity_path: String,
-        _identifier: String,
-        _retry_policy: ServiceBusRetryOptions,
-        _receive_mode: ServiceBusReceiveMode,
-        _prefetch_count: u32,
-        _session_id: String,
-        _is_processor: bool,
+        entity_path: String,
+        identifier: String,
+        retry_policy: ServiceBusRetryOptions,
+        receive_mode: ServiceBusReceiveMode,
+        prefetch_count: u32,
+        session_id: String,
+        is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
-        todo!()
+        Box::pin(async move {
+            let (identifier, receiver) = self
+                .connection_scope
+                .open_receiver_link(
+                    entity_path,
+                    identifier,
+                    &receive_mode,
+                    IsSessionReceiver::True(session_id),
+                    prefetch_count,
+                )
+                .await?;
+            let retry_policy = RP::new(retry_policy);
+            Ok(AmqpReceiver {
+                identifier,
+                retry_policy,
+                receiver,
+                receive_mode,
+                is_processor,
+                prefetch_count,
+            })
+        })
     }
 
     /// Creates a rule manager strongly aligned with the active protocol and transport, responsible

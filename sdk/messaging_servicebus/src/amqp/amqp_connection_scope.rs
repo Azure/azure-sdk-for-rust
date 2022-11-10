@@ -14,8 +14,8 @@ use fe2o3_amqp::{
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::{
     definitions::{ReceiverSettleMode, SenderSettleMode, MAJOR, MINOR, REVISION},
-    messaging::Source,
-    primitives::OrderedMap,
+    messaging::{FilterSet, Source},
+    primitives::{OrderedMap, Symbol},
 };
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
@@ -28,15 +28,18 @@ use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
     primitives::service_bus_transport_type::ServiceBusTransportType,
+    receiver::service_bus_session_receiver::IsSessionReceiver,
     ServiceBusReceiveMode,
 };
 
 use super::{
+    amqp_client_constants,
     amqp_connection::AmqpConnection,
     amqp_constants,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
     error::{CbsAuthError, DisposeError, OpenReceiverError, OpenSenderError},
+    filter::SessionFilter,
     LINK_IDENTIFIER,
 };
 
@@ -415,6 +418,7 @@ where
         entity_path: String,
         identifier: String,
         receive_mode: &ServiceBusReceiveMode,
+        is_session_receiver: IsSessionReceiver,
         prefetch_count: u32,
     ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
         if self.is_disposed {
@@ -429,12 +433,24 @@ where
             .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
             .await?;
 
+        let filter_set = match is_session_receiver {
+            IsSessionReceiver::False => FilterSet::with_capacity(0),
+            IsSessionReceiver::True(session_id) => {
+                let mut filter_set = FilterSet::with_capacity(1);
+                filter_set.insert(
+                    Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
+                    SessionFilter(session_id).into(),
+                );
+                filter_set
+            }
+        };
+
         // linkSettings.LinkName = $"{connection.Settings.ContainerId};{connection.Identifier}:{session.Identifier}:{link.Identifier}:{linkSettings.Source.ToString()}";
         // connection container id is the scope identifier
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let source = Source::builder()
             .address(endpoint)
-            .filter(OrderedMap::with_capacity(0)) // TODO: regular receiver link has an empty filter
+            .filter(filter_set) // TODO: regular receiver link has an empty filter
             .build();
         let (snd_settle_mode, rcv_settle_mode) = service_bus_receive_mode_to_amqp(receive_mode);
         let link_name = format!(
@@ -461,15 +477,6 @@ where
 
         let receiver = builder.attach(&mut self.session.handle).await?;
         Ok((link_identifier, receiver))
-    }
-
-    pub(crate) async fn open_session_receiver(
-        &mut self,
-        _entity_path: String,
-        _identifier: String,
-        _session_id: String,
-    ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
-        todo!()
     }
 }
 

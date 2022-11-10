@@ -16,8 +16,10 @@ use crate::{
     entity_name_formatter::format_entity_path,
     primitives::{
         service_bus_connection::ServiceBusConnection,
-        service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
+    },
+    receiver::service_bus_session_receiver::{
+        ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
     },
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
@@ -264,6 +266,42 @@ where
             inner,
             entity_path,
             identifier,
+        })
+    }
+
+    pub async fn accept_session(
+        &mut self,
+        queue_or_topic_name: impl Into<String>,
+        session_id: impl Into<String>,
+        options: ServiceBusSessionReceiverOptions,
+    ) -> Result<ServiceBusSessionReceiver<C::Receiver>, C::CreateReceiverError> {
+        let entity_path = queue_or_topic_name.into();
+        let identifier = options
+            .identifier
+            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+        let retry_options = self.connection.retry_options().clone();
+        let receive_mode = options.receive_mode;
+        let prefetch_count = options.prefetch_count;
+        let session_id = session_id.into();
+
+        let inner = self
+            .connection
+            .create_transport_session_receiver(
+                entity_path.clone(),
+                identifier.clone(),
+                retry_options,
+                receive_mode,
+                prefetch_count,
+                session_id.clone(),
+                false,
+            )
+            .await?;
+
+        Ok(ServiceBusSessionReceiver {
+            inner,
+            entity_path,
+            identifier,
+            session_id,
         })
     }
 }

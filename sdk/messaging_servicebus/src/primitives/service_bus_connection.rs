@@ -257,6 +257,32 @@ where
 
         Ok(receiver)
     }
+
+    pub(crate) async fn create_transport_session_receiver(
+        &mut self,
+        entity_path: String,
+        identifier: String,
+        retry_options: ServiceBusRetryOptions,
+        receive_mode: ServiceBusReceiveMode,
+        prefetch_count: u32,
+        session_id: String,
+        is_processor: bool,
+    ) -> Result<C::Receiver, C::CreateReceiverError> {
+        let receiver = self
+            .inner_client
+            .create_session_receiver(
+                entity_path,
+                identifier,
+                retry_options,
+                receive_mode,
+                prefetch_count,
+                session_id,
+                is_processor,
+            )
+            .await?;
+
+        Ok(receiver)
+    }
 }
 
 impl<C> ServiceBusConnection<C>

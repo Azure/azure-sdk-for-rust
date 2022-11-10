@@ -4,6 +4,16 @@ use crate::{
     core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
 };
 
+use crate::{primitives::sub_queue::SubQueue, ServiceBusReceiveMode};
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ServiceBusReceiverOptions {
+    pub prefetch_count: u32,
+    pub receive_mode: ServiceBusReceiveMode,
+    pub identifier: Option<String>,
+    pub sub_queue: SubQueue,
+}
+
 pub struct ServiceBusReceiver<R> {
     pub(crate) inner: R,
     pub(crate) entity_path: String,
