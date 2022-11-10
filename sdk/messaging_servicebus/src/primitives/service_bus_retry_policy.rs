@@ -19,7 +19,10 @@ pub trait MapRetryPolicy<P> {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RetryError<E> {
+    #[error("Retry policy exhausted")]
     ServiceBusy,
+
+    #[error(transparent)]
     Operation(E),
 }
 

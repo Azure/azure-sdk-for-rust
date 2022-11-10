@@ -8,11 +8,11 @@ use crate::{CreateMessageBatchOptions, ServiceBusMessage};
 /// for different transports.
 #[async_trait]
 pub trait TransportSender {
-    type Error: Send;
-    type SendError: Send;
-    type CloseError: Send;
+    type Error: std::error::Error + Send;
+    type SendError: std::error::Error + Send;
+    type CloseError: std::error::Error + Send;
     type MessageBatch: Send;
-    type CreateMessageBatchError: Send;
+    type CreateMessageBatchError: std::error::Error + Send;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the

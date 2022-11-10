@@ -43,7 +43,7 @@ where
     RP::State: ServiceBusRetryPolicyState,
     RP::Error: ServiceBusRetryPolicyError,
 {
-    type Error = ();
+    type Error = DetachError;
     type SendError = RetryError<RP::Error>;
     type CloseError = DetachError;
     type MessageBatch = AmqpMessageBatch;

@@ -46,6 +46,7 @@ fe2o3-amqp-ws = "0.1.2"
 serde_amqp = {version = "0.5.2", features = ["time"]}
 
 [dev-dependencies]
+anyhow = "1.0"
 dotenv = "0.15"
 env_logger = "0.9"
 futures = "0.3"
