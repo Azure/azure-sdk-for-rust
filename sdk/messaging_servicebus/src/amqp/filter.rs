@@ -19,7 +19,7 @@ pub struct SessionFilter(pub String);
 impl From<SessionFilter> for Described<String> {
     fn from(filter: SessionFilter) -> Self {
         Self {
-            // descriptor: Descriptor::Code((0x0000_0137 << 32) | 0x0000_000c),
+            // descriptor: Descriptor::Code((0x0000_0137 << 32) | 0x0000_000c), // FIXME: descriptor code doesn't work yet
             descriptor: Descriptor::Name(Symbol::from("com.microsoft:session-filter")),
             value: filter.0,
         }

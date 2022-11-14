@@ -19,6 +19,7 @@ pub(crate) mod cbs_token_provider;
 pub(crate) mod error;
 pub(crate) mod filter;
 pub(crate) mod management_constants;
+pub(crate) mod scheduled_message;
 pub(crate) mod token_type;
 
 use std::sync::atomic::AtomicU32;
