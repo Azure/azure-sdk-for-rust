@@ -1,13 +1,7 @@
-use std::borrow::Cow;
 use std::time::Duration as StdDuration;
 
-use fe2o3_amqp_types::{
-    messaging::{ApplicationProperties, Body, Message},
-    primitives::OrderedMap,
-};
+use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
-
-use super::management_constants;
 
 pub(crate) mod add_rule;
 pub(crate) mod cancel_scheduled_message;

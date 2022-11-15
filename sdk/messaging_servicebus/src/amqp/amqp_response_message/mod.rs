@@ -1,7 +1,4 @@
-use fe2o3_amqp_types::{
-    messaging::{Body, Message},
-    primitives::OrderedMap,
-};
+use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
 pub(crate) mod add_rule;

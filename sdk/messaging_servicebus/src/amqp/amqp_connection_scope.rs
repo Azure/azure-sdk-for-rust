@@ -12,11 +12,11 @@ use fe2o3_amqp::{
 };
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
-use fe2o3_amqp_management::{client::MgmtClient, error::AttachError};
+use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ReceiverSettleMode, SenderSettleMode, MAJOR, MINOR, REVISION},
     messaging::{FilterSet, Source},
-    primitives::{OrderedMap, Symbol},
+    primitives::Symbol,
 };
 use fe2o3_amqp_ws::WebSocketStream;
 use rand::{rngs::StdRng, SeedableRng};
@@ -386,7 +386,7 @@ where
     pub(crate) async fn open_management_link(
         &mut self,
         entity_path: &str,
-        identifier: &str,
+        _identifier: &str,
     ) -> Result<MgmtClient, OpenMgmtLinkError> {
         if self.is_disposed {
             return Err(OpenMgmtLinkError::ScopeIsDisposed);
