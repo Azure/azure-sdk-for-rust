@@ -3,7 +3,7 @@ use fe2o3_amqp::{
     link::{ReceiverAttachError, SenderAttachError},
     session,
 };
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::{AttachError, Error as MgmtError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 
 use crate::ServiceBusMessage;
@@ -49,15 +49,40 @@ pub enum DisposeError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum OpenMgmtLinkError {
+    #[error("Scope is disposed")]
+    ScopeIsDisposed,
+
+    #[error(transparent)]
+    Attach(#[from] AttachError),
+
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum OpenSenderError {
     #[error("The connection scope is disposed")]
     ScopeIsDisposed,
 
     #[error(transparent)]
-    Attach(#[from] SenderAttachError),
+    ManagemetnLinkAttach(#[from] AttachError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
 
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
+}
+
+impl From<OpenMgmtLinkError> for OpenSenderError {
+    fn from(err: OpenMgmtLinkError) -> Self {
+        match err {
+            OpenMgmtLinkError::ScopeIsDisposed => OpenSenderError::ScopeIsDisposed,
+            OpenMgmtLinkError::Attach(err) => OpenSenderError::ManagemetnLinkAttach(err),
+            OpenMgmtLinkError::CbsAuth(err) => OpenSenderError::CbsAuth(err),
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -66,10 +91,23 @@ pub enum OpenReceiverError {
     ScopeIsDisposed,
 
     #[error(transparent)]
-    Attach(#[from] ReceiverAttachError),
+    ManagemetnLinkAttach(#[from] AttachError),
+
+    #[error(transparent)]
+    ReceiverAttach(#[from] ReceiverAttachError),
 
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
+}
+
+impl From<OpenMgmtLinkError> for OpenReceiverError {
+    fn from(err: OpenMgmtLinkError) -> Self {
+        match err {
+            OpenMgmtLinkError::ScopeIsDisposed => OpenReceiverError::ScopeIsDisposed,
+            OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagemetnLinkAttach(err),
+            OpenMgmtLinkError::CbsAuth(err) => OpenReceiverError::CbsAuth(err),
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]

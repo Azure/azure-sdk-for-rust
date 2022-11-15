@@ -236,15 +236,20 @@ where
     ) -> Pin<Box<dyn Future<Output = Result<Self::Sender, Self::CreateSenderError>> + '_>> {
         Box::pin(async move {
             // TODO: this will be updated once GAT is stablized
-            let (identifier, sender) = self
+            let (link_identifier, sender) = self
                 .connection_scope
-                .open_sender_link(entity_path, identifier)
+                .open_sender_link(&entity_path, &identifier)
+                .await?;
+            let management_client = self
+                .connection_scope
+                .open_management_link(&entity_path, &identifier)
                 .await?;
             let retry_policy = RP::new(retry_options);
             Ok(AmqpSender {
-                identifier,
+                identifier: link_identifier,
                 retry_policy,
                 sender,
+                management_client,
             })
         })
     }
@@ -259,24 +264,29 @@ where
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
         Box::pin(async move {
-            let (identifier, receiver) = self
+            let (link_identifier, receiver) = self
                 .connection_scope
                 .open_receiver_link(
-                    entity_path,
-                    identifier,
+                    &entity_path,
+                    &identifier,
                     &receive_mode,
                     IsSessionReceiver::False,
                     prefetch_count,
                 )
                 .await?;
+            let management_client = self
+                .connection_scope
+                .open_management_link(&entity_path, &identifier)
+                .await?;
             let retry_policy = RP::new(retry_options);
             Ok(AmqpReceiver {
-                identifier,
+                identifier: link_identifier,
                 retry_policy,
                 receiver,
                 receive_mode,
                 is_processor,
                 prefetch_count,
+                management_client,
             })
         })
     }
@@ -292,24 +302,29 @@ where
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
         Box::pin(async move {
-            let (identifier, receiver) = self
+            let (link_identifier, receiver) = self
                 .connection_scope
                 .open_receiver_link(
-                    entity_path,
-                    identifier,
+                    &entity_path,
+                    &identifier,
                     &receive_mode,
                     IsSessionReceiver::True(session_id),
                     prefetch_count,
                 )
                 .await?;
+            let management_client = self
+                .connection_scope
+                .open_management_link(&entity_path, &identifier)
+                .await?;
             let retry_policy = RP::new(retry_policy);
             Ok(AmqpReceiver {
-                identifier,
+                identifier: link_identifier,
                 retry_policy,
                 receiver,
                 receive_mode,
                 is_processor,
                 prefetch_count,
+                management_client,
             })
         })
     }

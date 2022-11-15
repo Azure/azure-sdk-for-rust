@@ -3,6 +3,7 @@ use fe2o3_amqp::{
     link::{delivery::DeliveryInfo, DetachError, RecvError},
     Delivery,
 };
+use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{definitions::SequenceNo, messaging::Body, primitives::OrderedMap};
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
@@ -31,6 +32,7 @@ pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) receiver: fe2o3_amqp::Receiver,
     pub(crate) receive_mode: ServiceBusReceiveMode,
     pub(crate) is_processor: bool,
+    pub(crate) management_client: MgmtClient,
 }
 
 impl<RP> AmqpReceiver<RP>
@@ -142,7 +144,9 @@ where
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn close(self) -> Result<(), Self::CloseError> {
-        self.receiver.close().await
+        self.receiver.close().await?;
+        self.management_client.close().await?;
+        Ok(())
     }
 
     /// <summary>

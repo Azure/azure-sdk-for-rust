@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
+use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::messaging::Outcome;
 
 use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
@@ -26,6 +27,7 @@ pub struct AmqpSender<RP: ServiceBusRetryPolicy> {
     pub identifier: u32,
     pub retry_policy: RP,
     pub sender: fe2o3_amqp::Sender,
+    pub management_client: MgmtClient,
 }
 
 impl<RP: ServiceBusRetryPolicy> AmqpSender<RP>
@@ -158,7 +160,9 @@ where
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
     ///   cancel the operation.
     async fn close(self) -> Result<(), Self::CloseError> {
-        self.sender.close().await
+        self.sender.close().await?;
+        self.management_client.close().await?;
+        Ok(())
     }
 }
 

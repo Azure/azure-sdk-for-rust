@@ -24,11 +24,6 @@ impl Response for ScheduleMessageResponse {
     fn decode_message(
         message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
-        let map = message
-            .body
-            .into_iter()
-            .filter(|(key, _)| key == SEQUENCE_NUMBERS)
-            .collect();
-        Ok(Self { map })
+        Ok(Self { map: message.body })
     }
 }

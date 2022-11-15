@@ -12,6 +12,7 @@ use fe2o3_amqp::{
 };
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
+use fe2o3_amqp_management::{client::MgmtClient, error::AttachError};
 use fe2o3_amqp_types::{
     definitions::{ReceiverSettleMode, SenderSettleMode, MAJOR, MINOR, REVISION},
     messaging::{FilterSet, Source},
@@ -33,12 +34,12 @@ use crate::{
 };
 
 use super::{
-    amqp_client_constants,
+    amqp_client_constants::{self, MANAGEMENT_ADDRESS},
     amqp_connection::AmqpConnection,
     amqp_constants,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
-    error::{CbsAuthError, DisposeError, OpenReceiverError, OpenSenderError},
+    error::{CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError, OpenSenderError},
     filter::SessionFilter,
     LINK_IDENTIFIER,
 };
@@ -382,10 +383,46 @@ where
         Ok(cbs_token_expires_at_utc)
     }
 
+    pub(crate) async fn open_management_link(
+        &mut self,
+        entity_path: &str,
+        identifier: &str,
+    ) -> Result<MgmtClient, OpenMgmtLinkError> {
+        if self.is_disposed {
+            return Err(OpenMgmtLinkError::ScopeIsDisposed);
+        }
+
+        // TODO: customize mgmt-link properties?
+        let entity_path = format!("{}/{}", entity_path, MANAGEMENT_ADDRESS);
+
+        let required_claims = vec![
+            service_bus_claim::MANAGE,
+            service_bus_claim::LISTEN,
+            service_bus_claim::SEND,
+        ];
+        let endpoint = format!("{}/{}", self.service_endpoint, entity_path);
+        let audience = vec![&endpoint[..]];
+        let _auth_expiration_utc = self
+            .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
+            .await?;
+
+        let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+        let link_name = format!(
+            "{};{}:{}:{}",
+            self.id, self.connection.identifier, self.session.identifier, link_identifier
+        );
+        let mgmt_link = MgmtClient::builder()
+            .client_node_addr(link_name)
+            .management_node_address(entity_path)
+            .attach(&mut self.session.handle)
+            .await?;
+        Ok(mgmt_link)
+    }
+
     pub(crate) async fn open_sender_link(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
     ) -> Result<(u32, fe2o3_amqp::Sender), OpenSenderError> {
         if self.is_disposed {
             return Err(OpenSenderError::ScopeIsDisposed);
@@ -415,8 +452,8 @@ where
 
     pub(crate) async fn open_receiver_link(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         receive_mode: &ServiceBusReceiveMode,
         is_session_receiver: IsSessionReceiver,
         prefetch_count: u32,
