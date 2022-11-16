@@ -215,3 +215,72 @@ async fn client_send_and_receive_single_sessionful_message() {
     client_send_to_session(total, Default::default(), session_id.clone()).await;
     client_recv_from_session(total, Default::default(), session_id).await;
 }
+
+#[tokio::test]
+async fn client_schedule_message_via_service_bus_message() {
+    use time::OffsetDateTime;
+    use time::Duration as TimeSpan;
+
+    setup_dotenv();
+
+    let mut message = ServiceBusMessage::from("hello world");
+    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
+    message.set_scheduled_enqueue_time(enqueue_time);
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client
+        .create_sender(queue, Default::default())
+        .await
+        .unwrap();
+
+    sender.send_message(message).await.unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+#[tokio::test]
+async fn client_schedule_message_via_service_bus_sender() {
+    use time::OffsetDateTime;
+    use time::Duration as TimeSpan;
+
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client
+        .create_sender(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = ServiceBusMessage::from("hello world");
+    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
+    let seq = sender.schedule_message(message, enqueue_time).await.unwrap();
+    println!("seq: {}", seq);
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+#[tokio::test]
+async fn test_time_now() {
+    use time::OffsetDateTime;
+    use time::Duration as TimeSpan;
+    use fe2o3_amqp::types::primitives::Timestamp;
+
+    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
+    println!("enqueue_time: {}", enqueue_time);
+    let timestamp = Timestamp::from(enqueue_time);
+    println!("timestamp: {:?}", timestamp);
+    let enqueue_time2 = OffsetDateTime::try_from(timestamp).unwrap();
+    println!("enqueue_time2: {}", enqueue_time2);
+
+    let timestamp = Timestamp::from(1668610092112);
+    let enqueued_time3 = OffsetDateTime::try_from(timestamp).unwrap();
+    println!("enqueued_time3: {}", enqueued_time3);
+}

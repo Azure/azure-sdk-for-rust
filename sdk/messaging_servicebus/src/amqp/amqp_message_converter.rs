@@ -1,11 +1,10 @@
 use fe2o3_amqp::{Delivery, Sendable};
 use fe2o3_amqp_types::{
     messaging::{
-        annotations::{AnnotationKey, BorrowedKey},
+        annotations::{AnnotationKey},
         message::__private::Serializable,
-        Batch, Body, Data, Message, MessageAnnotations, Properties,
+        Batch, Body, Data, Message,
     },
-    primitives::SymbolRef,
 };
 use serde_amqp::{to_vec, Value};
 
@@ -13,7 +12,10 @@ use crate::{
     primitives::service_bus_received_message::ServiceBusReceivedMessage, ServiceBusMessage,
 };
 
-use super::{amqp_constants, amqp_message_constants};
+use super::{
+    amqp_constants,
+    amqp_message_constants::{self, PARTITION_KEY_NAME, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
+};
 
 /// <summary>
 /// The size, in bytes, to use for extracting the delivery tag bytes into <see cref="Guid"/>.
@@ -46,30 +48,6 @@ pub(crate) fn batch_service_bus_messages_as_amqp_message(
     build_amqp_batch_from_messages(batch_messages, force_batch)
 }
 
-fn filter_properties(properties: Properties) -> Properties {
-    Properties {
-        message_id: properties.message_id,
-        group_id: properties.group_id,
-        ..Default::default()
-    }
-}
-
-fn filter_message_annotation(message_annotations: MessageAnnotations) -> MessageAnnotations {
-    let map = message_annotations
-        .0
-        .into_iter()
-        .filter(|(k, _)| {
-            k.key()
-                == BorrowedKey::Symbol(SymbolRef::from(amqp_message_constants::PARTITION_KEY_NAME))
-                || k.key()
-                    == BorrowedKey::Symbol(SymbolRef::from(
-                        amqp_message_constants::VIA_PARTITION_KEY_NAME,
-                    ))
-        })
-        .collect();
-    MessageAnnotations(map)
-}
-
 /// <summary>
 ///   Builds a batch <see cref="AmqpMessage" /> from a set of <see cref="AmqpMessage" />.
 /// </summary>
@@ -89,9 +67,7 @@ pub(crate) fn build_amqp_batch_from_messages(
         (0, _) => None,
         (1, false) => {
             let mut message = source.next()?;
-            message.properties = message.properties.map(filter_properties);
-            message.message_annotations =
-                message.message_annotations.map(filter_message_annotation);
+            message.properties = message.properties;
             let sendable = Sendable {
                 message,
                 message_format: Default::default(),
@@ -109,11 +85,10 @@ pub(crate) fn build_amqp_batch_from_messages(
 
             // Take selected fields from the first message properties and message annotations and
             // use it as the basis for the evelope
-            let properties = first_message.properties.clone().map(filter_properties);
+            let properties = first_message.properties.clone();
             let message_annotations = first_message
                 .message_annotations
-                .clone()
-                .map(filter_message_annotation);
+                .clone();
 
             let data = Data::from(to_vec(&Serializable(first_message)).ok()?);
             batch_data.push(data);
