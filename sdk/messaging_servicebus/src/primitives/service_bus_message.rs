@@ -12,9 +12,9 @@ use time::OffsetDateTime;
 
 use crate::amqp::{
     amqp_message_constants::{
-        DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER, DEAD_LETTER_SOURCE_NAME,
-        ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME, LOCKED_UNTIL_NAME,
-        MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
+        self, DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
+        DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
+        LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
     },
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
     error::Error,
@@ -397,7 +397,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_reply_to(reply_to)
     }
 
-    /// Gets or sets the date and time in UTC at which the message will be enqueued. This property
+    /// Gets the date and time in UTC at which the message will be enqueued. This property
     /// returns the time in UTC; when setting the property, the supplied DateTime value must also be
     /// in UTC.
     ///
@@ -412,6 +412,19 @@ impl ServiceBusMessage {
     /// get enqueued, but the actual sending time depends on the queue's workload and its state.
     pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
         self.amqp_message.scheduled_enqueue_time()
+    }
+
+    /// Sets the date and time in UTC at which the message will be enqueued
+    pub fn set_schedule_enqueue_time(&mut self, enqueue_time: OffsetDateTime) {
+        let message_annotations = self
+            .amqp_message
+            .message_annotations
+            .get_or_insert_with(|| MessageAnnotations::default());
+        let timestamp = fe2o3_amqp::types::primitives::Timestamp::from(enqueue_time);
+        message_annotations.insert(
+            amqp_message_constants::SCHEDULED_ENQUEUE_TIME_UTC_NAME.into(),
+            timestamp.into(),
+        );
     }
 
     /// Gets the application properties bag, which can be used for custom message metadata.

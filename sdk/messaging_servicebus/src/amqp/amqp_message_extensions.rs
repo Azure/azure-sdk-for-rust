@@ -217,9 +217,10 @@ impl<B> AmqpMessageExt for Message<B> {
             .and_then(|m| m.get(&SCHEDULED_ENQUEUE_TIME_UTC_NAME as &dyn AnnotationKey))
             .map(|value| match value {
                 Value::Timestamp(timestamp) => {
-                    let millis = timestamp.milliseconds();
-                    let duration = TimeSpan::milliseconds(millis);
-                    OffsetDateTime::UNIX_EPOCH + duration
+                    // let millis = timestamp.milliseconds();
+                    // let duration = TimeSpan::milliseconds(millis);
+                    let timespan = TimeSpan::from(timestamp.clone());
+                    OffsetDateTime::UNIX_EPOCH + timespan
                 }
                 _ => unreachable!("Expecting a Timestamp"),
             })
