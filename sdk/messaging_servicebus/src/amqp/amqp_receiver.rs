@@ -165,9 +165,11 @@ where
     async fn complete(&mut self, delivery_info: DeliveryInfo) -> Result<(), Self::CompleteError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
         run_operation!(
             policy,
             RP,
+            try_timeout,
             complete_message::<RP::Error>(receiver, delivery_info.clone()).await
         )
     }

@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::messaging::Outcome;
+use std::time::Duration as StdDuration;
 
 use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
@@ -15,7 +16,9 @@ use crate::{
 
 use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
+use super::amqp_request_message::schedule_message::ScheduleMessageRequest;
 use super::error::RequestedSizeOutOfRange;
+use super::scheduled_message::ScheduledBatchEnvelope;
 use super::{
     amqp_message_converter::{
         batch_service_bus_messages_as_amqp_message, BatchEnvelope, SendableEnvelope,
@@ -106,10 +109,12 @@ where
         // TODO: retry policy
         let batch = batch_service_bus_messages_as_amqp_message(messages, false);
         let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
         let sender = &mut self.sender;
         run_operation! {
             policy,
             RP,
+            try_timeout,
             send_batch_envelope::<RP::Error>(sender, &batch).await
         }
     }
@@ -131,19 +136,40 @@ where
     ) -> Result<(), Self::SendError> {
         let batch = build_amqp_batch_from_messages(message_batch.messages.into_iter(), false);
         let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
         let sender = &mut self.sender;
         run_operation! {
             policy,
             RP,
+            try_timeout,
             send_batch_envelope::<RP::Error>(sender, &batch).await
         }
     }
 
     async fn schedule_messages(
         &mut self,
-        _messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-    ) -> Result<Vec<i64>, Self::Error> {
-        todo!()
+        messages: impl Iterator<Item = ServiceBusMessage> + Send,
+    ) -> Result<Vec<i64>, Self::SendError> {
+        let scheduled_messages = messages
+            .map(|m| m.amqp_message)
+            .map(ScheduledBatchEnvelope::from_amqp_message)
+            .collect::<Result<Option<Vec<_>>, _>>()
+            .unwrap(); // TODO: panic for now
+
+        match scheduled_messages {
+            Some(scheduled_messages) => {
+                let policy = &mut self.retry_policy;
+                let mut try_timeout = policy.calculate_try_timeout(0);
+                let management_client = &mut self.management_client;
+                run_operation! {
+                    policy,
+                    RP,
+                    try_timeout,
+                    schedule_message::<RP::Error>(management_client, &scheduled_messages, &try_timeout).await
+                }
+            }
+            None => Ok(vec![]),
+        }
     }
 
     async fn cancel_scheduled_messages(
@@ -206,4 +232,21 @@ async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
     }
 
     Ok(())
+}
+
+async fn schedule_message<E: ServiceBusRetryPolicyError>(
+    mgmt_client: &mut MgmtClient,
+    batch_envelopes: &[ScheduledBatchEnvelope],
+    try_timeout: &StdDuration,
+) -> Result<Vec<i64>, E> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    let request = ScheduleMessageRequest {
+        server_timeout,
+        messages: batch_envelopes,
+    };
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response
+        .into_sequence_numbers()
+        .unwrap_or_else(|| Vec::with_capacity(0)))
 }

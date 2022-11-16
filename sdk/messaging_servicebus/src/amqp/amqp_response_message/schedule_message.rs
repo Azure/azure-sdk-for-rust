@@ -12,6 +12,10 @@ impl ScheduleMessageResponse {
     pub fn sequence_numbers(&self) -> Option<&[i64]> {
         self.map.get(SEQUENCE_NUMBERS).map(|v| v.as_slice())
     }
+
+    pub fn into_sequence_numbers(mut self) -> Option<Vec<i64>> {
+        self.map.remove(SEQUENCE_NUMBERS)
+    }
 }
 
 impl Response for ScheduleMessageResponse {

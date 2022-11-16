@@ -1,15 +1,16 @@
 use std::hash::Hash;
-use std::time::Duration;
+use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
 use fe2o3_amqp::link::{DispositionError, SendError};
+use fe2o3_amqp_management::error::Error as MgmtError;
 use tokio::time::error::Elapsed;
 
 use crate::amqp::error::NotAcceptedError;
 
 use super::service_bus_retry_options::ServiceBusRetryOptions;
 
-pub static SERVER_BUSY_BASE_SLEEP_TIME: Duration = Duration::from_secs(10);
+pub static SERVER_BUSY_BASE_SLEEP_TIME: StdDuration = StdDuration::from_secs(10);
 
 pub trait MapRetryPolicy<P> {
     type Output;
@@ -30,6 +31,7 @@ pub trait ServiceBusRetryPolicyError
 where
     Self: std::error::Error
         + From<SendError>
+        + From<MgmtError>
         + From<Elapsed>
         + From<NotAcceptedError>
         + From<DispositionError>,
@@ -65,7 +67,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     /// # Returns
     ///
     /// The amount of time to allow for an operation to complete.
-    fn calculate_try_timeout(&self, attempt_count: u32) -> Duration;
+    fn calculate_try_timeout(&self, attempt_count: u32) -> StdDuration;
 
     /// Calculates the amount of time to wait before another attempt should be made.
     ///
@@ -83,7 +85,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
         &self,
         last_error: &Self::Error,
         attempt_count: u32,
-    ) -> Option<Duration>;
+    ) -> Option<StdDuration>;
 }
 
 pub trait ServiceBusRetryPolicyState {
@@ -175,17 +177,16 @@ pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
 impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + Sync {}
 
 macro_rules! run_operation {
-    ($policy:ident, $policy_ty:ty, $op:expr) => {{
+    ($policy:ident, $policy_ty:ty, $try_timeout:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
-        let mut try_timeout = $policy.calculate_try_timeout(0);
         if $policy.state().is_server_busy()
-            && try_timeout
+            && $try_timeout
                 < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
         {
             // We are in a server busy state before we start processing. Since
             // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
             // entire Sleep time.
-            tokio::time::sleep(try_timeout).await;
+            tokio::time::sleep($try_timeout).await;
         }
 
         let outcome = loop {
@@ -196,7 +197,7 @@ macro_rules! run_operation {
                 .await;
             }
 
-            let outcome = match tokio::time::timeout(try_timeout, async { $op }).await {
+            let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
                 Ok(result) => result.map_err(<$policy_ty>::Error::from),
                 Err(err) => Err(<$policy_ty>::Error::from(err)),
             };
@@ -210,7 +211,7 @@ macro_rules! run_operation {
                         (Some(retry_delay), false) => {
                             log::error!("{}", &error);
                             tokio::time::sleep(retry_delay).await;
-                            try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
+                            $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
                         }
                         _ => return Err(crate::primitives::service_bus_retry_policy::RetryError::Operation(error)),
                     }
@@ -218,20 +219,19 @@ macro_rules! run_operation {
             }
         };
 
-        Result::<(), crate::primitives::service_bus_retry_policy::RetryError<<$policy_ty>::Error>>::Ok(outcome)
+        Result::<_, crate::primitives::service_bus_retry_policy::RetryError<<$policy_ty>::Error>>::Ok(outcome)
     }};
 
-    ($policy:ident, $policy_ty:ty, $cancellation_token:ident, $op:expr) => {{
+    ($policy:ident, $policy_ty:ty, $try_timeout:ident, $cancellation_token:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
-        let mut try_timeout = $policy.calculate_try_timeout(0);
         if $policy.state().is_server_busy()
-            && try_timeout
+            && $try_timeout
                 < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
         {
             // We are in a server busy state before we start processing. Since
             // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
             // entire Sleep time.
-            tokio::time::timeout(try_timeout, $cancellation_token.cancelled())
+            tokio::time::timeout($try_timeout, $cancellation_token.cancelled())
                 .await
                 .map_err(|_| crate::primitives::service_bus_retry_policy::RetryError::ServiceBusy)?
         }
@@ -246,7 +246,7 @@ macro_rules! run_operation {
                 .await;
             }
 
-            let outcome = match tokio::time::timeout(try_timeout, async { $op }).await {
+            let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
                 Ok(result) => result.map_err(<$policy_ty>::Error::from),
                 Err(err) => Err(<$policy_ty>::Error::from(err)),
             };
@@ -267,7 +267,7 @@ macro_rules! run_operation {
                             let _ =
                                 tokio::time::timeout(retry_delay, $cancellation_token.cancelled())
                                     .await;
-                            try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
+                            $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
                         }
                         _ => return Err(RetryError::Operation(error)),
                     }

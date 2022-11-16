@@ -68,8 +68,8 @@ pub trait TransportSender {
 
     async fn schedule_messages(
         &mut self,
-        messages: impl Iterator<Item = &ServiceBusMessage> + Send,
-    ) -> Result<Vec<i64>, Self::Error>;
+        messages: impl Iterator<Item = ServiceBusMessage> + Send,
+    ) -> Result<Vec<i64>, Self::SendError>;
 
     async fn cancel_scheduled_messages(
         &mut self,

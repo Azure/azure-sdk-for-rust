@@ -1,3 +1,5 @@
+use time::OffsetDateTime;
+
 use crate::{
     core::{TransportMessageBatch, TransportSender},
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
@@ -45,6 +47,40 @@ where
         batch: ServiceBusMessageBatch<S::MessageBatch>,
     ) -> Result<(), S::SendError> {
         self.inner.send_batch(batch.inner).await
+    }
+
+    pub async fn schedule_message(
+        &mut self,
+        message: impl Into<ServiceBusMessage>,
+        enqueue_time: OffsetDateTime,
+    ) -> Result<i64, S::SendError> {
+        let messages = std::iter::once(message.into());
+        let seq_nums = self.schedule_messages(messages, enqueue_time).await?;
+        // PANIC: there should be exactly one sequence number returned
+        assert_eq!(seq_nums.len(), 1);
+        Ok(seq_nums[0])
+    }
+
+    pub async fn schedule_messages<M, I>(
+        &mut self,
+        messages: M,
+        enqueue_time: OffsetDateTime,
+    ) -> Result<Vec<i64>, S::SendError>
+    where
+        M: IntoIterator<Item = I>,
+        M::IntoIter: ExactSizeIterator + Send,
+        I: Into<ServiceBusMessage>,
+    {
+        let iter = messages.into_iter();
+        if iter.len() == 0 {
+            return Ok(vec![]);
+        }
+        let messages = iter.map(|m| {
+            let mut m = m.into();
+            m.set_scheduled_enqueue_time(enqueue_time);
+            m
+        });
+        self.inner.schedule_messages(messages).await
     }
 
     pub async fn dispose(self) -> Result<(), S::CloseError> {

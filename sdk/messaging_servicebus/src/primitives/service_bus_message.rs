@@ -415,7 +415,7 @@ impl ServiceBusMessage {
     }
 
     /// Sets the date and time in UTC at which the message will be enqueued
-    pub fn set_schedule_enqueue_time(&mut self, enqueue_time: OffsetDateTime) {
+    pub fn set_scheduled_enqueue_time(&mut self, enqueue_time: OffsetDateTime) {
         let message_annotations = self
             .amqp_message
             .message_annotations
