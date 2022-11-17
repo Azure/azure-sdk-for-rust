@@ -34,19 +34,19 @@ impl ScheduleMessageRequestBody {
 }
 
 pub(crate) struct ScheduleMessageRequest {
-    server_timeout: u32,
+    server_timeout: Option<u32>,
     messages: OrderedMap<String, EncodedMessages>,
 }
 
 impl ScheduleMessageRequest {
-    pub fn new(server_timeout: u32, body: ScheduleMessageRequestBody) -> Self {
+    pub fn new(body: ScheduleMessageRequestBody) -> Self {
         Self {
-            server_timeout,
+            server_timeout: None,
             messages: body.into_inner(),
         }
     }
 
-    pub fn set_server_timeout(&mut self, server_timeout: u32) {
+    pub fn set_server_timeout(&mut self, server_timeout: Option<u32>) {
         self.server_timeout = server_timeout;
     }
 }
@@ -61,9 +61,10 @@ impl Request for ScheduleMessageRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+        let server_timeout = self.server_timeout?;
         Some(
             ApplicationProperties::builder()
-                .insert(SERVER_TIMEOUT, self.server_timeout)
+                .insert(SERVER_TIMEOUT, server_timeout)
                 .build(),
         )
     }
@@ -82,9 +83,10 @@ impl<'a> Request for &'a mut ScheduleMessageRequest {
     type Body = &'a OrderedMap<String, EncodedMessages>;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
+        let server_timeout = self.server_timeout?;
         Some(
             ApplicationProperties::builder()
-                .insert(SERVER_TIMEOUT, self.server_timeout)
+                .insert(SERVER_TIMEOUT, server_timeout)
                 .build(),
         )
     }

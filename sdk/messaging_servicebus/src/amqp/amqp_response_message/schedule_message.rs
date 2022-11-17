@@ -1,19 +1,15 @@
 use fe2o3_amqp_management::error::Error as MgmtError;
 use fe2o3_amqp_management::response::Response;
-use fe2o3_amqp_types::primitives::OrderedMap;
+use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
 use crate::amqp::management_constants::properties::SEQUENCE_NUMBERS;
 
 pub(crate) struct ScheduleMessageResponse {
-    pub(crate) map: OrderedMap<String, Vec<i64>>,
+    pub(crate) map: OrderedMap<String, Array<i64>>,
 }
 
 impl ScheduleMessageResponse {
-    pub fn sequence_numbers(&self) -> Option<&[i64]> {
-        self.map.get(SEQUENCE_NUMBERS).map(|v| v.as_slice())
-    }
-
-    pub fn into_sequence_numbers(mut self) -> Option<Vec<i64>> {
+    pub fn into_sequence_numbers(mut self) -> Option<Array<i64>> {
         self.map.remove(SEQUENCE_NUMBERS)
     }
 }
@@ -21,7 +17,7 @@ impl ScheduleMessageResponse {
 impl Response for ScheduleMessageResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = OrderedMap<String, Vec<i64>>;
+    type Body = OrderedMap<String, Array<i64>>;
 
     type Error = MgmtError;
 

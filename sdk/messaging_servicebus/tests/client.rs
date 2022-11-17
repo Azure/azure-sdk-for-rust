@@ -1,4 +1,6 @@
 use std::env;
+use std::time::Duration as StdDuration;
+use time::Duration as TimeSpan;
 
 use azure_messaging_servicebus::{
     client::service_bus_client::ServiceBusClient,
@@ -218,7 +220,6 @@ async fn client_send_and_receive_single_sessionful_message() {
 
 #[tokio::test]
 async fn client_schedule_message_via_service_bus_message() {
-    use time::Duration as TimeSpan;
     use time::OffsetDateTime;
 
     setup_dotenv();
@@ -242,9 +243,7 @@ async fn client_schedule_message_via_service_bus_message() {
     client.dispose().await.unwrap();
 }
 
-#[tokio::test]
-async fn client_schedule_message_via_service_bus_sender() {
-    use time::Duration as TimeSpan;
+async fn client_schedule_single_message_via_service_bus_sender(delay: TimeSpan) -> i64 {
     use time::OffsetDateTime;
 
     setup_dotenv();
@@ -259,13 +258,48 @@ async fn client_schedule_message_via_service_bus_sender() {
         .unwrap();
 
     let message = ServiceBusMessage::from("hello world");
-    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
+    let enqueue_time = OffsetDateTime::now_utc() + delay;
     let seq = sender
         .schedule_message(message, enqueue_time)
         .await
         .unwrap();
-    println!("seq: {}", seq);
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+
+    seq
+}
+
+async fn client_cancel_single_scheduled_message(seq: i64) {
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client
+        .create_sender(queue, Default::default())
+        .await
+        .unwrap();
+
+    sender.cancel_scheduled_message(seq).await.unwrap();
 
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
 }
+
+#[tokio::test]
+async fn client_schedule_and_cancel_single_message() {
+    // TODO: remove sleep?
+    let seq = client_schedule_single_message_via_service_bus_sender(TimeSpan::minutes(1)).await;
+    tokio::time::sleep(StdDuration::from_secs(30)).await;
+    client_cancel_single_scheduled_message(seq).await;
+}
+
+#[tokio::test]
+#[should_panic]
+async fn client_cancel_non_existent_schedule_message() {
+    let seq = 1; // The queue should be well surpassed this number by now
+    client_cancel_single_scheduled_message(seq).await;
+}
+

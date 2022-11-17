@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::messaging::Outcome;
+use fe2o3_amqp_types::primitives::Array;
 use std::time::Duration as StdDuration;
 
 use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
@@ -16,6 +17,7 @@ use crate::{
 
 use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
+use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequest;
 use super::amqp_request_message::schedule_message::ScheduleMessageRequest;
 use super::error::RequestedSizeOutOfRange;
 use super::{
@@ -28,6 +30,7 @@ use super::{
 pub struct AmqpSender<RP: ServiceBusRetryPolicy> {
     pub identifier: u32,
     pub retry_policy: RP,
+    pub name: String,
     pub sender: fe2o3_amqp::Sender,
     pub management_client: MgmtClient,
 }
@@ -166,18 +169,17 @@ where
         match request_body {
             Some(body) => {
                 let policy = &mut self.retry_policy;
-                let mut try_timeout = policy.calculate_try_timeout(0);
 
                 // Use a wrapper type to avoid mistakes
-                let server_timeout = try_timeout.as_millis() as u32;
-                let mut request = ScheduleMessageRequest::new(server_timeout, body);
+                let mut try_timeout = policy.calculate_try_timeout(0);
+                let mut request = ScheduleMessageRequest::new(body);
 
                 let management_client = &mut self.management_client;
                 run_operation! {
                     policy,
                     RP,
                     try_timeout,
-                    schedule_message::<RP::Error>(management_client, &mut request, &try_timeout).await
+                    schedule_message::<RP::Error>(management_client, &mut request, try_timeout).await
                 }
             }
             None => Ok(vec![]),
@@ -186,9 +188,29 @@ where
 
     async fn cancel_scheduled_messages(
         &mut self,
-        _sequence_numbers: &[i64],
-    ) -> Result<(), Self::Error> {
-        todo!()
+        sequence_numbers: Vec<i64>,
+    ) -> Result<(), Self::SendError> {
+        use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequestBody;
+
+        if sequence_numbers.is_empty() {
+            return Ok(());
+        }
+
+        let request_body = CancelScheduledMessageRequestBody::new(Array(sequence_numbers));
+        // TODO: solve lifetime issue if link name is borrowed
+        let mut request = CancelScheduledMessageRequest::new(request_body);
+
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+        let management_client = &mut self.management_client;
+
+        run_operation!(
+            policy,
+            RP,
+            try_timeout,
+            cancel_scheduled_messages::<RP::Error>(management_client, &mut request, try_timeout)
+                .await
+        )
     }
 
     /// Closes the connection to the transport producer instance.
@@ -248,14 +270,27 @@ async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
 
 async fn schedule_message<E: ServiceBusRetryPolicyError>(
     mgmt_client: &mut MgmtClient,
-    request: &mut ScheduleMessageRequest,
-    try_timeout: &StdDuration,
+    request: &mut ScheduleMessageRequest, // Use a reference to avoid repeated serialization
+    try_timeout: StdDuration,
 ) -> Result<Vec<i64>, E> {
     let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(server_timeout);
+    request.set_server_timeout(Some(server_timeout));
 
     let response = mgmt_client.call(request).await?;
     Ok(response
         .into_sequence_numbers()
+        .map(|array| array.into_inner())
         .unwrap_or_else(|| Vec::with_capacity(0)))
+}
+
+async fn cancel_scheduled_messages<'a, E: ServiceBusRetryPolicyError>(
+    mgmt_client: &'a mut MgmtClient,
+    request: &'a mut CancelScheduledMessageRequest,
+    try_timeout: StdDuration,
+) -> Result<(), E> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let _response = mgmt_client.call(request).await?;
+    Ok(())
 }

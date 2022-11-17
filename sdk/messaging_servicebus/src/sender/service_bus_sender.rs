@@ -83,6 +83,32 @@ where
         self.inner.schedule_messages(messages).await
     }
 
+    pub async fn cancel_scheduled_message(
+        &mut self,
+        sequence_number: i64,
+    ) -> Result<(), S::SendError> {
+        // The request will always encode the sequence numbers as a Vec, so it doesn't hurt to
+        // allocate a Vec here.
+        self.cancel_scheduled_messages(std::iter::once(sequence_number))
+            .await
+    }
+
+    pub async fn cancel_scheduled_messages<I>(
+        &mut self,
+        sequence_numbers: I,
+    ) -> Result<(), S::SendError>
+    where
+        I: IntoIterator<Item = i64>,
+        I::IntoIter: ExactSizeIterator + Send,
+    {
+        let iter: Vec<i64> = sequence_numbers.into_iter().collect();
+        if iter.is_empty() {
+            return Ok(());
+        }
+
+        self.inner.cancel_scheduled_messages(iter).await
+    }
+
     pub async fn dispose(self) -> Result<(), S::CloseError> {
         self.inner.close().await
     }

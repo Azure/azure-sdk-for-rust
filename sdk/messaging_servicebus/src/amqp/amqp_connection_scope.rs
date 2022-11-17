@@ -423,7 +423,7 @@ where
         &mut self,
         entity_path: &str,
         identifier: &str,
-    ) -> Result<(u32, fe2o3_amqp::Sender), OpenSenderError> {
+    ) -> Result<(u32, String, fe2o3_amqp::Sender), OpenSenderError> {
         if self.is_disposed {
             return Err(OpenSenderError::ScopeIsDisposed);
         }
@@ -442,12 +442,12 @@ where
             self.id, self.connection.identifier, self.session.identifier, link_identifier
         );
         let sender = fe2o3_amqp::Sender::builder()
-            .name(link_name)
+            .name(&link_name)
             .source(identifier)
             .target(endpoint)
             .attach(&mut self.session.handle)
             .await?;
-        Ok((link_identifier, sender))
+        Ok((link_identifier, link_name, sender))
     }
 
     pub(crate) async fn open_receiver_link(

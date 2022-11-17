@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use super::service_bus_retry_mode::ServiceBusRetryMode;
 
-const RETRIES_MIN: u8 = 0;
-const RETRIES_MAX: u8 = 100;
+const RETRIES_MIN: u32 = 0;
+const RETRIES_MAX: u32 = 100;
 const DELAY_MIN: Duration = Duration::from_millis(1);
 const DELAY_MAX: Duration = Duration::from_secs(5 * 60);
 const TRY_TIMEOUT_MIN: Duration = Duration::ZERO;
@@ -25,7 +25,7 @@ pub struct ServiceBusRetryOptions {
 
     /// The maximum number of retry attempts before considering the associated operation to have
     /// failed.
-    pub(crate) max_retries: u8,
+    pub(crate) max_retries: u32,
 
     /// The delay or backoff factor to apply between retry attempts.
     pub(crate) delay: Duration,
@@ -58,7 +58,7 @@ impl Default for ServiceBusRetryOptions {
 }
 
 impl ServiceBusRetryOptions {
-    const DEFAULT_MAX_RETRIES: u8 = 3;
+    const DEFAULT_MAX_RETRIES: u32 = 3;
     const DEFAULT_DELAY: Duration = Duration::from_millis(800);
     const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
     const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
@@ -87,7 +87,7 @@ impl ServiceBusRetryOptions {
     /// # Value
     ///
     /// The default retry limit is 3.
-    pub fn max_retries(&self) -> u8 {
+    pub fn max_retries(&self) -> u32 {
         self.max_retries
     }
 
@@ -102,7 +102,7 @@ impl ServiceBusRetryOptions {
     ///
     /// Returns `Err(OutOfRange)` when the requested number of retries is not between 0 and
     /// 100 (inclusive).
-    pub fn set_max_retries(&mut self, value: u8) -> Result<(), OutOfRange<u8>> {
+    pub fn set_max_retries(&mut self, value: u32) -> Result<(), OutOfRange<u32>> {
         if value < RETRIES_MIN {
             Err(OutOfRange::LessThanAllowed {
                 value,

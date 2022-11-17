@@ -73,8 +73,8 @@ pub trait TransportSender {
 
     async fn cancel_scheduled_messages(
         &mut self,
-        sequence_numbers: &[i64],
-    ) -> Result<(), Self::Error>;
+        sequence_numbers: Vec<i64>,
+    ) -> Result<(), Self::SendError>;
 
     /// Closes the connection to the transport producer instance.
     ///
