@@ -218,8 +218,8 @@ async fn client_send_and_receive_single_sessionful_message() {
 
 #[tokio::test]
 async fn client_schedule_message_via_service_bus_message() {
-    use time::OffsetDateTime;
     use time::Duration as TimeSpan;
+    use time::OffsetDateTime;
 
     setup_dotenv();
 
@@ -244,8 +244,8 @@ async fn client_schedule_message_via_service_bus_message() {
 
 #[tokio::test]
 async fn client_schedule_message_via_service_bus_sender() {
-    use time::OffsetDateTime;
     use time::Duration as TimeSpan;
+    use time::OffsetDateTime;
 
     setup_dotenv();
 
@@ -260,7 +260,10 @@ async fn client_schedule_message_via_service_bus_sender() {
 
     let message = ServiceBusMessage::from("hello world");
     let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
-    let seq = sender.schedule_message(message, enqueue_time).await.unwrap();
+    let seq = sender
+        .schedule_message(message, enqueue_time)
+        .await
+        .unwrap();
     println!("seq: {}", seq);
 
     sender.dispose().await.unwrap();
@@ -269,9 +272,9 @@ async fn client_schedule_message_via_service_bus_sender() {
 
 #[tokio::test]
 async fn test_time_now() {
-    use time::OffsetDateTime;
-    use time::Duration as TimeSpan;
     use fe2o3_amqp::types::primitives::Timestamp;
+    use time::Duration as TimeSpan;
+    use time::OffsetDateTime;
 
     let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
     println!("enqueue_time: {}", enqueue_time);

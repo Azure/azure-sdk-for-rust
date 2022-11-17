@@ -1,10 +1,6 @@
 use fe2o3_amqp::{Delivery, Sendable};
-use fe2o3_amqp_types::{
-    messaging::{
-        annotations::{AnnotationKey},
-        message::__private::Serializable,
-        Batch, Body, Data, Message,
-    },
+use fe2o3_amqp_types::messaging::{
+    annotations::AnnotationKey, message::__private::Serializable, Batch, Body, Data, Message,
 };
 use serde_amqp::{to_vec, Value};
 
@@ -12,10 +8,7 @@ use crate::{
     primitives::service_bus_received_message::ServiceBusReceivedMessage, ServiceBusMessage,
 };
 
-use super::{
-    amqp_constants,
-    amqp_message_constants::{self, PARTITION_KEY_NAME, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
-};
+use super::amqp_constants;
 
 /// <summary>
 /// The size, in bytes, to use for extracting the delivery tag bytes into <see cref="Guid"/>.
@@ -86,9 +79,7 @@ pub(crate) fn build_amqp_batch_from_messages(
             // Take selected fields from the first message properties and message annotations and
             // use it as the basis for the evelope
             let properties = first_message.properties.clone();
-            let message_annotations = first_message
-                .message_annotations
-                .clone();
+            let message_annotations = first_message.message_annotations.clone();
 
             let data = Data::from(to_vec(&Serializable(first_message)).ok()?);
             batch_data.push(data);
