@@ -8,22 +8,55 @@ use crate::amqp::{
         operations::SCHEDULE_MESSAGE_OPERATION,
         properties::{MESSAGES, SERVER_TIMEOUT},
     },
-    scheduled_message::ScheduledBatchEnvelope,
 };
 
-type Messages = Vec<OrderedMap<String, Value>>;
+/// Type alias for scheduled messages that are encoded as maps
+type EncodedMessages = Vec<OrderedMap<String, Value>>;
 
-pub(crate) struct ScheduleMessageRequest<'a> {
-    pub server_timeout: u32,
-    pub messages: &'a [ScheduledBatchEnvelope],
+pub struct ScheduleMessageRequestBody(OrderedMap<String, EncodedMessages>);
+
+impl AsRef<OrderedMap<String, EncodedMessages>> for ScheduleMessageRequestBody {
+    fn as_ref(&self) -> &OrderedMap<String, EncodedMessages> {
+        &self.0
+    }
 }
 
-impl<'a> Request for ScheduleMessageRequest<'a> {
+impl ScheduleMessageRequestBody {
+    pub fn new(messages: EncodedMessages) -> Self {
+        let mut body = OrderedMap::with_capacity(1);
+        body.insert(MESSAGES.into(), messages);
+        Self(body)
+    }
+
+    pub fn into_inner(self) -> OrderedMap<String, EncodedMessages> {
+        self.0
+    }
+}
+
+pub(crate) struct ScheduleMessageRequest {
+    server_timeout: u32,
+    messages: OrderedMap<String, EncodedMessages>,
+}
+
+impl ScheduleMessageRequest {
+    pub fn new(server_timeout: u32, body: ScheduleMessageRequestBody) -> Self {
+        Self {
+            server_timeout,
+            messages: body.into_inner(),
+        }
+    }
+
+    pub fn set_server_timeout(&mut self, server_timeout: u32) {
+        self.server_timeout = server_timeout;
+    }
+}
+
+impl Request for ScheduleMessageRequest {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
 
-    type Body = OrderedMap<String, Messages>;
+    type Body = OrderedMap<String, EncodedMessages>;
 
     fn encode_application_properties(
         &mut self,
@@ -36,32 +69,19 @@ impl<'a> Request for ScheduleMessageRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        let messages: Messages = self
-            .messages
-            .into_iter()
-            .map(|message| message.clone_into_ordered_map())
-            .collect();
-        let mut map = OrderedMap::with_capacity(1);
-        map.insert(MESSAGES.into(), messages);
-        map
+        self.messages
     }
 }
 
-pub(crate) struct OwnedScheuldMessageRequest {
-    pub server_timeout: u32,
-    pub messages: Vec<ScheduledBatchEnvelope>,
-}
-
-impl Request for OwnedScheuldMessageRequest {
+/// This is to avoid repeated serialization of the same messages
+impl<'a> Request for &'a mut ScheduleMessageRequest {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
 
-    type Body = OrderedMap<String, Messages>;
+    type Body = &'a OrderedMap<String, EncodedMessages>;
 
-    fn encode_application_properties(
-        &mut self,
-    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
         Some(
             ApplicationProperties::builder()
                 .insert(SERVER_TIMEOUT, self.server_timeout)
@@ -70,13 +90,6 @@ impl Request for OwnedScheuldMessageRequest {
     }
 
     fn encode_body(self) -> Self::Body {
-        let messages: Messages = self
-            .messages
-            .into_iter()
-            .map(|message| message.into_ordered_map())
-            .collect();
-        let mut map = OrderedMap::with_capacity(1);
-        map.insert(MESSAGES.into(), messages);
-        map
+        &self.messages
     }
 }

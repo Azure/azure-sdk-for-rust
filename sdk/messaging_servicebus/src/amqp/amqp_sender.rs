@@ -18,7 +18,6 @@ use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
 use super::amqp_request_message::schedule_message::ScheduleMessageRequest;
 use super::error::RequestedSizeOutOfRange;
-use super::scheduled_message::ScheduledBatchEnvelope;
 use super::{
     amqp_message_converter::{
         batch_service_bus_messages_as_amqp_message, BatchEnvelope, SendableEnvelope,
@@ -150,26 +149,35 @@ where
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + Send,
     ) -> Result<Vec<i64>, Self::SendError> {
+        use super::amqp_request_message::schedule_message::ScheduleMessageRequestBody;
+        use super::scheduled_message::ScheduledBatchEnvelope;
         use fe2o3_amqp::link::SendError;
 
-        let scheduled_messages = messages
+        let request_body = messages
             .map(|m| m.amqp_message)
             .map(ScheduledBatchEnvelope::from_amqp_message)
+            .map(|result| result.map(|opt| opt.map(|m| m.into_ordered_map())))
             .collect::<Result<Option<Vec<_>>, _>>()
             .map_err(|_| SendError::MessageEncodeError)
             .map_err(RP::Error::from)
-            .map_err(RetryError::Operation)?;
+            .map_err(RetryError::Operation)?
+            .map(ScheduleMessageRequestBody::new);
 
-        match scheduled_messages {
-            Some(scheduled_messages) => {
+        match request_body {
+            Some(body) => {
                 let policy = &mut self.retry_policy;
                 let mut try_timeout = policy.calculate_try_timeout(0);
+
+                // Use a wrapper type to avoid mistakes
+                let server_timeout = try_timeout.as_millis() as u32;
+                let mut request = ScheduleMessageRequest::new(server_timeout, body);
+
                 let management_client = &mut self.management_client;
                 run_operation! {
                     policy,
                     RP,
                     try_timeout,
-                    schedule_message::<RP::Error>(management_client, &scheduled_messages, &try_timeout).await
+                    schedule_message::<RP::Error>(management_client, &mut request, &try_timeout).await
                 }
             }
             None => Ok(vec![]),
@@ -240,14 +248,11 @@ async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
 
 async fn schedule_message<E: ServiceBusRetryPolicyError>(
     mgmt_client: &mut MgmtClient,
-    batch_envelopes: &[ScheduledBatchEnvelope],
+    request: &mut ScheduleMessageRequest,
     try_timeout: &StdDuration,
 ) -> Result<Vec<i64>, E> {
     let server_timeout = try_timeout.as_millis() as u32;
-    let request = ScheduleMessageRequest {
-        server_timeout,
-        messages: batch_envelopes,
-    };
+    request.set_server_timeout(server_timeout);
 
     let response = mgmt_client.call(request).await?;
     Ok(response

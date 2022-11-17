@@ -269,21 +269,3 @@ async fn client_schedule_message_via_service_bus_sender() {
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
 }
-
-#[tokio::test]
-async fn test_time_now() {
-    use fe2o3_amqp::types::primitives::Timestamp;
-    use time::Duration as TimeSpan;
-    use time::OffsetDateTime;
-
-    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
-    println!("enqueue_time: {}", enqueue_time);
-    let timestamp = Timestamp::from(enqueue_time);
-    println!("timestamp: {:?}", timestamp);
-    let enqueue_time2 = OffsetDateTime::try_from(timestamp).unwrap();
-    println!("enqueue_time2: {}", enqueue_time2);
-
-    let timestamp = Timestamp::from(1668610092112);
-    let enqueued_time3 = OffsetDateTime::try_from(timestamp).unwrap();
-    println!("enqueued_time3: {}", enqueued_time3);
-}
