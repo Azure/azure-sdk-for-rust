@@ -150,11 +150,15 @@ where
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + Send,
     ) -> Result<Vec<i64>, Self::SendError> {
+        use fe2o3_amqp::link::SendError;
+
         let scheduled_messages = messages
             .map(|m| m.amqp_message)
             .map(ScheduledBatchEnvelope::from_amqp_message)
             .collect::<Result<Option<Vec<_>>, _>>()
-            .unwrap(); // TODO: panic for now
+            .map_err(|_| SendError::MessageEncodeError)
+            .map_err(RP::Error::from)
+            .map_err(RetryError::Operation)?;
 
         match scheduled_messages {
             Some(scheduled_messages) => {
