@@ -40,3 +40,35 @@ impl Request for RenewLockRequest {
         self.body
     }
 }
+
+impl<'a> Request for &'a mut RenewLockRequest {
+    const OPERATION: &'static str = RENEW_LOCK_OPERATION;
+
+    type Response = RenewLockResponse;
+
+    type Body = &'a OrderedMap<String, LockTokens>;
+
+    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}
+
+impl<'a> Request for &'a RenewLockRequest {
+    const OPERATION: &'static str = RENEW_LOCK_OPERATION;
+
+    type Response = RenewLockResponse;
+
+    type Body = &'a OrderedMap<String, LockTokens>;
+
+    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}

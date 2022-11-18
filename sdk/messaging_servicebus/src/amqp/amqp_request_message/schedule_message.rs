@@ -68,3 +68,19 @@ impl<'a> Request for &'a mut ScheduleMessageRequest {
         &self.body
     }
 }
+
+impl<'a> Request for &'a ScheduleMessageRequest {
+    const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
+
+    type Response = ScheduleMessageResponse;
+
+    type Body = &'a OrderedMap<String, EncodedMessages>;
+
+    fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}

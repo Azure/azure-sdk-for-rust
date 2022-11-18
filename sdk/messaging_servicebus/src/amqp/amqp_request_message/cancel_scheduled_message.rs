@@ -66,3 +66,19 @@ impl<'a> fe2o3_amqp_management::request::Request for &'a mut CancelScheduledMess
         &self.body
     }
 }
+
+impl<'a> fe2o3_amqp_management::request::Request for &'a CancelScheduledMessageRequest {
+    const OPERATION: &'static str = CANCEL_SCHEDULED_MESSAGE_OPERATION;
+
+    type Response = CancelScheduledMessageResponse;
+
+    type Body = &'a OrderedMap<String, Array<i64>>;
+
+    fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}
