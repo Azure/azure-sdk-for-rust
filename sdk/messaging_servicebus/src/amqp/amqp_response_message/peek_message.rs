@@ -13,15 +13,15 @@ type EncodedMessage = Array<u8>;
 type EncodedMessages = Vec<OrderedMap<String, EncodedMessage>>;
 
 pub struct PeekMessageResponse {
-    pub body: OrderedMap<String, EncodedMessages>,
+    pub body: Option<OrderedMap<String, EncodedMessages>>,
 }
 
 impl PeekMessageResponse {
     const STATUS_CODE_OK: u16 = 200;
     const STATUS_CODE_NO_CONTENT: u16 = 204;
 
-    pub fn into_messages(mut self) -> Option<impl Iterator<Item = Vec<u8>>> {
-        let messages = self.body.remove(MESSAGES)?;
+    pub fn into_messages(self) -> Option<impl Iterator<Item = Vec<u8>>> {
+        let messages = self.body?.remove(MESSAGES)?;
 
         let messages = messages
             .into_iter()
@@ -80,7 +80,7 @@ impl Response for PeekMessageResponse {
     fn decode_message(
         message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
-        Ok(Self { body: message.body })
+        Ok(Self { body: Some(message.body) })
     }
 
     fn from_message(
@@ -89,11 +89,10 @@ impl Response for PeekMessageResponse {
         let status_code = Self::verify_status_code(&mut message)?;
         match status_code.0.get() {
             Self::STATUS_CODE_OK => {
-                let body = message.body;
-                Ok(Self { body })
+                Self::decode_message(message)
             }
             Self::STATUS_CODE_NO_CONTENT => Ok(Self {
-                body: OrderedMap::with_capacity(0),
+                body: None,
             }),
             _ => unreachable!(),
         }
