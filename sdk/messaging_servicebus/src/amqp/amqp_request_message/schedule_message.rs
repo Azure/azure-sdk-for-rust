@@ -6,43 +6,26 @@ use crate::amqp::{
     amqp_response_message::schedule_message::ScheduleMessageResponse,
     management_constants::{
         operations::SCHEDULE_MESSAGE_OPERATION,
-        properties::{MESSAGES, SERVER_TIMEOUT},
+        properties::{MESSAGES},
     },
 };
 
 /// Type alias for scheduled messages that are encoded as maps
+/// List of maps
 type EncodedMessages = Vec<OrderedMap<String, Value>>;
-
-pub struct ScheduleMessageRequestBody(OrderedMap<String, EncodedMessages>);
-
-impl AsRef<OrderedMap<String, EncodedMessages>> for ScheduleMessageRequestBody {
-    fn as_ref(&self) -> &OrderedMap<String, EncodedMessages> {
-        &self.0
-    }
-}
-
-impl ScheduleMessageRequestBody {
-    pub fn new(messages: EncodedMessages) -> Self {
-        let mut body = OrderedMap::with_capacity(1);
-        body.insert(MESSAGES.into(), messages);
-        Self(body)
-    }
-
-    pub fn into_inner(self) -> OrderedMap<String, EncodedMessages> {
-        self.0
-    }
-}
 
 pub(crate) struct ScheduleMessageRequest {
     server_timeout: Option<u32>,
-    messages: OrderedMap<String, EncodedMessages>,
+    body: OrderedMap<String, EncodedMessages>,
 }
 
 impl ScheduleMessageRequest {
-    pub fn new(body: ScheduleMessageRequestBody) -> Self {
+    pub fn new(messages: EncodedMessages) -> Self {
+        let mut body = OrderedMap::with_capacity(1);
+        body.insert(MESSAGES.into(), messages);
         Self {
             server_timeout: None,
-            messages: body.into_inner(),
+            body,
         }
     }
 
@@ -65,7 +48,7 @@ impl Request for ScheduleMessageRequest {
     }
 
     fn encode_body(self) -> Self::Body {
-        self.messages
+        self.body
     }
 }
 
@@ -82,6 +65,6 @@ impl<'a> Request for &'a mut ScheduleMessageRequest {
     }
 
     fn encode_body(self) -> Self::Body {
-        &self.messages
+        &self.body
     }
 }

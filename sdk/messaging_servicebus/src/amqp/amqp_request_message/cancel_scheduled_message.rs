@@ -7,27 +7,11 @@ use crate::amqp::{
     amqp_response_message::cancel_scheduled_message::CancelScheduledMessageResponse,
     management_constants::{
         operations::CANCEL_SCHEDULED_MESSAGE_OPERATION,
-        properties::{SEQUENCE_NUMBERS, SERVER_TIMEOUT},
+        properties::{SEQUENCE_NUMBERS},
     },
 };
 
-pub(crate) struct CancelScheduledMessageRequestBody {
-    sequence_numbers: OrderedMap<String, Array<i64>>,
-}
-
-impl CancelScheduledMessageRequestBody {
-    pub fn new(sequence_numbers: Array<i64>) -> Self {
-        let mut body = OrderedMap::with_capacity(1);
-        body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers);
-        Self {
-            sequence_numbers: body,
-        }
-    }
-
-    pub fn into_inner(self) -> OrderedMap<String, Array<i64>> {
-        self.sequence_numbers
-    }
-}
+type SequenceNumbers = Array<i64>;
 
 pub(crate) struct CancelScheduledMessageRequest {
     server_timeout: Option<u32>,
@@ -35,10 +19,12 @@ pub(crate) struct CancelScheduledMessageRequest {
 }
 
 impl CancelScheduledMessageRequest {
-    pub fn new(body: CancelScheduledMessageRequestBody) -> Self {
+    pub fn new(sequence_numbers: SequenceNumbers) -> Self {
+        let mut body = OrderedMap::with_capacity(1);
+        body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers);
         Self {
             server_timeout: None,
-            body: body.into_inner(),
+            body,
         }
     }
 

@@ -152,27 +152,25 @@ where
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + Send,
     ) -> Result<Vec<i64>, Self::SendError> {
-        use super::amqp_request_message::schedule_message::ScheduleMessageRequestBody;
         use super::scheduled_message::ScheduledBatchEnvelope;
         use fe2o3_amqp::link::SendError;
 
-        let request_body = messages
+        let encoded_messages = messages
             .map(|m| m.amqp_message)
             .map(ScheduledBatchEnvelope::from_amqp_message)
             .map(|result| result.map(|opt| opt.map(|m| m.into_ordered_map())))
             .collect::<Result<Option<Vec<_>>, _>>()
             .map_err(|_| SendError::MessageEncodeError)
             .map_err(RP::Error::from)
-            .map_err(RetryError::Operation)?
-            .map(ScheduleMessageRequestBody::new);
+            .map_err(RetryError::Operation)?;
 
-        match request_body {
-            Some(body) => {
+        match encoded_messages {
+            Some(messages) => {
                 let policy = &mut self.retry_policy;
 
                 // Use a wrapper type to avoid mistakes
                 let mut try_timeout = policy.calculate_try_timeout(0);
-                let mut request = ScheduleMessageRequest::new(body);
+                let mut request = ScheduleMessageRequest::new(messages);
 
                 let management_client = &mut self.management_client;
                 run_operation! {
@@ -190,15 +188,12 @@ where
         &mut self,
         sequence_numbers: Vec<i64>,
     ) -> Result<(), Self::SendError> {
-        use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequestBody;
-
         if sequence_numbers.is_empty() {
             return Ok(());
         }
 
-        let request_body = CancelScheduledMessageRequestBody::new(Array(sequence_numbers));
         // TODO: solve lifetime issue if link name is borrowed
-        let mut request = CancelScheduledMessageRequest::new(request_body);
+        let mut request = CancelScheduledMessageRequest::new(Array(sequence_numbers));
 
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
