@@ -61,12 +61,7 @@ impl Request for ScheduleMessageRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        let server_timeout = self.server_timeout?;
-        Some(
-            ApplicationProperties::builder()
-                .insert(SERVER_TIMEOUT, server_timeout)
-                .build(),
-        )
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -83,12 +78,7 @@ impl<'a> Request for &'a mut ScheduleMessageRequest {
     type Body = &'a OrderedMap<String, EncodedMessages>;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        let server_timeout = self.server_timeout?;
-        Some(
-            ApplicationProperties::builder()
-                .insert(SERVER_TIMEOUT, server_timeout)
-                .build(),
-        )
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
     fn encode_body(self) -> Self::Body {

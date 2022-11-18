@@ -302,4 +302,3 @@ async fn client_cancel_non_existent_schedule_message() {
     let seq = 1; // The queue should be well surpassed this number by now
     client_cancel_single_scheduled_message(seq).await;
 }
-

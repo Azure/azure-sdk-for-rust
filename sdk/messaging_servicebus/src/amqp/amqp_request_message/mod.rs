@@ -1,7 +1,9 @@
 use std::time::Duration as StdDuration;
 
-use fe2o3_amqp_types::primitives::OrderedMap;
+use fe2o3_amqp_types::{primitives::OrderedMap, messaging::ApplicationProperties};
 use serde_amqp::Value;
+
+use super::management_constants::properties::SERVER_TIMEOUT;
 
 pub(crate) mod add_rule;
 pub(crate) mod cancel_scheduled_message;
@@ -26,4 +28,13 @@ pub(crate) struct AmqpRequestMessage<'a> {
     pub operation: &'a str, // All possible operations should be constants that are defined in the crate
     pub map: OrderedMap<String, Value>,
     pub timeout: StdDuration,
+}
+
+fn encode_server_timeout_as_application_properties(server_timeout: Option<u32>) -> Option<ApplicationProperties> {
+    let server_timeout = server_timeout?;
+    Some(
+        ApplicationProperties::builder()
+            .insert(SERVER_TIMEOUT, server_timeout)
+            .build(),
+    )
 }
