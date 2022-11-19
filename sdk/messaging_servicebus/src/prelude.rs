@@ -1,1 +1,1 @@
-pub use crate::service_bus::Client;
+pub use crate::service_bus::{QueueClient, SubscriptionReceiver, TopicClient, TopicSender};

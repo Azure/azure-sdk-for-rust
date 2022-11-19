@@ -6,11 +6,13 @@ use std::{ops::Add, sync::Arc};
 use time::OffsetDateTime;
 use url::form_urlencoded::{self, Serializer};
 
-mod client;
+mod queue_client;
+mod topic_client;
 
-use crate::utils::craft_peek_lock_url;
+use crate::utils::{craft_peek_lock_url, get_head_url};
 
-pub use self::client::Client;
+pub use self::queue_client::QueueClient;
+pub use self::topic_client::{SubscriptionReceiver, TopicClient, TopicSender};
 
 /// Default duration for the SAS token in days — We might want to make this configurable at some point
 const DEFAULT_SAS_DURATION: u64 = 3_600; // seconds = 1 hour
@@ -77,18 +79,18 @@ fn generate_signature(
     )
 }
 
-/// Sends a message to the queue
+/// Sends a message to the queue or topic
 async fn send_message(
     http_client: &Arc<dyn HttpClient>,
     namespace: &str,
-    queue: &str,
+    queue_or_topic: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
     msg: &str,
 ) -> azure_core::Result<()> {
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
-        namespace, queue
+        namespace, queue_or_topic
     );
 
     let req = finalize_request(
@@ -110,15 +112,12 @@ async fn send_message(
 async fn receive_and_delete_message(
     http_client: &Arc<dyn HttpClient>,
     namespace: &str,
-    queue: &str,
+    queue_or_topic: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
+    subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
-    let url = format!(
-        "https://{}.servicebus.windows.net/{}/messages/head",
-        namespace, queue
-    );
-
+    let url = get_head_url(namespace, queue_or_topic, subscription);
     let req = finalize_request(&url, Method::Delete, None, policy_name, signing_key)?;
 
     http_client
@@ -138,12 +137,13 @@ async fn receive_and_delete_message(
 async fn peek_lock_message(
     http_client: &Arc<dyn HttpClient>,
     namespace: &str,
-    queue: &str,
+    queue_or_topic: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
+    subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
-    let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
+    let url = craft_peek_lock_url(namespace, queue_or_topic, lock_expiry, subscription)?;
 
     let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
@@ -160,12 +160,13 @@ async fn peek_lock_message(
 async fn peek_lock_message2(
     http_client: &Arc<dyn HttpClient>,
     namespace: &str,
-    queue: &str,
+    queue_or_topic: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
+    subscription: Option<&str>,
 ) -> azure_core::Result<PeekLockResponse> {
-    let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
+    let url = craft_peek_lock_url(namespace, queue_or_topic, lock_expiry, subscription)?;
 
     let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
