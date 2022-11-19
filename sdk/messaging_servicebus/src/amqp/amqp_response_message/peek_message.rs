@@ -1,38 +1,38 @@
 use fe2o3_amqp_management::error::Error as MgmtError;
-use fe2o3_amqp_management::{
-    response::Response,
-    status::StatusCode,
-};
+use fe2o3_amqp_management::{response::Response, status::StatusCode};
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
 use crate::amqp::management_constants::properties::{MESSAGE, MESSAGES};
 
-type EncodedMessage = Array<u8>;
-type EncodedMessages = Vec<OrderedMap<String, EncodedMessage>>;
-type PeekMessageResponseBody = OrderedMap<String, EncodedMessages>;
+pub(super) type EncodedMessage = Array<u8>;
+pub(super) type EncodedMessages = Vec<OrderedMap<String, EncodedMessage>>;
+pub(super) type PeekMessageResponseBody = OrderedMap<String, EncodedMessages>;
 
 pub struct PeekMessageResponse {
     pub has_more_messages: bool,
     pub body: PeekMessageResponseBody,
 }
 
+pub(crate) fn get_messages_from_body(
+    mut body: PeekMessageResponseBody,
+) -> Option<impl Iterator<Item = Vec<u8>>> {
+    let messages = body.remove(MESSAGES)?;
+
+    let messages = messages
+        .into_iter()
+        .filter_map(|mut map| map.remove(MESSAGE).map(|arr| arr.into_inner()));
+
+    Some(messages)
+}
+
 impl PeekMessageResponse {
-    const STATUS_CODE_OK: u16 = super::HTTP_STATUS_CODE_OK;
-    const STATUS_CODE_NO_CONTENT: u16 = super::HTTP_STATUS_CODE_NO_CONTENT;
-
-    pub fn into_messages(mut self) -> Option<impl Iterator<Item = Vec<u8>>> {
-        let messages = self.body.remove(MESSAGES)?;
-
-        let messages = messages
-            .into_iter()
-            .filter_map(|mut map| map.remove(MESSAGE).map(|arr| arr.into_inner()));
-
-        Some(messages)
+    pub fn into_messages(self) -> Option<impl Iterator<Item = Vec<u8>>> {
+        get_messages_from_body(self.body)
     }
 }
 
 impl Response for PeekMessageResponse {
-    const STATUS_CODE: u16 = Self::STATUS_CODE_OK; //
+    const STATUS_CODE: u16 = super::HTTP_STATUS_CODE_OK; //
 
     type Body = PeekMessageResponseBody;
 
@@ -50,8 +50,8 @@ impl Response for PeekMessageResponse {
         let status_code = Self::verify_status_code(&mut message)?;
 
         let has_more_messages = match status_code.0.get() {
-            Self::STATUS_CODE_OK => true,
-            Self::STATUS_CODE_NO_CONTENT => false,
+            super::HTTP_STATUS_CODE_OK => true,
+            super::HTTP_STATUS_CODE_NO_CONTENT => false,
             _ => unreachable!(),
         };
 
