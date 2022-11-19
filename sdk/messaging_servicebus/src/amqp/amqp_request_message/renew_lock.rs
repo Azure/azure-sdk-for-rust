@@ -1,7 +1,10 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
-use crate::amqp::{management_constants::{properties::LOCK_TOKENS, operations::RENEW_LOCK_OPERATION}, amqp_response_message::renew_lock::RenewLockResponse};
+use crate::amqp::{
+    amqp_response_message::renew_lock::RenewLockResponse,
+    management_constants::{operations::RENEW_LOCK_OPERATION, properties::LOCK_TOKENS},
+};
 
 type LockTokens = Array<serde_amqp::primitives::Uuid>;
 
@@ -32,7 +35,9 @@ impl Request for RenewLockRequest {
 
     type Body = OrderedMap<String, LockTokens>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
@@ -48,7 +53,9 @@ impl<'a> Request for &'a mut RenewLockRequest {
 
     type Body = &'a OrderedMap<String, LockTokens>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
@@ -64,7 +71,9 @@ impl<'a> Request for &'a RenewLockRequest {
 
     type Body = &'a OrderedMap<String, LockTokens>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 

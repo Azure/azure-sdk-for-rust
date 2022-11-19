@@ -1,6 +1,5 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::OrderedMap};
-use serde_amqp::SerializeComposite;
 
 use crate::amqp::{
     amqp_response_message::peek_session_message::PeekSessionMessageResponse,

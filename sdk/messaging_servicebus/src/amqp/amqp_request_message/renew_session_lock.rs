@@ -1,8 +1,10 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::OrderedMap;
 
-use crate::amqp::{management_constants::{properties::SESSION_ID, operations::RENEW_SESSION_LOCK_OPERATION}, amqp_response_message::renew_session_lock::RenewSessionLockResponse};
-
+use crate::amqp::{
+    amqp_response_message::renew_session_lock::RenewSessionLockResponse,
+    management_constants::{operations::RENEW_SESSION_LOCK_OPERATION, properties::SESSION_ID},
+};
 
 pub(crate) struct RenewSessionLockRequest {
     server_timeout: Option<u32>,
@@ -31,7 +33,9 @@ impl Request for RenewSessionLockRequest {
 
     type Body = OrderedMap<String, String>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
@@ -47,7 +51,9 @@ impl<'a> Request for &'a mut RenewSessionLockRequest {
 
     type Body = &'a OrderedMap<String, String>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
@@ -63,7 +69,9 @@ impl<'a> Request for &'a RenewSessionLockRequest {
 
     type Body = &'a OrderedMap<String, String>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 

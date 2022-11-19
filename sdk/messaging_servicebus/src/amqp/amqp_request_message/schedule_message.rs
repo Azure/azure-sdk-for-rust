@@ -4,10 +4,7 @@ use serde_amqp::Value;
 
 use crate::amqp::{
     amqp_response_message::schedule_message::ScheduleMessageResponse,
-    management_constants::{
-        operations::SCHEDULE_MESSAGE_OPERATION,
-        properties::{MESSAGES},
-    },
+    management_constants::{operations::SCHEDULE_MESSAGE_OPERATION, properties::MESSAGES},
 };
 
 /// Type alias for scheduled messages that are encoded as maps

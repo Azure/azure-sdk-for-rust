@@ -6,8 +6,7 @@ use fe2o3_amqp_types::{
 use crate::amqp::{
     amqp_response_message::cancel_scheduled_message::CancelScheduledMessageResponse,
     management_constants::{
-        operations::CANCEL_SCHEDULED_MESSAGE_OPERATION,
-        properties::{SEQUENCE_NUMBERS},
+        operations::CANCEL_SCHEDULED_MESSAGE_OPERATION, properties::SEQUENCE_NUMBERS,
     },
 };
 

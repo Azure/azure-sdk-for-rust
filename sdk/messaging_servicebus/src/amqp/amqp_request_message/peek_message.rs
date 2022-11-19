@@ -2,8 +2,13 @@ use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
-use crate::amqp::{management_constants::{properties::{FROM_SEQUENCE_NUMBER, MESSAGE_COUNT}, operations::PEEK_MESSAGE_OPERATION}, amqp_response_message::peek_message::PeekMessageResponse};
-
+use crate::amqp::{
+    amqp_response_message::peek_message::PeekMessageResponse,
+    management_constants::{
+        operations::PEEK_MESSAGE_OPERATION,
+        properties::{FROM_SEQUENCE_NUMBER, MESSAGE_COUNT},
+    },
+};
 
 pub struct PeekMessageRequest {
     server_timeout: Option<u32>,
@@ -13,7 +18,10 @@ pub struct PeekMessageRequest {
 impl PeekMessageRequest {
     pub fn new(from_sequence_number: i64, message_count: i32) -> Self {
         let mut body = OrderedMap::with_capacity(2);
-        body.insert(FROM_SEQUENCE_NUMBER.into(), Value::Long(from_sequence_number));
+        body.insert(
+            FROM_SEQUENCE_NUMBER.into(),
+            Value::Long(from_sequence_number),
+        );
         body.insert(MESSAGE_COUNT.into(), Value::Int(message_count));
         Self {
             server_timeout: None,
@@ -33,7 +41,9 @@ impl Request for PeekMessageRequest {
 
     type Body = OrderedMap<String, Value>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
@@ -49,7 +59,9 @@ impl<'a> Request for &'a PeekMessageRequest {
 
     type Body = &'a OrderedMap<String, Value>;
 
-    fn encode_application_properties(&mut self) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
         super::encode_server_timeout_as_application_properties(self.server_timeout)
     }
 
@@ -57,5 +69,3 @@ impl<'a> Request for &'a PeekMessageRequest {
         &self.body
     }
 }
-
-
