@@ -37,6 +37,10 @@ impl ReceiveBySequenceNumberRequest {
             body,
         }
     }
+
+    pub fn set_server_timeout(&mut self, server_timeout: Option<u32>) {
+        self.server_timeout = server_timeout;
+    }
 }
 
 impl Request for ReceiveBySequenceNumberRequest {
