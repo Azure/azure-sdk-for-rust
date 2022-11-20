@@ -2,7 +2,7 @@ use fe2o3_amqp_management::response::Response;
 use fe2o3_amqp_types::messaging::Body;
 use serde_amqp::Value;
 
-pub struct SetSessionStateResponse {}
+pub(crate) struct SetSessionStateResponse {}
 
 impl Response for SetSessionStateResponse {
     const STATUS_CODE: u16 = 200;

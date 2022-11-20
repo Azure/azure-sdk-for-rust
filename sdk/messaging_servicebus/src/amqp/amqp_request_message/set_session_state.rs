@@ -12,7 +12,7 @@ use crate::amqp::{
 
 type SetSessionStateRequestBody = OrderedMap<String, Value>;
 
-pub struct SetSessionStateRequest {
+pub(crate) struct SetSessionStateRequest {
     server_timeout: Option<u32>,
     body: SetSessionStateRequestBody,
 }
@@ -26,6 +26,10 @@ impl SetSessionStateRequest {
             server_timeout: None,
             body,
         }
+    }
+
+    pub fn set_server_timeout(&mut self, server_timeout: Option<u32>) {
+        self.server_timeout = server_timeout;
     }
 }
 
