@@ -20,18 +20,6 @@ pub(crate) mod schedule_message;
 pub(crate) mod set_session_state;
 pub(crate) mod update_disposition;
 
-// /// TODO: This is a temporary solution to get the request/response working, as it seems like there
-// /// is some inconsistency between the cbs field constants vs the management field constants.
-// pub(crate) trait IntoMessage {
-//     fn into_message(self) -> Message<Body<Value>>;
-// }
-
-pub(crate) struct AmqpRequestMessage<'a> {
-    pub operation: &'a str, // All possible operations should be constants that are defined in the crate
-    pub map: OrderedMap<String, Value>,
-    pub timeout: StdDuration,
-}
-
 fn encode_server_timeout_as_application_properties(
     server_timeout: Option<u32>,
 ) -> Option<ApplicationProperties> {

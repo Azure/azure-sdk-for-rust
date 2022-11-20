@@ -21,20 +21,6 @@ pub(crate) mod schedule_message;
 pub(crate) mod set_session_state;
 pub(crate) mod update_disposition;
 
-// /// TODO: This is a temporary solution to get the request/response working, as it seems like there
-// /// is some inconsistency between the cbs field constants vs the management field constants.
-// pub(crate) trait FromMessage {
-//     type Error;
-
-//     fn from_message(message: Message<Body<Value>>) -> Result<Self, Self::Error>
-//     where
-//         Self: Sized;
-// }
-
-pub(crate) struct AmqpResponseMessage {
-    pub map: OrderedMap<String, Value>,
-}
-
 const HTTP_STATUS_CODE_OK: u16 = 200;
 const HTTP_STATUS_CODE_NO_CONTENT: u16 = 204;
 
