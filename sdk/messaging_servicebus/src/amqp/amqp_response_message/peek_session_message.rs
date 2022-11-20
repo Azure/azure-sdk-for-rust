@@ -1,15 +1,17 @@
 use fe2o3_amqp_management::response::Response;
 
+use crate::amqp::management_constants::properties::MESSAGES;
+
 type PeekSessionMessageResponseBody = super::peek_message::PeekMessageResponseBody;
 
 pub struct PeekSessionMessageResponse {
     pub has_more_messages: bool,
-    pub body: PeekSessionMessageResponseBody,
+    pub messages: Vec<Vec<u8>>,
 }
 
 impl PeekSessionMessageResponse {
-    pub fn into_messages(self) -> Option<impl Iterator<Item = Vec<u8>>> {
-        super::peek_message::get_messages_from_body(self.body)
+    pub fn into_messages(self) -> Vec<Vec<u8>> {
+        self.messages
     }
 }
 
@@ -37,9 +39,16 @@ impl Response for PeekSessionMessageResponse {
             _ => unreachable!(),
         };
 
+        let messages = super::peek_message::get_messages_from_body(message.body)
+            .ok_or_else(|| super::InvalidType {
+                expected: MESSAGES.to_string(),
+                actual: "None".to_string(),
+            })?
+            .collect();
+
         Ok(Self {
             has_more_messages,
-            body: message.body,
+            messages,
         })
     }
 

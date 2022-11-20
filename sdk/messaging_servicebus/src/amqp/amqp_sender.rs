@@ -272,10 +272,7 @@ async fn schedule_message<E: ServiceBusRetryPolicyError>(
     request.set_server_timeout(Some(server_timeout));
 
     let response = mgmt_client.call(request).await?;
-    Ok(response
-        .into_sequence_numbers()
-        .map(|array| array.into_inner())
-        .unwrap_or_else(|| Vec::with_capacity(0)))
+    Ok(response.into_sequence_numbers())
 }
 
 async fn cancel_scheduled_messages<'a, E: ServiceBusRetryPolicyError>(

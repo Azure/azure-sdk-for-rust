@@ -8,12 +8,12 @@ type RenewSessionLockResponseBody = OrderedMap<String, Timestamp>;
 
 pub(crate) struct RenewSessionLockResponse {
     pub has_more_messages: bool,
-    pub body: RenewSessionLockResponseBody,
+    pub expiration: Timestamp,
 }
 
 impl RenewSessionLockResponse {
-    pub fn into_expiration(mut self) -> Option<Timestamp> {
-        self.body.remove(EXPIRATION)
+    pub fn into_expiration(self) -> Timestamp {
+        self.expiration
     }
 }
 
@@ -41,9 +41,16 @@ impl Response for RenewSessionLockResponse {
             _ => unreachable!(),
         };
 
+        let expiration = message.body.remove(EXPIRATION).ok_or_else(|| {
+            fe2o3_amqp_management::error::InvalidType {
+                expected: EXPIRATION.to_string(),
+                actual: "None".to_string(),
+            }
+        })?;
+
         Ok(Self {
             has_more_messages,
-            body: message.body,
+            expiration,
         })
     }
 

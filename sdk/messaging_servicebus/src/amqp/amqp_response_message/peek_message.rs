@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::{Error as MgmtError, InvalidType};
 use fe2o3_amqp_management::{response::Response, status::StatusCode};
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
@@ -10,7 +10,7 @@ pub(super) type PeekMessageResponseBody = OrderedMap<String, EncodedMessages>;
 
 pub struct PeekMessageResponse {
     pub has_more_messages: bool,
-    pub body: PeekMessageResponseBody,
+    pub messages: Vec<Vec<u8>>,
 }
 
 pub(crate) fn get_messages_from_body(
@@ -26,8 +26,12 @@ pub(crate) fn get_messages_from_body(
 }
 
 impl PeekMessageResponse {
-    pub fn into_messages(self) -> Option<impl Iterator<Item = Vec<u8>>> {
-        get_messages_from_body(self.body)
+    pub fn has_more_messages(&self) -> bool {
+        self.has_more_messages
+    }
+
+    pub fn into_messages(self) -> Vec<Vec<u8>> {
+        self.messages
     }
 }
 
@@ -55,9 +59,16 @@ impl Response for PeekMessageResponse {
             _ => unreachable!(),
         };
 
+        let messages = get_messages_from_body(message.body)
+            .ok_or_else(|| InvalidType {
+                expected: MESSAGES.to_string(),
+                actual: "None".to_string(),
+            })?
+            .collect();
+
         Ok(Self {
             has_more_messages,
-            body: message.body,
+            messages,
         })
     }
 
