@@ -40,7 +40,7 @@ use super::{
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
     error::{CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError, OpenSenderError},
-    filter::SessionFilter,
+    filters::SessionFilter,
     LINK_IDENTIFIER,
 };
 

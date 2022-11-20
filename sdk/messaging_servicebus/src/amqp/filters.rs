@@ -1,4 +1,4 @@
-use fe2o3_amqp_types::primitives::{OrderedMap, Symbol};
+use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::{
     described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite, Value,
 };
@@ -19,7 +19,7 @@ use super::{
 )]
 #[amqp_contract(
     name = "com.microsoft:session-filter",
-    code = "0x0000_0137:0x0000_000c",
+    code = "0x0000_0013_7000_000c",
     encoding = "basic"
 )]
 pub struct SessionFilter(pub String);
@@ -27,8 +27,8 @@ pub struct SessionFilter(pub String);
 impl From<SessionFilter> for Described<String> {
     fn from(filter: SessionFilter) -> Self {
         Self {
-            // descriptor: Descriptor::Code((0x0000_0137 << 32) | 0x0000_000c), // FIXME: descriptor code doesn't work yet
-            descriptor: Descriptor::Name(Symbol::from("com.microsoft:session-filter")),
+            descriptor: Descriptor::Code(0x0000_0013_7000_000c), // FIXME: descriptor code doesn't work yet
+            // descriptor: Descriptor::Name(Symbol::from("com.microsoft:session-filter")),
             value: filter.0,
         }
     }
@@ -53,7 +53,7 @@ impl From<SessionFilter> for Option<Described<Value>> {
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
     name = "com.microsoft:sql-filter:list",
-    code = "0x0000_0137:0x0000_0006",
+    code = "0x0000_0013_7000_0006",
     encoding = "list",
     rename_all = "kebab-case" // This shouldn't matter because we're using the list encoding
 )]
@@ -64,7 +64,7 @@ pub struct SqlFilter {
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
     name = "com.microsoft:correlation-filter:list",
-    code = "0x0000_0137:0x0000_0009",
+    code = "0x0000_0013_7000_0009",
     encoding = "list",
     rename_all = "kebab-case" // This shouldn't matter because we're using the list encoding
 )]
@@ -141,7 +141,7 @@ impl TryFrom<CorrelationFilter> for OrderedMap<Value, Value> {
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
     name = "com.microsoft:true-filter:list",
-    code = "0x0000_0137:0x0000_0007",
+    code = "0x0000_0013_7000_0007",
     encoding = "list"
 )]
 pub struct TrueFilter {}
@@ -149,7 +149,134 @@ pub struct TrueFilter {}
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
     name = "com.microsoft:false-filter:list",
-    code = "0x0000_0137:0x0000_0008",
+    code = "0x0000_0013_7000_0008",
     encoding = "list"
 )]
 pub struct FalseFilter {}
+
+#[derive(Debug, Clone)]
+pub enum Filter {
+    Sql(SqlFilter),
+    Correlation(CorrelationFilter),
+    True(TrueFilter),
+    False(FalseFilter),
+}
+
+mod filter_impl {
+    use serde::{
+        de::{self, VariantAccess},
+        ser,
+    };
+
+    use super::Filter;
+
+    impl ser::Serialize for Filter {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: ser::Serializer,
+        {
+            match self {
+                Filter::Sql(filter) => filter.serialize(serializer),
+                Filter::Correlation(filter) => filter.serialize(serializer),
+                Filter::True(filter) => filter.serialize(serializer),
+                Filter::False(filter) => filter.serialize(serializer),
+            }
+        }
+    }
+
+    struct FieldVisitor {}
+
+    enum Field {
+        Sql,
+        Correlation,
+        True,
+        False,
+    }
+
+    impl<'de> de::Visitor<'de> for FieldVisitor {
+        type Value = Field;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str(
+                "Descriptor for one of the following filters: Sql, Correlation, True, False",
+            )
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            match v {
+                "com.microsoft:sql-filter:list" => Ok(Field::Sql),
+                "com.microsoft:correlation-filter:list" => Ok(Field::Correlation),
+                "com.microsoft:true-filter:list" => Ok(Field::True),
+                "com.microsoft:false-filter:list" => Ok(Field::False),
+                _ => Err(de::Error::custom(format!(
+                    "Unknown filter descriptor: {}",
+                    v
+                ))),
+            }
+        }
+
+        fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            match v {
+                0x0000_0013_7000_0006 => Ok(Field::Sql),
+                0x0000_0013_7000_0009 => Ok(Field::Correlation),
+                0x0000_0013_7000_0007 => Ok(Field::True),
+                0x0000_0013_7000_0008 => Ok(Field::False),
+                _ => Err(de::Error::custom(format!(
+                    "Unknown filter descriptor: {}",
+                    v
+                ))),
+            }
+        }
+    }
+
+    impl<'de> de::Deserialize<'de> for Field {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: de::Deserializer<'de>,
+        {
+            deserializer.deserialize_identifier(FieldVisitor {})
+        }
+    }
+
+    struct Visitor {}
+
+    impl<'de> de::Visitor<'de> for Visitor {
+        type Value = Filter;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("One of the following filters: Sql, Correlation, True, False")
+        }
+
+        fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::EnumAccess<'de>,
+        {
+            let (field, value) = data.variant::<Field>()?;
+            match field {
+                Field::Sql => Ok(Filter::Sql(value.newtype_variant()?)),
+                Field::Correlation => Ok(Filter::Correlation(value.newtype_variant()?)),
+                Field::True => Ok(Filter::True(value.newtype_variant()?)),
+                Field::False => Ok(Filter::False(value.newtype_variant()?)),
+            }
+        }
+    }
+
+    impl<'de> de::Deserialize<'de> for Filter {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: de::Deserializer<'de>,
+        {
+            deserializer.deserialize_enum(
+                serde_amqp::__constants::UNTAGGED_ENUM,
+                &["Sql", "Correlation", "True", "False"],
+                Visitor {},
+            )
+        }
+    }
+}

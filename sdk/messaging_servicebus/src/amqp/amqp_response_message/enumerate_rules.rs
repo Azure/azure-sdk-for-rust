@@ -1,35 +1,6 @@
 use fe2o3_amqp_management::response::Response;
 use serde_amqp::{DeserializeComposite, SerializeComposite};
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
-#[amqp_contract(
-    name = "com.microsoft:enumerate-rules:list",
-    code = "0x0000_0137:0x0000_0004",
-    encoding = "list",
-    rename_all = "kebab-case"
-)]
-pub struct RuleDescription {}
-
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
-#[amqp_contract(
-    name = "com.microsoft:empty-rule-action:list",
-    code = "0x0000_0137:0x0000_0005",
-    encoding = "list",
-    rename_all = "kebab-case"
-)]
-pub struct EmptyRuleAction {}
-
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
-#[amqp_contract(
-    name = "com.microsoft:sql-rule-action:list",
-    code = "0x0000_0137:0x0000_0006",
-    encoding = "list",
-    rename_all = "kebab-case"
-)]
-pub struct SqlRuleAction {
-    pub expression: String,
-}
-
 pub(crate) struct EnumerateRulesResponse {}
 
 impl Response for EnumerateRulesResponse {

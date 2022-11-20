@@ -5,7 +5,7 @@ use serde_amqp::Value;
 use crate::amqp::{
     amqp_response_message::add_rule::AddRuleResponse,
     error::CorrelationFilterError,
-    filter::{CorrelationFilter, SqlFilter},
+    filters::{CorrelationFilter, SqlFilter},
     management_constants::{
         operations::ADD_RULE_OPERATION,
         properties::{
