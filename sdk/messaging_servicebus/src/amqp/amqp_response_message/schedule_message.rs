@@ -9,7 +9,7 @@ pub(crate) struct ScheduleMessageResponse {
 }
 
 impl ScheduleMessageResponse {
-    pub fn into_sequence_numbers(mut self) -> Vec<i64> {
+    pub fn into_sequence_numbers(self) -> Vec<i64> {
         self.sequence_numbers
     }
 }
