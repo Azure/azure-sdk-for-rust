@@ -3,7 +3,7 @@ use fe2o3_amqp::{
     link::{ReceiverAttachError, SenderAttachError},
     session,
 };
-use fe2o3_amqp_management::error::{AttachError, Error as MgmtError};
+use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 
 use crate::ServiceBusMessage;
@@ -119,7 +119,7 @@ pub enum CbsAuthError {
     ExpirationDateTimeRange(#[from] time::error::ComponentRange),
 
     #[error(transparent)]
-    Cbs(#[from] MgmtError),
+    Cbs(#[from] ManagementError),
 }
 
 #[derive(Debug, thiserror::Error)]
