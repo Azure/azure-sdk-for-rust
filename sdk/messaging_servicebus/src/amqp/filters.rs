@@ -155,7 +155,7 @@ pub struct TrueFilter {}
 pub struct FalseFilter {}
 
 #[derive(Debug, Clone)]
-pub enum Filter {
+pub enum RuleFilter {
     Sql(SqlFilter),
     Correlation(CorrelationFilter),
     True(TrueFilter),
@@ -168,18 +168,18 @@ mod filter_impl {
         ser,
     };
 
-    use super::Filter;
+    use super::RuleFilter;
 
-    impl ser::Serialize for Filter {
+    impl ser::Serialize for RuleFilter {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: ser::Serializer,
         {
             match self {
-                Filter::Sql(filter) => filter.serialize(serializer),
-                Filter::Correlation(filter) => filter.serialize(serializer),
-                Filter::True(filter) => filter.serialize(serializer),
-                Filter::False(filter) => filter.serialize(serializer),
+                RuleFilter::Sql(filter) => filter.serialize(serializer),
+                RuleFilter::Correlation(filter) => filter.serialize(serializer),
+                RuleFilter::True(filter) => filter.serialize(serializer),
+                RuleFilter::False(filter) => filter.serialize(serializer),
             }
         }
     }
@@ -247,7 +247,7 @@ mod filter_impl {
     struct Visitor {}
 
     impl<'de> de::Visitor<'de> for Visitor {
-        type Value = Filter;
+        type Value = RuleFilter;
 
         fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
             formatter.write_str("One of the following filters: Sql, Correlation, True, False")
@@ -259,15 +259,15 @@ mod filter_impl {
         {
             let (field, value) = data.variant::<Field>()?;
             match field {
-                Field::Sql => Ok(Filter::Sql(value.newtype_variant()?)),
-                Field::Correlation => Ok(Filter::Correlation(value.newtype_variant()?)),
-                Field::True => Ok(Filter::True(value.newtype_variant()?)),
-                Field::False => Ok(Filter::False(value.newtype_variant()?)),
+                Field::Sql => Ok(RuleFilter::Sql(value.newtype_variant()?)),
+                Field::Correlation => Ok(RuleFilter::Correlation(value.newtype_variant()?)),
+                Field::True => Ok(RuleFilter::True(value.newtype_variant()?)),
+                Field::False => Ok(RuleFilter::False(value.newtype_variant()?)),
             }
         }
     }
 
-    impl<'de> de::Deserialize<'de> for Filter {
+    impl<'de> de::Deserialize<'de> for RuleFilter {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: de::Deserializer<'de>,

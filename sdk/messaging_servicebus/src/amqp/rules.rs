@@ -1,13 +1,20 @@
+use fe2o3_amqp_types::primitives::Array;
 use serde_amqp::{DeserializeComposite, SerializeComposite};
+
+use super::filters::RuleFilter;
 
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
     name = "com.microsoft:enumerate-rules:list",
     code = "0x0000_0137_0000_0004",
     encoding = "list",
-    rename_all = "kebab-case"
+    rename_all = "kebab-case" // This should not matter because we're using the list encoding
 )]
-pub struct RuleDescription {}
+pub struct RuleDescription {
+    filters: Array<RuleFilter>,
+    actions: Array<RuleAction>,
+    name: String,
+}
 
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
