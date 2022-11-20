@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_management::response::Response;
 use fe2o3_amqp_types::primitives::{OrderedMap, Timestamp};
 
@@ -22,7 +22,7 @@ impl Response for RenewSessionLockResponse {
 
     type Body = RenewSessionLockResponseBody;
 
-    type Error = MgmtError;
+    type Error = ManagementError;
 
     fn verify_status_code(
         message: &mut fe2o3_amqp_types::messaging::Message<Self::Body>,

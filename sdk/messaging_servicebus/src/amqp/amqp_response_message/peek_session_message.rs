@@ -20,7 +20,7 @@ impl Response for PeekSessionMessageResponse {
 
     type Body = PeekSessionMessageResponseBody;
 
-    type Error = super::MgmtError;
+    type Error = super::ManagementError;
 
     fn verify_status_code(
         message: &mut fe2o3_amqp_types::messaging::Message<Self::Body>,

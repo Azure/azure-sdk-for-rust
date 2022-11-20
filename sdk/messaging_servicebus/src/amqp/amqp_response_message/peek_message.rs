@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::{Error as MgmtError, InvalidType};
+use fe2o3_amqp_management::error::{Error as ManagementError, InvalidType};
 use fe2o3_amqp_management::{response::Response, status::StatusCode};
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
@@ -40,7 +40,7 @@ impl Response for PeekMessageResponse {
 
     type Body = PeekMessageResponseBody;
 
-    type Error = MgmtError;
+    type Error = ManagementError;
 
     fn verify_status_code(
         message: &mut fe2o3_amqp_types::messaging::Message<Self::Body>,

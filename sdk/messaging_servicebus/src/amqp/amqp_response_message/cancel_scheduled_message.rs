@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::Body;
 use serde_amqp::Value;
 
@@ -9,7 +9,7 @@ impl fe2o3_amqp_management::response::Response for CancelScheduledMessageRespons
 
     type Body = Body<Value>; // Nothing will be carried in the body, so anything is fine
 
-    type Error = MgmtError;
+    type Error = ManagementError;
 
     fn decode_message(
         _: fe2o3_amqp_types::messaging::Message<Self::Body>,

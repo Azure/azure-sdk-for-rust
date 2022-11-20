@@ -9,7 +9,7 @@ impl Response for SetSessionStateResponse {
 
     type Body = Body<Value>;
 
-    type Error = super::MgmtError;
+    type Error = super::ManagementError;
 
     fn decode_message(
         _message: fe2o3_amqp_types::messaging::Message<Self::Body>,

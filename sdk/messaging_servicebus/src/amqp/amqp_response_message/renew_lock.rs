@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_management::response::Response;
 use fe2o3_amqp_types::primitives::{Array, Timestamp};
 
@@ -11,7 +11,7 @@ impl Response for RenewLockResponse {
 
     type Body = Array<Timestamp>;
 
-    type Error = MgmtError;
+    type Error = ManagementError;
 
     fn decode_message(
         message: fe2o3_amqp_types::messaging::Message<Self::Body>,

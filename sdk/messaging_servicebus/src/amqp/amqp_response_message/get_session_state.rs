@@ -24,7 +24,7 @@ impl Response for GetSessionStateResponse {
 
     type Body = GetSessionStateResponseBody;
 
-    type Error = super::MgmtError;
+    type Error = super::ManagementError;
 
     fn decode_message(
         mut message: fe2o3_amqp_types::messaging::Message<Self::Body>,

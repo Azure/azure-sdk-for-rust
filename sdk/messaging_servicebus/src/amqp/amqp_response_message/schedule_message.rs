@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_management::response::Response;
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
@@ -19,7 +19,7 @@ impl Response for ScheduleMessageResponse {
 
     type Body = OrderedMap<String, Array<i64>>;
 
-    type Error = MgmtError;
+    type Error = ManagementError;
 
     fn decode_message(
         mut message: fe2o3_amqp_types::messaging::Message<Self::Body>,

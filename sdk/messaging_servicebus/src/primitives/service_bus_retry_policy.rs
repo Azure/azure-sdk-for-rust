@@ -3,7 +3,7 @@ use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
 use fe2o3_amqp::link::{DispositionError, SendError};
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use tokio::time::error::Elapsed;
 
 use crate::amqp::error::NotAcceptedError;
@@ -31,7 +31,7 @@ pub trait ServiceBusRetryPolicyError
 where
     Self: std::error::Error
         + From<SendError>
-        + From<MgmtError>
+        + From<ManagementError>
         + From<Elapsed>
         + From<NotAcceptedError>
         + From<DispositionError>,

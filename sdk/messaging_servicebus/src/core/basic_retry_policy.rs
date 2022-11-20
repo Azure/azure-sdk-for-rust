@@ -1,5 +1,5 @@
 use fe2o3_amqp::link::{IllegalLinkStateError, LinkStateError, SendError};
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use rand::Rng;
 use std::{fmt::Display, time::Duration};
 use tokio::time::error::Elapsed;
@@ -26,7 +26,7 @@ pub enum BasicRetryPolicyError {
     Elapsed(#[from] Elapsed),
 
     #[error(transparent)]
-    Management(#[from] MgmtError),
+    Management(#[from] ManagementError),
 
     #[error(transparent)]
     NotAccepted(#[from] NotAcceptedError),

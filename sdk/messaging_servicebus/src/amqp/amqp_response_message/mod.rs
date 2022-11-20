@@ -1,4 +1,4 @@
-use fe2o3_amqp_management::error::Error as MgmtError;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_management::{
     error::{InvalidType, StatusError},
     mgmt_ext::AmqpMessageManagementExt,
@@ -40,10 +40,10 @@ const HTTP_STATUS_CODE_NO_CONTENT: u16 = 204;
 
 fn verify_ok_or_no_content_status_code<B>(
     message: &mut Message<B>,
-) -> Result<StatusCode, MgmtError> {
+) -> Result<StatusCode, ManagementError> {
     let status_code = match message
         .remove_status_code()
-        .ok_or(MgmtError::StatusCodeNotFound)?
+        .ok_or(ManagementError::StatusCodeNotFound)?
     {
         Ok(code) => code,
         Err(err) => {
