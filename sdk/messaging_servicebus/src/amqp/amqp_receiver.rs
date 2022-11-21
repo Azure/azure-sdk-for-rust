@@ -245,11 +245,33 @@ where
     async fn dead_letter(
         &mut self,
         message: &ServiceBusReceivedMessage,
-        _dead_letter_reason: Option<String>,
-        _dead_letter_error_description: Option<String>,
-        _properties_to_modify: Option<OrderedMap<String, Value>>,
+        dead_letter_reason: Option<String>,
+        dead_letter_error_description: Option<String>,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        let receiver = &mut self.receiver;
+        let policy = &self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+        let properties_to_modify = properties_to_modify.map(|fields| {
+            fields
+                .into_iter()
+                .map(|(k, v)| (Symbol::from(k), v))
+                .collect()
+        });
+        run_operation!(
+            policy,
+            RP,
+            AmqpDispositionError,
+            try_timeout,
+            dead_letter_message(
+                receiver,
+                message,
+                dead_letter_reason,
+                dead_letter_error_description,
+                properties_to_modify
+            )
+            .await
+        )
     }
 
     /// <summary>
