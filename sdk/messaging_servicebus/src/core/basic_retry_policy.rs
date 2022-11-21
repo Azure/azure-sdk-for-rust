@@ -13,10 +13,12 @@ use crate::{
             ServiceBusRetryPolicy, ServiceBusRetryPolicyError, ServiceBusRetryPolicyState,
         },
     },
+    receiver::error::ServiceBusRecvError,
 };
 
 const JITTER_FACTOR: f64 = 0.08;
 
+// TODO: separate send and recv errors
 #[derive(Debug, thiserror::Error)]
 pub enum BasicRetryPolicyError {
     #[error(transparent)]
@@ -33,6 +35,9 @@ pub enum BasicRetryPolicyError {
 
     #[error(transparent)]
     Disposition(#[from] IllegalLinkStateError),
+
+    #[error(transparent)]
+    Recv(#[from] ServiceBusRecvError),
 }
 
 impl ServiceBusRetryPolicyError for BasicRetryPolicyError {

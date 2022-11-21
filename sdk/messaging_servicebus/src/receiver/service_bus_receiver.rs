@@ -30,8 +30,13 @@ where
         self.inner.close().await
     }
 
-    pub async fn receive_message() {
-        todo!()
+    /// Receive a single message from the entity.
+    pub async fn receive_message(
+        &mut self,
+    ) -> Result<Option<ServiceBusReceivedMessage>, R::ReceiveError> {
+        self.receive_messages(1, None)
+            .await
+            .map(|mut v| v.drain(..).next())
     }
 
     pub async fn receive_messages(

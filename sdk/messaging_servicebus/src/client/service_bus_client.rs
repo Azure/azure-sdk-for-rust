@@ -188,14 +188,6 @@ where
     C: TransportClient + Send + Sync + 'static,
     OpenSenderError: From<C::CreateSenderError>,
 {
-    // pub async fn create_sender(
-    //     &mut self,
-    //     queue_or_topic_name: impl Into<String>,
-    // ) -> Result<ServiceBusSender<C::Sender>, OpenSenderError> {
-    //     self.create_sender_with_options(queue_or_topic_name, ServiceBusSenderOptions::default())
-    //         .await
-    // }
-
     pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
@@ -228,14 +220,6 @@ where
     C: TransportClient + Send + Sync + 'static,
     OpenReceiverError: From<C::CreateReceiverError>,
 {
-    // pub async fn create_receiver(
-    //     &mut self,
-    //     queue_or_topic_name: impl Into<String>,
-    // ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
-    //     self.create_receiver_with_options(queue_or_topic_name, ServiceBusReceiverOptions::default())
-    //         .await
-    // }
-
     // This cannot be used to create a session receiver or proces
     pub async fn create_receiver(
         &mut self,

@@ -6,7 +6,7 @@ use fe2o3_amqp::link::{DispositionError, SendError};
 use fe2o3_amqp_management::error::Error as ManagementError;
 use tokio::time::error::Elapsed;
 
-use crate::amqp::error::NotAcceptedError;
+use crate::{amqp::error::NotAcceptedError, receiver::error::ServiceBusRecvError};
 
 use super::service_bus_retry_options::ServiceBusRetryOptions;
 
@@ -34,7 +34,8 @@ where
         + From<ManagementError>
         + From<Elapsed>
         + From<NotAcceptedError>
-        + From<DispositionError>,
+        + From<DispositionError>
+        + From<ServiceBusRecvError>,
 {
     fn is_scope_disposed(&self) -> bool;
 }

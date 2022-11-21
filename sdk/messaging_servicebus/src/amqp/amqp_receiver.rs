@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use fe2o3_amqp::{
     link::{delivery::DeliveryInfo, DetachError, RecvError},
-    Delivery,
+    Delivery, Receiver,
 };
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{definitions::SequenceNo, messaging::Body, primitives::OrderedMap};
@@ -35,50 +35,15 @@ pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) management_client: MgmtClient,
 }
 
-impl<RP> AmqpReceiver<RP>
-where
-    RP: ServiceBusRetryPolicy,
-{
-    async fn receive_messages_inner(
-        &mut self,
-        buffer: &mut Vec<ServiceBusReceivedMessage>,
-        max_messages: u32,
-    ) -> Result<(), ServiceBusRecvError> {
-        // Need to set credit
-        if self.prefetch_count == 0 {
-            // credit mode is manual
-            self.receiver.set_credit(max_messages).await?;
-        }
-
-        for _ in 0..max_messages {
-            let delivery: Delivery<Body<Value>> = self.receiver.recv().await?;
-
-            let mut is_settled = false;
-            if self.receive_mode == ServiceBusReceiveMode::ReceiveAndDelete {
-                self.receiver
-                    .accept(&delivery)
-                    .await
-                    .map_err(RecvError::from)?;
-                is_settled = true;
-            }
-
-            let message = amqp_message_converter::amqp_delivery_as_service_bus_received_message(
-                delivery, is_settled,
-            )?;
-
-            buffer.push(message);
-        }
-        Ok(())
-    }
-}
+impl<RP> AmqpReceiver<RP> where RP: ServiceBusRetryPolicy {}
 
 #[async_trait]
 impl<RP> TransportReceiver for AmqpReceiver<RP>
 where
-    RP: ServiceBusRetryPolicy + Send,
+    RP: ServiceBusRetryPolicy + Send + Sync,
 {
     type Error = ();
-    type ReceiveError = ServiceBusRecvError;
+    type ReceiveError = RetryError<RP::Error>;
     type CompleteError = RetryError<RP::Error>;
     type CloseError = DetachError;
 
@@ -117,25 +82,26 @@ where
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
-        let mut message_buffer: Vec<ServiceBusReceivedMessage> =
-            Vec::with_capacity(max_messages as usize);
         let max_wait_time =
             max_wait_time.unwrap_or_else(|| self.retry_policy.options().try_timeout);
-
-        tokio::select! {
-            _ = tokio::time::sleep(max_wait_time) => {
-                if self.prefetch_count == 0 { // credit mode is manual
-                    if let Err(err) = self.receiver.drain().await {
-                        log::error!("{}", err);
-                    }
-                }
-                Ok(message_buffer)
-            }
-            result = self.receive_messages_inner(&mut message_buffer, max_messages) => {
-                result?;
-                Ok(message_buffer)
-            }
-        }
+        let receiver = &mut self.receiver;
+        let prefetch_count = self.prefetch_count;
+        let receive_mode = &self.receive_mode;
+        let retry_policy = &self.retry_policy;
+        let mut try_timeout = retry_policy.calculate_try_timeout(0);
+        run_operation!(
+            retry_policy,
+            RP,
+            try_timeout,
+            receive_messages_with_timeout(
+                receiver,
+                prefetch_count,
+                receive_mode,
+                max_messages,
+                max_wait_time
+            )
+            .await
+        )
     }
 
     /// <summary>
@@ -351,4 +317,60 @@ async fn complete_message<E: ServiceBusRetryPolicyError>(
 ) -> Result<(), E> {
     receiver.accept(delivery_info).await?;
     Ok(())
+}
+
+async fn receive_messages(
+    receiver: &mut Receiver,
+    prefetch_count: u32,
+    receive_mode: &ServiceBusReceiveMode,
+    buffer: &mut Vec<ServiceBusReceivedMessage>,
+    max_messages: u32,
+) -> Result<(), ServiceBusRecvError> {
+    // Credit mode is manual, need to set credit
+    if prefetch_count == 0 {
+        receiver.set_credit(max_messages).await?;
+    }
+
+    for _ in 0..max_messages {
+        let delivery: Delivery<Body<Value>> = receiver.recv().await?;
+
+        let mut is_settled = false;
+        if *receive_mode == ServiceBusReceiveMode::ReceiveAndDelete {
+            receiver.accept(&delivery).await.map_err(RecvError::from)?;
+            is_settled = true;
+        }
+
+        let message = amqp_message_converter::amqp_delivery_as_service_bus_received_message(
+            delivery, is_settled,
+        )?;
+
+        buffer.push(message);
+    }
+    Ok(())
+}
+
+async fn receive_messages_with_timeout(
+    receiver: &mut Receiver,
+    prefetch_count: u32,
+    receive_mode: &ServiceBusReceiveMode,
+    max_messages: u32,
+    max_wait_time: StdDuration,
+) -> Result<Vec<ServiceBusReceivedMessage>, ServiceBusRecvError> {
+    let mut message_buffer: Vec<ServiceBusReceivedMessage> =
+        Vec::with_capacity(max_messages as usize);
+
+    tokio::select! {
+        _ = tokio::time::sleep(max_wait_time) => {
+            if prefetch_count == 0 { // credit mode is manual
+                if let Err(err) = receiver.drain().await {
+                    log::error!("{}", err);
+                }
+            }
+            Ok(message_buffer)
+        }
+        result = receive_messages(receiver, prefetch_count, receive_mode, &mut message_buffer, max_messages) => {
+            result?;
+            Ok(message_buffer)
+        }
+    }
 }
