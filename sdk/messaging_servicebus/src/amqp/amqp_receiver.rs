@@ -23,7 +23,7 @@ use crate::{
 
 use super::{
     amqp_message_converter,
-    error::{AmqpDispositionError, AmqpRecvError},
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
@@ -43,7 +43,7 @@ impl<RP> TransportReceiver for AmqpReceiver<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
-    type Error = ();
+    type RequestResponseError = RetryError<AmqpRequestResponseError>;
     type ReceiveError = RetryError<AmqpRecvError>;
     type DispositionError = RetryError<AmqpDispositionError>;
     type CloseError = DetachError;
@@ -164,9 +164,9 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn defer(
         &mut self,
-        _lock_token: impl AsRef<Uuid> + Send,
-        _properties_to_modify: Option<OrderedMap<String, String>>,
-    ) -> Result<(), Self::Error> {
+        delivery_info: DeliveryInfo,
+        _properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), Self::DispositionError> {
         todo!()
     }
 
@@ -189,7 +189,7 @@ where
         &mut self,
         _sequence_number: Option<u64>,
         _message_count: u32,
-    ) -> Result<ServiceBusReceivedMessage, Self::Error> {
+    ) -> Result<ServiceBusReceivedMessage, Self::RequestResponseError> {
         todo!()
     }
 
@@ -210,9 +210,9 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn abandon(
         &mut self,
-        _lock_token: impl AsRef<Uuid> + Send,
-        _properties_to_modify: Option<OrderedMap<String, String>>,
-    ) -> Result<(), Self::Error> {
+        delivery_info: DeliveryInfo,
+        _properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), Self::DispositionError> {
         todo!()
     }
 
@@ -237,11 +237,11 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn dead_letter(
         &mut self,
-        _lock_token: impl AsRef<Uuid> + Send,
+        delivery_info: DeliveryInfo,
         _dead_letter_reason: Option<String>,
         _dead_letter_error_description: Option<String>,
-        _properties_to_modify: Option<OrderedMap<String, String>>,
-    ) -> Result<(), Self::Error> {
+        _properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), Self::DispositionError> {
         todo!()
     }
 
@@ -256,7 +256,7 @@ where
     async fn receive_deferred_messages(
         &mut self,
         _sequence_numbers: impl Iterator<Item = SequenceNo> + Send,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::Error> {
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
         todo!()
     }
 
@@ -270,7 +270,7 @@ where
     async fn renew_message_lock(
         &mut self,
         _lock_token: impl AsRef<Uuid> + Send,
-    ) -> Result<OffsetDateTime, Self::Error> {
+    ) -> Result<OffsetDateTime, Self::RequestResponseError> {
         todo!()
     }
 
@@ -281,7 +281,7 @@ where
     /// <returns>New lock token expiry date and time in UTC format.</returns>
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::Error> {
+    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError> {
         todo!()
     }
 
@@ -292,7 +292,7 @@ where
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     ///
     /// <returns>The session state as <see cref="BinaryData"/>.</returns>
-    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::Error> {
+    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::RequestResponseError> {
         todo!()
     }
 
@@ -312,7 +312,7 @@ where
     async fn set_session_state(
         &mut self,
         _session_state: impl AsRef<u8> + Send,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::RequestResponseError> {
         todo!()
     }
 }

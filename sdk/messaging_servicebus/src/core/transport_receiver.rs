@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::delivery::DeliveryInfo;
 use fe2o3_amqp_types::{definitions::SequenceNo, primitives::OrderedMap};
+use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -14,7 +15,7 @@ use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
 /// details for different transports.
 #[async_trait]
 pub trait TransportReceiver {
-    type Error;
+    type RequestResponseError;
     type ReceiveError;
     type DispositionError;
     type CloseError;
@@ -90,9 +91,9 @@ pub trait TransportReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn defer(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
-        properties_to_modify: Option<OrderedMap<String, String>>,
-    ) -> Result<(), Self::Error>;
+        delivery_info: DeliveryInfo,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
     /// Fetches the next batch of active messages without changing the state of the receiver or the message source.
@@ -113,7 +114,7 @@ pub trait TransportReceiver {
         &mut self,
         sequence_number: Option<u64>,
         message_count: u32,
-    ) -> Result<ServiceBusReceivedMessage, Self::Error>;
+    ) -> Result<ServiceBusReceivedMessage, Self::RequestResponseError>;
 
     /// <summary>
     /// Abandons a <see cref="ServiceBusReceivedMessage"/>. This will make the message available again for processing.
@@ -132,9 +133,9 @@ pub trait TransportReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn abandon(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
-        properties_to_modify: Option<OrderedMap<String, String>>,
-    ) -> Result<(), Self::Error>;
+        delivery_info: DeliveryInfo,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
     /// Moves a message to the dead-letter subqueue.
@@ -157,11 +158,11 @@ pub trait TransportReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn dead_letter(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
+        delivery_info: DeliveryInfo,
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
-        properties_to_modify: Option<OrderedMap<String, String>>,
-    ) -> Result<(), Self::Error>;
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
     /// Receives a <see cref="IList{Message}"/> of deferred messages identified by <paramref name="sequenceNumbers"/>.
@@ -174,7 +175,7 @@ pub trait TransportReceiver {
     async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = SequenceNo> + Send,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::Error>;
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError>;
 
     /// <summary>
     /// Renews the lock on the message. The lock will be renewed based on the setting specified on the queue.
@@ -186,7 +187,7 @@ pub trait TransportReceiver {
     async fn renew_message_lock(
         &mut self,
         lock_token: impl AsRef<Uuid> + Send,
-    ) -> Result<OffsetDateTime, Self::Error>;
+    ) -> Result<OffsetDateTime, Self::RequestResponseError>;
 
     /// <summary>
     /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
@@ -195,7 +196,7 @@ pub trait TransportReceiver {
     /// <returns>New lock token expiry date and time in UTC format.</returns>
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::Error>;
+    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError>;
 
     /// <summary>
     /// Gets the session state.
@@ -204,7 +205,7 @@ pub trait TransportReceiver {
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     ///
     /// <returns>The session state as <see cref="BinaryData"/>.</returns>
-    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::Error>;
+    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::RequestResponseError>;
 
     /// <summary>
     /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
@@ -222,5 +223,5 @@ pub trait TransportReceiver {
     async fn set_session_state(
         &mut self,
         session_state: impl AsRef<u8> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::RequestResponseError>;
 }
