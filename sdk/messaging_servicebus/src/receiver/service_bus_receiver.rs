@@ -52,50 +52,50 @@ where
     pub async fn complete_message(
         &mut self,
         message: impl Into<DeliveryInfo>,
-    ) -> Result<(), R::CompleteError> {
+    ) -> Result<(), R::DispositionError> {
         let delivery_info = message.into();
         self.inner.complete(delivery_info).await
     }
 
     pub async fn abandon_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
+        _message: &ServiceBusReceivedMessage,
+        _properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), ()> {
         todo!()
     }
 
     pub async fn dead_letter_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
-        dead_letter_reason: Option<String>,
-        dead_letter_error_description: Option<String>,
+        _message: &ServiceBusReceivedMessage,
+        _properties_to_modify: Option<OrderedMap<String, Value>>,
+        _dead_letter_reason: Option<String>,
+        _dead_letter_error_description: Option<String>,
     ) -> Result<(), ()> {
         todo!()
     }
 
     pub async fn defer_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
+        _message: &ServiceBusReceivedMessage,
+        _properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), ()> {
         todo!()
     }
 
-    pub async fn peek_message(&mut self, from_sequence_number: Option<i64>) {
+    pub async fn peek_message(&mut self, _from_sequence_number: Option<i64>) {
         todo!()
     }
 
-    pub async fn peek_messages(&mut self, max_messages: u32, from_sequence_number: Option<i64>) {
+    pub async fn peek_messages(&mut self, _max_messages: u32, _from_sequence_number: Option<i64>) {
         todo!()
     }
 
-    pub async fn receive_deferred_message(&mut self, sequence_number: i64) {
+    pub async fn receive_deferred_message(&mut self, _sequence_number: i64) {
         todo!()
     }
 
-    pub async fn renew_message_lock(&mut self, message: &ServiceBusReceivedMessage) {
+    pub async fn renew_message_lock(&mut self, _message: &ServiceBusReceivedMessage) {
         todo!()
     }
 }

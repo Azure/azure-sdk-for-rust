@@ -70,7 +70,7 @@ where
     pub async fn complete_message(
         &mut self,
         message: impl Into<DeliveryInfo>,
-    ) -> Result<(), R::CompleteError> {
+    ) -> Result<(), R::DispositionError> {
         let delivery_info = message.into();
         self.inner.complete(delivery_info).await
     }

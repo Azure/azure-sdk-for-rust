@@ -1,11 +1,10 @@
-use fe2o3_amqp::link::{IllegalLinkStateError, LinkStateError, SendError};
-use fe2o3_amqp_management::error::Error as ManagementError;
+
+
 use rand::Rng;
 use std::{fmt::Display, time::Duration};
-use tokio::time::error::Elapsed;
+
 
 use crate::{
-    amqp::error::NotAcceptedError,
     primitives::{
         service_bus_retry_mode::ServiceBusRetryMode,
         service_bus_retry_options::ServiceBusRetryOptions,
@@ -13,46 +12,45 @@ use crate::{
             ServiceBusRetryPolicy, ServiceBusRetryPolicyError, ServiceBusRetryPolicyState,
         },
     },
-    receiver::error::ServiceBusRecvError,
 };
 
 const JITTER_FACTOR: f64 = 0.08;
 
-// TODO: separate send and recv errors
-#[derive(Debug, thiserror::Error)]
-pub enum BasicRetryPolicyError {
-    #[error(transparent)]
-    Send(#[from] SendError),
+// // TODO: separate send and recv errors
+// #[derive(Debug, thiserror::Error)]
+// pub enum BasicRetryPolicyError {
+//     #[error(transparent)]
+//     Send(#[from] SendError),
 
-    #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+//     #[error(transparent)]
+//     Elapsed(#[from] Elapsed),
 
-    #[error(transparent)]
-    Management(#[from] ManagementError),
+//     #[error(transparent)]
+//     Management(#[from] ManagementError),
 
-    #[error(transparent)]
-    NotAccepted(#[from] NotAcceptedError),
+//     #[error(transparent)]
+//     NotAccepted(#[from] NotAcceptedError),
 
-    #[error(transparent)]
-    Disposition(#[from] IllegalLinkStateError),
+//     #[error(transparent)]
+//     Disposition(#[from] IllegalLinkStateError),
 
-    #[error(transparent)]
-    Recv(#[from] ServiceBusRecvError),
-}
+//     #[error(transparent)]
+//     Recv(#[from] ServiceBusRecvError),
+// }
 
-impl ServiceBusRetryPolicyError for BasicRetryPolicyError {
-    fn is_scope_disposed(&self) -> bool {
-        match self {
-            BasicRetryPolicyError::Send(SendError::LinkStateError(
-                LinkStateError::IllegalSessionState,
-            ))
-            | BasicRetryPolicyError::Disposition(IllegalLinkStateError::IllegalSessionState) => {
-                true
-            }
-            _ => false,
-        }
-    }
-}
+// impl ServiceBusRetryPolicyError for BasicRetryPolicyError {
+//     fn is_scope_disposed(&self) -> bool {
+//         match self {
+//             BasicRetryPolicyError::Send(SendError::LinkStateError(
+//                 LinkStateError::IllegalSessionState,
+//             ))
+//             | BasicRetryPolicyError::Disposition(IllegalLinkStateError::IllegalSessionState) => {
+//                 true
+//             }
+//             _ => false,
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BasicRetryPolicyState {
@@ -111,8 +109,6 @@ impl Display for BasicRetryPolicy {
 impl ServiceBusRetryPolicy for BasicRetryPolicy {
     // type Ok = ();
 
-    type Error = BasicRetryPolicyError;
-
     type State = BasicRetryPolicyState;
 
     fn new(options: ServiceBusRetryOptions) -> Self {
@@ -138,9 +134,9 @@ impl ServiceBusRetryPolicy for BasicRetryPolicy {
         self.options.try_timeout
     }
 
-    fn calculate_retry_delay(
+    fn calculate_retry_delay<E: ServiceBusRetryPolicyError>(
         &self,
-        _last_error: &Self::Error,
+        _last_error: &E,
         attempt_count: u32,
     ) -> Option<std::time::Duration> {
         if self.options.max_retries == 0

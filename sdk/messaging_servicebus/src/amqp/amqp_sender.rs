@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_management::client::MgmtClient;
+use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::Outcome;
 use fe2o3_amqp_types::primitives::Array;
 use std::time::Duration as StdDuration;
 
-use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
     core::TransportSender,
@@ -19,7 +19,7 @@ use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
 use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequest;
 use super::amqp_request_message::schedule_message::ScheduleMessageRequest;
-use super::error::RequestedSizeOutOfRange;
+use super::error::{AmqpRequestResponseError, AmqpSendError, RequestedSizeOutOfRange};
 use super::{
     amqp_message_converter::{
         batch_service_bus_messages_as_amqp_message, BatchEnvelope, SendableEnvelope,
@@ -39,7 +39,6 @@ impl<RP: ServiceBusRetryPolicy> AmqpSender<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
     RP::State: ServiceBusRetryPolicyState,
-    RP::Error: ServiceBusRetryPolicyError,
 {
 }
 
@@ -48,10 +47,9 @@ impl<RP> TransportSender for AmqpSender<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
     RP::State: ServiceBusRetryPolicyState,
-    RP::Error: ServiceBusRetryPolicyError,
 {
-    type Error = DetachError;
-    type SendError = RetryError<RP::Error>;
+    type SendError = RetryError<AmqpSendError>;
+    type ScheduleError = RetryError<AmqpRequestResponseError>;
     type CloseError = DetachError;
     type MessageBatch = AmqpMessageBatch;
     type CreateMessageBatchError = RequestedSizeOutOfRange;
@@ -116,8 +114,9 @@ where
         run_operation! {
             policy,
             RP,
+            AmqpSendError,
             try_timeout,
-            send_batch_envelope::<RP::Error>(sender, &batch).await
+            send_batch_envelope(sender, &batch).await
         }
     }
 
@@ -143,15 +142,16 @@ where
         run_operation! {
             policy,
             RP,
+            AmqpSendError,
             try_timeout,
-            send_batch_envelope::<RP::Error>(sender, &batch).await
+            send_batch_envelope(sender, &batch).await
         }
     }
 
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + Send,
-    ) -> Result<Vec<i64>, Self::SendError> {
+    ) -> Result<Vec<i64>, Self::ScheduleError> {
         use super::scheduled_message::ScheduledBatchEnvelope;
         use fe2o3_amqp::link::SendError;
 
@@ -160,8 +160,8 @@ where
             .map(ScheduledBatchEnvelope::from_amqp_message)
             .map(|result| result.map(|opt| opt.map(|m| m.into_ordered_map())))
             .collect::<Result<Option<Vec<_>>, _>>()
-            .map_err(|_| SendError::MessageEncodeError)
-            .map_err(RP::Error::from)
+            .map_err(|_| ManagementError::Send(SendError::MessageEncodeError))
+            .map_err(AmqpRequestResponseError::RequestResponse)
             .map_err(RetryError::Operation)?;
 
         match encoded_messages {
@@ -176,8 +176,9 @@ where
                 run_operation! {
                     policy,
                     RP,
+                    AmqpRequestResponseError,
                     try_timeout,
-                    schedule_message::<RP::Error>(management_client, &mut request, try_timeout).await
+                    schedule_message(management_client, &mut request, try_timeout).await
                 }
             }
             None => Ok(vec![]),
@@ -187,7 +188,7 @@ where
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: Vec<i64>,
-    ) -> Result<(), Self::SendError> {
+    ) -> Result<(), Self::ScheduleError> {
         if sequence_numbers.is_empty() {
             return Ok(());
         }
@@ -202,9 +203,9 @@ where
         run_operation!(
             policy,
             RP,
+            AmqpRequestResponseError,
             try_timeout,
-            cancel_scheduled_messages::<RP::Error>(management_client, &mut request, try_timeout)
-                .await
+            cancel_scheduled_messages(management_client, &mut request, try_timeout).await
         )
     }
 
@@ -221,10 +222,10 @@ where
     }
 }
 
-async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
+async fn send_batch_envelope(
     sender: &mut fe2o3_amqp::Sender,
     batch: &Option<BatchEnvelope>,
-) -> Result<(), E> {
+) -> Result<(), AmqpSendError> {
     if let Some(batch) = batch {
         let outcome = match &batch.sendable {
             SendableEnvelope::Single(sendable) => match batch.batchable {
@@ -246,13 +247,13 @@ async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
         match outcome {
             Outcome::Accepted(_) => return Ok(()),
             Outcome::Rejected(rejected) => {
-                return Err(E::from(NotAcceptedError::Rejected(rejected)))
+                return Err(AmqpSendError::from(NotAcceptedError::Rejected(rejected)))
             }
             Outcome::Released(released) => {
-                return Err(E::from(NotAcceptedError::Released(released)))
+                return Err(AmqpSendError::from(NotAcceptedError::Released(released)))
             }
             Outcome::Modified(modified) => {
-                return Err(E::from(NotAcceptedError::Modified(modified)))
+                return Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
             }
             Outcome::Declared(_) => {
                 unreachable!("Declared is not expected outside txn-control links")
@@ -263,11 +264,11 @@ async fn send_batch_envelope<E: ServiceBusRetryPolicyError>(
     Ok(())
 }
 
-async fn schedule_message<E: ServiceBusRetryPolicyError>(
+async fn schedule_message(
     mgmt_client: &mut MgmtClient,
     request: &mut ScheduleMessageRequest, // Use a reference to avoid repeated serialization
     try_timeout: StdDuration,
-) -> Result<Vec<i64>, E> {
+) -> Result<Vec<i64>, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
     request.set_server_timeout(Some(server_timeout));
 
@@ -275,11 +276,11 @@ async fn schedule_message<E: ServiceBusRetryPolicyError>(
     Ok(response.into_sequence_numbers())
 }
 
-async fn cancel_scheduled_messages<'a, E: ServiceBusRetryPolicyError>(
+async fn cancel_scheduled_messages<'a>(
     mgmt_client: &'a mut MgmtClient,
     request: &'a mut CancelScheduledMessageRequest,
     try_timeout: StdDuration,
-) -> Result<(), E> {
+) -> Result<(), AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
     request.set_server_timeout(Some(server_timeout));
 

@@ -15,15 +15,16 @@ use crate::{
     primitives::{
         service_bus_received_message::ServiceBusReceivedMessage,
         service_bus_retry_policy::{
-            run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyError,
-            ServiceBusRetryPolicyState,
+            run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
         },
     },
-    receiver::error::ServiceBusRecvError,
     ServiceBusReceiveMode,
 };
 
-use super::amqp_message_converter;
+use super::{
+    amqp_message_converter,
+    error::{AmqpDispositionError, AmqpRecvError},
+};
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) identifier: u32,
@@ -43,8 +44,8 @@ where
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
     type Error = ();
-    type ReceiveError = RetryError<RP::Error>;
-    type CompleteError = RetryError<RP::Error>;
+    type ReceiveError = RetryError<AmqpRecvError>;
+    type DispositionError = RetryError<AmqpDispositionError>;
     type CloseError = DetachError;
 
     /// <summary>
@@ -92,6 +93,7 @@ where
         run_operation!(
             retry_policy,
             RP,
+            AmqpRecvError,
             try_timeout,
             receive_messages_with_timeout(
                 receiver,
@@ -128,15 +130,19 @@ where
     /// </remarks>
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
-    async fn complete(&mut self, delivery_info: DeliveryInfo) -> Result<(), Self::CompleteError> {
+    async fn complete(
+        &mut self,
+        delivery_info: DeliveryInfo,
+    ) -> Result<(), Self::DispositionError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
         run_operation!(
             policy,
             RP,
+            AmqpDispositionError,
             try_timeout,
-            complete_message::<RP::Error>(receiver, delivery_info.clone()).await
+            complete_message(receiver, delivery_info.clone()).await
         )
     }
 
@@ -311,10 +317,10 @@ where
     }
 }
 
-async fn complete_message<E: ServiceBusRetryPolicyError>(
+async fn complete_message(
     receiver: &mut fe2o3_amqp::Receiver,
     delivery_info: DeliveryInfo,
-) -> Result<(), E> {
+) -> Result<(), AmqpDispositionError> {
     receiver.accept(delivery_info).await?;
     Ok(())
 }
@@ -325,7 +331,7 @@ async fn receive_messages(
     receive_mode: &ServiceBusReceiveMode,
     buffer: &mut Vec<ServiceBusReceivedMessage>,
     max_messages: u32,
-) -> Result<(), ServiceBusRecvError> {
+) -> Result<(), AmqpRecvError> {
     // Credit mode is manual, need to set credit
     if prefetch_count == 0 {
         receiver.set_credit(max_messages).await?;
@@ -355,7 +361,7 @@ async fn receive_messages_with_timeout(
     receive_mode: &ServiceBusReceiveMode,
     max_messages: u32,
     max_wait_time: StdDuration,
-) -> Result<Vec<ServiceBusReceivedMessage>, ServiceBusRecvError> {
+) -> Result<Vec<ServiceBusReceivedMessage>, AmqpRecvError> {
     let mut message_buffer: Vec<ServiceBusReceivedMessage> =
         Vec::with_capacity(max_messages as usize);
 

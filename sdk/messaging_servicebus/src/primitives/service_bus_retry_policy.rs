@@ -2,11 +2,8 @@ use std::hash::Hash;
 use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
-use fe2o3_amqp::link::{DispositionError, SendError};
+use fe2o3_amqp::link::SendError;
 use fe2o3_amqp_management::error::Error as ManagementError;
-use tokio::time::error::Elapsed;
-
-use crate::{amqp::error::NotAcceptedError, receiver::error::ServiceBusRecvError};
 
 use super::service_bus_retry_options::ServiceBusRetryOptions;
 
@@ -27,17 +24,25 @@ pub enum RetryError<E> {
     Operation(E),
 }
 
-pub trait ServiceBusRetryPolicyError
-where
-    Self: std::error::Error
-        + From<SendError>
-        + From<ManagementError>
-        + From<Elapsed>
-        + From<NotAcceptedError>
-        + From<DispositionError>
-        + From<ServiceBusRecvError>,
-{
+pub trait ServiceBusRetryPolicyError: std::error::Error + Send + Sync + 'static {
     fn is_scope_disposed(&self) -> bool;
+}
+
+impl ServiceBusRetryPolicyError for fe2o3_amqp_management::error::Error {
+    fn is_scope_disposed(&self) -> bool {
+        use fe2o3_amqp::link::{LinkStateError, RecvError};
+        match self {
+            ManagementError::Send(error) => match error {
+                SendError::LinkStateError(LinkStateError::IllegalSessionState) => true,
+                _ => false,
+            },
+            ManagementError::Recv(error) => match error {
+                RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
 }
 
 /// An abstract representation of a policy to govern retrying of messaging operations.
@@ -46,8 +51,6 @@ where
 /// policies but instead configure the default policy by specifying the desired set of
 /// retry options when creating one of the Service Bus clients.
 pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
-    // type Ok: Send + Sync;
-    type Error: ServiceBusRetryPolicyError + Send + Sync;
     type State: ServiceBusRetryPolicyState;
 
     fn new(options: ServiceBusRetryOptions) -> Self;
@@ -82,9 +85,9 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     ///
     /// The amount of time to delay before retrying the associated operation; if `None`, then
     /// the operation is no longer eligible to be retried.
-    fn calculate_retry_delay(
+    fn calculate_retry_delay<E: ServiceBusRetryPolicyError>(
         &self,
-        last_error: &Self::Error,
+        last_error: &E,
         attempt_count: u32,
     ) -> Option<StdDuration>;
 }
@@ -178,7 +181,7 @@ pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
 impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + Sync {}
 
 macro_rules! run_operation {
-    ($policy:ident, $policy_ty:ty, $try_timeout:ident, $op:expr) => {{
+    ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
         if $policy.state().is_server_busy()
             && $try_timeout
@@ -199,8 +202,8 @@ macro_rules! run_operation {
             }
 
             let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
-                Ok(result) => result.map_err(<$policy_ty>::Error::from),
-                Err(err) => Err(<$policy_ty>::Error::from(err)),
+                Ok(result) => result.map_err(<$err_ty>::from),
+                Err(err) => Err(<$err_ty>::from(err)),
             };
             match outcome {
                 Ok(outcome) => break outcome,
@@ -208,7 +211,10 @@ macro_rules! run_operation {
                     failed_attempt_count += 1;
                     let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
 
-                    match (retry_delay, error.is_scope_disposed()) {
+                    match (
+                        retry_delay,
+                        crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error)
+                    ) {
                         (Some(retry_delay), false) => {
                             log::error!("{}", &error);
                             tokio::time::sleep(retry_delay).await;
@@ -220,10 +226,10 @@ macro_rules! run_operation {
             }
         };
 
-        Result::<_, crate::primitives::service_bus_retry_policy::RetryError<<$policy_ty>::Error>>::Ok(outcome)
+        Result::<_, RetryError<$err_ty>>::Ok(outcome)
     }};
 
-    ($policy:ident, $policy_ty:ty, $try_timeout:ident, $cancellation_token:ident, $op:expr) => {{
+    ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $cancellation_token:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
         if $policy.state().is_server_busy()
             && $try_timeout
@@ -248,8 +254,8 @@ macro_rules! run_operation {
             }
 
             let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
-                Ok(result) => result.map_err(<$policy_ty>::Error::from),
-                Err(err) => Err(<$policy_ty>::Error::from(err)),
+                Ok(result) => result.map_err(<$err_ty>::from),
+                Err(err) => Err(<$err_ty>::from(err)),
             };
             match outcome {
                 Ok(outcome) => break outcome,
@@ -259,7 +265,7 @@ macro_rules! run_operation {
 
                     match (
                         retry_delay,
-                        error.is_scope_disposed(),
+                        crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error),
                         $cancellation_token.is_cancelled(),
                     ) {
                         (Some(retry_delay), false, false) => {
@@ -276,7 +282,7 @@ macro_rules! run_operation {
             }
         };
 
-        Result::<(), RetryError<<$policy_ty>::Error>>::Ok(outcome)
+        Result::<_, RetryError<$err_ty>>::Ok(outcome)
     }};
 }
 

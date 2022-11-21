@@ -16,7 +16,7 @@ use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
 pub trait TransportReceiver {
     type Error;
     type ReceiveError;
-    type CompleteError;
+    type DispositionError;
     type CloseError;
 
     /// <summary>
@@ -69,7 +69,8 @@ pub trait TransportReceiver {
     /// </remarks>
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
-    async fn complete(&mut self, delivery_info: DeliveryInfo) -> Result<(), Self::CompleteError>;
+    async fn complete(&mut self, delivery_info: DeliveryInfo)
+        -> Result<(), Self::DispositionError>;
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
     ///

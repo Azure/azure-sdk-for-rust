@@ -8,8 +8,8 @@ use crate::{CreateMessageBatchOptions, ServiceBusMessage};
 /// for different transports.
 #[async_trait]
 pub trait TransportSender {
-    type Error: std::error::Error + Send;
     type SendError: std::error::Error + Send;
+    type ScheduleError: std::error::Error + Send;
     type CloseError: std::error::Error + Send;
     type MessageBatch: Send;
     type CreateMessageBatchError: std::error::Error + Send;
@@ -69,12 +69,12 @@ pub trait TransportSender {
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + Send,
-    ) -> Result<Vec<i64>, Self::SendError>;
+    ) -> Result<Vec<i64>, Self::ScheduleError>;
 
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: Vec<i64>,
-    ) -> Result<(), Self::SendError>;
+    ) -> Result<(), Self::ScheduleError>;
 
     /// Closes the connection to the transport producer instance.
     ///

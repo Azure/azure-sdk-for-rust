@@ -1,7 +1,7 @@
-use std::time::Duration as StdDuration;
 
-use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::OrderedMap};
-use serde_amqp::Value;
+
+use fe2o3_amqp_types::{messaging::ApplicationProperties};
+
 
 use super::management_constants::properties::SERVER_TIMEOUT;
 

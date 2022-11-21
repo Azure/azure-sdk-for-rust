@@ -53,7 +53,7 @@ where
         &mut self,
         message: impl Into<ServiceBusMessage>,
         enqueue_time: OffsetDateTime,
-    ) -> Result<i64, S::SendError> {
+    ) -> Result<i64, S::ScheduleError> {
         let messages = std::iter::once(message.into());
         let seq_nums = self.schedule_messages(messages, enqueue_time).await?;
         // PANIC: there should be exactly one sequence number returned
@@ -65,7 +65,7 @@ where
         &mut self,
         messages: M,
         enqueue_time: OffsetDateTime,
-    ) -> Result<Vec<i64>, S::SendError>
+    ) -> Result<Vec<i64>, S::ScheduleError>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -86,7 +86,7 @@ where
     pub async fn cancel_scheduled_message(
         &mut self,
         sequence_number: i64,
-    ) -> Result<(), S::SendError> {
+    ) -> Result<(), S::ScheduleError> {
         // The request will always encode the sequence numbers as a Vec, so it doesn't hurt to
         // allocate a Vec here.
         self.cancel_scheduled_messages(std::iter::once(sequence_number))
@@ -96,7 +96,7 @@ where
     pub async fn cancel_scheduled_messages<I>(
         &mut self,
         sequence_numbers: I,
-    ) -> Result<(), S::SendError>
+    ) -> Result<(), S::ScheduleError>
     where
         I: IntoIterator<Item = i64>,
         I::IntoIter: ExactSizeIterator + Send,

@@ -6,7 +6,7 @@ use azure_core::{
 };
 use fe2o3_amqp::{
     connection::OpenError,
-    link::{ReceiverAttachError, SendError, SenderAttachError},
+    link::{ReceiverAttachError, SenderAttachError},
     session::BeginError,
 };
 use tokio::time::error::Elapsed;
@@ -143,7 +143,6 @@ impl<C, RP> TransportClient for AmqpClient<C, RP>
 where
     C: TokenCredential + 'static,
     RP: ServiceBusRetryPolicy + Send + Sync,
-    RP::Error: From<SendError>,
 {
     type CreateClientError = AmqpClientError;
     type CreateSenderError = OpenSenderError;

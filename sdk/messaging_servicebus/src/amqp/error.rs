@@ -1,12 +1,18 @@
 use fe2o3_amqp::{
     connection,
-    link::{ReceiverAttachError, SenderAttachError},
+    link::{
+        IllegalLinkStateError, LinkStateError, ReceiverAttachError, RecvError,
+        SenderAttachError,
+    },
     session,
 };
 use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
+use tokio::time::error::Elapsed;
 
-use crate::ServiceBusMessage;
+use crate::{primitives::service_bus_retry_policy::ServiceBusRetryPolicyError, ServiceBusMessage};
+
+use super::amqp_message_converter::InvalidLockTokenError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -31,13 +37,6 @@ pub enum NotAcceptedError {
     #[error("Modified: {:?}", .0)]
     Modified(Modified),
 }
-
-// #[inline]
-// pub(crate) fn not_supported_error(field_type: &str, method: &str, alternative: &str) -> Error {
-//     Error::NotSupported(
-//         format!("{field_type} cannot be retrived using {method} method. Use {alternative} to access the underlying Amqp Message")
-//     )
-// }
 
 #[derive(Debug, thiserror::Error)]
 pub enum DisposeError {
@@ -106,6 +105,100 @@ impl From<OpenMgmtLinkError> for OpenReceiverError {
             OpenMgmtLinkError::ScopeIsDisposed => OpenReceiverError::ScopeIsDisposed,
             OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagemetnLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenReceiverError::CbsAuth(err),
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpSendError {
+    #[error(transparent)]
+    Send(#[from] fe2o3_amqp::link::SendError),
+
+    #[error(transparent)]
+    NotAccepted(#[from] NotAcceptedError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl ServiceBusRetryPolicyError for AmqpSendError {
+    fn is_scope_disposed(&self) -> bool {
+        use fe2o3_amqp::link::{LinkStateError, SendError};
+        matches!(
+            self,
+            Self::Send(SendError::LinkStateError(
+                LinkStateError::IllegalSessionState
+            ))
+        )
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpRecvError {
+    #[error("Lock token cannot be converted from AMQP message")]
+    InvalidLockTokenError,
+
+    #[error(transparent)]
+    Recv(#[from] RecvError),
+
+    #[error(transparent)]
+    LinkState(#[from] IllegalLinkStateError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl From<InvalidLockTokenError> for AmqpRecvError {
+    fn from(_: InvalidLockTokenError) -> Self {
+        Self::InvalidLockTokenError
+    }
+}
+
+impl ServiceBusRetryPolicyError for AmqpRecvError {
+    fn is_scope_disposed(&self) -> bool {
+        match self {
+            Self::Recv(err) => match err {
+                RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
+                _ => false,
+            },
+            Self::LinkState(IllegalLinkStateError::IllegalSessionState) => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpDispositionError {
+    #[error(transparent)]
+    IllegalState(#[from] IllegalLinkStateError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl ServiceBusRetryPolicyError for AmqpDispositionError {
+    fn is_scope_disposed(&self) -> bool {
+        matches!(
+            self,
+            Self::IllegalState(IllegalLinkStateError::IllegalSessionState)
+        )
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpRequestResponseError {
+    #[error(transparent)]
+    RequestResponse(#[from] ManagementError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
+    fn is_scope_disposed(&self) -> bool {
+        match self {
+            Self::RequestResponse(err) => err.is_scope_disposed(),
+            _ => false,
         }
     }
 }
