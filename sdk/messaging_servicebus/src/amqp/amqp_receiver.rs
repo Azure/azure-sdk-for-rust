@@ -1,10 +1,14 @@
 use async_trait::async_trait;
 use fe2o3_amqp::{
-    link::{delivery::DeliveryInfo, DetachError, RecvError},
+    link::{DetachError, RecvError},
     Delivery, Receiver,
 };
 use fe2o3_amqp_management::client::MgmtClient;
-use fe2o3_amqp_types::{definitions::SequenceNo, messaging::Body, primitives::OrderedMap};
+use fe2o3_amqp_types::{
+    definitions::{ErrorCondition, Fields, SequenceNo},
+    messaging::Body,
+    primitives::{OrderedMap, Symbol},
+};
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
@@ -22,6 +26,8 @@ use crate::{
 };
 
 use super::{
+    amqp_client_constants::DEAD_LETTER_NAME,
+    amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
     amqp_message_converter,
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
@@ -112,6 +118,7 @@ where
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn close(self) -> Result<(), Self::CloseError> {
+        self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
         self.receiver.close().await?;
         self.management_client.close().await?;
         Ok(())
@@ -132,7 +139,7 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn complete(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
     ) -> Result<(), Self::DispositionError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
@@ -142,7 +149,7 @@ where
             RP,
             AmqpDispositionError,
             try_timeout,
-            complete_message(receiver, delivery_info.clone()).await
+            complete_message(receiver, message).await
         )
     }
 
@@ -164,7 +171,7 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn defer(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
         _properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError> {
         todo!()
@@ -210,7 +217,7 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn abandon(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
         _properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError> {
         todo!()
@@ -237,7 +244,7 @@ where
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn dead_letter(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
         _dead_letter_reason: Option<String>,
         _dead_letter_error_description: Option<String>,
         _properties_to_modify: Option<OrderedMap<String, Value>>,
@@ -319,9 +326,9 @@ where
 
 async fn complete_message(
     receiver: &mut fe2o3_amqp::Receiver,
-    delivery_info: DeliveryInfo,
+    message: &ServiceBusReceivedMessage,
 ) -> Result<(), AmqpDispositionError> {
-    receiver.accept(delivery_info).await?;
+    receiver.accept(message).await?;
     Ok(())
 }
 
@@ -379,4 +386,45 @@ async fn receive_messages_with_timeout(
             Ok(message_buffer)
         }
     }
+}
+
+async fn dead_letter_message(
+    receiver: &mut fe2o3_amqp::Receiver,
+    message: &ServiceBusReceivedMessage,
+    dead_letter_reason: Option<String>,
+    dead_letter_error_description: Option<String>,
+    properties_to_modify: Option<Fields>,
+) -> Result<(), AmqpDispositionError> {
+    let mut error = None;
+    if dead_letter_reason.is_some()
+        || dead_letter_error_description.is_some()
+        || properties_to_modify.is_some()
+    {
+        let condition = ErrorCondition::Custom(Symbol::from(DEAD_LETTER_NAME));
+        let mut info = None;
+
+        if let Some(reason) = dead_letter_reason {
+            info.get_or_insert(Fields::default())
+                .insert(DEAD_LETTER_REASON_HEADER.into(), reason.into());
+        }
+
+        if let Some(description) = dead_letter_error_description {
+            info.get_or_insert(Fields::default()).insert(
+                DEAD_LETTER_ERROR_DESCRIPTION_HEADER.into(),
+                description.into(),
+            );
+        }
+
+        if let Some(properties_to_modify) = properties_to_modify {
+            for (k, v) in properties_to_modify {
+                info.get_or_insert(Fields::default()).insert(k, v);
+            }
+        }
+
+        error = Some(fe2o3_amqp::types::definitions::Error::new(
+            condition, None, info,
+        ))
+    }
+    receiver.reject(message, error).await?;
+    Ok(())
 }

@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use fe2o3_amqp::link::delivery::DeliveryInfo;
 use fe2o3_amqp_types::{definitions::SequenceNo, primitives::OrderedMap};
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
@@ -70,8 +69,10 @@ pub trait TransportReceiver {
     /// </remarks>
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
-    async fn complete(&mut self, delivery_info: DeliveryInfo)
-        -> Result<(), Self::DispositionError>;
+    async fn complete(
+        &mut self,
+        message: &ServiceBusReceivedMessage,
+    ) -> Result<(), Self::DispositionError>;
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
     ///
@@ -91,7 +92,7 @@ pub trait TransportReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn defer(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError>;
 
@@ -133,7 +134,7 @@ pub trait TransportReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn abandon(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError>;
 
@@ -158,7 +159,7 @@ pub trait TransportReceiver {
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn dead_letter(
         &mut self,
-        delivery_info: DeliveryInfo,
+        message: &ServiceBusReceivedMessage,
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
