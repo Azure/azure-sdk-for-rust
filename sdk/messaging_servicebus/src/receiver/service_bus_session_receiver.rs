@@ -69,9 +69,8 @@ where
 
     pub async fn complete_message(
         &mut self,
-        message: impl Into<DeliveryInfo>,
+        message: &ServiceBusReceivedMessage,
     ) -> Result<(), R::DispositionError> {
-        let delivery_info = message.into();
-        self.inner.complete(delivery_info).await
+        self.inner.complete(message).await
     }
 }

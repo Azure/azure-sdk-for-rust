@@ -79,7 +79,7 @@ async fn client_receive_messages(total: u32, options: ServiceBusReceiverOptions)
     assert_eq!(messages.len(), total as usize);
 
     for message in messages {
-        receiver.complete_message(message).await.unwrap();
+        receiver.complete_message(&message).await.unwrap();
     }
 
     receiver.dispose().await.unwrap();
@@ -105,7 +105,7 @@ async fn client_recv_from_session(
     assert_eq!(messages.len(), total as usize);
 
     for message in messages {
-        receiver.complete_message(message).await.unwrap();
+        receiver.complete_message(&message).await.unwrap();
     }
 
     receiver.dispose().await.unwrap();

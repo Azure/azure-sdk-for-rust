@@ -6,7 +6,7 @@ use fe2o3_amqp::{
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ErrorCondition, Fields, SequenceNo},
-    messaging::Body,
+    messaging::{Body, Modified},
     primitives::{OrderedMap, Symbol},
 };
 use serde_amqp::Value;
@@ -117,7 +117,7 @@ where
     /// </summary>
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn close(self) -> Result<(), Self::CloseError> {
+    async fn close(mut self) -> Result<(), Self::CloseError> {
         self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
         self.receiver.close().await?;
         self.management_client.close().await?;
@@ -172,9 +172,18 @@ where
     async fn defer(
         &mut self,
         message: &ServiceBusReceivedMessage,
-        _properties_to_modify: Option<OrderedMap<String, Value>>,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        let receiver = &mut self.receiver;
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+        run_operation!(
+            policy,
+            RP,
+            AmqpDispositionError,
+            try_timeout,
+            defer_message(receiver, message, &properties_to_modify).await
+        )
     }
 
     /// <summary>
@@ -218,9 +227,18 @@ where
     async fn abandon(
         &mut self,
         message: &ServiceBusReceivedMessage,
-        _properties_to_modify: Option<OrderedMap<String, Value>>,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        let receiver = &mut self.receiver;
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+        run_operation!(
+            policy,
+            RP,
+            AmqpDispositionError,
+            try_timeout,
+            abandon_message(receiver, message, &properties_to_modify).await
+        )
     }
 
     /// <summary>
@@ -252,12 +270,6 @@ where
         let receiver = &mut self.receiver;
         let policy = &self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
-        let properties_to_modify = properties_to_modify.map(|fields| {
-            fields
-                .into_iter()
-                .map(|(k, v)| (Symbol::from(k), v))
-                .collect()
-        });
         run_operation!(
             policy,
             RP,
@@ -266,9 +278,9 @@ where
             dead_letter_message(
                 receiver,
                 message,
-                dead_letter_reason,
-                dead_letter_error_description,
-                properties_to_modify
+                &dead_letter_reason,
+                &dead_letter_error_description,
+                &properties_to_modify
             )
             .await
         )
@@ -410,12 +422,22 @@ async fn receive_messages_with_timeout(
     }
 }
 
+// TODO: reduce clone
+fn map_properties_to_modify_into_fields(
+    properties_to_modify: &OrderedMap<String, Value>,
+) -> Fields {
+    properties_to_modify
+        .iter()
+        .map(|(k, v)| (Symbol::from(k.as_str()), v.clone()))
+        .collect()
+}
+
 async fn dead_letter_message(
     receiver: &mut fe2o3_amqp::Receiver,
     message: &ServiceBusReceivedMessage,
-    dead_letter_reason: Option<String>,
-    dead_letter_error_description: Option<String>,
-    properties_to_modify: Option<Fields>,
+    dead_letter_reason: &Option<String>,
+    dead_letter_error_description: &Option<String>,
+    properties_to_modify: &Option<OrderedMap<String, Value>>,
 ) -> Result<(), AmqpDispositionError> {
     let mut error = None;
     if dead_letter_reason.is_some()
@@ -426,20 +448,23 @@ async fn dead_letter_message(
         let mut info = None;
 
         if let Some(reason) = dead_letter_reason {
-            info.get_or_insert(Fields::default())
-                .insert(DEAD_LETTER_REASON_HEADER.into(), reason.into());
+            info.get_or_insert(Fields::default()).insert(
+                DEAD_LETTER_REASON_HEADER.into(),
+                Value::from(reason.as_str()),
+            );
         }
 
         if let Some(description) = dead_letter_error_description {
             info.get_or_insert(Fields::default()).insert(
                 DEAD_LETTER_ERROR_DESCRIPTION_HEADER.into(),
-                description.into(),
+                Value::from(description.as_str()),
             );
         }
 
         if let Some(properties_to_modify) = properties_to_modify {
             for (k, v) in properties_to_modify {
-                info.get_or_insert(Fields::default()).insert(k, v);
+                info.get_or_insert(Fields::default())
+                    .insert(Symbol::from(k.as_str()), v.clone()); // TODO: reduce cloning
             }
         }
 
@@ -448,5 +473,39 @@ async fn dead_letter_message(
         ))
     }
     receiver.reject(message, error).await?;
+    Ok(())
+}
+
+async fn abandon_message(
+    receiver: &mut Receiver,
+    message: &ServiceBusReceivedMessage,
+    properties_to_modify: &Option<OrderedMap<String, Value>>,
+) -> Result<(), AmqpDispositionError> {
+    let modifiedd = Modified {
+        delivery_failed: None,
+        undeliverable_here: None,
+        message_annotations: properties_to_modify
+            .as_ref()
+            .map(map_properties_to_modify_into_fields),
+    };
+
+    receiver.modify(message, modifiedd).await?;
+    Ok(())
+}
+
+async fn defer_message(
+    receiver: &mut Receiver,
+    message: &ServiceBusReceivedMessage,
+    properties_to_modify: &Option<OrderedMap<String, Value>>,
+) -> Result<(), AmqpDispositionError> {
+    let modifiedd = Modified {
+        delivery_failed: None,
+        undeliverable_here: Some(true),
+        message_annotations: properties_to_modify
+            .as_ref()
+            .map(map_properties_to_modify_into_fields),
+    };
+
+    receiver.modify(message, modifiedd).await?;
     Ok(())
 }
