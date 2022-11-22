@@ -96,18 +96,8 @@ pub trait TransportClient: Sized {
         identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
+        session_id: Option<String>,
         prefetch_count: u32,
-        is_processor: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>>;
-
-    fn create_session_receiver(
-        &mut self,
-        entity_path: String,
-        identifier: String,
-        retry_options: ServiceBusRetryOptions,
-        receive_mode: ServiceBusReceiveMode,
-        prefetch_count: u32,
-        session_id: String,
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>>;
 

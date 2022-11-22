@@ -21,10 +21,7 @@ use crate::{
         service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    receiver::{
-        service_bus_receive_mode::ServiceBusReceiveMode,
-        service_bus_session_receiver::IsSessionReceiver,
-    },
+    receiver::service_bus_receive_mode::ServiceBusReceiveMode,
 };
 
 use super::{
@@ -261,6 +258,7 @@ where
         identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
+        session_id: Option<String>,
         prefetch_count: u32,
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
@@ -271,7 +269,7 @@ where
                     &entity_path,
                     &identifier,
                     &receive_mode,
-                    IsSessionReceiver::False,
+                    session_id,
                     prefetch_count,
                 )
                 .await?;
@@ -280,46 +278,6 @@ where
                 .open_management_link(&entity_path, &identifier)
                 .await?;
             let retry_policy = RP::new(retry_options);
-            Ok(AmqpReceiver {
-                identifier: link_identifier,
-                retry_policy,
-                receiver,
-                receive_mode,
-                is_processor,
-                prefetch_count,
-                management_client,
-                request_response_locked_messages: Default::default(),
-                last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
-            })
-        })
-    }
-
-    fn create_session_receiver(
-        &mut self,
-        entity_path: String,
-        identifier: String,
-        retry_policy: ServiceBusRetryOptions,
-        receive_mode: ServiceBusReceiveMode,
-        prefetch_count: u32,
-        session_id: String,
-        is_processor: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
-        Box::pin(async move {
-            let (link_identifier, receiver) = self
-                .connection_scope
-                .open_receiver_link(
-                    &entity_path,
-                    &identifier,
-                    &receive_mode,
-                    IsSessionReceiver::True(session_id),
-                    prefetch_count,
-                )
-                .await?;
-            let management_client = self
-                .connection_scope
-                .open_management_link(&entity_path, &identifier)
-                .await?;
-            let retry_policy = RP::new(retry_policy);
             Ok(AmqpReceiver {
                 identifier: link_identifier,
                 retry_policy,

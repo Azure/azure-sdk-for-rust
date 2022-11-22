@@ -44,33 +44,6 @@ impl ScheduledBatchEnvelope {
         map
     }
 
-    pub(crate) fn clone_into_ordered_map(&self) -> OrderedMap<String, Value> {
-        let mut map = OrderedMap::with_capacity(5);
-        map.insert(
-            MESSAGE_ID.into(),
-            self.message_id
-                .as_ref()
-                .map(Clone::clone)
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        );
-        if let Some(session_id) = &self.session_id {
-            map.insert(SESSION_ID.into(), session_id.clone().into());
-        }
-        if let Some(partition_key) = &self.partition_key {
-            map.insert(PARTITION_KEY.into(), partition_key.clone().into());
-        }
-        if let Some(via_partition_key) = &self.via_partition_key {
-            map.insert(VIA_PARTITION_KEY.into(), via_partition_key.clone().into());
-        }
-
-        map.insert(
-            MESSAGE.into(),
-            Value::Binary(Binary::from(self.batch_envelope_bytes.clone())),
-        );
-        map
-    }
-
     pub(crate) fn from_amqp_message(
         message: Message<Data>,
     ) -> Result<Option<Self>, serde_amqp::Error> {

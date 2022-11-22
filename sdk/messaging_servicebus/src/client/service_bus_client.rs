@@ -24,10 +24,7 @@ use crate::{
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
 
-use super::{
-    service_bus_client_options::ServiceBusClientOptions,
-    service_bus_transport_metrics::ServiceBusTransportMetrics, Error,
-};
+use super::{service_bus_client_options::ServiceBusClientOptions, Error};
 
 /// The [`ServiceBusClient`] is the top-level client through which all Service Bus entities can be
 /// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
@@ -109,17 +106,17 @@ where
         &self.connection.transport_type()
     }
 
-    /// <summary>
-    /// Gets the metrics associated with this <see cref="ServiceBusClient"/> instance. The metrics returned represent a snapshot and will not be updated.
-    /// To get updated metrics, this method should be called again.
-    /// In order to use this property, <see cref="ServiceBusClientOptions.EnableTransportMetrics"/> must be set to <value>true</value>.
-    /// </summary>
-    // internal virtual ServiceBusTransportMetrics GetTransportMetrics()
-    //     => Connection.InnerClient.TransportMetrics?.Clone() ??
-    //         throw new InvalidOperationException("Transport metrics are not enabled. To enable transport metrics, set the EnableTransportMetrics property on the ServiceBusClientOptions.");
-    pub(crate) fn transport_metrics(&self) -> Option<ServiceBusTransportMetrics> {
-        todo!()
-    }
+    // /// <summary>
+    // /// Gets the metrics associated with this <see cref="ServiceBusClient"/> instance. The metrics returned represent a snapshot and will not be updated.
+    // /// To get updated metrics, this method should be called again.
+    // /// In order to use this property, <see cref="ServiceBusClientOptions.EnableTransportMetrics"/> must be set to <value>true</value>.
+    // /// </summary>
+    // // internal virtual ServiceBusTransportMetrics GetTransportMetrics()
+    // //     => Connection.InnerClient.TransportMetrics?.Clone() ??
+    // //         throw new InvalidOperationException("Transport metrics are not enabled. To enable transport metrics, set the EnableTransportMetrics property on the ServiceBusClientOptions.");
+    // pub(crate) fn transport_metrics(&self) -> Option<ServiceBusTransportMetrics> {
+    //     todo!()
+    // }
 }
 
 impl ServiceBusClient<()> {
@@ -281,11 +278,11 @@ where
             )
             .await?;
 
-        Ok(ServiceBusSessionReceiver {
+        let inner = ServiceBusReceiver {
             inner,
             entity_path,
             identifier,
-            session_id,
-        })
+        };
+        Ok(ServiceBusSessionReceiver { inner, session_id })
     }
 }

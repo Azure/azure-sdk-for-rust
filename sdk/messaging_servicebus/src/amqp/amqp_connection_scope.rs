@@ -29,7 +29,6 @@ use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
     primitives::service_bus_transport_type::ServiceBusTransportType,
-    receiver::service_bus_session_receiver::IsSessionReceiver,
     ServiceBusReceiveMode,
 };
 
@@ -455,7 +454,7 @@ where
         entity_path: &str,
         identifier: &str,
         receive_mode: &ServiceBusReceiveMode,
-        is_session_receiver: IsSessionReceiver,
+        session_id: Option<String>,
         prefetch_count: u32,
     ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
         if self.is_disposed {
@@ -470,9 +469,8 @@ where
             .request_authorization_using_cbs(&endpoint, &audience, &required_claims)
             .await?;
 
-        let filter_set = match is_session_receiver {
-            IsSessionReceiver::False => FilterSet::with_capacity(0),
-            IsSessionReceiver::True(session_id) => {
+        let filter_set = match session_id {
+            Some(session_id) => {
                 let mut filter_set = FilterSet::with_capacity(1);
                 filter_set.insert(
                     Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
@@ -480,6 +478,7 @@ where
                 );
                 filter_set
             }
+            None => FilterSet::with_capacity(0),
         };
 
         // linkSettings.LinkName = $"{connection.Settings.ContainerId};{connection.Identifier}:{session.Identifier}:{link.Identifier}:{linkSettings.Source.ToString()}";

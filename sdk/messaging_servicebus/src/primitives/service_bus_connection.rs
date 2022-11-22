@@ -250,6 +250,7 @@ where
                 identifier,
                 retry_options,
                 receive_mode,
+                None,
                 prefetch_count,
                 is_processor,
             )
@@ -270,13 +271,13 @@ where
     ) -> Result<C::Receiver, C::CreateReceiverError> {
         let receiver = self
             .inner_client
-            .create_session_receiver(
+            .create_receiver(
                 entity_path,
                 identifier,
                 retry_options,
                 receive_mode,
+                Some(session_id),
                 prefetch_count,
-                session_id,
                 is_processor,
             )
             .await?;
