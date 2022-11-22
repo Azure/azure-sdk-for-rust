@@ -3,7 +3,6 @@ use fe2o3_amqp_types::{definitions::SequenceNo, primitives::OrderedMap};
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
 
@@ -226,6 +225,6 @@ pub trait TransportReceiver {
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn renew_message_lock(
         &mut self,
-        lock_token: impl AsRef<Uuid> + Send,
+        lock_token: impl AsRef<fe2o3_amqp::types::primitives::Uuid> + Send,
     ) -> Result<OffsetDateTime, Self::RequestResponseError>;
 }

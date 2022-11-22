@@ -287,6 +287,7 @@ where
                 is_processor,
                 prefetch_count,
                 management_client,
+                request_response_locked_messages: Default::default(),
             })
         })
     }
@@ -325,6 +326,7 @@ where
                 is_processor,
                 prefetch_count,
                 management_client,
+                request_response_locked_messages: Default::default(),
             })
         })
     }

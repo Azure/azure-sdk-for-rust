@@ -7,12 +7,11 @@ use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ErrorCondition, Fields, ReceiverSettleMode, SequenceNo},
     messaging::{Body, Modified},
-    primitives::{Array, OrderedMap, Symbol},
+    primitives::{Array, OrderedMap, Symbol, Uuid},
 };
 use serde_amqp::Value;
-use std::time::Duration as StdDuration;
+use std::{collections::HashSet, time::Duration as StdDuration};
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 use crate::{
     core::TransportReceiver,
@@ -28,7 +27,10 @@ use crate::{
 use super::{
     amqp_client_constants::DEAD_LETTER_NAME,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
-    amqp_request_message::receive_by_sequence_number::ReceiveBySequenceNumberRequest,
+    amqp_request_message::{
+        receive_by_sequence_number::ReceiveBySequenceNumberRequest,
+        update_disposition::{DispositionStatus, UpdateDispositionRequest},
+    },
     amqp_response_message::receive_by_sequence_number::ReceiveBySequenceNumberResponse,
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
@@ -41,6 +43,7 @@ pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) receive_mode: ServiceBusReceiveMode,
     pub(crate) is_processor: bool,
     pub(crate) management_client: MgmtClient,
+    pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,
 }
 
 impl<RP> AmqpReceiver<RP> where RP: ServiceBusRetryPolicy {}
@@ -123,13 +126,35 @@ where
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
-        run_operation!(
-            policy,
-            RP,
-            AmqpDispositionError,
-            try_timeout,
-            complete_message(receiver, message).await
-        )
+
+        match &message.lock_token {
+            ReceivedMessageLockToken::LockToken(lock_token) => {
+                if self.request_response_locked_messages.remove(&lock_token) {
+                    let mgmt_client = &mut self.management_client;
+                    run_operation!(
+                        policy,
+                        RP,
+                        AmqpDispositionError,
+                        try_timeout,
+                        complete_message_via_management_client(
+                            mgmt_client,
+                            lock_token,
+                            &try_timeout
+                        )
+                        .await
+                    )?;
+                }
+            }
+            ReceivedMessageLockToken::Delivery(delivery_info) => run_operation!(
+                policy,
+                RP,
+                AmqpDispositionError,
+                try_timeout,
+                complete_message(receiver, delivery_info).await
+            )?,
+        };
+
+        Ok(())
     }
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
@@ -318,17 +343,6 @@ where
     }
 }
 
-async fn complete_message(
-    receiver: &mut fe2o3_amqp::Receiver,
-    message: &ServiceBusReceivedMessage,
-) -> Result<(), AmqpDispositionError> {
-    match ReceivedMessageLockToken::from(message) {
-        ReceivedMessageLockToken::LockToken(_) => todo!(),
-        ReceivedMessageLockToken::Delivery(delivery_info) => receiver.accept(delivery_info).await?,
-    }
-    Ok(())
-}
-
 async fn receive_messages(
     receiver: &mut Receiver,
     prefetch_count: u32,
@@ -388,6 +402,33 @@ async fn receive_messages_with_timeout(
             Ok(message_buffer)
         }
     }
+}
+
+async fn complete_message(
+    receiver: &mut fe2o3_amqp::Receiver,
+    delivery_info: &DeliveryInfo,
+) -> Result<(), AmqpDispositionError> {
+    // TODO: avoid clone
+    receiver.accept(delivery_info.clone()).await?;
+    Ok(())
+}
+
+async fn complete_message_via_management_client(
+    mgmt_client: &mut MgmtClient,
+    lock_token: &Uuid,
+    try_timeout: &StdDuration,
+) -> Result<(), fe2o3_amqp_management::error::Error> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    let mut request = UpdateDispositionRequest::new(
+        DispositionStatus::Completed,
+        Array(vec![lock_token.clone()]), // TODO: reduce clone
+        None,
+        None,
+        None,
+    );
+    request.set_server_timeout(Some(server_timeout));
+    let _response = mgmt_client.call(&request).await?;
+    Ok(())
 }
 
 // TODO: reduce clone

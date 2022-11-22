@@ -161,15 +161,19 @@ pub enum AmqpDispositionError {
     IllegalState(#[from] IllegalLinkStateError),
 
     #[error(transparent)]
+    RequestResponse(#[from] ManagementError),
+
+    #[error(transparent)]
     Elapsed(#[from] Elapsed),
 }
 
 impl ServiceBusRetryPolicyError for AmqpDispositionError {
     fn is_scope_disposed(&self) -> bool {
-        matches!(
-            self,
-            Self::IllegalState(IllegalLinkStateError::IllegalSessionState)
-        )
+        match self {
+            Self::IllegalState(IllegalLinkStateError::IllegalSessionState) => true,
+            Self::RequestResponse(err) => err.is_scope_disposed(),
+            _ => false,
+        }
     }
 }
 
