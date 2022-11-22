@@ -57,28 +57,35 @@ where
 
     pub async fn abandon_message(
         &mut self,
-        _message: &ServiceBusReceivedMessage,
-        _properties_to_modify: Option<OrderedMap<String, Value>>,
-    ) -> Result<(), ()> {
-        todo!()
+        message: &ServiceBusReceivedMessage,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), R::DispositionError> {
+        self.inner.abandon(message, properties_to_modify).await
     }
 
     pub async fn dead_letter_message(
         &mut self,
-        _message: &ServiceBusReceivedMessage,
-        _properties_to_modify: Option<OrderedMap<String, Value>>,
-        _dead_letter_reason: Option<String>,
-        _dead_letter_error_description: Option<String>,
-    ) -> Result<(), ()> {
-        todo!()
+        message: &ServiceBusReceivedMessage,
+        dead_letter_reason: Option<String>,
+        dead_letter_error_description: Option<String>,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), R::DispositionError> {
+        self.inner
+            .dead_letter(
+                message,
+                dead_letter_reason,
+                dead_letter_error_description,
+                properties_to_modify,
+            )
+            .await
     }
 
     pub async fn defer_message(
         &mut self,
-        _message: &ServiceBusReceivedMessage,
-        _properties_to_modify: Option<OrderedMap<String, Value>>,
-    ) -> Result<(), ()> {
-        todo!()
+        message: &ServiceBusReceivedMessage,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+    ) -> Result<(), R::DispositionError> {
+        self.inner.defer(message, properties_to_modify).await
     }
 
     pub async fn peek_message(&mut self, _from_sequence_number: Option<i64>) {
