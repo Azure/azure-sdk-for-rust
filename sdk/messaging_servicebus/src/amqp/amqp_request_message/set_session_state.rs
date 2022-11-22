@@ -1,5 +1,5 @@
 use fe2o3_amqp_management::request::Request;
-use fe2o3_amqp_types::primitives::{Array, OrderedMap};
+use fe2o3_amqp_types::primitives::{Array, Binary, OrderedMap};
 use serde_amqp::Value;
 
 use crate::amqp::{
@@ -18,7 +18,7 @@ pub(crate) struct SetSessionStateRequest {
 }
 
 impl SetSessionStateRequest {
-    pub fn new(session_id: String, session_state: Array<u8>) -> Self {
+    pub fn new(session_id: String, session_state: Binary) -> Self {
         let mut body = OrderedMap::new();
         body.insert(SESSION_ID.into(), session_id.into());
         body.insert(SESSION_STATE.into(), session_state.into());

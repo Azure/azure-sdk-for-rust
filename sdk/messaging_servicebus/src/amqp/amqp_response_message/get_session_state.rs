@@ -1,12 +1,12 @@
 use fe2o3_amqp_management::{error::InvalidType, response::Response};
-use fe2o3_amqp_types::primitives::{Array, OrderedMap};
+use fe2o3_amqp_types::primitives::{Binary, OrderedMap};
 
 use crate::amqp::management_constants::properties::SESSION_STATE;
 
-type GetSessionStateResponseBody = OrderedMap<String, Array<u8>>;
+type GetSessionStateResponseBody = OrderedMap<String, Binary>;
 
 pub(crate) struct GetSessionStateResponse {
-    pub session_state: Array<u8>,
+    pub session_state: Binary,
 }
 
 impl GetSessionStateResponse {
@@ -14,7 +14,7 @@ impl GetSessionStateResponse {
         &self.session_state
     }
 
-    pub fn into_session_state(self) -> Array<u8> {
+    pub fn into_session_state(self) -> Binary {
         self.session_state
     }
 }

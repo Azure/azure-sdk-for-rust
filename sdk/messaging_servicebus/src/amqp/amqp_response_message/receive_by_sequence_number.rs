@@ -1,7 +1,7 @@
 use fe2o3_amqp_management::{error::InvalidType, response::Response};
 use fe2o3_amqp_types::{
     messaging::{message::__private::Deserializable, Body, Message},
-    primitives::{OrderedMap, Uuid},
+    primitives::{Binary, OrderedMap, Uuid},
 };
 use serde_amqp::Value;
 
@@ -17,7 +17,7 @@ type ListOfDeferredMessages = Vec<DeferredMessage>;
 type ReceiveBySequenceNumberResponseBody = OrderedMap<String, ListOfDeferredMessages>;
 
 pub struct ReceiveBySequenceNumberResponse {
-    pub deferred_messages: Vec<(Uuid, Vec<u8>)>,
+    pub deferred_messages: Vec<(Uuid, Binary)>,
 }
 
 impl ReceiveBySequenceNumberResponse {
@@ -59,7 +59,7 @@ impl Response for ReceiveBySequenceNumberResponse {
             .into_iter()
             .map(|mut map| {
                 let uuid = map.remove(LOCK_TOKEN).map(Uuid::try_from);
-                let message = map.remove(MESSAGE).map(Vec::<u8>::try_from);
+                let message = map.remove(MESSAGE).map(Binary::try_from);
                 match (uuid, message) {
                     (Some(Ok(uuid)), Some(Ok(message))) => Some((uuid, message)),
                     _ => None,
