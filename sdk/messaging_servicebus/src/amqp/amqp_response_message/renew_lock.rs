@@ -9,7 +9,7 @@ pub struct RenewLockResponse {
 impl Response for RenewLockResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = Array<Timestamp>;
+    type Body = Option<Array<Timestamp>>;
 
     type Error = ManagementError;
 
@@ -17,7 +17,7 @@ impl Response for RenewLockResponse {
         message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
         Ok(Self {
-            expirations: message.body,
+            expirations: message.body.ok_or(ManagementError::DecodeError(None))?,
         })
     }
 }

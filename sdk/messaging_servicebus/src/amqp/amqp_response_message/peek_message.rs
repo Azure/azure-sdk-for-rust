@@ -56,7 +56,7 @@ impl PeekMessageResponse {
 impl Response for PeekMessageResponse {
     const STATUS_CODE: u16 = super::HTTP_STATUS_CODE_OK; //
 
-    type Body = PeekMessageResponseBody;
+    type Body = Option<PeekMessageResponseBody>;
 
     type Error = ManagementError;
 
@@ -77,7 +77,8 @@ impl Response for PeekMessageResponse {
             _ => unreachable!(),
         };
 
-        let messages = get_messages_from_body(message.body)
+        let body = message.body.ok_or(Self::Error::DecodeError(None))?;
+        let messages = get_messages_from_body(body)
             .ok_or_else(|| InvalidType {
                 expected: MESSAGES.to_string(),
                 actual: "None".to_string(),

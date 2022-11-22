@@ -1,5 +1,5 @@
 use fe2o3_amqp_management::request::Request;
-use fe2o3_amqp_types::primitives::{Array, Binary, OrderedMap};
+use fe2o3_amqp_types::primitives::{Binary, OrderedMap};
 use serde_amqp::Value;
 
 use crate::amqp::{

@@ -18,7 +18,7 @@ impl PeekSessionMessageResponse {
 impl Response for PeekSessionMessageResponse {
     const STATUS_CODE: u16 = super::HTTP_STATUS_CODE_OK;
 
-    type Body = PeekSessionMessageResponseBody;
+    type Body = Option<PeekSessionMessageResponseBody>;
 
     type Error = super::ManagementError;
 
@@ -39,7 +39,8 @@ impl Response for PeekSessionMessageResponse {
             _ => unreachable!(),
         };
 
-        let messages = super::peek_message::get_messages_from_body(message.body)
+        let body = message.body.ok_or(Self::Error::DecodeError(None))?;
+        let messages = super::peek_message::get_messages_from_body(body)
             .ok_or_else(|| super::InvalidType {
                 expected: MESSAGES.to_string(),
                 actual: "None".to_string(),

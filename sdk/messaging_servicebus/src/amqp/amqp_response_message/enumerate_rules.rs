@@ -15,13 +15,15 @@ pub(crate) struct EnumerateRulesResponse {
 impl Response for EnumerateRulesResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = EnumerateRulesResponseBody;
+    type Body = Option<EnumerateRulesResponseBody>;
 
     type Error = super::ManagementError;
 
     fn decode_message(
         message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
-        Ok(Self { body: message.body })
+        Ok(Self {
+            body: message.body.ok_or(Self::Error::DecodeError(None))?,
+        })
     }
 }

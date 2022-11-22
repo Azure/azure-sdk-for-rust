@@ -22,15 +22,16 @@ impl GetSessionStateResponse {
 impl Response for GetSessionStateResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = GetSessionStateResponseBody;
+    type Body = Option<GetSessionStateResponseBody>;
 
     type Error = super::ManagementError;
 
     fn decode_message(
-        mut message: fe2o3_amqp_types::messaging::Message<Self::Body>,
+        message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
         let session_state = message
             .body
+            .ok_or(Self::Error::DecodeError(None))?
             .remove(SESSION_STATE)
             .ok_or_else(|| InvalidType {
                 expected: SESSION_STATE.to_string(),

@@ -17,15 +17,16 @@ impl ScheduleMessageResponse {
 impl Response for ScheduleMessageResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = OrderedMap<String, Array<i64>>;
+    type Body = Option<OrderedMap<String, Array<i64>>>;
 
     type Error = ManagementError;
 
     fn decode_message(
-        mut message: fe2o3_amqp_types::messaging::Message<Self::Body>,
+        message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
         let sequence_numbers = message
             .body
+            .ok_or(ManagementError::DecodeError(None))?
             .remove(SEQUENCE_NUMBERS)
             .ok_or_else(|| fe2o3_amqp_management::error::InvalidType {
                 expected: SEQUENCE_NUMBERS.to_string(),

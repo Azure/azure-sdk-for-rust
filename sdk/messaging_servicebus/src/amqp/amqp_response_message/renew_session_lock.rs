@@ -20,7 +20,7 @@ impl RenewSessionLockResponse {
 impl Response for RenewSessionLockResponse {
     const STATUS_CODE: u16 = super::HTTP_STATUS_CODE_OK; // This will be ignored
 
-    type Body = RenewSessionLockResponseBody;
+    type Body = Option<RenewSessionLockResponseBody>;
 
     type Error = ManagementError;
 
@@ -41,12 +41,13 @@ impl Response for RenewSessionLockResponse {
             _ => unreachable!(),
         };
 
-        let expiration = message.body.remove(EXPIRATION).ok_or_else(|| {
-            fe2o3_amqp_management::error::InvalidType {
-                expected: EXPIRATION.to_string(),
-                actual: "None".to_string(),
-            }
-        })?;
+        let mut body = message.body.ok_or(Self::Error::DecodeError(None))?;
+        let expiration =
+            body.remove(EXPIRATION)
+                .ok_or_else(|| fe2o3_amqp_management::error::InvalidType {
+                    expected: EXPIRATION.to_string(),
+                    actual: "None".to_string(),
+                })?;
 
         Ok(Self {
             has_more_messages,

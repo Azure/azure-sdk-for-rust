@@ -274,6 +274,34 @@ async fn peek_one_message() -> Option<ServiceBusPeekedMessage> {
     message
 }
 
+async fn defer_and_then_receive_one_message() {
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .create_receiver(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = receiver.receive_message().await.unwrap().unwrap();
+    let seq = message.sequence_number();
+    receiver.defer_message(&message, None).await.unwrap();
+
+    let deferred = receiver
+        .receive_deferred_message(seq)
+        .await
+        .unwrap()
+        .unwrap();
+
+    receiver.complete_message(&deferred).await.unwrap();
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
 #[test]
 fn hello_world() {
     setup_dotenv();
@@ -419,4 +447,10 @@ async fn test_send_and_peek_one_message() {
     client_send_single_message(Default::default()).await;
     let peeked = peek_one_message().await;
     assert!(peeked.is_some());
+}
+
+#[tokio::test]
+async fn test_defer_and_receive_deferred_message() {
+    client_send_single_message(Default::default()).await;
+    defer_and_then_receive_one_message().await;
 }

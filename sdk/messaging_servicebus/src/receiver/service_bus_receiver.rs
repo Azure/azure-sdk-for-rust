@@ -128,7 +128,7 @@ where
 
     pub async fn renew_message_lock(
         &mut self,
-        message: &ServiceBusReceivedMessage,
+        _message: &ServiceBusReceivedMessage,
     ) -> Result<OffsetDateTime, R::RequestResponseError> {
         // TODO: what if lock token is None?
         todo!()

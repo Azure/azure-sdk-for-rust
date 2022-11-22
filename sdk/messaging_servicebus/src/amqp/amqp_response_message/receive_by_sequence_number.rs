@@ -43,17 +43,21 @@ impl ReceiveBySequenceNumberResponse {
 impl Response for ReceiveBySequenceNumberResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = ReceiveBySequenceNumberResponseBody;
+    type Body = Option<ReceiveBySequenceNumberResponseBody>;
 
     type Error = super::ManagementError;
 
     fn decode_message(
-        mut message: fe2o3_amqp_types::messaging::Message<Self::Body>,
+        message: fe2o3_amqp_types::messaging::Message<Self::Body>,
     ) -> Result<Self, Self::Error> {
-        let messages = message.body.remove(MESSAGES).ok_or_else(|| InvalidType {
-            expected: MESSAGES.into(),
-            actual: "None".into(),
-        })?;
+        let messages = message
+            .body
+            .ok_or(super::ManagementError::DecodeError(None))?
+            .remove(MESSAGES)
+            .ok_or_else(|| InvalidType {
+                expected: MESSAGES.into(),
+                actual: "None".into(),
+            })?;
 
         let deferred_messages = messages
             .into_iter()
