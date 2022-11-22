@@ -278,11 +278,11 @@ where
             )
             .await?;
 
-        let inner = ServiceBusReceiver {
+        Ok(ServiceBusSessionReceiver {
             inner,
             entity_path,
             identifier,
-        };
-        Ok(ServiceBusSessionReceiver { inner, session_id })
+            session_id,
+        })
     }
 }

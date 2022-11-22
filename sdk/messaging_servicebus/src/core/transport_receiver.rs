@@ -113,6 +113,7 @@ pub trait TransportReceiver {
     async fn complete(
         &mut self,
         message: &ServiceBusReceivedMessage,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
@@ -135,6 +136,7 @@ pub trait TransportReceiver {
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
@@ -177,6 +179,7 @@ pub trait TransportReceiver {
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
@@ -204,6 +207,7 @@ pub trait TransportReceiver {
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
@@ -217,6 +221,7 @@ pub trait TransportReceiver {
     async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
+        session_id: Option<String>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError>;
 
     /// <summary>

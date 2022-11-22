@@ -1,7 +1,8 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    core::TransportReceiver, ServiceBusReceiveMode, ServiceBusReceiver, ServiceBusReceiverOptions,
+    core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
+    ServiceBusReceiveMode, ServiceBusReceiver, ServiceBusReceiverOptions,
 };
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -37,23 +38,10 @@ impl From<ServiceBusSessionReceiverOptions> for ServiceBusReceiverOptions {
 }
 
 pub struct ServiceBusSessionReceiver<R> {
-    pub(crate) inner: ServiceBusReceiver<R>,
+    pub(crate) inner: R,
+    pub(crate) entity_path: String,
+    pub(crate) identifier: String,
     pub(crate) session_id: String,
-}
-
-// Use `Deref` and `DerefMut` to avoid having to implement all the methods of `ServiceBusReceiver` on `ServiceBusSessionReceiver`.
-impl<R> Deref for ServiceBusSessionReceiver<R> {
-    type Target = ServiceBusReceiver<R>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<R> DerefMut for ServiceBusSessionReceiver<R> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
 }
 
 impl<R> ServiceBusSessionReceiver<R>
@@ -61,6 +49,34 @@ where
     R: TransportReceiver,
 {
     pub async fn dispose(self) -> Result<(), R::CloseError> {
-        self.inner.dispose().await
+        self.inner.close().await
+    }
+
+    /// Receive a single message from the entity.
+    pub async fn receive_message(
+        &mut self,
+    ) -> Result<Option<ServiceBusReceivedMessage>, R::ReceiveError> {
+        self.receive_messages(1, None)
+            .await
+            .map(|mut v| v.drain(..).next())
+    }
+
+    pub async fn receive_messages(
+        &mut self,
+        max_messages: u32,
+        max_wait_time: Option<std::time::Duration>,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
+        self.inner
+            .receive_messages(max_messages, max_wait_time)
+            .await
+    }
+
+    pub async fn complete_message(
+        &mut self,
+        message: &ServiceBusReceivedMessage,
+    ) -> Result<(), R::DispositionError> {
+        self.inner
+            .complete(message, Some(self.session_id.clone())) // TODO: avoid cloning
+            .await
     }
 }

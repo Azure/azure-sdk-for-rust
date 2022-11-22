@@ -9,7 +9,7 @@ use crate::amqp::{
     amqp_response_message::receive_by_sequence_number::ReceiveBySequenceNumberResponse,
     management_constants::{
         operations::RECEIVE_BY_SEQUENCE_NUMBER_OPERATION,
-        properties::{RECEIVER_SETTLE_MODE, SEQUENCE_NUMBERS},
+        properties::{RECEIVER_SETTLE_MODE, SEQUENCE_NUMBERS, SESSION_ID},
     },
 };
 
@@ -22,16 +22,20 @@ pub struct ReceiveBySequenceNumberRequest {
 
 impl ReceiveBySequenceNumberRequest {
     pub fn new(
-        sequence_numbers: impl Into<Array<i64>>,
+        sequence_numbers: impl Into<Vec<i64>>,
         receiver_settle_mode: ReceiverSettleMode,
+        session_id: Option<String>,
     ) -> Self {
         let sequence_numbers = sequence_numbers.into();
         let mut body = OrderedMap::new();
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers.into());
         body.insert(
             RECEIVER_SETTLE_MODE.into(),
-            Value::UByte(receiver_settle_mode.into()),
+            Value::UInt(u8::from(receiver_settle_mode) as u32),
         );
+        if let Some(session_id) = session_id {
+            body.insert(SESSION_ID.into(), session_id.into());
+        }
         Self {
             server_timeout: None,
             body,

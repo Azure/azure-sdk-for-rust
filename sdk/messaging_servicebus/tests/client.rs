@@ -274,7 +274,7 @@ async fn peek_one_message() -> Option<ServiceBusPeekedMessage> {
     message
 }
 
-async fn defer_and_then_receive_one_message() {
+async fn defer_one_message() -> i64 {
     setup_dotenv();
 
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -290,13 +290,51 @@ async fn defer_and_then_receive_one_message() {
     let seq = message.sequence_number();
     receiver.defer_message(&message, None).await.unwrap();
 
-    let deferred = receiver
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+
+    seq
+}
+
+async fn receive_one_deferred_message(seq: i64) {
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .create_receiver(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = receiver
         .receive_deferred_message(seq)
         .await
         .unwrap()
         .unwrap();
+    receiver.complete_message(&message).await.unwrap();
 
-    receiver.complete_message(&deferred).await.unwrap();
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+async fn receive_then_renew_lock() {
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .create_receiver(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = receiver.receive_message().await.unwrap().unwrap();
+    receiver.renew_message_lock(&message).await.unwrap();
+
+    receiver.complete_message(&message).await.unwrap();
 
     receiver.dispose().await.unwrap();
     client.dispose().await.unwrap();
@@ -450,7 +488,20 @@ async fn test_send_and_peek_one_message() {
 }
 
 #[tokio::test]
-async fn test_defer_and_receive_deferred_message() {
+async fn test_send_and_defer_one_message() {
     client_send_single_message(Default::default()).await;
-    defer_and_then_receive_one_message().await;
+    let _seq = defer_one_message().await;
+}
+
+#[tokio::test]
+async fn test_receive_deferred_message() {
+    client_send_single_message(Default::default()).await;
+    let seq = defer_one_message().await;
+    receive_one_deferred_message(seq).await; // FIXME: this line doesn't work now
+}
+
+#[tokio::test]
+async fn test_renew_message_lock() {
+    client_send_single_message(Default::default()).await;
+    receive_then_renew_lock().await;
 }

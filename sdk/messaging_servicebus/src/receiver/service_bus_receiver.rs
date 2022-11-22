@@ -54,7 +54,7 @@ where
         &mut self,
         message: &ServiceBusReceivedMessage,
     ) -> Result<(), R::DispositionError> {
-        self.inner.complete(message).await
+        self.inner.complete(message, None).await
     }
 
     pub async fn abandon_message(
@@ -62,7 +62,9 @@ where
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
-        self.inner.abandon(message, properties_to_modify).await
+        self.inner
+            .abandon(message, properties_to_modify, None)
+            .await
     }
 
     pub async fn dead_letter_message(
@@ -78,6 +80,7 @@ where
                 dead_letter_reason,
                 dead_letter_error_description,
                 properties_to_modify,
+                None,
             )
             .await
     }
@@ -87,7 +90,7 @@ where
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
-        self.inner.defer(message, properties_to_modify).await
+        self.inner.defer(message, properties_to_modify, None).await
     }
 
     pub async fn peek_message(
@@ -123,7 +126,9 @@ where
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
     ) -> Result<Vec<ServiceBusReceivedMessage>, R::RequestResponseError> {
-        self.inner.receive_deferred_messages(sequence_numbers).await
+        self.inner
+            .receive_deferred_messages(sequence_numbers, None)
+            .await
     }
 
     pub async fn renew_message_lock(

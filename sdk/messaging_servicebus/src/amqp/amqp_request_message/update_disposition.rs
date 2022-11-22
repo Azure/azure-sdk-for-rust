@@ -9,7 +9,7 @@ use crate::{
             operations::UPDATE_DISPOSITION_OPERATION,
             properties::{
                 DEAD_LETTER_DESCRIPTION, DEAD_LETTER_REASON, DISPOSITION_STATUS, LOCK_TOKENS,
-                PROPERTIES_TO_MODIFY,
+                PROPERTIES_TO_MODIFY, SESSION_ID,
             },
         },
     },
@@ -30,6 +30,7 @@ impl UpdateDispositionRequest {
         dead_letter_reason: Option<String>,
         dead_letter_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Self {
         let mut body = UpdateDispositionRequestBody::new();
         body.insert(DISPOSITION_STATUS.into(), disposition_status.into());
@@ -42,6 +43,9 @@ impl UpdateDispositionRequest {
         }
         if let Some(properties) = properties_to_modify {
             body.insert(PROPERTIES_TO_MODIFY.into(), properties.into());
+        }
+        if let Some(session_id) = session_id {
+            body.insert(SESSION_ID.into(), session_id.into());
         }
 
         Self {

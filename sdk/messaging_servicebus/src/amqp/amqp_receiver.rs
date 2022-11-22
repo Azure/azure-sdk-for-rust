@@ -130,6 +130,7 @@ where
     async fn complete(
         &mut self,
         message: &ServiceBusReceivedMessage,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError> {
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
@@ -144,6 +145,7 @@ where
                         None,
                         None,
                         None,
+                        session_id,
                     );
                     run_operation!(
                         policy,
@@ -191,6 +193,7 @@ where
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
@@ -206,6 +209,7 @@ where
                         None,
                         None,
                         properties_to_modify,
+                        session_id,
                     );
                     run_operation!(
                         policy,
@@ -298,6 +302,7 @@ where
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
@@ -313,6 +318,7 @@ where
                         None,
                         None,
                         properties_to_modify,
+                        session_id,
                     );
                     run_operation!(
                         policy,
@@ -363,6 +369,7 @@ where
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<String>,
     ) -> Result<(), Self::DispositionError> {
         let policy = &self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
@@ -377,6 +384,7 @@ where
                         dead_letter_reason,
                         dead_letter_error_description,
                         properties_to_modify,
+                        session_id,
                     );
                     run_operation!(
                         policy,
@@ -422,6 +430,7 @@ where
     async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
+        session_id: Option<String>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
         let sequence_numbers: Array<i64> = sequence_numbers.collect();
         let receiver_settle_mode = match self.receive_mode {
@@ -429,7 +438,7 @@ where
             ServiceBusReceiveMode::ReceiveAndDelete => ReceiverSettleMode::First,
         };
         let mut request =
-            ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode);
+            ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode, session_id);
 
         let mgmt_client = &mut self.management_client;
         let policy = &self.retry_policy;
