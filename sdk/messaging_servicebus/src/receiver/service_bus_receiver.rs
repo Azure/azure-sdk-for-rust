@@ -96,8 +96,21 @@ where
         todo!()
     }
 
-    pub async fn receive_deferred_message(&mut self, _sequence_number: i64) {
-        todo!()
+    /// TODO: should the return type be `Result<Option<_>>`?
+    pub async fn receive_deferred_message(
+        &mut self,
+        sequence_number: i64,
+    ) -> Result<Option<ServiceBusReceivedMessage>, R::RequestResponseError> {
+        self.receive_deferred_messages(std::iter::once(sequence_number))
+            .await
+            .map(|mut v| v.drain(..).next())
+    }
+
+    pub async fn receive_deferred_messages(
+        &mut self,
+        sequence_numbers: impl Iterator<Item = i64> + Send,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, R::RequestResponseError> {
+        self.inner.receive_deferred_messages(sequence_numbers).await
     }
 
     pub async fn renew_message_lock(&mut self, _message: &ServiceBusReceivedMessage) {
