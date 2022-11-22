@@ -432,7 +432,7 @@ where
         sequence_numbers: impl Iterator<Item = i64> + Send,
         session_id: Option<String>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
-        let sequence_numbers: Array<i64> = sequence_numbers.collect();
+        let sequence_numbers = sequence_numbers.collect();
         let receiver_settle_mode = match self.receive_mode {
             ServiceBusReceiveMode::PeekLock => ReceiverSettleMode::Second,
             ServiceBusReceiveMode::ReceiveAndDelete => ReceiverSettleMode::First,

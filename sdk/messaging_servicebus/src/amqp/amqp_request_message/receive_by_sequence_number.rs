@@ -22,11 +22,10 @@ pub struct ReceiveBySequenceNumberRequest {
 
 impl ReceiveBySequenceNumberRequest {
     pub fn new(
-        sequence_numbers: impl Into<Vec<i64>>,
+        sequence_numbers: Vec<i64>,
         receiver_settle_mode: ReceiverSettleMode,
         session_id: Option<String>,
     ) -> Self {
-        let sequence_numbers = sequence_numbers.into();
         let mut body = OrderedMap::new();
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers.into());
         body.insert(
