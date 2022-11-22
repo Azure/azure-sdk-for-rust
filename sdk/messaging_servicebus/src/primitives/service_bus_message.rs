@@ -63,7 +63,7 @@ impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
         // A raw AMQP message may be sent to a queue or topic.
         //
         // TODO: what about empty body?
-        match &received.delivery.body() {
+        match &received.raw_amqp_message.body {
             Body::Data(batch) => match batch.len() {
                 1 => {}
                 // There should be only one data section
@@ -72,7 +72,7 @@ impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
             _ => return Err(received),
         }
 
-        let src = received.delivery.into_message();
+        let src = received.raw_amqp_message;
 
         // copy header except for delivery count which should be set to null
         let header = src.header.map(|h| Header {

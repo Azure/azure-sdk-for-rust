@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
 
+#[async_trait]
 pub trait TransportSessionReceiver: TransportReceiver {
     /// <summary>
     /// Indicates whether the session link has been closed. This is useful for session receiver scenarios because once the link is closed for a
@@ -23,6 +24,42 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// The Session Id associated with the receiver.
     /// </summary>
     fn session_locked_until(&self) -> Option<OffsetDateTime>;
+
+    /// <summary>
+    /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
+    /// </summary>
+    ///
+    /// <returns>New lock token expiry date and time in UTC format.</returns>
+    ///
+    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
+    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError>;
+
+    /// <summary>
+    /// Gets the session state.
+    /// </summary>
+    ///
+    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
+    ///
+    /// <returns>The session state as <see cref="BinaryData"/>.</returns>
+    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::RequestResponseError>;
+
+    /// <summary>
+    /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
+    /// </summary>
+    ///
+    /// <param name="sessionState">A <see cref="BinaryData"/> of session state</param>
+    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
+    ///
+    /// <remarks>This state is stored on Service Bus forever unless you set an empty state on it.</remarks>
+    ///
+    /// <returns>A task to be resolved on when the operation has completed.</returns>
+    // public abstract Task SetStateAsync(
+    //     BinaryData sessionState,
+    //     CancellationToken cancellationToken);
+    async fn set_session_state(
+        &mut self,
+        session_state: impl AsRef<u8> + Send,
+    ) -> Result<(), Self::RequestResponseError>;
 }
 
 /// Provides an abstraction for generalizing a message receiver so that a dedicated instance may provide operations
@@ -191,40 +228,4 @@ pub trait TransportReceiver {
         &mut self,
         lock_token: impl AsRef<Uuid> + Send,
     ) -> Result<OffsetDateTime, Self::RequestResponseError>;
-
-    /// <summary>
-    /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
-    /// </summary>
-    ///
-    /// <returns>New lock token expiry date and time in UTC format.</returns>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError>;
-
-    /// <summary>
-    /// Gets the session state.
-    /// </summary>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <returns>The session state as <see cref="BinaryData"/>.</returns>
-    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::RequestResponseError>;
-
-    /// <summary>
-    /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
-    /// </summary>
-    ///
-    /// <param name="sessionState">A <see cref="BinaryData"/> of session state</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>This state is stored on Service Bus forever unless you set an empty state on it.</remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
-    // public abstract Task SetStateAsync(
-    //     BinaryData sessionState,
-    //     CancellationToken cancellationToken);
-    async fn set_session_state(
-        &mut self,
-        session_state: impl AsRef<u8> + Send,
-    ) -> Result<(), Self::RequestResponseError>;
 }

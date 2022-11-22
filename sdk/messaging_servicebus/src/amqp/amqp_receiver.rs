@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use fe2o3_amqp::{
-    link::{DetachError, RecvError},
+    link::{delivery::DeliveryInfo, DetachError, RecvError},
     Delivery, Receiver,
 };
 use fe2o3_amqp_management::client::MgmtClient;
@@ -17,7 +17,7 @@ use uuid::Uuid;
 use crate::{
     core::TransportReceiver,
     primitives::{
-        service_bus_received_message::ServiceBusReceivedMessage,
+        service_bus_received_message::{ReceivedMessageLockToken, ServiceBusReceivedMessage},
         service_bus_retry_policy::{
             run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
         },
@@ -291,55 +291,16 @@ where
     ) -> Result<OffsetDateTime, Self::RequestResponseError> {
         todo!()
     }
-
-    /// <summary>
-    /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
-    /// </summary>
-    ///
-    /// <returns>New lock token expiry date and time in UTC format.</returns>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError> {
-        todo!()
-    }
-
-    /// <summary>
-    /// Gets the session state.
-    /// </summary>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <returns>The session state as <see cref="BinaryData"/>.</returns>
-    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::RequestResponseError> {
-        todo!()
-    }
-
-    /// <summary>
-    /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
-    /// </summary>
-    ///
-    /// <param name="sessionState">A <see cref="BinaryData"/> of session state</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>This state is stored on Service Bus forever unless you set an empty state on it.</remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
-    // public abstract Task SetStateAsync(
-    //     BinaryData sessionState,
-    //     CancellationToken cancellationToken);
-    async fn set_session_state(
-        &mut self,
-        _session_state: impl AsRef<u8> + Send,
-    ) -> Result<(), Self::RequestResponseError> {
-        todo!()
-    }
 }
 
 async fn complete_message(
     receiver: &mut fe2o3_amqp::Receiver,
     message: &ServiceBusReceivedMessage,
 ) -> Result<(), AmqpDispositionError> {
-    receiver.accept(message).await?;
+    match ReceivedMessageLockToken::from(message) {
+        ReceivedMessageLockToken::LockToken(_) => todo!(),
+        ReceivedMessageLockToken::Delivery(delivery_info) => receiver.accept(delivery_info).await?,
+    }
     Ok(())
 }
 
@@ -364,9 +325,13 @@ async fn receive_messages(
             is_settled = true;
         }
 
+        let delivery_info = DeliveryInfo::from(&delivery);
+        let lock_token = ReceivedMessageLockToken::Delivery(delivery_info);
+        let raw_amqp_message = delivery.into_message();
         let message = ServiceBusReceivedMessage {
-            delivery,
             is_settled,
+            raw_amqp_message,
+            lock_token,
         };
 
         buffer.push(message);
@@ -450,7 +415,13 @@ async fn dead_letter_message(
             condition, None, info,
         ))
     }
-    receiver.reject(message, error).await?;
+
+    match ReceivedMessageLockToken::from(message) {
+        ReceivedMessageLockToken::LockToken(_) => todo!(),
+        ReceivedMessageLockToken::Delivery(delivery_info) => {
+            receiver.reject(delivery_info, error).await?
+        }
+    }
     Ok(())
 }
 
@@ -459,7 +430,7 @@ async fn abandon_message(
     message: &ServiceBusReceivedMessage,
     properties_to_modify: &Option<OrderedMap<String, Value>>,
 ) -> Result<(), AmqpDispositionError> {
-    let modifiedd = Modified {
+    let modified = Modified {
         delivery_failed: None,
         undeliverable_here: None,
         message_annotations: properties_to_modify
@@ -467,7 +438,13 @@ async fn abandon_message(
             .map(map_properties_to_modify_into_fields),
     };
 
-    receiver.modify(message, modifiedd).await?;
+    match ReceivedMessageLockToken::from(message) {
+        ReceivedMessageLockToken::LockToken(_) => todo!(),
+        ReceivedMessageLockToken::Delivery(delivery_info) => {
+            receiver.modify(delivery_info, modified).await?
+        }
+    }
+
     Ok(())
 }
 
@@ -476,7 +453,7 @@ async fn defer_message(
     message: &ServiceBusReceivedMessage,
     properties_to_modify: &Option<OrderedMap<String, Value>>,
 ) -> Result<(), AmqpDispositionError> {
-    let modifiedd = Modified {
+    let modified = Modified {
         delivery_failed: None,
         undeliverable_here: Some(true),
         message_annotations: properties_to_modify
@@ -484,6 +461,12 @@ async fn defer_message(
             .map(map_properties_to_modify_into_fields),
     };
 
-    receiver.modify(message, modifiedd).await?;
+    match ReceivedMessageLockToken::from(message) {
+        ReceivedMessageLockToken::LockToken(_) => todo!(),
+        ReceivedMessageLockToken::Delivery(delivery_info) => {
+            receiver.modify(delivery_info, modified).await?
+        }
+    }
+
     Ok(())
 }

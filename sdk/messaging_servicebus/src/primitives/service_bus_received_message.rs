@@ -25,6 +25,18 @@ use crate::{
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
+/// The lock token for a received message
+#[derive(Debug, Clone)]
+pub(crate) enum ReceivedMessageLockToken {
+    /// Message that is received using the request-response link will only
+    /// have a UUID lock token
+    LockToken(Uuid),
+
+    /// Message that is received using the receive link will have complete
+    /// delivery information that will be used for disposition on the AMQP receiver link
+    Delivery(DeliveryInfo),
+}
+
 /// The <see cref="ServiceBusReceivedMessage"/> is used to receive data from Service Bus Queues and
 /// Subscriptions. When sending messages, the <see cref="ServiceBusMessage"/> is used.
 ///
@@ -39,18 +51,21 @@ pub struct ServiceBusReceivedMessage {
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
-    pub(crate) delivery: Delivery<Body<Value>>, // TODO: Change to generics?
+    pub(crate) raw_amqp_message: Message<Body<Value>>,
+
+    /// Delivery Info
+    pub(crate) lock_token: ReceivedMessageLockToken,
 }
 
-impl From<ServiceBusReceivedMessage> for DeliveryInfo {
+impl From<ServiceBusReceivedMessage> for ReceivedMessageLockToken {
     fn from(message: ServiceBusReceivedMessage) -> Self {
-        DeliveryInfo::from(message.delivery)
+        message.lock_token
     }
 }
 
-impl From<&ServiceBusReceivedMessage> for DeliveryInfo {
+impl From<&ServiceBusReceivedMessage> for ReceivedMessageLockToken {
     fn from(message: &ServiceBusReceivedMessage) -> Self {
-        DeliveryInfo::from(&message.delivery)
+        message.lock_token.clone()
     }
 }
 
@@ -63,12 +78,12 @@ impl ServiceBusReceivedMessage {
     ///
     /// The raw Amqp message.
     pub fn raw_amqp_message(&self) -> &Message<Body<Value>> {
-        &self.delivery.message()
+        &self.raw_amqp_message
     }
 
     /// Gets the body of the message.
     pub fn body(&self) -> Result<&[u8], Error> {
-        match &self.delivery.body() {
+        match &self.raw_amqp_message.body {
             Body::Data(batch) => match batch.len() {
                 1 => Ok(batch[0].0.as_ref()),
                 _ => Err(Error::RawAmqpMessage),
@@ -88,7 +103,7 @@ impl ServiceBusReceivedMessage {
     /// feature identifies and removes second and further submissions of messages with the same
     /// MessageId.
     pub fn message_id(&self) -> Option<Cow<'_, str>> {
-        self.delivery.message().message_id()
+        self.raw_amqp_message.message_id()
     }
 
     /// Gets a partition key for sending a message to a partitioned entity.
@@ -106,7 +121,7 @@ impl ServiceBusReceivedMessage {
     /// function over this value and cannot be chosen directly. For session-aware entities, the
     /// [`session_id()`](#method.session_id) property overrides this value.
     pub fn partition_key(&self) -> Option<&str> {
-        self.delivery.message().partition_key()
+        self.raw_amqp_message.partition_key()
     }
 
     /// Gets a partition key for sending a message into an entity via a partitioned transfer queue.
@@ -123,7 +138,7 @@ impl ServiceBusReceivedMessage {
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-viaå).
     pub fn transaction_partition_key(&self) -> Option<&str> {
-        self.delivery.message().via_partition_key()
+        self.raw_amqp_message.via_partition_key()
     }
 
     /// Gets the session identifier for a session-aware entity.
@@ -140,7 +155,7 @@ impl ServiceBusReceivedMessage {
     /// value is ignored. See [Message
     /// Sessions](https://docs.microsoft.com/azure/service-bus-messaging/message-sessions).
     pub fn session_id(&self) -> Option<&str> {
-        self.delivery.message().session_id()
+        self.raw_amqp_message.session_id()
     }
 
     /// Gets a session identifier augmenting the [`reply_to()`](#method.reply_to) address.
@@ -155,7 +170,7 @@ impl ServiceBusReceivedMessage {
     /// the reply when sent to the reply entity. See [Message Routing and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation)
     pub fn reply_to_session_id(&self) -> Option<&str> {
-        self.delivery.message().reply_to_session_id()
+        self.raw_amqp_message.reply_to_session_id()
     }
 
     /// Gets the message’s "time to live" value.
@@ -173,7 +188,7 @@ impl ServiceBusReceivedMessage {
     /// longer than the entity's DefaultTimeToLive setting and it is silently adjusted if it does.
     /// See [Expiration](https://docs.microsoft.com/azure/service-bus-messaging/message-expiration)
     pub fn time_to_live(&self) -> TimeSpan {
-        match self.delivery.message().time_to_live() {
+        match self.raw_amqp_message.time_to_live() {
             Some(ttl) => ttl,
             None => TimeSpan::MAX, // TODO: is this the same as in dotnet sdk?
         }
@@ -192,7 +207,7 @@ impl ServiceBusReceivedMessage {
     /// Routing and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation").
     pub fn correlation_id(&self) -> Option<Cow<'_, str>> {
-        self.delivery.message().correlation_id()
+        self.raw_amqp_message.correlation_id()
     }
 
     /// Gets an application specific label.
@@ -206,7 +221,7 @@ impl ServiceBusReceivedMessage {
     /// in a standardized fashion, similar to an email subject line. The mapped AMQP property is
     /// "subject".
     pub fn subject(&self) -> Option<&str> {
-        self.delivery.message().subject()
+        self.raw_amqp_message.subject()
     }
 
     /// Gets the "to" address.
@@ -222,7 +237,7 @@ impl ServiceBusReceivedMessage {
     /// chaining](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-auto-forwarding)
     /// scenarios to indicate the intended logical destination of the message.
     pub fn to(&self) -> Option<&str> {
-        self.delivery.message().to()
+        self.raw_amqp_message.to()
     }
 
     /// Gets the content type descriptor.
@@ -236,7 +251,7 @@ impl ServiceBusReceivedMessage {
     /// Optionally describes the payload of the message, with a descriptor following the format of
     /// RFC2045, Section 5, for example "application/json".
     pub fn content_type(&self) -> Option<&str> {
-        self.delivery.message().content_type()
+        self.raw_amqp_message.content_type()
     }
 
     /// Gets the address of an entity to send replies to.
@@ -253,7 +268,7 @@ impl ServiceBusReceivedMessage {
     /// and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation)
     pub fn reply_to(&self) -> Option<&str> {
-        self.delivery.message().reply_to()
+        self.raw_amqp_message.reply_to()
     }
 
     /// Gets the date and time in UTC at which the message will be enqueued. This property returns
@@ -269,7 +284,7 @@ impl ServiceBusReceivedMessage {
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will
     /// get enqueued, but the actual sending time depends on the queue's workload and its state.
     pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
-        self.delivery.message().scheduled_enqueue_time()
+        self.raw_amqp_message.scheduled_enqueue_time()
     }
 
     /// Gets the application properties bag, which can be used for custom message metadata.
@@ -279,7 +294,7 @@ impl ServiceBusReceivedMessage {
     /// long, ulong, float, double, decimal, bool, Guid, string, Uri, DateTime, DateTimeOffset,
     /// TimeSpan
     pub fn application_properties(&self) -> Option<&ApplicationProperties> {
-        self.delivery.message().application_properties.as_ref()
+        self.raw_amqp_message.application_properties.as_ref()
     }
 
     /// Gets the lock token for the current message.
@@ -298,19 +313,24 @@ impl ServiceBusReceivedMessage {
     ///
     /// A `Some(lock_token)` is returned if the lock token is found. Otherwise, `None` is returned.
     pub fn lock_token(&self) -> Option<Uuid> {
-        let delivery_tag = self.delivery.delivery_tag().as_ref();
-        match Uuid::try_from(delivery_tag) {
-            Ok(uuid) => Some(uuid),
-            Err(_) => match self
-                .delivery
-                .message()
-                .delivery_annotations
-                .as_ref()
-                .and_then(|da| da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey))
-            {
-                Some(Value::Uuid(uuid)) => Some(uuid.clone()),
-                _ => None,
-            },
+        match &self.lock_token {
+            ReceivedMessageLockToken::LockToken(uuid) => Some(uuid.clone()),
+            ReceivedMessageLockToken::Delivery(delivery_info) => {
+                let delivery_tag = delivery_info.delivery_tag().as_ref();
+                match Uuid::try_from(delivery_tag) {
+                    Ok(uuid) => Some(uuid),
+                    Err(_) => match self
+                        .raw_amqp_message
+                        .delivery_annotations
+                        .as_ref()
+                        .and_then(|da| {
+                            da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey)
+                        }) {
+                        Some(Value::Uuid(uuid)) => Some(uuid.clone()),
+                        _ => None,
+                    },
+                }
+            }
         }
     }
 
@@ -325,8 +345,7 @@ impl ServiceBusReceivedMessage {
     /// when a message lock expires, or the message is explicitly abandoned by the receiver. This
     /// property is read-only.
     pub fn delivery_count(&self) -> Option<u32> {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .header
             .as_ref()
             .map(|h| h.delivery_count + 1)
@@ -354,8 +373,7 @@ impl ServiceBusReceivedMessage {
     /// When the lock expires, the [`delivery_count`](#method.delivery_count) is incremented and the
     /// message is again available for retrieval. This property is read-only.
     pub fn locked_until(&self) -> Option<OffsetDateTime> {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .message_annotations
             .as_ref()?
             .get(&LOCKED_UNTIL_NAME as &dyn AnnotationKey)
@@ -394,8 +412,7 @@ impl ServiceBusReceivedMessage {
     /// topmost 16 bits reflect the partition identifier. Sequence numbers monotonically increase.
     /// They roll over to 0 when the 48-64 bit range is exhausted. This property is read-only.
     pub fn sequence_number(&self) -> i64 {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&SEQUENCE_NUMBER_NAME as &dyn AnnotationKey))
@@ -423,8 +440,7 @@ impl ServiceBusReceivedMessage {
     /// dead-letter queue to another entity. Indicates the entity in which the message was
     /// dead-lettered. This property is read-only.
     pub fn dead_letter_source(&self) -> Option<&str> {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .message_annotations
             .as_ref()?
             .get(&DEAD_LETTER_SOURCE_NAME as &dyn AnnotationKey)
@@ -455,8 +471,7 @@ impl ServiceBusReceivedMessage {
     /// had first been assigned to the message at its original point of submission. This property is
     /// read-only.
     pub fn enqueued_sequence_number(&self) -> i64 {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&ENQUEUE_SEQUENCE_NUMBER_NAME as &dyn AnnotationKey))
@@ -487,8 +502,7 @@ impl ServiceBusReceivedMessage {
     /// can be used as an authoritative and neutral arrival time indicator when the receiver does
     /// not want to trust the sender's clock. This property is read-only.
     pub fn enqueued_time(&self) -> OffsetDateTime {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&ENQUEUED_TIME_UTC_NAME as &dyn AnnotationKey))
@@ -530,8 +544,7 @@ impl ServiceBusReceivedMessage {
     /// [enqueued_time](#method.enqueued_time)
     pub fn expires_at(&self) -> OffsetDateTime {
         match self
-            .delivery
-            .message()
+            .raw_amqp_message
             .properties
             .as_ref()
             .and_then(|p| p.absolute_expiry_time.as_ref())
@@ -555,8 +568,7 @@ impl ServiceBusReceivedMessage {
 
     /// Gets the dead letter reason for the message.
     pub fn dead_letter_reason(&self) -> Option<&str> {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .application_properties
             .as_ref()?
             .get(DEAD_LETTER_REASON_HEADER)
@@ -568,8 +580,7 @@ impl ServiceBusReceivedMessage {
 
     /// Gets the dead letter error description for the message.
     pub fn dead_letter_error_description(&self) -> Option<&str> {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .application_properties
             .as_ref()?
             .get(DEAD_LETTER_ERROR_DESCRIPTION_HEADER)
@@ -591,8 +602,7 @@ impl ServiceBusReceivedMessage {
     /// Deferred state, scheduled messages have Scheduled state, all other messages have Active
     /// state.
     pub fn state(&self) -> ServiceBusMessageState {
-        self.delivery
-            .message()
+        self.raw_amqp_message
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&MESSAGE_STATE_NAME as &dyn AnnotationKey))
