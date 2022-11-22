@@ -5,9 +5,9 @@ use fe2o3_amqp::{
 };
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
-    definitions::{ErrorCondition, Fields, SequenceNo},
+    definitions::{ErrorCondition, Fields, ReceiverSettleMode, SequenceNo},
     messaging::{Body, Modified},
-    primitives::{OrderedMap, Symbol},
+    primitives::{Array, OrderedMap, Symbol},
 };
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
@@ -28,6 +28,8 @@ use crate::{
 use super::{
     amqp_client_constants::DEAD_LETTER_NAME,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
+    amqp_request_message::receive_by_sequence_number::ReceiveBySequenceNumberRequest,
+    amqp_response_message::receive_by_sequence_number::ReceiveBySequenceNumberResponse,
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
@@ -273,9 +275,32 @@ where
     /// <seealso cref="DeferAsync"/>
     async fn receive_deferred_messages(
         &mut self,
-        _sequence_numbers: impl Iterator<Item = SequenceNo> + Send,
+        sequence_numbers: impl Iterator<Item = i64> + Send,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
-        todo!()
+        let sequence_numbers: Array<i64> = sequence_numbers.collect();
+        let receiver_settle_mode = match self.receive_mode {
+            ServiceBusReceiveMode::PeekLock => ReceiverSettleMode::Second,
+            ServiceBusReceiveMode::ReceiveAndDelete => ReceiverSettleMode::First,
+        };
+        let mut request =
+            ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode);
+
+        let mgmt_client = &mut self.management_client;
+        let policy = &self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        let response = run_operation!(
+            policy,
+            RP,
+            AmqpRequestResponseError,
+            try_timeout,
+            receive_by_sequence_number(mgmt_client, &mut request, &try_timeout).await
+        )?;
+
+        response
+            .into_received_messages()
+            .map_err(AmqpRequestResponseError::from)
+            .map_err(RetryError::Operation)
     }
 
     /// <summary>
@@ -469,4 +494,16 @@ async fn defer_message(
     }
 
     Ok(())
+}
+
+async fn receive_by_sequence_number(
+    mgmt_client: &mut MgmtClient,
+    request: &mut ReceiveBySequenceNumberRequest,
+    try_timeout: &StdDuration,
+) -> Result<ReceiveBySequenceNumberResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
 }

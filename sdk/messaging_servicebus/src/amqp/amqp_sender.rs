@@ -205,7 +205,7 @@ where
             RP,
             AmqpRequestResponseError,
             try_timeout,
-            cancel_scheduled_messages(management_client, &mut request, try_timeout).await
+            cancel_scheduled_messages(management_client, &mut request, &try_timeout).await
         )
     }
 
@@ -279,7 +279,7 @@ async fn schedule_message(
 async fn cancel_scheduled_messages<'a>(
     mgmt_client: &'a mut MgmtClient,
     request: &'a mut CancelScheduledMessageRequest,
-    try_timeout: StdDuration,
+    try_timeout: &StdDuration,
 ) -> Result<(), AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
     request.set_server_timeout(Some(server_timeout));

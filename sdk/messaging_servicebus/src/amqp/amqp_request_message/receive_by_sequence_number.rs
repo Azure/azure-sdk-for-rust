@@ -60,3 +60,39 @@ impl Request for ReceiveBySequenceNumberRequest {
         self.body
     }
 }
+
+impl<'a> Request for &'a mut ReceiveBySequenceNumberRequest {
+    const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
+
+    type Response = ReceiveBySequenceNumberResponse;
+
+    type Body = &'a ReceiveBySequenceNumberRequestBody;
+
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}
+
+impl<'a> Request for &'a ReceiveBySequenceNumberRequest {
+    const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
+
+    type Response = ReceiveBySequenceNumberResponse;
+
+    type Body = &'a ReceiveBySequenceNumberRequestBody;
+
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}

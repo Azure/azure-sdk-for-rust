@@ -214,7 +214,7 @@ pub trait TransportReceiver {
     /// <seealso cref="DeferAsync"/>
     async fn receive_deferred_messages(
         &mut self,
-        sequence_numbers: impl Iterator<Item = SequenceNo> + Send,
+        sequence_numbers: impl Iterator<Item = i64> + Send,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError>;
 
     /// <summary>

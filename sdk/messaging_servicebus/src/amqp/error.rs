@@ -191,6 +191,12 @@ impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
     }
 }
 
+impl From<serde_amqp::Error> for AmqpRequestResponseError {
+    fn from(_: serde_amqp::Error) -> Self {
+        Self::RequestResponse(ManagementError::DecodeError(None))
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum CbsAuthError {
     #[error(transparent)]
