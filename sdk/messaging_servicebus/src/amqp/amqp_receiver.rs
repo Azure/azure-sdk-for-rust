@@ -364,9 +364,8 @@ async fn receive_messages(
             is_settled = true;
         }
 
-        let delivery_info = DeliveryInfo::from(&delivery);
+        let (delivery_info, raw_amqp_message) = delivery.into_parts();
         let lock_token = ReceivedMessageLockToken::Delivery(delivery_info);
-        let raw_amqp_message = delivery.into_message();
         let message = ServiceBusReceivedMessage {
             is_settled,
             raw_amqp_message,
