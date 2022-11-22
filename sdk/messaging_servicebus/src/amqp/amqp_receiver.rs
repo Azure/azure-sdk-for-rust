@@ -55,28 +55,6 @@ where
     type CloseError = DetachError;
 
     /// <summary>
-    /// Indicates whether the session link has been closed. This is useful for session receiver scenarios because once the link is closed for a
-    /// session receiver it will not be reopened.
-    /// </summary>
-    fn is_session_link_closed(&self) -> bool {
-        todo!()
-    }
-
-    /// <summary>
-    ///
-    /// </summary>
-    fn session_id(&self) -> Option<&str> {
-        todo!()
-    }
-
-    /// <summary>
-    /// The Session Id associated with the receiver.
-    /// </summary>
-    fn session_locked_until(&self) -> Option<OffsetDateTime> {
-        todo!()
-    }
-
-    /// <summary>
     /// Receives a set of <see cref="ServiceBusReceivedMessage" /> from the entity using <see cref="ServiceBusReceiveMode"/> mode.
     /// </summary>
     /// <param name="maximumMessageCount">The maximum number of messages that will be received.</param>

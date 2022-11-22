@@ -7,18 +7,7 @@ use uuid::Uuid;
 
 use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
 
-/// Provides an abstraction for generalizing a message receiver so that a dedicated instance may provide operations
-/// for a specific transport, such as AMQP or JMS.  It is intended that the public <see
-/// cref="ServiceBusReceiver" /> and <see cref="ServiceBusProcessor" /> employ a transport receiver
-/// via containment and delegate operations to it rather than understanding protocol-specific
-/// details for different transports.
-#[async_trait]
-pub trait TransportReceiver {
-    type RequestResponseError;
-    type ReceiveError;
-    type DispositionError;
-    type CloseError;
-
+pub trait TransportSessionReceiver: TransportReceiver {
     /// <summary>
     /// Indicates whether the session link has been closed. This is useful for session receiver scenarios because once the link is closed for a
     /// session receiver it will not be reopened.
@@ -34,6 +23,19 @@ pub trait TransportReceiver {
     /// The Session Id associated with the receiver.
     /// </summary>
     fn session_locked_until(&self) -> Option<OffsetDateTime>;
+}
+
+/// Provides an abstraction for generalizing a message receiver so that a dedicated instance may provide operations
+/// for a specific transport, such as AMQP or JMS.  It is intended that the public <see
+/// cref="ServiceBusReceiver" /> and <see cref="ServiceBusProcessor" /> employ a transport receiver
+/// via containment and delegate operations to it rather than understanding protocol-specific
+/// details for different transports.
+#[async_trait]
+pub trait TransportReceiver {
+    type RequestResponseError;
+    type ReceiveError;
+    type DispositionError;
+    type CloseError;
 
     /// <summary>
     /// Receives a set of <see cref="ServiceBusReceivedMessage" /> from the entity using <see cref="ServiceBusReceiveMode"/> mode.
