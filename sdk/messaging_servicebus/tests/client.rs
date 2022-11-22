@@ -3,9 +3,10 @@ use std::time::Duration as StdDuration;
 use time::Duration as TimeSpan;
 
 use azure_messaging_servicebus::{
-    client::service_bus_client::ServiceBusClient, primitives::sub_queue::SubQueue,
-    receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions, ServiceBusMessage,
-    ServiceBusReceiverOptions, ServiceBusSenderOptions,
+    client::service_bus_client::ServiceBusClient,
+    primitives::{service_bus_peeked_message::ServiceBusPeekedMessage, sub_queue::SubQueue},
+    receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions,
+    ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSenderOptions,
 };
 
 fn setup_dotenv() {
@@ -208,6 +209,71 @@ async fn recv_from_dead_letter_queue() -> usize {
     count
 }
 
+async fn client_schedule_single_message_via_service_bus_sender(delay: TimeSpan) -> i64 {
+    use time::OffsetDateTime;
+
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client
+        .create_sender(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = ServiceBusMessage::from("hello world");
+    let enqueue_time = OffsetDateTime::now_utc() + delay;
+    let seq = sender
+        .schedule_message(message, enqueue_time)
+        .await
+        .unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+
+    seq
+}
+
+async fn client_cancel_single_scheduled_message(seq: i64) {
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut sender = client
+        .create_sender(queue, Default::default())
+        .await
+        .unwrap();
+
+    sender.cancel_scheduled_message(seq).await.unwrap();
+
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+async fn peek_one_message() -> Option<ServiceBusPeekedMessage> {
+    setup_dotenv();
+
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .create_receiver(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = receiver.peek_message(None).await.unwrap();
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+
+    message
+}
+
 #[test]
 fn hello_world() {
     setup_dotenv();
@@ -297,7 +363,7 @@ async fn client_schedule_message_via_service_bus_message() {
     setup_dotenv();
 
     let mut message = ServiceBusMessage::from("hello world");
-    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::minutes(2);
+    let enqueue_time = OffsetDateTime::now_utc() + TimeSpan::seconds(20);
     message.set_scheduled_enqueue_time(enqueue_time);
 
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -313,51 +379,9 @@ async fn client_schedule_message_via_service_bus_message() {
 
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
-}
 
-async fn client_schedule_single_message_via_service_bus_sender(delay: TimeSpan) -> i64 {
-    use time::OffsetDateTime;
-
-    setup_dotenv();
-
-    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
-
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
-    let mut sender = client
-        .create_sender(queue, Default::default())
-        .await
-        .unwrap();
-
-    let message = ServiceBusMessage::from("hello world");
-    let enqueue_time = OffsetDateTime::now_utc() + delay;
-    let seq = sender
-        .schedule_message(message, enqueue_time)
-        .await
-        .unwrap();
-
-    sender.dispose().await.unwrap();
-    client.dispose().await.unwrap();
-
-    seq
-}
-
-async fn client_cancel_single_scheduled_message(seq: i64) {
-    setup_dotenv();
-
-    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
-
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
-    let mut sender = client
-        .create_sender(queue, Default::default())
-        .await
-        .unwrap();
-
-    sender.cancel_scheduled_message(seq).await.unwrap();
-
-    sender.dispose().await.unwrap();
-    client.dispose().await.unwrap();
+    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+    client_receive_messages(1, Default::default()).await;
 }
 
 #[tokio::test]
@@ -388,4 +412,11 @@ async fn test_dead_letter_message() {
     dead_letter_one_message().await;
     let count = recv_from_dead_letter_queue().await;
     assert_eq!(count, 1);
+}
+
+#[tokio::test]
+async fn test_send_and_peek_one_message() {
+    client_send_single_message(Default::default()).await;
+    let peeked = peek_one_message().await;
+    assert!(peeked.is_some());
 }

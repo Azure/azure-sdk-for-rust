@@ -2,13 +2,13 @@ use fe2o3_amqp_management::error::{Error as ManagementError, InvalidType};
 use fe2o3_amqp_management::{response::Response, status::StatusCode};
 use fe2o3_amqp_types::messaging::message::__private::Deserializable;
 use fe2o3_amqp_types::messaging::{Body, Message};
-use fe2o3_amqp_types::primitives::{Array, OrderedMap};
+use fe2o3_amqp_types::primitives::{Binary, OrderedMap};
 use serde_amqp::Value;
 
 use crate::amqp::management_constants::properties::{MESSAGE, MESSAGES};
 use crate::primitives::service_bus_peeked_message::ServiceBusPeekedMessage;
 
-pub(super) type EncodedMessage = Array<u8>;
+pub(super) type EncodedMessage = Binary;
 pub(super) type EncodedMessages = Vec<OrderedMap<String, EncodedMessage>>;
 pub(super) type PeekMessageResponseBody = OrderedMap<String, EncodedMessages>;
 
@@ -24,7 +24,7 @@ pub(crate) fn get_messages_from_body(
 
     let messages = messages
         .into_iter()
-        .filter_map(|mut map| map.remove(MESSAGE).map(|arr| arr.into_inner()));
+        .filter_map(|mut map| map.remove(MESSAGE).map(|arr| arr.into_vec()));
 
     Some(messages)
 }
