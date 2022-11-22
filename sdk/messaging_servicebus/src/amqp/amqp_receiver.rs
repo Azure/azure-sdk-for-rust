@@ -48,6 +48,7 @@ pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) receiver: fe2o3_amqp::Receiver,
     pub(crate) receive_mode: ServiceBusReceiveMode,
     pub(crate) is_processor: bool,
+
     pub(crate) management_client: MgmtClient,
     pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,
     pub(crate) last_peeked_sequence_number: i64,
@@ -251,7 +252,7 @@ where
         message_count: i32,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
         let mut request = PeekMessageRequest::new(
-            sequence_number.unwrap_or(self.last_peeked_sequence_number),
+            sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
             message_count,
         );
 
@@ -267,10 +268,15 @@ where
             peek_message(mgmt_client, &mut request, &try_timeout).await
         )?;
 
-        response
+        let peeked_messages = response
             .into_peeked_messages()
             .map_err(AmqpRequestResponseError::from)
-            .map_err(RetryError::Operation)
+            .map_err(RetryError::Operation)?;
+
+        if let Some(last) = peeked_messages.last() {
+            self.last_peeked_sequence_number = last.sequence_number();
+        }
+        Ok(peeked_messages)
     }
 
     /// <summary>

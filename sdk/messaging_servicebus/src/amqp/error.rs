@@ -120,7 +120,7 @@ pub enum AmqpSendError {
 
 impl ServiceBusRetryPolicyError for AmqpSendError {
     fn is_scope_disposed(&self) -> bool {
-        use fe2o3_amqp::link::{LinkStateError, SendError};
+        use fe2o3_amqp::link::SendError;
         matches!(
             self,
             Self::Send(SendError::LinkStateError(
