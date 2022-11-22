@@ -1,16 +1,11 @@
-
-
 use rand::Rng;
 use std::{fmt::Display, time::Duration};
 
-
-use crate::{
-    primitives::{
-        service_bus_retry_mode::ServiceBusRetryMode,
-        service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_retry_policy::{
-            ServiceBusRetryPolicy, ServiceBusRetryPolicyError, ServiceBusRetryPolicyState,
-        },
+use crate::primitives::{
+    service_bus_retry_mode::ServiceBusRetryMode,
+    service_bus_retry_options::ServiceBusRetryOptions,
+    service_bus_retry_policy::{
+        ServiceBusRetryPolicy, ServiceBusRetryPolicyError, ServiceBusRetryPolicyState,
     },
 };
 

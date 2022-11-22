@@ -16,6 +16,7 @@ use crate::{
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
             LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
+        amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
         amqp_message_extensions::AmqpMessageExt,
         error::Error,
     },
@@ -39,8 +40,6 @@ pub struct ServiceBusReceivedMessage {
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
     /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
     pub(crate) delivery: Delivery<Body<Value>>, // TODO: Change to generics?
-
-    pub(crate) lock_token_uuid: fe2o3_amqp_types::primitives::Uuid,
 }
 
 impl From<ServiceBusReceivedMessage> for DeliveryInfo {
@@ -294,8 +293,25 @@ impl ServiceBusReceivedMessage {
     /// The token can also be used to pin the lock permanently through the [Deferral
     /// API](https://docs.microsoft.com/azure/service-bus-messaging/message-deferral) and, with
     /// that, take the message out of the regular delivery state flow. This property is read-only.
-    pub fn lock_token(&self) -> &Uuid {
-        &self.lock_token_uuid
+    ///
+    /// # Value
+    ///
+    /// A `Some(lock_token)` is returned if the lock token is found. Otherwise, `None` is returned.
+    pub fn lock_token(&self) -> Option<Uuid> {
+        let delivery_tag = self.delivery.delivery_tag().as_ref();
+        match Uuid::try_from(delivery_tag) {
+            Ok(uuid) => Some(uuid),
+            Err(_) => match self
+                .delivery
+                .message()
+                .delivery_annotations
+                .as_ref()
+                .and_then(|da| da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey))
+            {
+                Some(Value::Uuid(uuid)) => Some(uuid.clone()),
+                _ => None,
+            },
+        }
     }
 
     /// Get the current delivery count.

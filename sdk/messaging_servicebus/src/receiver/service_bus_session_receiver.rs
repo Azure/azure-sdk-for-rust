@@ -1,5 +1,3 @@
-use fe2o3_amqp::link::delivery::DeliveryInfo;
-
 use crate::{
     core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
     ServiceBusReceiveMode, ServiceBusReceiverOptions,

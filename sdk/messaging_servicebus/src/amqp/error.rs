@@ -1,8 +1,7 @@
 use fe2o3_amqp::{
     connection,
     link::{
-        IllegalLinkStateError, LinkStateError, ReceiverAttachError, RecvError,
-        SenderAttachError,
+        IllegalLinkStateError, LinkStateError, ReceiverAttachError, RecvError, SenderAttachError,
     },
     session,
 };
@@ -11,8 +10,6 @@ use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use tokio::time::error::Elapsed;
 
 use crate::{primitives::service_bus_retry_policy::ServiceBusRetryPolicyError, ServiceBusMessage};
-
-use super::amqp_message_converter::InvalidLockTokenError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -135,9 +132,6 @@ impl ServiceBusRetryPolicyError for AmqpSendError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpRecvError {
-    #[error("Lock token cannot be converted from AMQP message")]
-    InvalidLockTokenError,
-
     #[error(transparent)]
     Recv(#[from] RecvError),
 
@@ -146,12 +140,6 @@ pub enum AmqpRecvError {
 
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
-}
-
-impl From<InvalidLockTokenError> for AmqpRecvError {
-    fn from(_: InvalidLockTokenError) -> Self {
-        Self::InvalidLockTokenError
-    }
 }
 
 impl ServiceBusRetryPolicyError for AmqpRecvError {

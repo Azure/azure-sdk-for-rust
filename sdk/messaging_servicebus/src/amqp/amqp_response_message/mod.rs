@@ -4,8 +4,7 @@ use fe2o3_amqp_management::{
     mgmt_ext::AmqpMessageManagementExt,
     status::StatusCode,
 };
-use fe2o3_amqp_types::{messaging::Message};
-
+use fe2o3_amqp_types::messaging::Message;
 
 pub(crate) mod add_rule;
 pub(crate) mod cancel_scheduled_message;

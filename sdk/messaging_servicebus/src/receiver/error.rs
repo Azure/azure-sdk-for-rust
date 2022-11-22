@@ -1,7 +1,3 @@
-
-
-
-
 // #[derive(Debug, thiserror::Error)]
 // pub enum ServiceBusRecvError {
 //     #[error("Lock token cannot be converted from AMQP message")]

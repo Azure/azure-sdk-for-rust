@@ -1,7 +1,4 @@
-
-
-use fe2o3_amqp_types::{messaging::ApplicationProperties};
-
+use fe2o3_amqp_types::messaging::ApplicationProperties;
 
 use super::management_constants::properties::SERVER_TIMEOUT;
 

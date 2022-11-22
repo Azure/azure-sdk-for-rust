@@ -28,7 +28,6 @@ use crate::{
 use super::{
     amqp_client_constants::DEAD_LETTER_NAME,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
-    amqp_message_converter,
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
@@ -365,9 +364,10 @@ async fn receive_messages(
             is_settled = true;
         }
 
-        let message = amqp_message_converter::amqp_delivery_as_service_bus_received_message(
-            delivery, is_settled,
-        )?;
+        let message = ServiceBusReceivedMessage {
+            delivery,
+            is_settled,
+        };
 
         buffer.push(message);
     }

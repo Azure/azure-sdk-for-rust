@@ -1,4 +1,3 @@
-use fe2o3_amqp::link::delivery::DeliveryInfo;
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
