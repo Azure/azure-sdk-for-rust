@@ -3,7 +3,7 @@ use std::time::Duration as StdDuration;
 use time::Duration as TimeSpan;
 
 use azure_messaging_servicebus::{
-    client::service_bus_client::ServiceBusClient,
+    client::service_bus_client::ServiceBusClient, primitives::sub_queue::SubQueue,
     receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions, ServiceBusMessage,
     ServiceBusReceiverOptions, ServiceBusSenderOptions,
 };
@@ -134,6 +134,78 @@ async fn client_send_to_session(total: u32, options: ServiceBusSenderOptions, se
 
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
+}
+
+async fn abandon_one_message() {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .create_receiver(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = receiver.receive_message().await.unwrap();
+
+    if let Some(message) = message {
+        receiver.abandon_message(&message, None).await.unwrap();
+    }
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+async fn dead_letter_one_message() {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut receiver = client
+        .create_receiver(queue, Default::default())
+        .await
+        .unwrap();
+
+    let message = receiver.receive_message().await.unwrap();
+
+    if let Some(message) = message {
+        receiver
+            .dead_letter_message(&message, None, None, None)
+            .await
+            .unwrap();
+    }
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+async fn recv_from_dead_letter_queue() -> usize {
+    setup_dotenv();
+    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let options = ServiceBusReceiverOptions {
+        sub_queue: SubQueue::DeadLetter,
+        ..Default::default()
+    };
+    let mut receiver = client.create_receiver(queue, options).await.unwrap();
+
+    let message = receiver.receive_message().await.unwrap();
+
+    let count = if let Some(message) = message {
+        receiver.complete_message(&message).await.unwrap();
+        1
+    } else {
+        0
+    };
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+
+    count
 }
 
 #[test]
@@ -301,4 +373,19 @@ async fn client_schedule_and_cancel_single_message() {
 async fn client_cancel_non_existent_schedule_message() {
     let seq = 1; // The queue should be well surpassed this number by now
     client_cancel_single_scheduled_message(seq).await;
+}
+
+#[tokio::test]
+async fn test_abancon_message() {
+    client_send_single_message(Default::default()).await;
+    abandon_one_message().await;
+    client_receive_messages(1, Default::default()).await;
+}
+
+#[tokio::test]
+async fn test_dead_letter_message() {
+    client_send_single_message(Default::default()).await;
+    dead_letter_one_message().await;
+    let count = recv_from_dead_letter_queue().await;
+    assert_eq!(count, 1);
 }
