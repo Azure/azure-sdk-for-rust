@@ -52,6 +52,24 @@ impl Request for PeekMessageRequest {
     }
 }
 
+impl<'a> Request for &'a mut PeekMessageRequest {
+    const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
+
+    type Response = PeekMessageResponse;
+
+    type Body = &'a OrderedMap<String, Value>;
+
+    fn encode_application_properties(
+        &mut self,
+    ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
+        super::encode_server_timeout_as_application_properties(self.server_timeout)
+    }
+
+    fn encode_body(self) -> Self::Body {
+        &self.body
+    }
+}
+
 impl<'a> Request for &'a PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 

@@ -361,7 +361,7 @@ where
 
             // find the smallest timeout
             let expires_at = match token.expires_at_utc() {
-                Some(timestamp) => Some(OffsetDateTime::try_from(timestamp.clone())?),
+                Some(timestamp) => Some(OffsetDateTime::from(timestamp.clone())),
                 None => None,
             };
 

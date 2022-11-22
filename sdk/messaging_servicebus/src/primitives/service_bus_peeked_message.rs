@@ -1,75 +1,33 @@
 use std::borrow::Cow;
 
-use fe2o3_amqp::link::delivery::DeliveryInfo;
-use time::Duration as TimeSpan;
-
 use fe2o3_amqp_types::{
     messaging::{annotations::AnnotationKey, ApplicationProperties, Body, Message},
-    primitives::{SimpleValue, Uuid, Value},
+    primitives::SimpleValue,
 };
-use time::OffsetDateTime;
+use serde_amqp::Value;
+use time::{Duration as TimeSpan, OffsetDateTime};
 
 use crate::{
     amqp::{
         amqp_message_constants::{
             DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER,
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
-            LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
+            MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
-        amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
         amqp_message_extensions::AmqpMessageExt,
-        error::Error,
+        Error,
     },
     constants::{DEFAULT_OFFSET_DATE_TIME, MAX_OFFSET_DATE_TIME},
 };
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
-/// The lock token for a received message
-#[derive(Debug, Clone)]
-pub(crate) enum ReceivedMessageLockToken {
-    /// Message that is received using the request-response link will only
-    /// have a UUID lock token
-    LockToken(Uuid),
-
-    /// Message that is received using the receive link will have complete
-    /// delivery information that will be used for disposition on the AMQP receiver link
-    Delivery(DeliveryInfo),
-}
-
-/// The <see cref="ServiceBusReceivedMessage"/> is used to receive data from Service Bus Queues and
-/// Subscriptions. When sending messages, the <see cref="ServiceBusMessage"/> is used.
-///
-/// The message structure is discussed in detail in the [product
-/// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 #[derive(Debug)]
-pub struct ServiceBusReceivedMessage {
-    /// Indicates whether the user has settled the message as part of their callback.
-    /// If they have done so, we will not autocomplete.
-    pub(crate) is_settled: bool,
-
-    /// Gets the raw Amqp message data that was transmitted over the wire.
-    /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
-    /// data that is not exposed as top level properties in the <see cref="ServiceBusReceivedMessage"/>.
+pub struct ServiceBusPeekedMessage {
     pub(crate) raw_amqp_message: Message<Body<Value>>,
-
-    /// Delivery Info
-    pub(crate) lock_token: ReceivedMessageLockToken,
 }
 
-impl From<ServiceBusReceivedMessage> for ReceivedMessageLockToken {
-    fn from(message: ServiceBusReceivedMessage) -> Self {
-        message.lock_token
-    }
-}
-
-impl From<&ServiceBusReceivedMessage> for ReceivedMessageLockToken {
-    fn from(message: &ServiceBusReceivedMessage) -> Self {
-        message.lock_token.clone()
-    }
-}
-
-impl ServiceBusReceivedMessage {
+impl ServiceBusPeekedMessage {
     /// Gets the raw Amqp message data that was transmitted over the wire. This can be used to
     /// enable scenarios that require reading AMQP header, footer, property, or annotation data that
     /// is not exposed as top level properties in the [`ServiceBusReceivedMessage`].
@@ -297,43 +255,6 @@ impl ServiceBusReceivedMessage {
         self.raw_amqp_message.application_properties.as_ref()
     }
 
-    /// Gets the lock token for the current message.
-    ///
-    /// # Remarks
-    ///
-    /// The lock token is a reference to the lock that is being held by the broker in
-    /// ReceiveMode.PeekLock mode. Locks are used to explicitly settle messages as explained in the
-    /// documentation in more
-    /// detail](https://docs.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement).
-    /// The token can also be used to pin the lock permanently through the [Deferral
-    /// API](https://docs.microsoft.com/azure/service-bus-messaging/message-deferral) and, with
-    /// that, take the message out of the regular delivery state flow. This property is read-only.
-    ///
-    /// # Value
-    ///
-    /// A `Some(lock_token)` is returned if the lock token is found. Otherwise, `None` is returned.
-    pub fn lock_token(&self) -> Option<Uuid> {
-        match &self.lock_token {
-            ReceivedMessageLockToken::LockToken(uuid) => Some(uuid.clone()),
-            ReceivedMessageLockToken::Delivery(delivery_info) => {
-                let delivery_tag = delivery_info.delivery_tag().as_ref();
-                match Uuid::try_from(delivery_tag) {
-                    Ok(uuid) => Some(uuid),
-                    Err(_) => match self
-                        .raw_amqp_message
-                        .delivery_annotations
-                        .as_ref()
-                        .and_then(|da| {
-                            da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey)
-                        }) {
-                        Some(Value::Uuid(uuid)) => Some(uuid.clone()),
-                        _ => None,
-                    },
-                }
-            }
-        }
-    }
-
     /// Get the current delivery count.
     ///
     /// # Value
@@ -349,42 +270,6 @@ impl ServiceBusReceivedMessage {
             .header
             .as_ref()
             .map(|h| h.delivery_count + 1)
-    }
-
-    // pub(crate) fn set_delivery_count(&mut self, count: u32) {
-    //     self.delivery
-    //         .message()
-    //         .header
-    //         .get_or_insert(Header::default())
-    //         .delivery_count = count - 1;
-    // }
-
-    /// Gets the date and time in UTC until which the message will be locked in the
-    /// queue/subscription.
-    ///
-    /// # Value
-    ///
-    /// The date and time until which the message will be locked in the queue/subscription.
-    ///
-    /// # Remarks
-    ///
-    /// For messages retrieved under a lock (peek-lock receive mode, not pre-settled) this property
-    /// reflects the UTC instant until which the message is held locked in the queue/subscription.
-    /// When the lock expires, the [`delivery_count`](#method.delivery_count) is incremented and the
-    /// message is again available for retrieval. This property is read-only.
-    pub fn locked_until(&self) -> Option<OffsetDateTime> {
-        self.raw_amqp_message
-            .message_annotations
-            .as_ref()?
-            .get(&LOCKED_UNTIL_NAME as &dyn AnnotationKey)
-            .map(|value| match value {
-                Value::Timestamp(timestamp) => {
-                    let millis = timestamp.milliseconds();
-                    let duration = TimeSpan::milliseconds(millis);
-                    OffsetDateTime::UNIX_EPOCH + duration
-                }
-                _ => unreachable!("Expecting a Timestamp"),
-            })
     }
 
     // /// # Panic
@@ -517,19 +402,6 @@ impl ServiceBusReceivedMessage {
             .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
     }
 
-    // pub(crate) fn set_enqueued_time(&mut self, value: OffsetDateTime) {
-    //     let timespan = value - OffsetDateTime::UNIX_EPOCH;
-    //     let millis = timespan.whole_milliseconds();
-    //     assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
-    //     let millis = Timestamp::from_milliseconds(millis as i64);
-
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(ENQUEUED_TIME_UTC_NAME.into(), millis.into());
-    // }
-
     /// Gets the date and time in UTC at which the message is set to expire.
     ///
     /// # Value
@@ -611,29 +483,5 @@ impl ServiceBusReceivedMessage {
                 _ => unreachable!("Expecting a Long"),
             })
             .unwrap_or_default()
-    }
-
-    // pub(crate) fn set_state(&mut self, state: ServiceBusMessageState) {
-    //     let value = state as i64;
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(MESSAGE_STATE_NAME.into(), value.into());
-    // }
-}
-
-/// Returns a string that represents the current message.
-impl ToString for ServiceBusReceivedMessage {
-    fn to_string(&self) -> String {
-        match self.message_id() {
-            Some(id) => {
-                let mut s = String::from(r#"{MessageId:"#);
-                s.push_str(&id);
-                s.push('}');
-                s
-            }
-            None => String::from(r#"{MessageId:None"#),
-        }
     }
 }

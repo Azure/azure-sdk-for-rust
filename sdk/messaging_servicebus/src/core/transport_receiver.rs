@@ -1,10 +1,13 @@
 use async_trait::async_trait;
-use fe2o3_amqp_types::{definitions::SequenceNo, primitives::OrderedMap};
+use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 
-use crate::primitives::service_bus_received_message::ServiceBusReceivedMessage;
+use crate::primitives::{
+    service_bus_peeked_message::ServiceBusPeekedMessage,
+    service_bus_received_message::ServiceBusReceivedMessage,
+};
 
 #[async_trait]
 pub trait TransportSessionReceiver: TransportReceiver {
@@ -151,9 +154,9 @@ pub trait TransportReceiver {
     /// <returns></returns>
     async fn peek_message(
         &mut self,
-        sequence_number: Option<u64>,
-        message_count: u32,
-    ) -> Result<ServiceBusReceivedMessage, Self::RequestResponseError>;
+        sequence_number: Option<i64>,
+        message_count: i32,
+    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError>;
 
     /// <summary>
     /// Abandons a <see cref="ServiceBusReceivedMessage"/>. This will make the message available again for processing.
@@ -225,6 +228,6 @@ pub trait TransportReceiver {
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn renew_message_lock(
         &mut self,
-        lock_token: impl AsRef<fe2o3_amqp::types::primitives::Uuid> + Send,
-    ) -> Result<OffsetDateTime, Self::RequestResponseError>;
+        lock_token: Vec<fe2o3_amqp::types::primitives::Uuid>,
+    ) -> Result<Vec<OffsetDateTime>, Self::RequestResponseError>;
 }

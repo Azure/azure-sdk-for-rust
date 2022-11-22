@@ -207,9 +207,6 @@ pub enum CbsAuthError {
     TokenCredential(#[from] azure_core::Error),
 
     #[error(transparent)]
-    ExpirationDateTimeRange(#[from] time::error::ComponentRange),
-
-    #[error(transparent)]
     Cbs(#[from] ManagementError),
 }
 

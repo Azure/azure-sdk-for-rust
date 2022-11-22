@@ -1,9 +1,11 @@
+pub mod disposition_status;
 pub mod service_bus_connection;
 pub mod service_bus_connection_string_properties;
 pub mod service_bus_error;
 pub mod service_bus_failure_reason;
 pub mod service_bus_message;
 pub mod service_bus_message_state;
+pub mod service_bus_peeked_message;
 pub mod service_bus_received_message;
 pub mod service_bus_retry_mode;
 pub mod service_bus_retry_options;

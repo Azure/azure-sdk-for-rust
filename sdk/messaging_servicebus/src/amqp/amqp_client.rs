@@ -14,6 +14,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    constants::DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
     core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
@@ -288,6 +289,7 @@ where
                 prefetch_count,
                 management_client,
                 request_response_locked_messages: Default::default(),
+                last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
             })
         })
     }
@@ -327,6 +329,7 @@ where
                 prefetch_count,
                 management_client,
                 request_response_locked_messages: Default::default(),
+                last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
             })
         })
     }

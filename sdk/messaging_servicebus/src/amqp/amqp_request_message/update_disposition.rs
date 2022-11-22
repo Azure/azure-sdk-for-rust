@@ -2,44 +2,21 @@ use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::{Array, OrderedMap, Uuid};
 use serde_amqp::Value;
 
-use crate::amqp::{
-    amqp_response_message::update_disposition::UpdateDispositionResponse,
-    management_constants::{
-        operations::UPDATE_DISPOSITION_OPERATION,
-        properties::{
-            DEAD_LETTER_DESCRIPTION, DEAD_LETTER_REASON, DISPOSITION_STATUS, LOCK_TOKENS,
-            PROPERTIES_TO_MODIFY,
+use crate::{
+    amqp::{
+        amqp_response_message::update_disposition::UpdateDispositionResponse,
+        management_constants::{
+            operations::UPDATE_DISPOSITION_OPERATION,
+            properties::{
+                DEAD_LETTER_DESCRIPTION, DEAD_LETTER_REASON, DISPOSITION_STATUS, LOCK_TOKENS,
+                PROPERTIES_TO_MODIFY,
+            },
         },
     },
+    primitives::disposition_status::DispositionStatus,
 };
 
 type UpdateDispositionRequestBody = OrderedMap<String, Value>;
-
-pub enum DispositionStatus {
-    Completed,
-    Abandoned,
-    Suspended,
-}
-
-impl From<DispositionStatus> for String {
-    fn from(status: DispositionStatus) -> Self {
-        match status {
-            DispositionStatus::Completed => "completed".to_string(),
-            DispositionStatus::Abandoned => "abandoned".to_string(),
-            DispositionStatus::Suspended => "suspended".to_string(),
-        }
-    }
-}
-
-impl From<DispositionStatus> for Value {
-    fn from(status: DispositionStatus) -> Self {
-        match status {
-            DispositionStatus::Completed => Value::String("completed".into()),
-            DispositionStatus::Abandoned => Value::String("abandoned".into()),
-            DispositionStatus::Suspended => Value::String("suspended".into()),
-        }
-    }
-}
 
 pub(crate) struct UpdateDispositionRequest {
     server_timeout: Option<u32>,
