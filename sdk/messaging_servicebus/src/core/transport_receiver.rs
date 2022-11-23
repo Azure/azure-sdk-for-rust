@@ -27,7 +27,7 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// </summary>
     fn session_locked_until(&self) -> Option<OffsetDateTime>;
 
-    fn set_sesesion_locked_until(&mut self, session_locked_until: Option<OffsetDateTime>);
+    fn set_sesesion_locked_until(&mut self, session_locked_until: OffsetDateTime);
 
     /// <summary>
     /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.

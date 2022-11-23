@@ -46,7 +46,7 @@ pub const WELL_KNOWN_PUBLIC_PORTS_LIMIT: i32 = 1023;
 pub const DEFAULT_SCOPE: &str = "https://servicebus.azure.net/.default";
 
 /// `time::OffsetDateTime` doesn't implement `Default`. This value is taken from the
-/// dotnet SDK (Azure.Messaging.ServiceBus).
+/// dotnet SDK `DateTime.MinValue` (Azure.Messaging.ServiceBus).
 pub(crate) const DEFAULT_OFFSET_DATE_TIME: OffsetDateTime =
     time::macros::datetime!(0001-01-01 12:00:00 AM +00:00);
 

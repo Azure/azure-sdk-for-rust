@@ -2,13 +2,14 @@ use async_trait::async_trait;
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::Fields,
-    primitives::{OrderedMap, Timestamp},
+    primitives::{OrderedMap, SymbolRef, Timestamp},
 };
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 
 use crate::{
+    constants::DEFAULT_OFFSET_DATE_TIME,
     core::{TransportReceiver, TransportSessionReceiver},
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
@@ -18,7 +19,8 @@ use crate::{
 };
 
 use super::{
-    amqp_receiver::AmqpReceiver, amqp_request_message::renew_session_lock::RenewSessionLockRequest,
+    amqp_client_constants::LOCKED_UNTIL_UTC, amqp_receiver::AmqpReceiver,
+    amqp_request_message::renew_session_lock::RenewSessionLockRequest,
     amqp_response_message::renew_session_lock::RenewSessionLockResponse,
     error::AmqpRequestResponseError,
 };
@@ -164,11 +166,17 @@ where
     /// The Session Id associated with the receiver.
     /// </summary>
     fn session_locked_until(&self) -> Option<OffsetDateTime> {
-        todo!()
+        self.inner.receiver.properties(get_session_locked_until)
     }
 
-    fn set_sesesion_locked_until(&mut self, session_locked_until: Option<OffsetDateTime>) {
-        todo!()
+    fn set_sesesion_locked_until(&mut self, session_locked_until: OffsetDateTime) {
+        let timestamp = Timestamp::from(session_locked_until);
+        let op = move |properties: &mut Option<Fields>| {
+            properties
+                .get_or_insert(Fields::default())
+                .insert(LOCKED_UNTIL_UTC.into(), Value::Timestamp(timestamp));
+        };
+        self.inner.receiver.properties_mut(op);
     }
 
     /// <summary>
@@ -228,8 +236,20 @@ where
     }
 }
 
-pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Timestamp {
-    todo!()
+pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<OffsetDateTime> {
+    // SessionLockedUntil = link.Settings.Properties.TryGetValue<long>(
+    //     AmqpClientConstants.LockedUntilUtc, out var lockedUntilUtcTicks)
+    //     ? new DateTime(lockedUntilUtcTicks, DateTimeKind.Utc)
+    //     : DateTime.MinValue;
+    properties
+        .as_ref()
+        .and_then(|map| map.get(LOCKED_UNTIL_UTC))
+        .and_then(|value| match value {
+            Value::Timestamp(timestamp) => Some(timestamp.clone()),
+            _ => None, // TODO: what if it's not a timestamp?
+        })
+        .map(OffsetDateTime::from)
+    // .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
 }
 
 async fn renew_session_lock<'a>(
