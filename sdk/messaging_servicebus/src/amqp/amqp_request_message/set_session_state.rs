@@ -20,7 +20,7 @@ pub(crate) struct SetSessionStateRequest<'a> {
 
 impl<'a> SetSessionStateRequest<'a> {
     pub fn new(
-        session_id: String,
+        session_id: &str,
         session_state: Binary,
         associated_link_name: Option<&'a str>,
     ) -> Self {

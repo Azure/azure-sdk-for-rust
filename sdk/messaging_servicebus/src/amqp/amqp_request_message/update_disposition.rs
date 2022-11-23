@@ -31,7 +31,7 @@ impl<'a> UpdateDispositionRequest<'a> {
         dead_letter_reason: Option<String>,
         dead_letter_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
         associated_link_name: Option<&'a str>,
     ) -> Self {
         let mut body = UpdateDispositionRequestBody::new();

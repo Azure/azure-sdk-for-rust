@@ -5,10 +5,9 @@ use super::management_constants::{properties::SERVER_TIMEOUT, request::ASSOCIATE
 pub(crate) mod add_rule;
 pub(crate) mod cancel_scheduled_message;
 pub(crate) mod enumerate_rules;
-pub mod error;
 pub(crate) mod get_session_state;
 pub(crate) mod peek_message;
-pub(crate) mod peek_session_pessage;
+pub(crate) mod peek_session_message;
 pub(crate) mod receive_by_sequence_number;
 pub(crate) mod remove_rule;
 pub(crate) mod renew_lock;

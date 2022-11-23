@@ -22,7 +22,7 @@ impl<'a> PeekSessionMessageRequest<'a> {
         from_sequence_number: i64,
         message_count: i32,
         associated_link_name: Option<&'a str>,
-        session_id: String,
+        session_id: &str,
     ) -> Self {
         let mut body = OrderedMap::with_capacity(3);
         body.insert(FROM_SEQUENCE_NUMBER.into(), from_sequence_number.into());

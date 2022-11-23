@@ -15,9 +15,9 @@ pub(crate) struct GetSessionStateRequest<'a> {
 }
 
 impl<'a> GetSessionStateRequest<'a> {
-    pub fn new(session_id: String, associated_link_name: Option<&'a str>) -> Self {
+    pub fn new(session_id: &str, associated_link_name: Option<&'a str>) -> Self {
         let mut body = OrderedMap::new();
-        body.insert(SESSION_ID.into(), session_id);
+        body.insert(SESSION_ID.into(), session_id.into());
         Self {
             server_timeout: None,
             associated_link_name,

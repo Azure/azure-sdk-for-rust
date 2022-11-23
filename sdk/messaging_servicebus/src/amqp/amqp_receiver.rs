@@ -30,12 +30,12 @@ use super::{
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
     amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
     amqp_request_message::{
-        peek_message::PeekMessageRequest,
+        peek_message::PeekMessageRequest, peek_session_message::PeekSessionMessageRequest,
         receive_by_sequence_number::ReceiveBySequenceNumberRequest, renew_lock::RenewLockRequest,
         update_disposition::UpdateDispositionRequest,
     },
     amqp_response_message::{
-        peek_message::PeekMessageResponse,
+        peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
@@ -131,7 +131,7 @@ where
     async fn complete(
         &mut self,
         message: &ServiceBusReceivedMessage,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
@@ -195,7 +195,7 @@ where
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
@@ -287,6 +287,42 @@ where
         Ok(peeked_messages)
     }
 
+    async fn peek_session_message(
+        &mut self,
+        sequence_number: Option<i64>,
+        message_count: i32,
+        session_id: &str,
+    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
+        let mut request = PeekSessionMessageRequest::new(
+            sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
+            message_count,
+            Some(self.receiver.name()),
+            session_id,
+        );
+
+        let mgmt_client = &mut self.management_client;
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        let response = run_operation!(
+            policy,
+            RP,
+            AmqpRequestResponseError,
+            try_timeout,
+            peek_session_message(mgmt_client, &mut request, &try_timeout).await
+        )?;
+
+        let peeked_messages = response
+            .into_peeked_messages()
+            .map_err(AmqpRequestResponseError::from)
+            .map_err(RetryError::Operation)?;
+
+        if let Some(last) = peeked_messages.last() {
+            self.last_peeked_sequence_number = last.sequence_number();
+        }
+        Ok(peeked_messages)
+    }
+
     /// <summary>
     /// Abandons a <see cref="ServiceBusReceivedMessage"/>. This will make the message available again for processing.
     /// </summary>
@@ -306,7 +342,7 @@ where
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
         let receiver = &mut self.receiver;
         let policy = &mut self.retry_policy;
@@ -374,7 +410,7 @@ where
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
         let policy = &self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
@@ -436,7 +472,7 @@ where
     async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
         let sequence_numbers = sequence_numbers.collect();
         let receiver_settle_mode = match self.receive_mode {
@@ -715,6 +751,18 @@ async fn peek_message<'a>(
     request: &mut PeekMessageRequest<'a>,
     try_timeout: &StdDuration,
 ) -> Result<PeekMessageResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
+}
+
+async fn peek_session_message<'a>(
+    mgmt_client: &mut MgmtClient,
+    request: &mut PeekSessionMessageRequest<'a>,
+    try_timeout: &StdDuration,
+) -> Result<PeekSessionMessageResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
     request.set_server_timeout(Some(server_timeout));
 

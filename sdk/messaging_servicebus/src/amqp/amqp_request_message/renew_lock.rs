@@ -6,7 +6,7 @@ use crate::amqp::{
     management_constants::{operations::RENEW_LOCK_OPERATION, properties::LOCK_TOKENS},
 };
 
-type LockTokens = Array<serde_amqp::primitives::Uuid>;
+pub(super) type LockTokens = Array<serde_amqp::primitives::Uuid>;
 
 pub(crate) struct RenewLockRequest<'a> {
     server_timeout: Option<u32>,

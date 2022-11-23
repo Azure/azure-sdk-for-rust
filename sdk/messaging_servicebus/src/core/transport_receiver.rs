@@ -113,7 +113,7 @@ pub trait TransportReceiver {
     async fn complete(
         &mut self,
         message: &ServiceBusReceivedMessage,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
@@ -136,7 +136,7 @@ pub trait TransportReceiver {
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
@@ -160,6 +160,13 @@ pub trait TransportReceiver {
         message_count: i32,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError>;
 
+    async fn peek_session_message(
+        &mut self,
+        sequence_number: Option<i64>,
+        message_count: i32,
+        session_id: &str,
+    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError>;
+
     /// <summary>
     /// Abandons a <see cref="ServiceBusReceivedMessage"/>. This will make the message available again for processing.
     /// </summary>
@@ -179,7 +186,7 @@ pub trait TransportReceiver {
         &mut self,
         message: &ServiceBusReceivedMessage,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
@@ -207,7 +214,7 @@ pub trait TransportReceiver {
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError>;
 
     /// <summary>
@@ -221,7 +228,7 @@ pub trait TransportReceiver {
     async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError>;
 
     /// <summary>

@@ -1,6 +1,11 @@
 use fe2o3_amqp_management::response::Response;
+use fe2o3_amqp_types::messaging::{message::__private::Deserializable, Body, Message};
+use serde_amqp::Value;
 
-use crate::amqp::management_constants::properties::MESSAGES;
+use crate::{
+    amqp::management_constants::properties::MESSAGES,
+    primitives::service_bus_peeked_message::ServiceBusPeekedMessage,
+};
 
 type PeekSessionMessageResponseBody = super::peek_message::PeekMessageResponseBody;
 
@@ -10,8 +15,26 @@ pub struct PeekSessionMessageResponse {
 }
 
 impl PeekSessionMessageResponse {
+    pub fn has_more_messages(&self) -> bool {
+        self.has_more_messages
+    }
+
     pub fn into_messages(self) -> Vec<Vec<u8>> {
         self.messages
+    }
+
+    pub fn into_peeked_messages(self) -> Result<Vec<ServiceBusPeekedMessage>, serde_amqp::Error> {
+        self.messages
+            .into_iter()
+            .map(|buf| {
+                let raw_amqp_message: Deserializable<Message<Body<Value>>> =
+                    serde_amqp::from_slice(&buf)?;
+                let message = ServiceBusPeekedMessage {
+                    raw_amqp_message: raw_amqp_message.0,
+                };
+                Ok(message)
+            })
+            .collect()
     }
 }
 

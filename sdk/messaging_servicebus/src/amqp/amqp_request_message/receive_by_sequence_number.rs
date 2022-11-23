@@ -27,7 +27,7 @@ impl<'a> ReceiveBySequenceNumberRequest<'a> {
         sequence_numbers: Array<i64>,
         receiver_settle_mode: ReceiverSettleMode,
         associated_link_name: Option<&'a str>,
-        session_id: Option<String>,
+        session_id: Option<&str>,
     ) -> Self {
         let mut body = OrderedMap::new();
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers.into());
