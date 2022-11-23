@@ -32,11 +32,12 @@ use super::{
     amqp_request_message::{
         peek_message::PeekMessageRequest, peek_session_message::PeekSessionMessageRequest,
         receive_by_sequence_number::ReceiveBySequenceNumberRequest, renew_lock::RenewLockRequest,
-        update_disposition::UpdateDispositionRequest,
+        renew_session_lock::RenewSessionLockRequest, update_disposition::UpdateDispositionRequest,
     },
     amqp_response_message::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
+        renew_session_lock::RenewSessionLockResponse,
     },
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
@@ -539,6 +540,26 @@ where
         )?;
         Ok(response.expirations.into_inner())
     }
+
+    // async fn renew_session_lock(
+    //     &mut self,
+    //     session_id: &str,
+    // ) -> Result<Timestamp, Self::RequestResponseError> {
+    //     let mut request = RenewSessionLockRequest::new(Some(self.receiver.name()), session_id);
+    //     let mgmt_client = &mut self.management_client;
+    //     let policy = &self.retry_policy;
+    //     let mut try_timeout = policy.calculate_try_timeout(0);
+
+    //     let response = run_operation!(
+    //         policy,
+    //         RP,
+    //         AmqpRequestResponseError,
+    //         try_timeout,
+    //         renew_session_lock(mgmt_client, &mut request, &try_timeout).await
+    //     )?;
+
+    //     Ok(response.expiration)
+    // }
 }
 
 fn lock_token_from_delivery<B>(delivery: &Delivery<B>) -> Option<Uuid> {
@@ -775,6 +796,18 @@ async fn renew_lock<'a>(
     request: &mut RenewLockRequest<'a>,
     try_timeout: &StdDuration,
 ) -> Result<RenewLockResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
+}
+
+async fn renew_session_lock<'a>(
+    mgmt_client: &mut MgmtClient,
+    request: &mut RenewSessionLockRequest<'a>,
+    try_timeout: &StdDuration,
+) -> Result<RenewSessionLockResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
     request.set_server_timeout(Some(server_timeout));
 

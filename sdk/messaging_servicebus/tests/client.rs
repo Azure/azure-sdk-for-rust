@@ -87,31 +87,31 @@ async fn client_receive_messages(total: u32, options: ServiceBusReceiverOptions)
     client.dispose().await.unwrap();
 }
 
-async fn client_recv_from_session(
-    total: u32,
-    options: ServiceBusSessionReceiverOptions,
-    session_id: String,
-) {
-    setup_dotenv();
-    let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let session_enabled_queue = env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
+// async fn client_recv_from_session(
+//     total: u32,
+//     options: ServiceBusSessionReceiverOptions,
+//     session_id: String,
+// ) {
+//     setup_dotenv();
+//     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+//     let session_enabled_queue = env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
-    let mut receiver = client
-        .accept_session(session_enabled_queue, session_id, options)
-        .await
-        .unwrap();
-    let messages = receiver.receive_messages(total, None).await.unwrap();
+//     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+//     let mut receiver = client
+//         .accept_session(session_enabled_queue, session_id, options)
+//         .await
+//         .unwrap();
+//     let messages = receiver.receive_messages(total, None).await.unwrap();
 
-    assert_eq!(messages.len(), total as usize);
+//     assert_eq!(messages.len(), total as usize);
 
-    for message in messages {
-        receiver.complete_message(&message).await.unwrap();
-    }
+//     for message in messages {
+//         receiver.complete_message(&message).await.unwrap();
+//     }
 
-    receiver.dispose().await.unwrap();
-    client.dispose().await.unwrap();
-}
+//     receiver.dispose().await.unwrap();
+//     client.dispose().await.unwrap();
+// }
 
 async fn client_send_to_session(total: u32, options: ServiceBusSenderOptions, session_id: String) {
     setup_dotenv();
@@ -413,7 +413,8 @@ async fn client_send_message_batch_and_receive_messages_with_default_options() {
 
 #[tokio::test]
 async fn client_can_create_session_receiver() {
-    client_recv_from_session(0, Default::default(), "session_id".to_string()).await;
+    // client_recv_from_session(0, Default::default(), "session_id".to_string()).await;
+    todo!()
 }
 
 #[tokio::test]
@@ -422,7 +423,8 @@ async fn client_send_and_receive_single_sessionful_message() {
     let session_id = "session_id".to_string();
 
     client_send_to_session(total, Default::default(), session_id.clone()).await;
-    client_recv_from_session(total, Default::default(), session_id).await;
+    // client_recv_from_session(total, Default::default(), session_id).await;
+    todo!()
 }
 
 #[tokio::test]

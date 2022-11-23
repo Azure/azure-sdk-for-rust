@@ -15,6 +15,7 @@ pub(crate) mod amqp_response_message;
 pub(crate) mod amqp_rule_manager;
 pub(crate) mod amqp_sender;
 pub(crate) mod amqp_session;
+pub(crate) mod amqp_session_receiver;
 pub(crate) mod cbs_token_provider;
 pub(crate) mod error;
 pub(crate) mod filters;

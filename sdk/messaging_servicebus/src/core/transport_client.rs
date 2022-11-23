@@ -16,7 +16,7 @@ use crate::{
 
 use super::{
     transport_receiver::TransportReceiver, transport_rule_manager::TransportRuleManager,
-    transport_sender::TransportSender,
+    transport_sender::TransportSender, TransportSessionReceiver,
 };
 
 // pub(crate) trait CreateTransportClient<TC>
@@ -49,6 +49,7 @@ pub trait TransportClient: Sized {
 
     type Sender: TransportSender;
     type Receiver: TransportReceiver;
+    type SessionReceiver: TransportSessionReceiver;
     type RuleManager: TransportRuleManager;
     type TokenCredential: TokenCredential;
 
@@ -96,10 +97,20 @@ pub trait TransportClient: Sized {
         identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
-        session_id: Option<String>,
         prefetch_count: u32,
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>>;
+
+    fn create_session_receiver(
+        &mut self,
+        entity_path: String,
+        identifier: String,
+        retry_options: ServiceBusRetryOptions,
+        receive_mode: ServiceBusReceiveMode,
+        session_id: String,
+        prefetch_count: u32,
+        is_processor: bool,
+    ) -> Pin<Box<dyn Future<Output = Result<Self::SessionReceiver, Self::CreateReceiverError>> + '_>>;
 
     /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
     /// for adding, removing and getting rules from the Service Bus subscription.

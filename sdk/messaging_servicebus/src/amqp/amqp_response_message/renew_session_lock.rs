@@ -11,12 +11,6 @@ pub(crate) struct RenewSessionLockResponse {
     pub expiration: Timestamp,
 }
 
-impl RenewSessionLockResponse {
-    pub fn into_expiration(self) -> Timestamp {
-        self.expiration
-    }
-}
-
 impl Response for RenewSessionLockResponse {
     const STATUS_CODE: u16 = super::HTTP_STATUS_CODE_OK; // This will be ignored
 

@@ -1,8 +1,9 @@
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
+use time::OffsetDateTime;
 
 use crate::{
-    core::TransportReceiver,
+    core::{TransportReceiver, TransportSessionReceiver},
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
@@ -47,11 +48,12 @@ pub struct ServiceBusSessionReceiver<R> {
     pub(crate) entity_path: String,
     pub(crate) identifier: String,
     pub(crate) session_id: String,
+    pub(crate) session_locked_until: OffsetDateTime,
 }
 
 impl<R> ServiceBusSessionReceiver<R>
 where
-    R: TransportReceiver,
+    R: TransportSessionReceiver,
 {
     pub async fn dispose(self) -> Result<(), R::CloseError> {
         self.inner.close().await
@@ -163,6 +165,16 @@ where
         &mut self,
         message: &mut ServiceBusReceivedMessage,
     ) -> Result<(), R::RequestResponseError> {
-        todo!()
+        let lock_tokens = vec![message.lock_token().clone()];
+        let mut expirations = self.inner.renew_message_lock(lock_tokens).await?;
+        if let Some(expiration) = expirations.drain(..).next() {
+            message.set_locked_until(expiration);
+        }
+        // TODO: what if the iterator is empty?
+        Ok(())
+    }
+
+    pub async fn renew_session_lock(&mut self) -> Result<(), R::RequestResponseError> {
+        todo!();
     }
 }

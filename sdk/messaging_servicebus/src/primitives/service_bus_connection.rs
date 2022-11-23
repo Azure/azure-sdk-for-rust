@@ -250,7 +250,6 @@ where
                 identifier,
                 retry_options,
                 receive_mode,
-                None,
                 prefetch_count,
                 is_processor,
             )
@@ -268,15 +267,15 @@ where
         prefetch_count: u32,
         session_id: String,
         is_processor: bool,
-    ) -> Result<C::Receiver, C::CreateReceiverError> {
+    ) -> Result<C::SessionReceiver, C::CreateReceiverError> {
         let receiver = self
             .inner_client
-            .create_receiver(
+            .create_session_receiver(
                 entity_path,
                 identifier,
                 retry_options,
                 receive_mode,
-                Some(session_id),
+                session_id,
                 prefetch_count,
                 is_processor,
             )

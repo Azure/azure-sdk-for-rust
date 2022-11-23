@@ -38,7 +38,7 @@ urlencoding = "2"
 uuid = "1"
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.7.14", features = ["transaction", "rustls"]}
+fe2o3-amqp = {version = "0.7.15", features = ["transaction", "rustls"]}
 fe2o3-amqp-cbs = "0.0.10"
 # fe2o3-amqp-cbs = {git = "https://github.com/minghuaw/fe2o3-amqp", branch = "0.7.0-dev"}
 fe2o3-amqp-management = "0.0.5"
