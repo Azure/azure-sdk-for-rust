@@ -11,7 +11,6 @@ use fe2o3_amqp_types::{
 };
 use serde_amqp::Value;
 use std::{collections::HashSet, time::Duration as StdDuration};
-use time::OffsetDateTime;
 
 use crate::{
     core::TransportReceiver,

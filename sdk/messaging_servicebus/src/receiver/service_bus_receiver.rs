@@ -1,6 +1,5 @@
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
-use time::OffsetDateTime;
 
 use crate::primitives::service_bus_peeked_message::ServiceBusPeekedMessage;
 use crate::{

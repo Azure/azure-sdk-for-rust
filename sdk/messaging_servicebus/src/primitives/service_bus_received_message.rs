@@ -18,7 +18,6 @@ use crate::{
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
             LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
-        amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
         amqp_message_extensions::AmqpMessageExt,
         error::Error,
     },

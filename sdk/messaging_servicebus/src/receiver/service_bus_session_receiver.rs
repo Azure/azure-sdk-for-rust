@@ -1,8 +1,6 @@
-use std::ops::{Deref, DerefMut};
-
 use crate::{
     core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
-    ServiceBusReceiveMode, ServiceBusReceiver, ServiceBusReceiverOptions,
+    ServiceBusReceiveMode, ServiceBusReceiverOptions,
 };
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
