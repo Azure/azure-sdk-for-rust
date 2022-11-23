@@ -263,7 +263,7 @@ where
         is_processor: bool,
     ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
         Box::pin(async move {
-            let (link_identifier, receiver) = self
+            let (link_identifier, name, receiver) = self
                 .connection_scope
                 .open_receiver_link(
                     &entity_path,
@@ -280,6 +280,7 @@ where
             let retry_policy = RP::new(retry_options);
             Ok(AmqpReceiver {
                 identifier: link_identifier,
+                name,
                 retry_policy,
                 receiver,
                 receive_mode,

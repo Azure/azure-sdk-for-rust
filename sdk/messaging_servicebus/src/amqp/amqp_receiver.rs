@@ -43,6 +43,8 @@ use super::{
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) identifier: u32,
+    pub(crate) name: String,
+
     pub(crate) prefetch_count: u32,
     pub(crate) retry_policy: RP,
     pub(crate) receiver: fe2o3_amqp::Receiver,
@@ -437,8 +439,14 @@ where
             ServiceBusReceiveMode::PeekLock => ReceiverSettleMode::Second,
             ServiceBusReceiveMode::ReceiveAndDelete => ReceiverSettleMode::First,
         };
-        let mut request =
-            ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode, session_id);
+        let mut request = ReceiveBySequenceNumberRequest::new(
+            sequence_numbers,
+            receiver_settle_mode,
+            Some(self.name.clone()),
+            session_id,
+            None,
+        );
+        // ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode, session_id);
 
         let mgmt_client = &mut self.management_client;
         let policy = &self.retry_policy;
