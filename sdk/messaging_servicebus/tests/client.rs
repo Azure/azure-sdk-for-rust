@@ -331,8 +331,11 @@ async fn receive_then_renew_lock() {
         .await
         .unwrap();
 
-    let message = receiver.receive_message().await.unwrap().unwrap();
-    receiver.renew_message_lock(&message).await.unwrap();
+    let mut message = receiver.receive_message().await.unwrap().unwrap();
+
+    println!("Received message: {:?}", message);
+
+    receiver.renew_message_lock(&mut message).await.unwrap();
 
     receiver.complete_message(&message).await.unwrap();
 

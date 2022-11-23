@@ -140,6 +140,9 @@ pub enum AmqpRecvError {
 
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
+
+    #[error("A valid lock token was not found in the message")]
+    LockTokenNotFound,
 }
 
 impl ServiceBusRetryPolicyError for AmqpRecvError {

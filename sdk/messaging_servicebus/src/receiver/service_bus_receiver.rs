@@ -133,9 +133,14 @@ where
 
     pub async fn renew_message_lock(
         &mut self,
-        _message: &ServiceBusReceivedMessage,
-    ) -> Result<OffsetDateTime, R::RequestResponseError> {
-        // TODO: what if lock token is None?
-        todo!()
+        message: &mut ServiceBusReceivedMessage,
+    ) -> Result<(), R::RequestResponseError> {
+        let lock_tokens = vec![message.lock_token().clone()];
+        let mut expirations = self.inner.renew_message_lock(lock_tokens).await?;
+        if let Some(expiration) = expirations.drain(..).next() {
+            message.set_locked_until(expiration);
+        }
+        // TODO: what if the iterator is empty?
+        Ok(())
     }
 }

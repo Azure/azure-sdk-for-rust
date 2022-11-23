@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use fe2o3_amqp_types::primitives::OrderedMap;
+use fe2o3_amqp_types::primitives::{OrderedMap, Timestamp};
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
@@ -234,5 +234,5 @@ pub trait TransportReceiver {
     async fn renew_message_lock(
         &mut self,
         lock_token: Vec<fe2o3_amqp::types::primitives::Uuid>,
-    ) -> Result<Vec<OffsetDateTime>, Self::RequestResponseError>;
+    ) -> Result<Vec<Timestamp>, Self::RequestResponseError>;
 }

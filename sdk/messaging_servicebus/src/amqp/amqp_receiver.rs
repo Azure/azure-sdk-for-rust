@@ -6,8 +6,8 @@ use fe2o3_amqp::{
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ErrorCondition, Fields, ReceiverSettleMode},
-    messaging::{Body, Modified},
-    primitives::{Array, OrderedMap, Symbol, Uuid},
+    messaging::{annotations::AnnotationKey, Body, Modified},
+    primitives::{Array, OrderedMap, Symbol, Timestamp, Uuid},
 };
 use serde_amqp::Value;
 use std::{collections::HashSet, time::Duration as StdDuration};
@@ -29,6 +29,7 @@ use crate::{
 use super::{
     amqp_client_constants::DEAD_LETTER_NAME,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
+    amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
     amqp_request_message::{
         peek_message::PeekMessageRequest,
         receive_by_sequence_number::ReceiveBySequenceNumberRequest, renew_lock::RenewLockRequest,
@@ -160,7 +161,7 @@ where
                     self.request_response_locked_messages.remove(&lock_token);
                 }
             }
-            ReceivedMessageLockToken::Delivery(delivery_info) => {
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 let receiver = &mut self.receiver;
                 run_operation!(
                     policy,
@@ -225,7 +226,7 @@ where
                     self.request_response_locked_messages.remove(&lock_token);
                 }
             }
-            ReceivedMessageLockToken::Delivery(delivery_info) => {
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
                     policy,
                     RP,
@@ -336,7 +337,7 @@ where
                     self.request_response_locked_messages.remove(&lock_token);
                 }
             }
-            ReceivedMessageLockToken::Delivery(delivery_info) => {
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
                     policy,
                     RP,
@@ -403,7 +404,7 @@ where
                     self.request_response_locked_messages.remove(lock_token);
                 }
             }
-            ReceivedMessageLockToken::Delivery(delivery_info) => {
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 let receiver = &mut self.receiver;
                 run_operation!(
                     policy,
@@ -488,7 +489,7 @@ where
     async fn renew_message_lock(
         &mut self,
         lock_tokens: Vec<Uuid>,
-    ) -> Result<Vec<OffsetDateTime>, Self::RequestResponseError> {
+    ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
         let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name()));
         let mgmt_client = &mut self.management_client;
         let policy = &self.retry_policy;
@@ -501,13 +502,25 @@ where
             try_timeout,
             renew_lock(mgmt_client, &mut request, &try_timeout).await
         )?;
+        Ok(response.expirations.into_inner())
+    }
+}
 
-        let expirations = response
-            .expirations
-            .into_iter()
-            .map(|timestamp| OffsetDateTime::from(timestamp))
-            .collect();
-        Ok(expirations)
+fn lock_token_from_delivery<B>(delivery: &Delivery<B>) -> Option<Uuid> {
+    match delivery
+        .message()
+        .delivery_annotations
+        .as_ref()
+        .and_then(|da| da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey))
+    {
+        Some(Value::Uuid(uuid)) => Some(uuid.clone()),
+        _ => {
+            let delivery_tag = delivery.delivery_tag().as_ref();
+            match Uuid::try_from(delivery_tag) {
+                Ok(uuid) => Some(uuid),
+                _ => None,
+            }
+        }
     }
 }
 
@@ -532,8 +545,13 @@ async fn receive_messages(
             is_settled = true;
         }
 
+        let lock_token =
+            lock_token_from_delivery(&delivery).ok_or(AmqpRecvError::LockTokenNotFound)?;
         let (delivery_info, raw_amqp_message) = delivery.into_parts();
-        let lock_token = ReceivedMessageLockToken::Delivery(delivery_info);
+        let lock_token = ReceivedMessageLockToken::Delivery {
+            delivery_info,
+            lock_token,
+        };
         let message = ServiceBusReceivedMessage {
             is_settled,
             raw_amqp_message,

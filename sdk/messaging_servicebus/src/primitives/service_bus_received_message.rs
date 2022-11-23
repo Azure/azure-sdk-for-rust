@@ -4,8 +4,10 @@ use fe2o3_amqp::link::delivery::DeliveryInfo;
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
-    messaging::{annotations::AnnotationKey, ApplicationProperties, Body, Message},
-    primitives::{SimpleValue, Uuid, Value},
+    messaging::{
+        annotations::AnnotationKey, ApplicationProperties, Body, Message, MessageAnnotations,
+    },
+    primitives::{SimpleValue, Timestamp, Uuid, Value},
 };
 use time::OffsetDateTime;
 
@@ -34,7 +36,10 @@ pub(crate) enum ReceivedMessageLockToken {
 
     /// Message that is received using the receive link will have complete
     /// delivery information that will be used for disposition on the AMQP receiver link
-    Delivery(DeliveryInfo),
+    Delivery {
+        delivery_info: DeliveryInfo,
+        lock_token: Uuid,
+    },
 }
 
 /// The <see cref="ServiceBusReceivedMessage"/> is used to receive data from Service Bus Queues and
@@ -312,25 +317,10 @@ impl ServiceBusReceivedMessage {
     /// # Value
     ///
     /// A `Some(lock_token)` is returned if the lock token is found. Otherwise, `None` is returned.
-    pub fn lock_token(&self) -> Option<Uuid> {
+    pub fn lock_token(&self) -> &Uuid {
         match &self.lock_token {
-            ReceivedMessageLockToken::LockToken(uuid) => Some(uuid.clone()),
-            ReceivedMessageLockToken::Delivery(delivery_info) => {
-                let delivery_tag = delivery_info.delivery_tag().as_ref();
-                match Uuid::try_from(delivery_tag) {
-                    Ok(uuid) => Some(uuid),
-                    Err(_) => match self
-                        .raw_amqp_message
-                        .delivery_annotations
-                        .as_ref()
-                        .and_then(|da| {
-                            da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey)
-                        }) {
-                        Some(Value::Uuid(uuid)) => Some(uuid.clone()),
-                        _ => None,
-                    },
-                }
-            }
+            ReceivedMessageLockToken::LockToken(lock_token) => lock_token,
+            ReceivedMessageLockToken::Delivery { lock_token, .. } => lock_token,
         }
     }
 
@@ -387,21 +377,16 @@ impl ServiceBusReceivedMessage {
             })
     }
 
-    // /// # Panic
-    // ///
-    // /// Panics if timestamp exceeds the valid range of i64
-    // pub(crate) fn set_locked_until(&mut self, value: OffsetDateTime) {
-    //     let timespan = value - OffsetDateTime::UNIX_EPOCH;
-    //     let millis = timespan.whole_milliseconds();
-    //     assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
-    //     let millis = Timestamp::from_milliseconds(millis as i64);
-
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(LOCKED_UNTIL_NAME.into(), millis.into());
-    // }
+    /// # Panic
+    ///
+    /// Panics if timestamp exceeds the valid range of i64
+    pub(crate) fn set_locked_until(&mut self, value: impl Into<Timestamp>) {
+        let value: Timestamp = value.into();
+        self.raw_amqp_message
+            .message_annotations
+            .get_or_insert(MessageAnnotations::default())
+            .insert(LOCKED_UNTIL_NAME.into(), value.into());
+    }
 
     /// Gets the unique number assigned to a message by Service Bus.
     ///
