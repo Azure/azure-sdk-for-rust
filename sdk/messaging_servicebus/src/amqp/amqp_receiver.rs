@@ -802,15 +802,3 @@ async fn renew_lock<'a>(
     let response = mgmt_client.call(request).await?;
     Ok(response)
 }
-
-async fn renew_session_lock<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut RenewSessionLockRequest<'a>,
-    try_timeout: &StdDuration,
-) -> Result<RenewSessionLockResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
-}

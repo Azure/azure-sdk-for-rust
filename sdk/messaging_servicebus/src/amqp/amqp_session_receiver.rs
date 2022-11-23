@@ -1,5 +1,9 @@
 use async_trait::async_trait;
-use fe2o3_amqp_types::primitives::{OrderedMap, Timestamp};
+use fe2o3_amqp_management::client::MgmtClient;
+use fe2o3_amqp_types::{
+    definitions::Fields,
+    primitives::{OrderedMap, Timestamp},
+};
 use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
@@ -9,13 +13,18 @@ use crate::{
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
     },
 };
 
-use super::amqp_receiver::AmqpReceiver;
+use super::{
+    amqp_receiver::AmqpReceiver, amqp_request_message::renew_session_lock::RenewSessionLockRequest,
+    amqp_response_message::renew_session_lock::RenewSessionLockResponse,
+    error::AmqpRequestResponseError,
+};
 
 pub struct AmqpSessionReceiver<R: ServiceBusRetryPolicy> {
+    session_id: String,
     inner: AmqpReceiver<R>,
 }
 
@@ -34,11 +43,13 @@ where
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
-        todo!()
+        self.inner
+            .receive_messages(max_messages, max_wait_time)
+            .await
     }
 
     async fn close(self) -> Result<(), Self::CloseError> {
-        todo!()
+        self.inner.close().await
     }
 
     async fn complete(
@@ -46,7 +57,7 @@ where
         message: &ServiceBusReceivedMessage,
         session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        self.inner.complete(message, session_id).await
     }
 
     async fn defer(
@@ -55,7 +66,9 @@ where
         properties_to_modify: Option<OrderedMap<String, Value>>,
         session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        self.inner
+            .defer(message, properties_to_modify, session_id)
+            .await
     }
 
     async fn peek_message(
@@ -63,7 +76,9 @@ where
         sequence_number: Option<i64>,
         message_count: i32,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
-        todo!()
+        self.inner
+            .peek_message(sequence_number, message_count)
+            .await
     }
 
     async fn peek_session_message(
@@ -72,7 +87,9 @@ where
         message_count: i32,
         session_id: &str,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
-        todo!()
+        self.inner
+            .peek_session_message(sequence_number, message_count, session_id)
+            .await
     }
 
     async fn abandon(
@@ -81,7 +98,9 @@ where
         properties_to_modify: Option<OrderedMap<String, Value>>,
         session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        self.inner
+            .abandon(message, properties_to_modify, session_id)
+            .await
     }
 
     async fn dead_letter(
@@ -92,7 +111,15 @@ where
         properties_to_modify: Option<OrderedMap<String, Value>>,
         session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError> {
-        todo!()
+        self.inner
+            .dead_letter(
+                message,
+                dead_letter_reason,
+                dead_letter_error_description,
+                properties_to_modify,
+                session_id,
+            )
+            .await
     }
 
     async fn receive_deferred_messages(
@@ -100,14 +127,16 @@ where
         sequence_numbers: impl Iterator<Item = i64> + Send,
         session_id: Option<&str>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
-        todo!()
+        self.inner
+            .receive_deferred_messages(sequence_numbers, session_id)
+            .await
     }
 
     async fn renew_message_lock(
         &mut self,
         lock_token: Vec<fe2o3_amqp::types::primitives::Uuid>,
     ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
-        todo!()
+        self.inner.renew_message_lock(lock_token).await
     }
 }
 
@@ -149,8 +178,22 @@ where
     /// <returns>New lock token expiry date and time in UTC format.</returns>
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError> {
-        todo!()
+    async fn renew_session_lock(&mut self) -> Result<Timestamp, Self::RequestResponseError> {
+        let mut request =
+            RenewSessionLockRequest::new(Some(self.inner.receiver.name()), &self.session_id);
+        let mgmt_client = &mut self.inner.management_client;
+        let policy = &self.inner.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        let response = run_operation!(
+            policy,
+            RP,
+            AmqpRequestResponseError,
+            try_timeout,
+            renew_session_lock(mgmt_client, &mut request, &try_timeout).await
+        )?;
+
+        Ok(response.expiration)
     }
 
     /// <summary>
@@ -183,4 +226,20 @@ where
     ) -> Result<(), Self::RequestResponseError> {
         todo!()
     }
+}
+
+pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Timestamp {
+    todo!()
+}
+
+async fn renew_session_lock<'a>(
+    mgmt_client: &mut MgmtClient,
+    request: &mut RenewSessionLockRequest<'a>,
+    try_timeout: &StdDuration,
+) -> Result<RenewSessionLockResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
 }

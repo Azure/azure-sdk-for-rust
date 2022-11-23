@@ -183,7 +183,7 @@ impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + S
 macro_rules! run_operation {
     ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
-        if $policy.state().is_server_busy()
+        if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
             && $try_timeout
                 < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
         {
@@ -194,7 +194,7 @@ macro_rules! run_operation {
         }
 
         let outcome = loop {
-            if $policy.state().is_server_busy() {
+            if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state()) {
                 tokio::time::sleep(
                     crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
                 )
@@ -226,12 +226,12 @@ macro_rules! run_operation {
             }
         };
 
-        Result::<_, RetryError<$err_ty>>::Ok(outcome)
+        Result::<_, crate::primitives::service_bus_retry_policy::RetryError<$err_ty>>::Ok(outcome)
     }};
 
     ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $cancellation_token:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
-        if $policy.state().is_server_busy()
+        if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
             && $try_timeout
                 < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
         {
@@ -244,7 +244,7 @@ macro_rules! run_operation {
         }
 
         let outcome = loop {
-            if $policy.state().is_server_busy() {
+            if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state()) {
                 let cancelled_fut = $cancellation_token.cancelled();
                 let _ = tokio::time::timeout(
                     crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
@@ -282,7 +282,7 @@ macro_rules! run_operation {
             }
         };
 
-        Result::<_, RetryError<$err_ty>>::Ok(outcome)
+        Result::<_, crate::primitives::service_bus_retry_policy::RetryError<$err_ty>>::Ok(outcome)
     }};
 }
 

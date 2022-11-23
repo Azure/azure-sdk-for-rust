@@ -36,7 +36,7 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// <returns>New lock token expiry date and time in UTC format.</returns>
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<OffsetDateTime, Self::RequestResponseError>;
+    async fn renew_session_lock(&mut self) -> Result<Timestamp, Self::RequestResponseError>;
 
     /// <summary>
     /// Gets the session state.
