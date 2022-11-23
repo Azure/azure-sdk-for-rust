@@ -21,22 +21,25 @@ type ReceiveBySequenceNumberRequestBody = OrderedMap<String, Value>;
 
 fn encode_application_properties(
     server_timeout: Option<u32>,
-    tracking_id: String,
     associated_link_name: Option<String>,
-) -> ApplicationProperties {
-    let mut builder = ApplicationProperties::builder().insert(TRACKING_ID, tracking_id.clone());
+) -> Option<ApplicationProperties> {
+    let mut application_properties = None;
     if let Some(server_timeout) = server_timeout {
-        builder = builder.insert(SERVER_TIMEOUT, server_timeout);
+        application_properties
+            .get_or_insert(ApplicationProperties::default())
+            .insert(SERVER_TIMEOUT.into(), server_timeout.into());
     }
     if let Some(link_name) = associated_link_name {
-        builder = builder.insert(ASSOCIATED_LINK_NAME, link_name.clone());
+        application_properties
+            .get_or_insert(ApplicationProperties::default())
+            .insert(ASSOCIATED_LINK_NAME.into(), link_name.into());
     }
-    builder.build()
+    application_properties
 }
 
 #[derive(Debug, Clone)]
 pub struct ReceiveBySequenceNumberRequest {
-    application_properties: ApplicationProperties,
+    application_properties: Option<ApplicationProperties>,
     body: ReceiveBySequenceNumberRequestBody,
 }
 
@@ -46,11 +49,8 @@ impl ReceiveBySequenceNumberRequest {
         receiver_settle_mode: ReceiverSettleMode,
         associated_link_name: Option<String>,
         session_id: Option<String>,
-        tracking_id: Option<String>,
     ) -> Self {
-        let tracking_id = tracking_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-        let application_properties =
-            encode_application_properties(None, tracking_id, associated_link_name);
+        let application_properties = encode_application_properties(None, associated_link_name);
 
         let mut body = OrderedMap::new();
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers.into());
@@ -71,6 +71,7 @@ impl ReceiveBySequenceNumberRequest {
     pub fn set_server_timeout(&mut self, server_timeout: Option<u32>) {
         if let Some(server_timeout) = server_timeout {
             self.application_properties
+                .get_or_insert(ApplicationProperties::default())
                 .insert(SERVER_TIMEOUT.into(), server_timeout.into());
         }
     }
@@ -86,7 +87,7 @@ impl Request for ReceiveBySequenceNumberRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        Some(self.application_properties.clone())
+        self.application_properties.clone()
     }
 
     fn encode_body(self) -> Self::Body {
@@ -104,7 +105,7 @@ impl<'a> Request for &'a mut ReceiveBySequenceNumberRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        Some(self.application_properties.clone())
+        self.application_properties.clone()
     }
 
     fn encode_body(self) -> Self::Body {
@@ -122,7 +123,7 @@ impl<'a> Request for &'a ReceiveBySequenceNumberRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        Some(self.application_properties.clone())
+        self.application_properties.clone()
     }
 
     fn encode_body(self) -> Self::Body {
@@ -146,7 +147,6 @@ mod tests {
             fe2o3_amqp_types::definitions::ReceiverSettleMode::First,
             Some("link-name".into()),
             Some("session-id".into()),
-            None,
         );
         println!("request {:?}", request);
 

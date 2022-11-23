@@ -497,6 +497,7 @@ async fn test_send_and_defer_one_message() {
 async fn test_receive_deferred_message() {
     client_send_single_message(Default::default()).await;
     let seq = defer_one_message().await;
+    println!("seq: {}", seq);
     receive_one_deferred_message(seq).await; // FIXME: this line doesn't work now
 }
 
