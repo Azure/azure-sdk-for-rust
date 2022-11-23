@@ -259,7 +259,7 @@ where
         let policy = &self.inner.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
-        let response = run_operation!(
+        let _response = run_operation!(
             policy,
             RP,
             AmqpRequestResponseError,
