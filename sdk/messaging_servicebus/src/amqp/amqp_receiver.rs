@@ -43,7 +43,6 @@ use super::{
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) identifier: u32,
-    pub(crate) name: String,
 
     pub(crate) prefetch_count: u32,
     pub(crate) retry_policy: RP,
@@ -442,7 +441,7 @@ where
         let mut request = ReceiveBySequenceNumberRequest::new(
             sequence_numbers,
             receiver_settle_mode,
-            Some(self.name.clone()),
+            self.receiver.name(),
             session_id,
         );
         // ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode, session_id);
@@ -666,9 +665,9 @@ async fn defer_message(
     Ok(())
 }
 
-async fn receive_by_sequence_number(
+async fn receive_by_sequence_number<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut ReceiveBySequenceNumberRequest,
+    request: &mut ReceiveBySequenceNumberRequest<'a>,
     try_timeout: &StdDuration,
 ) -> Result<ReceiveBySequenceNumberResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;

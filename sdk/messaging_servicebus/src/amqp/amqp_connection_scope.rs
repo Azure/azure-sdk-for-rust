@@ -456,7 +456,7 @@ where
         receive_mode: &ServiceBusReceiveMode,
         session_id: Option<String>,
         prefetch_count: u32,
-    ) -> Result<(u32, String, fe2o3_amqp::Receiver), OpenReceiverError> {
+    ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
         if self.is_disposed {
             return Err(OpenReceiverError::ScopeIsDisposed);
         }
@@ -495,7 +495,7 @@ where
         );
 
         let mut builder = fe2o3_amqp::Receiver::builder()
-            .name(&link_name)
+            .name(link_name)
             .source(source)
             .target(identifier);
 
@@ -512,7 +512,7 @@ where
         }
 
         let receiver = builder.attach(&mut self.session.handle).await?;
-        Ok((link_identifier, link_name, receiver))
+        Ok((link_identifier, receiver))
     }
 }
 
