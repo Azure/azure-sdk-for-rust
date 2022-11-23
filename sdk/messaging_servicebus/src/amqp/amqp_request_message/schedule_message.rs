@@ -11,17 +11,19 @@ use crate::amqp::{
 /// List of maps
 type EncodedMessages = Vec<OrderedMap<String, Value>>;
 
-pub(crate) struct ScheduleMessageRequest {
+pub(crate) struct ScheduleMessageRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: OrderedMap<String, EncodedMessages>,
 }
 
-impl ScheduleMessageRequest {
-    pub fn new(messages: EncodedMessages) -> Self {
+impl<'a> ScheduleMessageRequest<'a> {
+    pub fn new(messages: EncodedMessages, associated_link_name: Option<&'a str>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(MESSAGES.into(), messages);
         Self {
             server_timeout: None,
+            associated_link_name,
             body,
         }
     }
@@ -31,7 +33,7 @@ impl ScheduleMessageRequest {
     }
 }
 
-impl Request for ScheduleMessageRequest {
+impl<'a> Request for ScheduleMessageRequest<'a> {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
@@ -41,7 +43,7 @@ impl Request for ScheduleMessageRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -50,7 +52,7 @@ impl Request for ScheduleMessageRequest {
 }
 
 /// This is to avoid repeated serialization of the same messages
-impl<'a> Request for &'a mut ScheduleMessageRequest {
+impl<'a, 'b> Request for &'a mut ScheduleMessageRequest<'b> {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
@@ -58,7 +60,7 @@ impl<'a> Request for &'a mut ScheduleMessageRequest {
     type Body = &'a OrderedMap<String, EncodedMessages>;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -66,7 +68,7 @@ impl<'a> Request for &'a mut ScheduleMessageRequest {
     }
 }
 
-impl<'a> Request for &'a ScheduleMessageRequest {
+impl<'a, 'b> Request for &'a ScheduleMessageRequest<'b> {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
@@ -74,7 +76,7 @@ impl<'a> Request for &'a ScheduleMessageRequest {
     type Body = &'a OrderedMap<String, EncodedMessages>;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

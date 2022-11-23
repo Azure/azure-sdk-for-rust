@@ -10,13 +10,18 @@ use crate::amqp::{
     },
 };
 
-pub struct PeekMessageRequest {
+pub struct PeekMessageRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: OrderedMap<String, Value>,
 }
 
-impl PeekMessageRequest {
-    pub fn new(from_sequence_number: i64, message_count: i32) -> Self {
+impl<'a> PeekMessageRequest<'a> {
+    pub fn new(
+        from_sequence_number: i64,
+        message_count: i32,
+        associated_link_name: Option<&'a str>,
+    ) -> Self {
         let mut body = OrderedMap::with_capacity(2);
         body.insert(
             FROM_SEQUENCE_NUMBER.into(),
@@ -25,6 +30,7 @@ impl PeekMessageRequest {
         body.insert(MESSAGE_COUNT.into(), Value::Int(message_count));
         Self {
             server_timeout: None,
+            associated_link_name,
             body,
         }
     }
@@ -34,7 +40,7 @@ impl PeekMessageRequest {
     }
 }
 
-impl Request for PeekMessageRequest {
+impl<'a> Request for PeekMessageRequest<'a> {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -44,7 +50,7 @@ impl Request for PeekMessageRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -52,7 +58,7 @@ impl Request for PeekMessageRequest {
     }
 }
 
-impl<'a> Request for &'a mut PeekMessageRequest {
+impl<'a, 'b> Request for &'a mut PeekMessageRequest<'b> {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -62,7 +68,7 @@ impl<'a> Request for &'a mut PeekMessageRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -70,7 +76,7 @@ impl<'a> Request for &'a mut PeekMessageRequest {
     }
 }
 
-impl<'a> Request for &'a PeekMessageRequest {
+impl<'a, 'b> Request for &'a PeekMessageRequest<'b> {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -80,7 +86,7 @@ impl<'a> Request for &'a PeekMessageRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

@@ -40,16 +40,18 @@ type RuleDescription = OrderedMap<String, OrderedMap<String, String>>;
 
 type AddRuleRequestBody = OrderedMap<String, Value>;
 
-pub(crate) struct AddRuleRequest {
+pub(crate) struct AddRuleRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: AddRuleRequestBody,
 }
 
-impl AddRuleRequest {
+impl<'a> AddRuleRequest<'a> {
     pub fn new(
         rule_name: String,
         filter: impl Into<RuleFilter>,
         sql_rule_action: String,
+        associated_link_name: Option<&'a str>,
     ) -> Result<Self, CorrelationFilterError> {
         let filter = filter.into();
         let mut rule_description: OrderedMap<Value, Value> = OrderedMap::new();
@@ -73,6 +75,7 @@ impl AddRuleRequest {
 
         Ok(Self {
             server_timeout: None,
+            associated_link_name,
             body,
         })
     }
@@ -82,7 +85,7 @@ impl AddRuleRequest {
     }
 }
 
-impl Request for AddRuleRequest {
+impl<'a> Request for AddRuleRequest<'a> {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;
@@ -92,7 +95,7 @@ impl Request for AddRuleRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -100,7 +103,7 @@ impl Request for AddRuleRequest {
     }
 }
 
-impl<'a> Request for &'a AddRuleRequest {
+impl<'a, 'b> Request for &'a AddRuleRequest<'b> {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;
@@ -110,7 +113,7 @@ impl<'a> Request for &'a AddRuleRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -118,7 +121,7 @@ impl<'a> Request for &'a AddRuleRequest {
     }
 }
 
-impl<'a> Request for &'a mut AddRuleRequest {
+impl<'a, 'b> Request for &'a mut AddRuleRequest<'b> {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;
@@ -128,7 +131,7 @@ impl<'a> Request for &'a mut AddRuleRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

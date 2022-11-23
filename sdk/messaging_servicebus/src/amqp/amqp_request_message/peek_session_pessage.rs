@@ -11,19 +11,26 @@ use crate::amqp::{
 
 type PeekSessionMessageRequestBody = OrderedMap<String, serde_amqp::Value>;
 
-pub struct PeekSessionMessageRequest {
+pub struct PeekSessionMessageRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: PeekSessionMessageRequestBody,
 }
 
-impl PeekSessionMessageRequest {
-    pub fn new(from_sequence_number: i64, message_count: i32, session_id: String) -> Self {
+impl<'a> PeekSessionMessageRequest<'a> {
+    pub fn new(
+        from_sequence_number: i64,
+        message_count: i32,
+        associated_link_name: Option<&'a str>,
+        session_id: String,
+    ) -> Self {
         let mut body = OrderedMap::with_capacity(3);
         body.insert(FROM_SEQUENCE_NUMBER.into(), from_sequence_number.into());
         body.insert(MESSAGE_COUNT.into(), message_count.into());
         body.insert(SESSION_ID.into(), session_id.into());
         Self {
             server_timeout: None,
+            associated_link_name,
             body,
         }
     }
@@ -33,7 +40,7 @@ impl PeekSessionMessageRequest {
     }
 }
 
-impl Request for PeekSessionMessageRequest {
+impl<'a> Request for PeekSessionMessageRequest<'a> {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -41,7 +48,7 @@ impl Request for PeekSessionMessageRequest {
     type Body = PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -49,7 +56,7 @@ impl Request for PeekSessionMessageRequest {
     }
 }
 
-impl<'a> Request for &'a mut PeekSessionMessageRequest {
+impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest<'b> {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -57,7 +64,7 @@ impl<'a> Request for &'a mut PeekSessionMessageRequest {
     type Body = &'a PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -65,7 +72,7 @@ impl<'a> Request for &'a mut PeekSessionMessageRequest {
     }
 }
 
-impl<'a> Request for &'a PeekSessionMessageRequest {
+impl<'a, 'b> Request for &'a PeekSessionMessageRequest<'b> {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -73,7 +80,7 @@ impl<'a> Request for &'a PeekSessionMessageRequest {
     type Body = &'a PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

@@ -11,19 +11,21 @@ use crate::amqp::{
 
 type EnumerateRulesRequestBody = OrderedMap<String, i32>;
 
-pub(crate) struct EnumerateRulesRequest {
+pub(crate) struct EnumerateRulesRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: EnumerateRulesRequestBody,
 }
 
-impl EnumerateRulesRequest {
-    pub fn new(top: i32, skip: i32) -> Self {
+impl<'a> EnumerateRulesRequest<'a> {
+    pub fn new(top: i32, skip: i32, associated_link_name: Option<&'a str>) -> Self {
         let mut body = OrderedMap::new();
         body.insert(TOP.to_string(), top);
         body.insert(SKIP.to_string(), skip);
 
         Self {
             server_timeout: None,
+            associated_link_name,
             body,
         }
     }
@@ -33,7 +35,7 @@ impl EnumerateRulesRequest {
     }
 }
 
-impl Request for EnumerateRulesRequest {
+impl<'a> Request for EnumerateRulesRequest<'a> {
     const OPERATION: &'static str = ENUMERATE_RULES_OPERATION;
 
     type Response = EnumerateRulesResponse;
@@ -43,7 +45,7 @@ impl Request for EnumerateRulesRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -51,7 +53,7 @@ impl Request for EnumerateRulesRequest {
     }
 }
 
-impl<'a> Request for &'a EnumerateRulesRequest {
+impl<'a, 'b> Request for &'a EnumerateRulesRequest<'b> {
     const OPERATION: &'static str = ENUMERATE_RULES_OPERATION;
 
     type Response = EnumerateRulesResponse;
@@ -61,7 +63,7 @@ impl<'a> Request for &'a EnumerateRulesRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -69,7 +71,7 @@ impl<'a> Request for &'a EnumerateRulesRequest {
     }
 }
 
-impl<'a> Request for &'a mut EnumerateRulesRequest {
+impl<'a, 'b> Request for &'a mut EnumerateRulesRequest<'b> {
     const OPERATION: &'static str = ENUMERATE_RULES_OPERATION;
 
     type Response = EnumerateRulesResponse;
@@ -79,7 +81,7 @@ impl<'a> Request for &'a mut EnumerateRulesRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

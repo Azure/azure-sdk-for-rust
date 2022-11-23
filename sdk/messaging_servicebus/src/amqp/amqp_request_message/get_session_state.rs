@@ -8,17 +8,19 @@ use crate::amqp::{
 
 type GetSessionStateRequestBody = OrderedMap<String, String>;
 
-pub(crate) struct GetSessionStateRequest {
+pub(crate) struct GetSessionStateRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: GetSessionStateRequestBody,
 }
 
-impl GetSessionStateRequest {
-    pub fn new(session_id: String) -> Self {
+impl<'a> GetSessionStateRequest<'a> {
+    pub fn new(session_id: String, associated_link_name: Option<&'a str>) -> Self {
         let mut body = OrderedMap::new();
         body.insert(SESSION_ID.into(), session_id);
         Self {
             server_timeout: None,
+            associated_link_name,
             body,
         }
     }
@@ -28,7 +30,7 @@ impl GetSessionStateRequest {
     }
 }
 
-impl Request for GetSessionStateRequest {
+impl<'a> Request for GetSessionStateRequest<'a> {
     const OPERATION: &'static str = GET_SESSION_STATE_OPERATION;
 
     type Response = GetSessionStateResponse;
@@ -38,7 +40,7 @@ impl Request for GetSessionStateRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -46,7 +48,7 @@ impl Request for GetSessionStateRequest {
     }
 }
 
-impl<'a> Request for &'a mut GetSessionStateRequest {
+impl<'a, 'b> Request for &'a mut GetSessionStateRequest<'b> {
     const OPERATION: &'static str = GET_SESSION_STATE_OPERATION;
 
     type Response = GetSessionStateResponse;
@@ -56,7 +58,7 @@ impl<'a> Request for &'a mut GetSessionStateRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -64,7 +66,7 @@ impl<'a> Request for &'a mut GetSessionStateRequest {
     }
 }
 
-impl<'a> Request for &'a GetSessionStateRequest {
+impl<'a, 'b> Request for &'a GetSessionStateRequest<'b> {
     const OPERATION: &'static str = GET_SESSION_STATE_OPERATION;
 
     type Response = GetSessionStateResponse;
@@ -74,7 +76,7 @@ impl<'a> Request for &'a GetSessionStateRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

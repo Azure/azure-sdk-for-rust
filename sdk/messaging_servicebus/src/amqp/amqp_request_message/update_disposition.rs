@@ -18,12 +18,13 @@ use crate::{
 
 type UpdateDispositionRequestBody = OrderedMap<String, Value>;
 
-pub(crate) struct UpdateDispositionRequest {
+pub(crate) struct UpdateDispositionRequest<'a> {
     server_timeout: Option<u32>,
+    associated_link_name: Option<&'a str>,
     body: UpdateDispositionRequestBody,
 }
 
-impl UpdateDispositionRequest {
+impl<'a> UpdateDispositionRequest<'a> {
     pub fn new(
         disposition_status: DispositionStatus,
         lock_tokens: Array<Uuid>,
@@ -31,6 +32,7 @@ impl UpdateDispositionRequest {
         dead_letter_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
         session_id: Option<String>,
+        associated_link_name: Option<&'a str>,
     ) -> Self {
         let mut body = UpdateDispositionRequestBody::new();
         body.insert(DISPOSITION_STATUS.into(), disposition_status.into());
@@ -50,6 +52,7 @@ impl UpdateDispositionRequest {
 
         Self {
             server_timeout: None,
+            associated_link_name,
             body,
         }
     }
@@ -59,7 +62,7 @@ impl UpdateDispositionRequest {
     }
 }
 
-impl Request for UpdateDispositionRequest {
+impl<'a> Request for UpdateDispositionRequest<'a> {
     const OPERATION: &'static str = UPDATE_DISPOSITION_OPERATION;
 
     type Response = UpdateDispositionResponse;
@@ -69,7 +72,7 @@ impl Request for UpdateDispositionRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -77,7 +80,7 @@ impl Request for UpdateDispositionRequest {
     }
 }
 
-impl<'a> Request for &'a mut UpdateDispositionRequest {
+impl<'a, 'b> Request for &'a mut UpdateDispositionRequest<'b> {
     const OPERATION: &'static str = UPDATE_DISPOSITION_OPERATION;
 
     type Response = UpdateDispositionResponse;
@@ -87,7 +90,7 @@ impl<'a> Request for &'a mut UpdateDispositionRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -95,7 +98,7 @@ impl<'a> Request for &'a mut UpdateDispositionRequest {
     }
 }
 
-impl<'a> Request for &'a UpdateDispositionRequest {
+impl<'a, 'b> Request for &'a UpdateDispositionRequest<'b> {
     const OPERATION: &'static str = UPDATE_DISPOSITION_OPERATION;
 
     type Response = UpdateDispositionResponse;
@@ -105,7 +108,7 @@ impl<'a> Request for &'a UpdateDispositionRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_server_timeout_as_application_properties(self.server_timeout)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {

@@ -1,7 +1,6 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::{
     definitions::ReceiverSettleMode,
-    messaging::ApplicationProperties,
     primitives::{Array, OrderedMap},
 };
 use serde_amqp::Value;
@@ -10,29 +9,16 @@ use crate::amqp::{
     amqp_response_message::receive_by_sequence_number::ReceiveBySequenceNumberResponse,
     management_constants::{
         operations::RECEIVE_BY_SEQUENCE_NUMBER_OPERATION,
-        properties::{RECEIVER_SETTLE_MODE, SEQUENCE_NUMBERS, SERVER_TIMEOUT, SESSION_ID},
-        request::ASSOCIATED_LINK_NAME,
+        properties::{RECEIVER_SETTLE_MODE, SEQUENCE_NUMBERS, SESSION_ID},
     },
 };
 
 type ReceiveBySequenceNumberRequestBody = OrderedMap<String, Value>;
 
-fn encode_application_properties(
-    server_timeout: Option<u32>,
-    associated_link_name: &str,
-) -> ApplicationProperties {
-    let mut builder =
-        ApplicationProperties::builder().insert(ASSOCIATED_LINK_NAME, associated_link_name);
-    if let Some(server_timeout) = server_timeout {
-        builder = builder.insert(SERVER_TIMEOUT, server_timeout);
-    }
-    builder.build()
-}
-
 #[derive(Debug, Clone)]
 pub struct ReceiveBySequenceNumberRequest<'a> {
     server_timeout: Option<u32>,
-    associated_link_name: &'a str,
+    associated_link_name: Option<&'a str>,
     body: ReceiveBySequenceNumberRequestBody,
 }
 
@@ -40,11 +26,9 @@ impl<'a> ReceiveBySequenceNumberRequest<'a> {
     pub fn new(
         sequence_numbers: Array<i64>,
         receiver_settle_mode: ReceiverSettleMode,
-        associated_link_name: &'a str,
+        associated_link_name: Option<&'a str>,
         session_id: Option<String>,
     ) -> Self {
-        let application_properties = encode_application_properties(None, associated_link_name);
-
         let mut body = OrderedMap::new();
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers.into());
         body.insert(
@@ -77,10 +61,7 @@ impl<'a> Request for ReceiveBySequenceNumberRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        Some(encode_application_properties(
-            self.server_timeout,
-            self.associated_link_name,
-        ))
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -98,10 +79,7 @@ impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        Some(encode_application_properties(
-            self.server_timeout,
-            &self.associated_link_name,
-        ))
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -119,10 +97,7 @@ impl<'a, 'b> Request for &'a ReceiveBySequenceNumberRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        Some(encode_application_properties(
-            self.server_timeout,
-            &self.associated_link_name,
-        ))
+        super::encode_application_properties(self.server_timeout, self.associated_link_name)
     }
 
     fn encode_body(self) -> Self::Body {
@@ -144,7 +119,7 @@ mod tests {
         let request = super::ReceiveBySequenceNumberRequest::new(
             vec![389].into(),
             fe2o3_amqp_types::definitions::ReceiverSettleMode::First,
-            "link-name",
+            Some("link-name"),
             Some("session-id".into()),
         );
         println!("request {:?}", request);

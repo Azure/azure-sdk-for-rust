@@ -170,7 +170,7 @@ where
 
                 // Use a wrapper type to avoid mistakes
                 let mut try_timeout = policy.calculate_try_timeout(0);
-                let mut request = ScheduleMessageRequest::new(messages);
+                let mut request = ScheduleMessageRequest::new(messages, Some(self.sender.name()));
 
                 let management_client = &mut self.management_client;
                 run_operation! {
@@ -194,7 +194,8 @@ where
         }
 
         // TODO: solve lifetime issue if link name is borrowed
-        let mut request = CancelScheduledMessageRequest::new(Array(sequence_numbers));
+        let mut request =
+            CancelScheduledMessageRequest::new(Array(sequence_numbers), Some(self.sender.name()));
 
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
@@ -264,9 +265,9 @@ async fn send_batch_envelope(
     Ok(())
 }
 
-async fn schedule_message(
+async fn schedule_message<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut ScheduleMessageRequest, // Use a reference to avoid repeated serialization
+    request: &mut ScheduleMessageRequest<'a>, // Use a reference to avoid repeated serialization
     try_timeout: StdDuration,
 ) -> Result<Vec<i64>, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -276,9 +277,9 @@ async fn schedule_message(
     Ok(response.into_sequence_numbers())
 }
 
-async fn cancel_scheduled_messages<'a>(
+async fn cancel_scheduled_messages<'a, 'b>(
     mgmt_client: &'a mut MgmtClient,
-    request: &'a mut CancelScheduledMessageRequest,
+    request: &'a mut CancelScheduledMessageRequest<'b>,
     try_timeout: &StdDuration,
 ) -> Result<(), AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
