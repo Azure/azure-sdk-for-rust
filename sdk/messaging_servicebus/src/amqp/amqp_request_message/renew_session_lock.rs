@@ -13,7 +13,7 @@ pub(crate) struct RenewSessionLockRequest<'a> {
 }
 
 impl<'a> RenewSessionLockRequest<'a> {
-    pub fn new(associated_link_name: Option<&'a str>, session_id: &str) -> Self {
+    pub fn new(session_id: &str, associated_link_name: Option<&'a str>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(SESSION_ID.into(), session_id.into());
         Self {

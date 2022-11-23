@@ -48,7 +48,6 @@ pub struct ServiceBusSessionReceiver<R> {
     pub(crate) entity_path: String,
     pub(crate) identifier: String,
     pub(crate) session_id: String,
-    pub(crate) session_locked_until: OffsetDateTime,
 }
 
 impl<R> ServiceBusSessionReceiver<R>
@@ -174,7 +173,22 @@ where
         Ok(())
     }
 
+    pub async fn session_state(&mut self) -> Result<Vec<u8>, R::RequestResponseError> {
+        self.inner.session_state(&self.session_id).await
+    }
+
+    pub async fn set_session_state(
+        &mut self,
+        session_state: Vec<u8>,
+    ) -> Result<(), R::RequestResponseError> {
+        self.inner
+            .set_session_state(&self.session_id, session_state)
+            .await
+    }
+
     pub async fn renew_session_lock(&mut self) -> Result<(), R::RequestResponseError> {
-        todo!();
+        let locked_until = self.inner.renew_session_lock(&self.session_id).await?;
+        self.inner.set_session_locked_until(locked_until);
+        Ok(())
     }
 }

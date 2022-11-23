@@ -18,16 +18,11 @@ pub trait TransportSessionReceiver: TransportReceiver {
     fn is_session_link_closed(&self) -> bool;
 
     /// <summary>
-    ///
-    /// </summary>
-    fn session_id(&self) -> Option<&str>;
-
-    /// <summary>
     /// The Session Id associated with the receiver.
     /// </summary>
     fn session_locked_until(&self) -> Option<OffsetDateTime>;
 
-    fn set_sesesion_locked_until(&mut self, session_locked_until: OffsetDateTime);
+    fn set_session_locked_until(&mut self, session_locked_until: OffsetDateTime);
 
     /// <summary>
     /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
@@ -36,7 +31,10 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// <returns>New lock token expiry date and time in UTC format.</returns>
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    async fn renew_session_lock(&mut self) -> Result<Timestamp, Self::RequestResponseError>;
+    async fn renew_session_lock(
+        &mut self,
+        session_id: &str,
+    ) -> Result<OffsetDateTime, Self::RequestResponseError>;
 
     /// <summary>
     /// Gets the session state.
@@ -45,7 +43,10 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     ///
     /// <returns>The session state as <see cref="BinaryData"/>.</returns>
-    async fn get_session_state(&mut self) -> Result<Vec<u8>, Self::RequestResponseError>;
+    async fn session_state(
+        &mut self,
+        session_id: &str,
+    ) -> Result<Vec<u8>, Self::RequestResponseError>;
 
     /// <summary>
     /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
@@ -62,7 +63,8 @@ pub trait TransportSessionReceiver: TransportReceiver {
     //     CancellationToken cancellationToken);
     async fn set_session_state(
         &mut self,
-        session_state: impl AsRef<u8> + Send,
+        session_id: &str,
+        session_state: Vec<u8>,
     ) -> Result<(), Self::RequestResponseError>;
 }
 

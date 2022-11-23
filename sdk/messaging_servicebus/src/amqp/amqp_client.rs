@@ -118,6 +118,8 @@ where
     // private AmqpConnectionScope ConnectionScope { get; }
     connection_scope: AmqpConnectionScope<TC>,
 
+    transport_type: ServiceBusTransportType,
+
     /// Retry policy phantom
     retry_policy: PhantomData<RP>,
 }
@@ -133,6 +135,7 @@ where
             closed: self.closed,
             access_token: self.access_token,
             connection_scope: self.connection_scope,
+            transport_type: self.transport_type,
             retry_policy: PhantomData,
         }
     }
@@ -183,7 +186,7 @@ where
                 service_endpoint,
                 connection_endpoint,
                 credential,
-                transport_type,
+                transport_type.clone(),
                 retry_timeout,
             )
             .await?;
@@ -191,16 +194,15 @@ where
                 credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
                 closed: false,
                 access_token: None,
-                // service_endpoint,
-                // connection_endpoint,
                 connection_scope,
                 retry_policy: PhantomData,
+                transport_type,
             })
         })
     }
 
     fn transport_type(&self) -> &ServiceBusTransportType {
-        self.transport_type()
+        &self.transport_type
     }
 
     /// Indicates whether or not this client has been closed.
@@ -320,18 +322,18 @@ where
                 .open_management_link(&entity_path, &identifier)
                 .await?;
             let retry_policy = RP::new(retry_options);
-            // Ok(AmqpReceiver {
-            //     identifier: link_identifier,
-            //     retry_policy,
-            //     receiver,
-            //     receive_mode,
-            //     is_processor,
-            //     prefetch_count,
-            //     management_client,
-            //     request_response_locked_messages: Default::default(),
-            //     last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
-            // })
-            todo!()
+            let inner = AmqpReceiver {
+                identifier: link_identifier,
+                retry_policy,
+                receiver,
+                receive_mode,
+                is_processor,
+                prefetch_count,
+                management_client,
+                request_response_locked_messages: Default::default(),
+                last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
+            };
+            Ok(AmqpSessionReceiver { inner })
         })
     }
 

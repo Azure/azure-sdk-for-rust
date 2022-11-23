@@ -255,7 +255,7 @@ where
         queue_or_topic_name: impl Into<String>,
         session_id: impl Into<String>,
         options: ServiceBusSessionReceiverOptions,
-    ) -> Result<ServiceBusSessionReceiver<C::Receiver>, C::CreateReceiverError> {
+    ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
@@ -278,13 +278,11 @@ where
             )
             .await?;
 
-        // Ok(ServiceBusSessionReceiver {
-        //     inner,
-        //     entity_path,
-        //     identifier,
-        //     session_id,
-        //     session_locked_until: todo!(),
-        // })
-        todo!()
+        Ok(ServiceBusSessionReceiver {
+            inner,
+            entity_path,
+            identifier,
+            session_id,
+        })
     }
 }

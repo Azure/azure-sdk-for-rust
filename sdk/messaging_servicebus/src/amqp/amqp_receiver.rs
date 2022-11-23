@@ -297,8 +297,8 @@ where
         let mut request = PeekSessionMessageRequest::new(
             sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
             message_count,
-            Some(self.receiver.name()),
             session_id,
+            Some(self.receiver.name()),
         );
 
         let mgmt_client = &mut self.management_client;
@@ -483,10 +483,9 @@ where
         let mut request = ReceiveBySequenceNumberRequest::new(
             sequence_numbers,
             receiver_settle_mode,
-            Some(self.receiver.name()),
             session_id,
+            Some(self.receiver.name()),
         );
-        // ReceiveBySequenceNumberRequest::new(sequence_numbers, receiver_settle_mode, session_id);
 
         let mgmt_client = &mut self.management_client;
         let policy = &self.retry_policy;
@@ -540,26 +539,6 @@ where
         )?;
         Ok(response.expirations.into_inner())
     }
-
-    // async fn renew_session_lock(
-    //     &mut self,
-    //     session_id: &str,
-    // ) -> Result<Timestamp, Self::RequestResponseError> {
-    //     let mut request = RenewSessionLockRequest::new(Some(self.receiver.name()), session_id);
-    //     let mgmt_client = &mut self.management_client;
-    //     let policy = &self.retry_policy;
-    //     let mut try_timeout = policy.calculate_try_timeout(0);
-
-    //     let response = run_operation!(
-    //         policy,
-    //         RP,
-    //         AmqpRequestResponseError,
-    //         try_timeout,
-    //         renew_session_lock(mgmt_client, &mut request, &try_timeout).await
-    //     )?;
-
-    //     Ok(response.expiration)
-    // }
 }
 
 fn lock_token_from_delivery<B>(delivery: &Delivery<B>) -> Option<Uuid> {
