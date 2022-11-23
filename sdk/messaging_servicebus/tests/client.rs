@@ -417,7 +417,7 @@ async fn client_can_create_session_receiver() {
 }
 
 #[tokio::test]
-async fn client_send_and_receive_single_sessionful_message() {
+async fn test_send_and_receive_sessionful_messages() {
     let total = 3;
     let session_id = "session_id".to_string();
 
