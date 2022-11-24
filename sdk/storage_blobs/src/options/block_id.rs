@@ -5,8 +5,16 @@ use bytes::Bytes;
 pub struct BlockId(Bytes);
 
 impl BlockId {
+    /// Returns a new block id,
+    ///
     pub fn new(block_id: impl Into<Bytes>) -> Self {
         Self(block_id.into())
+    }
+
+    /// Returns clone of bytes,
+    ///
+    pub fn bytes(&self) -> Bytes {
+        self.0.clone()
     }
 }
 
