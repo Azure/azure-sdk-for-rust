@@ -9,6 +9,12 @@ const DEAD_LETTER_QUEUE_NAME: &str = "$DeadLetterQueue"; // SubQueuePrefix + Dea
 const TRANSFER: &str = "Transfer";
 const TRANSFER_DEAD_LETTER_QUEUE_NAME: &str = "$Transfer/$DeadLetterQueue"; // SubQueuePrefix + Transfer + PathDelimiter + DeadLetterQueueName;
 
+pub(crate) fn format_subscription_path(topic_name: &str, subscription_name: &str) -> String {
+    format!(
+        "{topic_name}{PATH_DELIMITER}{SUBSCRIPTIONS_SUB_PATH}{PATH_DELIMITER}{subscription_name}"
+    )
+}
+
 pub(crate) fn format_entity_path(entity_path: String, sub_queue: SubQueue) -> String {
     match sub_queue {
         SubQueue::None => entity_path,

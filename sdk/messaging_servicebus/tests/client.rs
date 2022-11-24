@@ -74,7 +74,10 @@ async fn client_receive_messages(total: u32, options: ServiceBusReceiverOptions)
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
-    let mut receiver = client.create_receiver(queue, options).await.unwrap();
+    let mut receiver = client
+        .create_receiver_for_queue(queue, options)
+        .await
+        .unwrap();
     let messages = receiver.receive_messages(total, None).await.unwrap();
 
     assert_eq!(messages.len(), total as usize);
@@ -98,7 +101,7 @@ async fn client_recv_from_session(
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .accept_session(session_enabled_queue, session_id, options)
+        .accept_next_session_for_queue(session_enabled_queue, session_id, options)
         .await
         .unwrap();
     let messages = receiver.receive_messages(total, None).await.unwrap();
@@ -144,7 +147,7 @@ async fn abandon_one_message() {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -165,7 +168,7 @@ async fn dead_letter_one_message() {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -192,7 +195,10 @@ async fn recv_from_dead_letter_queue() -> usize {
         sub_queue: SubQueue::DeadLetter,
         ..Default::default()
     };
-    let mut receiver = client.create_receiver(queue, options).await.unwrap();
+    let mut receiver = client
+        .create_receiver_for_queue(queue, options)
+        .await
+        .unwrap();
 
     let message = receiver.receive_message().await.unwrap();
 
@@ -262,7 +268,7 @@ async fn peek_one_message() -> Option<ServiceBusPeekedMessage> {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -282,7 +288,7 @@ async fn defer_one_message() -> i64 {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -304,7 +310,7 @@ async fn receive_one_deferred_message(seq: i64) {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -327,7 +333,7 @@ async fn receive_then_renew_lock() {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let mut receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -382,7 +388,7 @@ async fn client_can_create_receiver() {
 
     let mut client = ServiceBusClient::new(connection_string).await.unwrap();
     let receiver = client
-        .create_receiver(queue, Default::default())
+        .create_receiver_for_queue(queue, Default::default())
         .await
         .unwrap();
 
@@ -501,7 +507,7 @@ async fn test_receive_deferred_message() {
     client_send_single_message(Default::default()).await;
     let seq = defer_one_message().await;
     println!("seq: {}", seq);
-    receive_one_deferred_message(seq).await; // FIXME: this line doesn't work now
+    receive_one_deferred_message(seq).await;
 }
 
 #[tokio::test]

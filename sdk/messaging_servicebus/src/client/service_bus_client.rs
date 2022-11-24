@@ -13,7 +13,7 @@ use crate::{
     },
     core::{BasicRetryPolicy, TransportClient},
     diagnostics,
-    entity_name_formatter::format_entity_path,
+    entity_name_formatter::{self, format_entity_path},
     primitives::{
         service_bus_connection::ServiceBusConnection,
         service_bus_transport_type::ServiceBusTransportType,
@@ -217,13 +217,34 @@ where
     C: TransportClient + Send + Sync + 'static,
     OpenReceiverError: From<C::CreateReceiverError>,
 {
-    // This cannot be used to create a session receiver or proces
-    pub async fn create_receiver(
+    pub async fn create_receiver_for_queue(
         &mut self,
-        queue_or_topic_name: impl Into<String>,
+        queue_name: impl Into<String>,
         options: ServiceBusReceiverOptions,
     ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
-        let entity_path = queue_or_topic_name.into();
+        let entity_path = queue_name.into();
+        self.create_receiver(entity_path, options).await
+    }
+
+    pub async fn create_receiver_for_subscription<'a>(
+        &mut self,
+        topic_name: impl AsRef<str>,
+        subscription_name: impl AsRef<str>,
+        options: ServiceBusReceiverOptions,
+    ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
+        let entity_path = entity_name_formatter::format_subscription_path(
+            topic_name.as_ref(),
+            subscription_name.as_ref(),
+        );
+        self.create_receiver(entity_path, options).await
+    }
+
+    // This cannot be used to create a session receiver or proces
+    async fn create_receiver(
+        &mut self,
+        entity_path: String,
+        options: ServiceBusReceiverOptions,
+    ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
         let identifier = options
             .identifier
             .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
@@ -250,20 +271,46 @@ where
         })
     }
 
-    pub async fn accept_session(
+    pub async fn accept_next_session_for_queue(
         &mut self,
-        queue_or_topic_name: impl Into<String>,
+        queue_name: impl Into<String>,
         session_id: impl Into<String>,
         options: ServiceBusSessionReceiverOptions,
     ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
-        let entity_path = queue_or_topic_name.into();
+        let entity_path = queue_name.into();
+        let session_id = session_id.into();
+        self.accept_next_session(entity_path, session_id, options)
+            .await
+    }
+
+    pub async fn accept_next_session_for_subscription(
+        &mut self,
+        topic_name: impl AsRef<str>,
+        subscription_name: impl AsRef<str>,
+        session_id: impl Into<String>,
+        options: ServiceBusSessionReceiverOptions,
+    ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
+        let entity_path = entity_name_formatter::format_subscription_path(
+            topic_name.as_ref(),
+            subscription_name.as_ref(),
+        );
+        let session_id = session_id.into();
+        self.accept_next_session(entity_path, session_id, options)
+            .await
+    }
+
+    async fn accept_next_session(
+        &mut self,
+        entity_path: String,
+        session_id: String,
+        options: ServiceBusSessionReceiverOptions,
+    ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
         let identifier = options
             .identifier
             .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let receive_mode = options.receive_mode;
         let prefetch_count = options.prefetch_count;
-        let session_id = session_id.into();
 
         let inner = self
             .connection

@@ -18,9 +18,7 @@ use crate::{
         disposition_status::DispositionStatus,
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::{ReceivedMessageLockToken, ServiceBusReceivedMessage},
-        service_bus_retry_policy::{
-            run_operation, RetryError, ServiceBusRetryPolicy,
-        },
+        service_bus_retry_policy::{run_operation, RetryError, ServiceBusRetryPolicy},
     },
     ServiceBusReceiveMode,
 };
@@ -31,7 +29,8 @@ use super::{
     amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
     amqp_request_message::{
         peek_message::PeekMessageRequest, peek_session_message::PeekSessionMessageRequest,
-        receive_by_sequence_number::ReceiveBySequenceNumberRequest, renew_lock::RenewLockRequest, update_disposition::UpdateDispositionRequest,
+        receive_by_sequence_number::ReceiveBySequenceNumberRequest, renew_lock::RenewLockRequest,
+        update_disposition::UpdateDispositionRequest,
     },
     amqp_response_message::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
