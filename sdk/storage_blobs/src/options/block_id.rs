@@ -1,6 +1,10 @@
 use azure_core::AppendToUrlQuery;
 use bytes::Bytes;
 
+/// Struct wrapping the bytes of a block blob block-id,
+///
+/// A block id cannot exceed 64 bytes. In addition all block id's in a block list must be the same length when converted into a base64 string.
+///
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlockId(Bytes);
 
