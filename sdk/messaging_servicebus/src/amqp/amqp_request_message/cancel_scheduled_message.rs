@@ -11,6 +11,7 @@ use crate::amqp::{
 };
 
 type SequenceNumbers = Array<i64>;
+type CancelScheduledMessageRequestBody = OrderedMap<String, SequenceNumbers>;
 
 pub(crate) struct CancelScheduledMessageRequest<'a> {
     server_timeout: Option<u32>,
@@ -39,7 +40,7 @@ impl<'a> fe2o3_amqp_management::request::Request for CancelScheduledMessageReque
 
     type Response = CancelScheduledMessageResponse;
 
-    type Body = OrderedMap<String, Array<i64>>;
+    type Body = CancelScheduledMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
         super::encode_application_properties(self.server_timeout, self.associated_link_name)
@@ -55,7 +56,7 @@ impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a mut CancelScheduled
 
     type Response = CancelScheduledMessageResponse;
 
-    type Body = &'a OrderedMap<String, Array<i64>>;
+    type Body = &'a CancelScheduledMessageRequestBody;
 
     // TODO: override the blanket impl of `into_message()` to avoid repeated allocation of
     // `ApplicationProperties`
@@ -73,7 +74,7 @@ impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a CancelScheduledMess
 
     type Response = CancelScheduledMessageResponse;
 
-    type Body = &'a OrderedMap<String, Array<i64>>;
+    type Body = &'a CancelScheduledMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
         super::encode_application_properties(self.server_timeout, self.associated_link_name)

@@ -10,6 +10,7 @@ use crate::amqp::{
 /// Type alias for scheduled messages that are encoded as maps
 /// List of maps
 type EncodedMessages = Vec<OrderedMap<String, Value>>;
+type ScheduleMessageRequestBody = OrderedMap<String, EncodedMessages>;
 
 pub(crate) struct ScheduleMessageRequest<'a> {
     server_timeout: Option<u32>,
@@ -38,7 +39,7 @@ impl<'a> Request for ScheduleMessageRequest<'a> {
 
     type Response = ScheduleMessageResponse;
 
-    type Body = OrderedMap<String, EncodedMessages>;
+    type Body = ScheduleMessageRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -57,7 +58,7 @@ impl<'a, 'b> Request for &'a mut ScheduleMessageRequest<'b> {
 
     type Response = ScheduleMessageResponse;
 
-    type Body = &'a OrderedMap<String, EncodedMessages>;
+    type Body = &'a ScheduleMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
         super::encode_application_properties(self.server_timeout, self.associated_link_name)
@@ -73,7 +74,7 @@ impl<'a, 'b> Request for &'a ScheduleMessageRequest<'b> {
 
     type Response = ScheduleMessageResponse;
 
-    type Body = &'a OrderedMap<String, EncodedMessages>;
+    type Body = &'a ScheduleMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
         super::encode_application_properties(self.server_timeout, self.associated_link_name)

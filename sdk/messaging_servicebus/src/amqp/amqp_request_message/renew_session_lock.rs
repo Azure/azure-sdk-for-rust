@@ -6,6 +6,8 @@ use crate::amqp::{
     management_constants::{operations::RENEW_SESSION_LOCK_OPERATION, properties::SESSION_ID},
 };
 
+type RenewSessionLockRequestBody = OrderedMap<String, String>;
+
 pub(crate) struct RenewSessionLockRequest<'a> {
     server_timeout: Option<u32>,
     associated_link_name: Option<&'a str>,
@@ -33,7 +35,7 @@ impl<'a> Request for RenewSessionLockRequest<'a> {
 
     type Response = RenewSessionLockResponse;
 
-    type Body = OrderedMap<String, String>;
+    type Body = RenewSessionLockRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -51,7 +53,7 @@ impl<'a, 'b> Request for &'a mut RenewSessionLockRequest<'b> {
 
     type Response = RenewSessionLockResponse;
 
-    type Body = &'a OrderedMap<String, String>;
+    type Body = &'a RenewSessionLockRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -69,7 +71,7 @@ impl<'a, 'b> Request for &'a RenewSessionLockRequest<'b> {
 
     type Response = RenewSessionLockResponse;
 
-    type Body = &'a OrderedMap<String, String>;
+    type Body = &'a RenewSessionLockRequestBody;
 
     fn encode_application_properties(
         &mut self,

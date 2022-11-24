@@ -7,6 +7,7 @@ use crate::amqp::{
 };
 
 pub(super) type LockTokens = Array<serde_amqp::primitives::Uuid>;
+type RenewLockRequestBody = OrderedMap<String, LockTokens>;
 
 pub(crate) struct RenewLockRequest<'a> {
     server_timeout: Option<u32>,
@@ -35,7 +36,7 @@ impl<'a> Request for RenewLockRequest<'a> {
 
     type Response = RenewLockResponse;
 
-    type Body = OrderedMap<String, LockTokens>;
+    type Body = RenewLockRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -53,7 +54,7 @@ impl<'a, 'b> Request for &'a mut RenewLockRequest<'b> {
 
     type Response = RenewLockResponse;
 
-    type Body = &'a OrderedMap<String, LockTokens>;
+    type Body = &'a RenewLockRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -71,7 +72,7 @@ impl<'a, 'b> Request for &'a RenewLockRequest<'b> {
 
     type Response = RenewLockResponse;
 
-    type Body = &'a OrderedMap<String, LockTokens>;
+    type Body = &'a RenewLockRequestBody;
 
     fn encode_application_properties(
         &mut self,

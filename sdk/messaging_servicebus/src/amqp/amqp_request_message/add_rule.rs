@@ -15,10 +15,6 @@ use crate::amqp::{
     },
 };
 
-// type SqlFilter = OrderedMap<String, String>;
-// type CorrelationFilter = OrderedMap<String, String>;
-// type SqlRuleAction = OrderedMap<String, String>;
-
 pub enum RuleFilter {
     Sql(SqlFilter),
     Correlation(CorrelationFilter),

@@ -10,6 +10,8 @@ use crate::amqp::{
     },
 };
 
+type PeekMessageRequestBody = OrderedMap<String, Value>;
+
 pub struct PeekMessageRequest<'a> {
     server_timeout: Option<u32>,
     associated_link_name: Option<&'a str>,
@@ -45,7 +47,7 @@ impl<'a> Request for PeekMessageRequest<'a> {
 
     type Response = PeekMessageResponse;
 
-    type Body = OrderedMap<String, Value>;
+    type Body = PeekMessageRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -63,7 +65,7 @@ impl<'a, 'b> Request for &'a mut PeekMessageRequest<'b> {
 
     type Response = PeekMessageResponse;
 
-    type Body = &'a OrderedMap<String, Value>;
+    type Body = &'a PeekMessageRequestBody;
 
     fn encode_application_properties(
         &mut self,
@@ -81,7 +83,7 @@ impl<'a, 'b> Request for &'a PeekMessageRequest<'b> {
 
     type Response = PeekMessageResponse;
 
-    type Body = &'a OrderedMap<String, Value>;
+    type Body = &'a PeekMessageRequestBody;
 
     fn encode_application_properties(
         &mut self,
