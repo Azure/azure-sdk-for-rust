@@ -172,6 +172,9 @@ impl Client {
     pub fn kusto_pool_principal_assignments_client(&self) -> kusto_pool_principal_assignments::Client {
         kusto_pool_principal_assignments::Client(self.clone())
     }
+    pub fn kusto_pool_private_link_resources_client(&self) -> kusto_pool_private_link_resources::Client {
+        kusto_pool_private_link_resources::Client(self.clone())
+    }
     pub fn kusto_pools_client(&self) -> kusto_pools::Client {
         kusto_pools::Client(self.clone())
     }
@@ -1314,9 +1317,9 @@ pub mod ip_firewall_rules {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::IpFirewallRuleInfo> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::IpFirewallRuleInfo = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1376,7 +1379,7 @@ pub mod ip_firewall_rules {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IpFirewallRuleInfo>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3802,6 +3805,7 @@ pub mod sql_pools {
             pub(crate) sql_pool_info: models::SqlPoolPatchInfo,
         }
         impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3842,9 +3846,9 @@ pub mod sql_pools {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::SqlPool> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::SqlPool = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3904,7 +3908,7 @@ pub mod sql_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPool>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4010,9 +4014,9 @@ pub mod sql_pools {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::SqlPool> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::SqlPool = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4073,7 +4077,7 @@ pub mod sql_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPool>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4082,9 +4086,9 @@ pub mod sql_pools {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::SqlPool> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::SqlPool = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4145,7 +4149,7 @@ pub mod sql_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPool>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4414,9 +4418,9 @@ pub mod sql_pool_operation_results {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::SqlPool> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::SqlPool = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4446,6 +4450,7 @@ pub mod sql_pool_operation_results {
             pub(crate) operation_id: String,
         }
         impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4469,7 +4474,7 @@ pub mod sql_pool_operation_results {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SqlPool>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -13927,9 +13932,9 @@ pub mod workspaces {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::Workspace> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::Workspace = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -13987,7 +13992,7 @@ pub mod workspaces {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Workspace>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -15262,9 +15267,9 @@ pub mod big_data_pools {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+            pub async fn into_body(self) -> azure_core::Result<models::BigDataPoolResourceInfo> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let body: models::BigDataPoolResourceInfo = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -15324,7 +15329,7 @@ pub mod big_data_pools {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BigDataPoolResourceInfo>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -21642,6 +21647,98 @@ pub mod kusto_pool_database_principal_assignments {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+        }
+    }
+}
+pub mod kusto_pool_private_link_resources {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists all Kusto pool PrivateLinkResources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            kusto_pool_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                kusto_pool_name: kusto_pool_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PrivateLinkResources> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PrivateLinkResources = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) kusto_pool_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/privateLinkResources" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . workspace_name , & this . kusto_pool_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateLinkResources>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

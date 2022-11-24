@@ -16,7 +16,7 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
     let service_name = &spec.service_name();
     let package_name = &package_name(spec, run_config);
     let output_folder = &io::join(output_folder, service_name)?;
-    let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    let mut package_config = autorust_toml::read(&io::join(output_folder, "autorust.toml")?)?;
     if package_config.tags.sort.is_none() {
         package_config.tags.sort = Some(true);
     }
@@ -26,15 +26,26 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
     if package_config.tags.limit.is_none() {
         package_config.tags.limit = Some(5);
     }
-    let tags = &package_config.filter_tags(spec_config.tags());
-    if tags.is_empty() {
-        println!("not generating {} - no tags", spec.spec());
-        return Ok(());
-    }
 
     let src_folder = io::join(output_folder, "src")?;
     if src_folder.exists() {
         fs::remove_dir_all(&src_folder)?;
+    }
+
+    let readme_path = io::join(output_folder, "README.md")?;
+    if readme_path.exists() {
+        std::fs::remove_file(&readme_path)?;
+    }
+
+    let cargo_toml_path = io::join(output_folder, "Cargo.toml")?;
+    if cargo_toml_path.exists() {
+        std::fs::remove_file(&cargo_toml_path)?;
+    }
+
+    let tags = &package_config.filter_tags(spec_config.tags());
+    if tags.is_empty() {
+        println!("not generating {} - no tags", spec.spec());
+        return Ok(());
     }
 
     let mut operation_totals = HashMap::new();
@@ -80,7 +91,7 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
     };
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
 
-    cargo_toml::create(package_name, tags, default_tag, has_xml, &io::join(output_folder, "Cargo.toml")?)?;
+    cargo_toml::create(package_name, tags, default_tag, has_xml, &cargo_toml_path)?;
     lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
         package_name,
@@ -91,7 +102,7 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
         api_version_totals,
         api_versions,
     };
-    readme.create(&io::join(output_folder, "README.md")?)?;
+    readme.create(&readme_path)?;
 
     Ok(())
 }

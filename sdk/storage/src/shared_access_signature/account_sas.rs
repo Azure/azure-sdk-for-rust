@@ -183,7 +183,7 @@ impl AccountSharedAccessSignature {
                     self.resource_type,
                     self.start.map_or("".to_string(), format_date),
                     format_date(self.expiry),
-                    self.ip.clone().unwrap_or_else(|| "".to_string()),
+                    self.ip.clone().unwrap_or_default(),
                     self.protocol
                         .as_ref()
                         .map_or("".to_string(), |v| v.to_string()),

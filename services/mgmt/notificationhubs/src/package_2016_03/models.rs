@@ -227,7 +227,11 @@ impl NamespaceCreateOrUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceListResult {
     #[doc = "Result of the List Namespace operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NamespaceResource>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Namespaces"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -344,7 +348,11 @@ impl NotificationHubCreateOrUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationHubListResult {
     #[doc = "Result of the List NotificationHub operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NotificationHubResource>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of NotificationHub"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -371,7 +379,12 @@ pub struct NotificationHubProperties {
     #[serde(rename = "registrationTtl", default, skip_serializing_if = "Option::is_none")]
     pub registration_ttl: Option<String>,
     #[doc = "The AuthorizationRules of the created NotificationHub"]
-    #[serde(rename = "authorizationRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "authorizationRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorization_rules: Vec<SharedAccessAuthorizationRuleProperties>,
     #[doc = "Description of a NotificationHub ApnsCredential."]
     #[serde(rename = "apnsCredential", default, skip_serializing_if = "Option::is_none")]
@@ -543,7 +556,11 @@ impl SharedAccessAuthorizationRuleCreateOrUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleListResult {
     #[doc = "Result of the List AuthorizationRules operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SharedAccessAuthorizationRuleResource>,
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of AuthorizationRules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -564,7 +581,11 @@ impl SharedAccessAuthorizationRuleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleProperties {
     #[doc = "The rights associated with the rule."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rights: Vec<String>,
 }
 impl SharedAccessAuthorizationRuleProperties {

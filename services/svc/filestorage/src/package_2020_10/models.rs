@@ -612,9 +612,19 @@ pub type ShareEnabledProtocols = String;
 #[doc = "The list of file ranges"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareFileRangeList {
-    #[serde(rename = "Ranges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Ranges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ranges: Vec<FileRange>,
-    #[serde(rename = "ClearRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ClearRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub clear_ranges: Vec<ClearRange>,
 }
 impl ShareFileRangeList {

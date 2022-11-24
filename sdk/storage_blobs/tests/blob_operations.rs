@@ -7,15 +7,15 @@ mod setup;
 
 #[tokio::test]
 async fn put_block_blob_and_snapshot() {
-    const CONTAINER_NAME: &'static str = "test-container-put-block-blob-and-snapshot";
-    const BLOB_NAME: &'static str = "test-container-put-block-blob-and-snapshot";
+    const CONTAINER_NAME: &str = "test-container-put-block-blob-and-snapshot";
+    const BLOB_NAME: &str = "test-container-put-block-blob-and-snapshot";
     let data = Bytes::from_static(b"abcdef");
 
     let blob_service = setup::initialize("put_block_blob_and_snapshot").unwrap();
     let container = blob_service.container_client(CONTAINER_NAME);
     let blob = container.blob_client(BLOB_NAME);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -24,13 +24,11 @@ async fn put_block_blob_and_snapshot() {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == CONTAINER_NAME)
-        .is_none()
+        .any(|x| x.name == CONTAINER_NAME)
     {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -41,17 +39,16 @@ async fn put_block_blob_and_snapshot() {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", BLOB_NAME);
 
-    let snapshot = blob.snapshot().into_future().await.unwrap().snapshot;
+    let snapshot = blob.snapshot().await.unwrap().snapshot;
 
     trace!("crated snapshot: {:?} of {:?}", snapshot, BLOB_NAME);
 
     // Clean-up test
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
     trace!("container {} deleted!", CONTAINER_NAME);
 }

@@ -195,9 +195,13 @@ pub mod skus {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all the available Skus in the region and information related to them"]
-        pub fn list(&self) -> list::RequestBuilder {
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
             list::RequestBuilder {
                 client: self.0.clone(),
+                subscription_id: subscription_id.into(),
                 filter: None,
             }
         }
@@ -231,6 +235,7 @@ pub mod skus {
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
         impl RequestBuilder {
@@ -245,7 +250,11 @@ pub mod skus {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/providers/Microsoft.ElasticSan/skus", this.client.endpoint(),))?;
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.ElasticSan/skus",
+                            this.client.endpoint(),
+                            &this.subscription_id
+                        ))?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;

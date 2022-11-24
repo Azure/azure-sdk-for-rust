@@ -171,6 +171,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_app
 
+  azure_mgmt_appcomplianceautomation:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_appcomplianceautomation
+
   azure_mgmt_appconfiguration:
     if: always()
     runs-on: ubuntu-latest
@@ -2715,6 +2731,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_resources
 
+  azure_mgmt_riskiq:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_riskiq
+
   azure_mgmt_saas:
     if: always()
     runs-on: ubuntu-latest
@@ -2810,6 +2842,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_securityandcompliance
+
+  azure_mgmt_securitydevops:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_securitydevops
 
   azure_mgmt_securityinsights:
     if: always()
@@ -3210,6 +3258,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_synapse
+
+  azure_mgmt_syntex:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_syntex
 
   azure_mgmt_testbase:
     if: always()

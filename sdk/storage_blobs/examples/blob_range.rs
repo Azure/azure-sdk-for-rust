@@ -17,16 +17,13 @@ async fn main() -> azure_core::Result<()> {
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let container_client =
         BlobServiceClient::new(account, storage_credentials).container_client(container_name);
-    container_client.create().into_future().await?;
+    container_client.create().await?;
 
     let blob_client = container_client.blob_client(&blob_name);
 
     let buf = b"0123456789".repeat(1000);
 
-    blob_client
-        .put_block_blob(buf.clone())
-        .into_future()
-        .await?;
+    blob_client.put_block_blob(buf.clone()).await?;
 
     // if we get the entire content, it should match
     let blob = blob_client.get_content().await?;
@@ -100,7 +97,7 @@ async fn main() -> azure_core::Result<()> {
         "streamed blob content should match original buf"
     );
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
 
     Ok(())
 }

@@ -83,7 +83,12 @@ pub struct AwsOrganizationalDataMaster {
     #[serde(rename = "stacksetName", default, skip_serializing_if = "Option::is_none")]
     pub stackset_name: Option<String>,
     #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
-    #[serde(rename = "excludedAccountIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedAccountIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_account_ids: Vec<String>,
 }
 impl AwsOrganizationalDataMaster {
@@ -166,10 +171,19 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl CloudErrorBody {
@@ -341,7 +355,12 @@ pub struct GcpOrganizationalDataOrganization {
     #[serde(flatten)]
     pub gcp_organizational_data: GcpOrganizationalData,
     #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
-    #[serde(rename = "excludedProjectNumbers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedProjectNumbers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_project_numbers: Vec<String>,
     #[doc = "The service account email address which represents the organization level permissions container."]
     #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
@@ -470,7 +489,11 @@ pub struct SecurityConnectorProperties {
     #[serde(rename = "environmentName", default, skip_serializing_if = "Option::is_none")]
     pub environment_name: Option<security_connector_properties::EnvironmentName>,
     #[doc = "A collection of offerings for the security connector."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub offerings: Vec<CloudOffering>,
     #[doc = "The security connector environment data."]
     #[serde(rename = "environmentData", default, skip_serializing_if = "Option::is_none")]

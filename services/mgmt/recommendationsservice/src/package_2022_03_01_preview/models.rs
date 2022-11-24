@@ -141,7 +141,11 @@ pub struct AccountResourceList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of RecommendationsService Account resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AccountResource>,
 }
 impl azure_core::Continuable for AccountResourceList {
@@ -159,7 +163,12 @@ impl AccountResourceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountStatus {
     #[doc = "The list of scopes statuses."]
-    #[serde(rename = "scopesStatuses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "scopesStatuses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scopes_statuses: Vec<ScopeStatuses>,
 }
 impl AccountStatus {
@@ -247,13 +256,28 @@ pub struct CorsRule {
     #[serde(rename = "allowedOrigins")]
     pub allowed_origins: Vec<String>,
     #[doc = "The methods (HTTP request verbs) that the origin domain may use for a CORS request."]
-    #[serde(rename = "allowedMethods", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedMethods",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_methods: Vec<String>,
     #[doc = "The request headers that the origin domain may specify on the CORS request."]
-    #[serde(rename = "allowedHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_headers: Vec<String>,
     #[doc = "The response headers to expose to CORS clients."]
-    #[serde(rename = "exposedHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "exposedHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exposed_headers: Vec<String>,
     #[doc = "The number of seconds that the client/browser should cache a preflight response."]
     #[serde(rename = "maxAgeInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -358,10 +382,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -674,7 +707,11 @@ pub struct ModelingResourceList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of Modeling resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ModelingResource>,
 }
 impl azure_core::Continuable for ModelingResourceList {
@@ -817,7 +854,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -855,7 +896,11 @@ pub struct OperationStatusResult {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The operations list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<OperationStatusResult>,
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -900,7 +945,11 @@ pub struct ScopeStatuses {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[doc = "Scope stage statuses."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub statuses: Vec<StageStatus>,
 }
 impl ScopeStatuses {
@@ -972,7 +1021,11 @@ pub struct ServiceEndpointResourceList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of ServiceEndpoint resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceEndpointResource>,
 }
 impl azure_core::Continuable for ServiceEndpointResourceList {

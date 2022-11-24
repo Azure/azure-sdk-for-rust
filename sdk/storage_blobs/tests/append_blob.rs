@@ -38,7 +38,6 @@ async fn put_append_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -50,13 +49,12 @@ async fn put_append_blob() {
     blob.put_append_blob()
         .content_type("text/plain")
         .metadata(metadata)
-        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let resp = blob.get_metadata().into_future().await.unwrap();
+    let resp = blob.get_metadata().await.unwrap();
 
     assert_eq!(resp.metadata.len(), 2);
 

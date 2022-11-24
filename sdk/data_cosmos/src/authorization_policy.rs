@@ -228,7 +228,7 @@ fn encode_str_to_sign(data: &str, key: &[u8]) -> String {
     let mut hmac = Hmac::<Sha256>::new_from_slice(key).unwrap();
     hmac.update(data.as_bytes());
     let signature = hmac.finalize().into_bytes();
-    base64::encode(&signature)
+    base64::encode(signature)
 }
 
 #[cfg(test)]

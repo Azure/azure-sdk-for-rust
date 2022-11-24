@@ -10,10 +10,20 @@ pub struct ApiKeyRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The read access rights of this API Key."]
-    #[serde(rename = "linkedReadProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedReadProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_read_properties: Vec<String>,
     #[doc = "The write access rights of this API Key."]
-    #[serde(rename = "linkedWriteProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedWriteProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_write_properties: Vec<String>,
 }
 impl ApiKeyRequest {
@@ -76,7 +86,11 @@ impl AnnotationError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AnnotationsListResult {
     #[doc = "An array of annotations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Annotation>,
 }
 impl azure_core::Continuable for AnnotationsListResult {
@@ -130,10 +144,20 @@ pub struct ApplicationInsightsComponentApiKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The read access rights of this API Key."]
-    #[serde(rename = "linkedReadProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedReadProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_read_properties: Vec<String>,
     #[doc = "The write access rights of this API Key."]
-    #[serde(rename = "linkedWriteProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedWriteProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_write_properties: Vec<String>,
 }
 impl ApplicationInsightsComponentApiKey {
@@ -297,7 +321,12 @@ impl ApplicationInsightsComponentAnalyticsItemProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationInsightsComponentAvailableFeatures {
     #[doc = "A list of Application Insights component feature."]
-    #[serde(rename = "Result", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Result",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub result: Vec<ApplicationInsightsComponentFeature>,
 }
 impl ApplicationInsightsComponentAvailableFeatures {
@@ -312,7 +341,12 @@ pub struct ApplicationInsightsComponentBillingFeatures {
     #[serde(rename = "DataVolumeCap", default, skip_serializing_if = "Option::is_none")]
     pub data_volume_cap: Option<ApplicationInsightsComponentDataVolumeCap>,
     #[doc = "Current enabled pricing plan. When the component is in the Enterprise plan, this will list both 'Basic' and 'Application Insights Enterprise'."]
-    #[serde(rename = "CurrentBillingFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "CurrentBillingFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub current_billing_features: Vec<String>,
 }
 impl ApplicationInsightsComponentBillingFeatures {
@@ -475,7 +509,12 @@ pub struct ApplicationInsightsComponentFavorite {
     #[serde(rename = "TimeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     #[doc = "A list of 0 or more tags that are associated with this favorite definition"]
-    #[serde(rename = "Tags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Tags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
     #[doc = "Favorite category, as defined by the user at creation time."]
     #[serde(rename = "Category", default, skip_serializing_if = "Option::is_none")]
@@ -522,7 +561,12 @@ pub struct ApplicationInsightsComponentFeature {
     #[serde(rename = "IsHidden", default, skip_serializing_if = "Option::is_none")]
     pub is_hidden: Option<bool>,
     #[doc = "A list of Application Insights component feature capability."]
-    #[serde(rename = "Capabilities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Capabilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<ApplicationInsightsComponentFeatureCapability>,
     #[doc = "Display name of the feature."]
     #[serde(rename = "Title", default, skip_serializing_if = "Option::is_none")]
@@ -656,7 +700,12 @@ pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
     #[serde(rename = "SendEmailsToSubscriptionOwners", default, skip_serializing_if = "Option::is_none")]
     pub send_emails_to_subscription_owners: Option<bool>,
     #[doc = "Custom email addresses for this rule notifications"]
-    #[serde(rename = "CustomEmails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "CustomEmails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_emails: Vec<String>,
     #[doc = "The last time this rule was updated"]
     #[serde(rename = "LastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
@@ -769,7 +818,12 @@ pub struct ApplicationInsightsComponentProperties {
     #[serde(rename = "LaMigrationDate", default, with = "azure_core::date::rfc3339::option")]
     pub la_migration_date: Option<time::OffsetDateTime>,
     #[doc = "List of linked private link scope resources."]
-    #[serde(rename = "PrivateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "PrivateLinkScopedResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
     #[doc = "The network access type for operating on the Application Insights Component. By default it is Enabled"]
     #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
@@ -1318,7 +1372,11 @@ impl InnerError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerErrorTrace {
     #[doc = "detailed error trace"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trace: Vec<String>,
 }
 impl InnerErrorTrace {
@@ -1542,7 +1600,11 @@ pub struct MyWorkbookProperties {
     #[doc = "Workbook category, as defined by the user at creation time."]
     pub category: String,
     #[doc = "A list of 0 or more tags that are associated with this private workbook definition"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
     #[doc = "Unique user id of the specific user that owns this private workbook."]
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
@@ -1618,7 +1680,11 @@ impl MyWorkbookUserAssignedIdentities {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbooksListResult {
     #[doc = "An array of private workbooks."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MyWorkbook>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1695,7 +1761,11 @@ impl OperationInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of CDN operations supported by the CDN resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1740,7 +1810,11 @@ impl OperationLive {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[doc = "A collection of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationLive>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2104,7 +2178,11 @@ impl WorkItemConfigurationError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkItemConfigurationsListResult {
     #[doc = "An array of work item configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkItemConfiguration>,
 }
 impl azure_core::Continuable for WorkItemConfigurationsListResult {
@@ -2200,7 +2278,11 @@ impl WorkbookErrorDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookInnerErrorTrace {
     #[doc = "detailed error trace"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trace: Vec<String>,
 }
 impl WorkbookInnerErrorTrace {
@@ -2226,7 +2308,11 @@ pub struct WorkbookProperties {
     #[doc = "Workbook category, as defined by the user at creation time."]
     pub category: String,
     #[doc = "Being deprecated, please use the other tags field"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
     #[doc = "Unique user id of the specific user that owns this workbook."]
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
@@ -2274,7 +2360,11 @@ pub struct WorkbookPropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "A list of 0 or more tags that are associated with this workbook definition"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tags: Vec<String>,
     #[doc = "The description of the workbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2397,7 +2487,11 @@ pub struct WorkbookTemplateErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The list of invalid fields send in request, in case of validation error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<WorkbookTemplateErrorFieldContract>,
 }
 impl WorkbookTemplateErrorBody {
@@ -2454,7 +2548,11 @@ pub struct WorkbookTemplateLocalizedGallery {
     #[serde(rename = "templateData", default, skip_serializing_if = "Option::is_none")]
     pub template_data: Option<serde_json::Value>,
     #[doc = "Workbook galleries supported by the template."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub galleries: Vec<WorkbookTemplateGallery>,
 }
 impl WorkbookTemplateLocalizedGallery {
@@ -2539,7 +2637,11 @@ impl WorkbookTemplateUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookTemplatesListResult {
     #[doc = "An array of workbook templates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkbookTemplate>,
 }
 impl azure_core::Continuable for WorkbookTemplatesListResult {
@@ -2614,7 +2716,11 @@ pub mod workbook_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbooksListResult {
     #[doc = "An array of workbooks."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workbook>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

@@ -16,7 +16,12 @@ pub struct AccountCredentialDetails {
     #[serde(rename = "accountConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub account_connection_string: Option<String>,
     #[doc = "Per share level unencrypted access credentials."]
-    #[serde(rename = "shareCredentialDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "shareCredentialDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub share_credential_details: Vec<ShareCredentialDetails>,
 }
 impl AccountCredentialDetails {
@@ -69,7 +74,12 @@ pub struct AddressValidationProperties {
     #[serde(rename = "validationStatus", default, skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<address_validation_properties::ValidationStatus>,
     #[doc = "List of alternate addresses."]
-    #[serde(rename = "alternateAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "alternateAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub alternate_addresses: Vec<ShippingAddress>,
 }
 impl AddressValidationProperties {
@@ -150,7 +160,12 @@ pub struct AvailableSkuRequest {
     #[doc = "Location for data transfer. For locations check: https://management.azure.com/subscriptions/SUBSCRIPTIONID/locations?api-version=2018-01-01"]
     pub location: String,
     #[doc = "Sku Names to filter for available skus"]
-    #[serde(rename = "skuNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "skuNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sku_names: Vec<String>,
 }
 impl AvailableSkuRequest {
@@ -176,7 +191,11 @@ pub mod available_sku_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableSkusResult {
     #[doc = "List of available skus."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuInformation>,
     #[doc = "Link for the next set of skus."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -197,13 +216,28 @@ impl AvailableSkusResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFileFilterDetails {
     #[doc = "Prefix list of the Azure files to be transferred."]
-    #[serde(rename = "filePrefixList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filePrefixList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub file_prefix_list: Vec<String>,
     #[doc = "List of full path of the files to be transferred."]
-    #[serde(rename = "filePathList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filePathList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub file_path_list: Vec<String>,
     #[doc = "List of file shares to be transferred."]
-    #[serde(rename = "fileShareList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fileShareList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub file_share_list: Vec<String>,
 }
 impl AzureFileFilterDetails {
@@ -215,13 +249,28 @@ impl AzureFileFilterDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobFilterDetails {
     #[doc = "Prefix list of the Azure blobs to be transferred."]
-    #[serde(rename = "blobPrefixList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blobPrefixList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_prefix_list: Vec<String>,
     #[doc = "List of full path of the blobs to be transferred."]
-    #[serde(rename = "blobPathList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blobPathList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_path_list: Vec<String>,
     #[doc = "List of blob containers to be transferred."]
-    #[serde(rename = "containerList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containerList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub container_list: Vec<String>,
 }
 impl BlobFilterDetails {
@@ -244,13 +293,22 @@ impl CancellationReason {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[doc = "Gets or sets additional error info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<AdditionalErrorInfo>,
     #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[doc = "Gets or sets details for the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudError>,
     #[doc = "The error message parsed from the body of the http error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -282,7 +340,12 @@ pub struct ContactDetails {
     #[serde(rename = "emailList")]
     pub email_list: Vec<String>,
     #[doc = "Notification preference for a job stage."]
-    #[serde(rename = "notificationPreference", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationPreference",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_preference: Vec<NotificationPreference>,
 }
 impl ContactDetails {
@@ -464,7 +527,12 @@ pub struct CustomerDiskJobSecrets {
     #[serde(flatten)]
     pub job_secrets: JobSecrets,
     #[doc = "Contains the list of secrets object for that device."]
-    #[serde(rename = "diskSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "diskSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disk_secrets: Vec<DiskSecret>,
     #[doc = "Carrier Account Number of the customer"]
     #[serde(rename = "carrierAccountNumber", default, skip_serializing_if = "Option::is_none")]
@@ -664,7 +732,12 @@ pub struct DataBoxCustomerDiskJobDetails {
     #[serde(rename = "exportDiskDetailsCollection", default, skip_serializing_if = "Option::is_none")]
     pub export_disk_details_collection: Option<serde_json::Value>,
     #[doc = "Copy progress per disk."]
-    #[serde(rename = "copyProgress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyProgress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_progress: Vec<DataBoxCustomerDiskCopyProgress>,
     #[doc = "package carrier info"]
     #[serde(rename = "deliverToDcPackageDetails", default, skip_serializing_if = "Option::is_none")]
@@ -817,9 +890,9 @@ pub struct DataBoxDiskGranularCopyLogDetails {
     #[doc = "Disk Serial Number."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
-    #[doc = "Account name."]
-    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
-    pub account_name: Option<String>,
+    #[doc = "Account id."]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
     #[doc = "Link for copy error logs."]
     #[serde(rename = "errorLogLink", default, skip_serializing_if = "Option::is_none")]
     pub error_log_link: Option<String>,
@@ -832,7 +905,7 @@ impl DataBoxDiskGranularCopyLogDetails {
         Self {
             granular_copy_log_details,
             serial_number: None,
-            account_name: None,
+            account_id: None,
             error_log_link: None,
             verbose_log_link: None,
         }
@@ -938,10 +1011,20 @@ pub struct DataBoxDiskJobDetails {
     #[serde(rename = "preferredDisks", default, skip_serializing_if = "Option::is_none")]
     pub preferred_disks: Option<serde_json::Value>,
     #[doc = "Copy progress per disk."]
-    #[serde(rename = "copyProgress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyProgress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_progress: Vec<DataBoxDiskCopyProgress>,
     #[doc = "Copy progress per disk."]
-    #[serde(rename = "granularCopyProgress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "granularCopyProgress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub granular_copy_progress: Vec<DataBoxDiskGranularCopyProgress>,
     #[doc = "Contains the map of disk serial number to the disk size being used for the job. Is returned only after the disks are shipped to the customer."]
     #[serde(rename = "disksAndSizeDetails", default, skip_serializing_if = "Option::is_none")]
@@ -968,7 +1051,12 @@ pub struct DataBoxDiskJobSecrets {
     #[serde(flatten)]
     pub job_secrets: JobSecrets,
     #[doc = "Contains the list of secrets object for that device."]
-    #[serde(rename = "diskSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "diskSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disk_secrets: Vec<DiskSecret>,
     #[doc = "PassKey for the disk Job."]
     #[serde(rename = "passKey", default, skip_serializing_if = "Option::is_none")]
@@ -992,14 +1080,24 @@ impl DataBoxDiskJobSecrets {
 pub struct DataBoxHeavyAccountCopyLogDetails {
     #[serde(flatten)]
     pub copy_log_details: CopyLogDetails,
-    #[doc = "Account name."]
+    #[doc = "Account id."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
     #[doc = "Link for copy logs."]
-    #[serde(rename = "copyLogLink", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyLogLink",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_log_link: Vec<String>,
     #[doc = "Link for copy verbose logs. This will be set only when the LogCollectionLevel is set to verbose."]
-    #[serde(rename = "copyVerboseLogLink", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyVerboseLogLink",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_verbose_log_link: Vec<String>,
 }
 impl DataBoxHeavyAccountCopyLogDetails {
@@ -1018,7 +1116,12 @@ pub struct DataBoxHeavyJobDetails {
     #[serde(flatten)]
     pub job_details: JobDetails,
     #[doc = "Copy progress per account."]
-    #[serde(rename = "copyProgress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyProgress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_progress: Vec<CopyProgress>,
     #[doc = "Set Device password for unlocking Databox Heavy. Should not be passed for TransferType:ExportFromAzure jobs. If this is not passed, the service will generate password itself. This will not be returned in Get Call. Password Requirements :  Password must be minimum of 12 and maximum of 64 characters. Password must have at least one uppercase alphabet, one number and one special character. Password cannot have the following characters : IilLoO0 Password can have only alphabets, numbers and these characters : @#\\-$%^!+=;:_()]+"]
     #[serde(rename = "devicePassword", default, skip_serializing_if = "Option::is_none")]
@@ -1039,7 +1142,12 @@ pub struct DataBoxHeavyJobSecrets {
     #[serde(flatten)]
     pub job_secrets: JobSecrets,
     #[doc = "Contains the list of secret objects for a databox heavy job."]
-    #[serde(rename = "cabinetPodSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cabinetPodSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cabinet_pod_secrets: Vec<DataBoxHeavySecret>,
 }
 impl DataBoxHeavyJobSecrets {
@@ -1060,13 +1168,23 @@ pub struct DataBoxHeavySecret {
     #[serde(rename = "devicePassword", default, skip_serializing_if = "Option::is_none")]
     pub device_password: Option<String>,
     #[doc = "Network configuration of the appliance."]
-    #[serde(rename = "networkConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_configurations: Vec<ApplianceNetworkConfiguration>,
     #[doc = "The base 64 encoded public key to authenticate with the device"]
     #[serde(rename = "encodedValidationCertPubKey", default, skip_serializing_if = "Option::is_none")]
     pub encoded_validation_cert_pub_key: Option<String>,
     #[doc = "Per account level access credentials."]
-    #[serde(rename = "accountCredentialDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "accountCredentialDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub account_credential_details: Vec<AccountCredentialDetails>,
 }
 impl DataBoxHeavySecret {
@@ -1080,7 +1198,12 @@ pub struct DataBoxJobDetails {
     #[serde(flatten)]
     pub job_details: JobDetails,
     #[doc = "Copy progress per storage account."]
-    #[serde(rename = "copyProgress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyProgress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_progress: Vec<CopyProgress>,
     #[doc = "Set Device password for unlocking Databox. Should not be passed for TransferType:ExportFromAzure jobs. If this is not passed, the service will generate password itself. This will not be returned in Get Call. Password Requirements :  Password must be minimum of 12 and maximum of 64 characters. Password must have at least one uppercase alphabet, one number and one special character. Password cannot have the following characters : IilLoO0 Password can have only alphabets, numbers and these characters : @#\\-$%^!+=;:_()]+"]
     #[serde(rename = "devicePassword", default, skip_serializing_if = "Option::is_none")]
@@ -1118,13 +1241,23 @@ pub struct DataBoxSecret {
     #[serde(rename = "devicePassword", default, skip_serializing_if = "Option::is_none")]
     pub device_password: Option<String>,
     #[doc = "Network configuration of the appliance."]
-    #[serde(rename = "networkConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_configurations: Vec<ApplianceNetworkConfiguration>,
     #[doc = "The base 64 encoded public key to authenticate with the device"]
     #[serde(rename = "encodedValidationCertPubKey", default, skip_serializing_if = "Option::is_none")]
     pub encoded_validation_cert_pub_key: Option<String>,
     #[doc = "Per account level access credentials."]
-    #[serde(rename = "accountCredentialDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "accountCredentialDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub account_credential_details: Vec<AccountCredentialDetails>,
 }
 impl DataBoxSecret {
@@ -1221,10 +1354,20 @@ pub struct DataTransferDetailsValidationRequest {
     #[serde(flatten)]
     pub validation_input_request: ValidationInputRequest,
     #[doc = "List of DataTransfer details to be used to export data from azure."]
-    #[serde(rename = "dataExportDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataExportDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_export_details: Vec<DataExportDetails>,
     #[doc = "List of DataTransfer details to be used to import data to azure."]
-    #[serde(rename = "dataImportDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataImportDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_import_details: Vec<DataImportDetails>,
     #[doc = "Device type."]
     #[serde(rename = "deviceType")]
@@ -1298,7 +1441,12 @@ pub struct DataboxJobSecrets {
     #[serde(flatten)]
     pub job_secrets: JobSecrets,
     #[doc = "Contains the list of secret objects for a job."]
-    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "podSecrets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pod_secrets: Vec<DataBoxSecret>,
 }
 impl DataboxJobSecrets {
@@ -1427,7 +1575,12 @@ pub struct DatacenterAddressResponse {
     #[serde(rename = "datacenterAddressType")]
     pub datacenter_address_type: datacenter_address_response::DatacenterAddressType,
     #[doc = "List of supported carriers for return shipment."]
-    #[serde(rename = "supportedCarriersForReturnShipment", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedCarriersForReturnShipment",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_carriers_for_return_shipment: Vec<String>,
     #[doc = "Azure Location where the Data Center serves primarily."]
     #[serde(rename = "dataCenterAzureLocation", default, skip_serializing_if = "Option::is_none")]
@@ -1538,7 +1691,11 @@ pub mod encryption_preferences {
 pub struct ErrorDetail {
     pub code: String,
     pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Details>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
@@ -1760,7 +1917,12 @@ impl JobDeliveryInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDetails {
     #[doc = "List of stages that run in the job."]
-    #[serde(rename = "jobStages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "jobStages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub job_stages: Vec<JobStages>,
     #[doc = "Contact Details."]
     #[serde(rename = "contactDetails")]
@@ -1775,10 +1937,20 @@ pub struct JobDetails {
     #[serde(rename = "returnPackage", default, skip_serializing_if = "Option::is_none")]
     pub return_package: Option<PackageShippingDetails>,
     #[doc = "Details of the data to be imported into azure."]
-    #[serde(rename = "dataImportDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataImportDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_import_details: Vec<DataImportDetails>,
     #[doc = "Details of the data to be exported from azure."]
-    #[serde(rename = "dataExportDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataExportDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_export_details: Vec<DataExportDetails>,
     #[doc = "Indicates the type of job details."]
     #[serde(rename = "jobDetailsType")]
@@ -1787,7 +1959,12 @@ pub struct JobDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preferences: Option<Preferences>,
     #[doc = "List of copy log details."]
-    #[serde(rename = "copyLogDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "copyLogDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub copy_log_details: Vec<CopyLogDetails>,
     #[doc = "Shared access key to download the return shipment label"]
     #[serde(rename = "reverseShipmentLabelSasKey", default, skip_serializing_if = "Option::is_none")]
@@ -1802,7 +1979,11 @@ pub struct JobDetails {
     #[serde(rename = "expectedDataSizeInTeraBytes", default, skip_serializing_if = "Option::is_none")]
     pub expected_data_size_in_tera_bytes: Option<i32>,
     #[doc = "Available actions on the job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
     #[doc = "Last Mitigation Action Performed On Job"]
     #[serde(rename = "lastMitigationActionOnJob", default, skip_serializing_if = "Option::is_none")]
@@ -2257,7 +2438,11 @@ impl JobResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResourceList {
     #[doc = "List of job resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobResource>,
     #[doc = "Link for the next set of job resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2704,7 +2889,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "Link for the next set of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2784,7 +2973,12 @@ impl PackageShippingDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Preferences {
     #[doc = "Preferred data center region."]
-    #[serde(rename = "preferredDataCenterRegion", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "preferredDataCenterRegion",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub preferred_data_center_region: Vec<String>,
     #[doc = "Preferences related to the shipment logistics of the sku"]
     #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
@@ -2793,7 +2987,12 @@ pub struct Preferences {
     #[serde(rename = "encryptionPreferences", default, skip_serializing_if = "Option::is_none")]
     pub encryption_preferences: Option<EncryptionPreferences>,
     #[doc = "Preferences related to the Access Tier of storage accounts."]
-    #[serde(rename = "storageAccountAccessTierPreferences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccountAccessTierPreferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_account_access_tier_preferences: Vec<String>,
 }
 impl Preferences {
@@ -2978,7 +3177,12 @@ pub mod schedule_availability_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleAvailabilityResponse {
     #[doc = "List of dates available to schedule"]
-    #[serde(rename = "availableDates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableDates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_dates: Vec<time::OffsetDateTime>,
 }
 impl ScheduleAvailabilityResponse {
@@ -3002,7 +3206,12 @@ pub struct ShareCredentialDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[doc = "Access protocols supported on the device."]
-    #[serde(rename = "supportedAccessProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAccessProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_access_protocols: Vec<String>,
 }
 impl ShareCredentialDetails {
@@ -3289,16 +3498,30 @@ impl SkuInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuProperties {
     #[doc = "The map of data location to service location."]
-    #[serde(rename = "dataLocationToServiceLocationMap", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataLocationToServiceLocationMap",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_location_to_service_location_map: Vec<DataLocationToServiceLocationMap>,
     #[doc = "Capacity of the sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<SkuCapacity>,
     #[doc = "Cost of the Sku."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub costs: Vec<SkuCost>,
     #[doc = "Api versions that support this Sku."]
-    #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "apiVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub api_versions: Vec<String>,
     #[doc = "Reason why the Sku is disabled."]
     #[serde(rename = "disabledReason", default, skip_serializing_if = "Option::is_none")]
@@ -3487,7 +3710,12 @@ pub struct TransferFilterDetails {
     #[serde(rename = "azureFileFilterDetails", default, skip_serializing_if = "Option::is_none")]
     pub azure_file_filter_details: Option<AzureFileFilterDetails>,
     #[doc = "Details of the filter files to be used for data transfer."]
-    #[serde(rename = "filterFileDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filterFileDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filter_file_details: Vec<FilterFileDetails>,
 }
 impl TransferFilterDetails {
@@ -3562,7 +3790,12 @@ pub mod transport_availability_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransportAvailabilityResponse {
     #[doc = "List of transport availability details for given region"]
-    #[serde(rename = "transportAvailabilityDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "transportAvailabilityDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transport_availability_details: Vec<TransportAvailabilityDetails>,
 }
 impl TransportAvailabilityResponse {
@@ -3610,7 +3843,11 @@ impl UnencryptedCredentials {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UnencryptedCredentialsList {
     #[doc = "List of unencrypted credentials."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UnencryptedCredentials>,
     #[doc = "Link for the next set of unencrypted credentials."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3831,7 +4068,12 @@ pub struct ValidationResponseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<validation_response_properties::Status>,
     #[doc = "List of response details contain validationType and its response as key and value respectively."]
-    #[serde(rename = "individualResponseDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "individualResponseDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub individual_response_details: Vec<ValidationInputResponse>,
 }
 impl ValidationResponseProperties {

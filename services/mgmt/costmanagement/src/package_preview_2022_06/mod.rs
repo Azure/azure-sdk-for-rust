@@ -2025,9 +2025,9 @@ pub mod forecast {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::QueryResult> {
+            pub async fn into_body(self) -> azure_core::Result<models::ForecastResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::QueryResult = serde_json::from_slice(&bytes)?;
+                let body: models::ForecastResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2091,7 +2091,7 @@ pub mod forecast {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QueryResult>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ForecastResult>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2100,9 +2100,9 @@ pub mod forecast {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::QueryResult> {
+            pub async fn into_body(self) -> azure_core::Result<models::ForecastResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::QueryResult = serde_json::from_slice(&bytes)?;
+                let body: models::ForecastResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2168,7 +2168,7 @@ pub mod forecast {
                 })
             }
             #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::QueryResult>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ForecastResult>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2928,7 +2928,7 @@ pub mod exports {
                 expand: None,
             }
         }
-        #[doc = "The operation to create or update a export. Update operation requires latest eTag to be set in the request. You may obtain the latest eTag by performing a get operation. Create operation does not require eTag."]
+        #[doc = "The operation to create or update an export. You can optionally provide an eTag if desired as a form of concurrency control. To obtain the latest eTag for a given export, perform a get operation prior to your put operation."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId} for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]

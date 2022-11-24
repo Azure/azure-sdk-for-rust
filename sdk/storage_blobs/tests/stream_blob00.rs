@@ -37,11 +37,7 @@ async fn code() -> azure_core::Result<()> {
         .any(|x| x.name == container_name)
     {
         println!("create container");
-        container
-            .create()
-            .public_access(PublicAccess::None)
-            .into_future()
-            .await?;
+        container.create().public_access(PublicAccess::None).await?;
     }
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
@@ -49,7 +45,6 @@ async fn code() -> azure_core::Result<()> {
 
     blob.put_block_blob(string)
         .content_type("text/plain")
-        .into_future()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -75,11 +70,10 @@ async fn code() -> azure_core::Result<()> {
 
     blob.delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .into_future()
         .await?;
 
     println!("{}/{} blob deleted!", container_name, file_name);
 
-    container.delete().into_future().await?;
+    container.delete().await?;
     Ok(())
 }

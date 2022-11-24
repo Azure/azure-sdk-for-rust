@@ -27,7 +27,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .enabled(false)
         .recovery_level("Purgeable")
         .expiration(OffsetDateTime::now_utc() + date::duration_from_days(14))
-        .into_future()
         .await?;
 
     Ok(())

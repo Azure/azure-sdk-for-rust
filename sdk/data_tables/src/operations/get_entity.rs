@@ -52,7 +52,6 @@ impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
 
 azure_core::future!(GetEntity<T>);
 
-#[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetEntityBuilder<T> {
     type IntoFuture = GetEntity<T>;
     type Output = <GetEntity<T> as std::future::Future>::Output;

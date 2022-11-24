@@ -24,7 +24,6 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await?;
 
     let data = Bytes::from_static(b"something");
@@ -38,7 +37,6 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -47,7 +45,6 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -56,7 +53,6 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data)
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("{:?}", res);
 

@@ -157,14 +157,10 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientUpdate");
 
         println!("Delete the table (if it exists)");
-        let _ = table.delete().into_future().await;
+        let _ = table.delete().await;
 
         println!("Create the table");
-        table
-            .create()
-            .into_future()
-            .await
-            .expect("the table should be created");
+        table.create().await.expect("the table should be created");
 
         let entity = TestEntity {
             city: "Milan".to_owned(),
@@ -180,14 +176,12 @@ mod integration_tests {
         entity_client
             .update(&entity, IfMatchCondition::Any)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect_err("the update should fail if the entity doesn't exist");
 
         table
             .insert::<&TestEntity, TestEntity>(&entity)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the entity should be inserted");
 
@@ -196,7 +190,6 @@ mod integration_tests {
         entity_client
             .update(&entity, IfMatchCondition::Any)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the update operation should complete");
 
@@ -210,14 +203,10 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientMerge");
 
         println!("Delete the table (if it exists)");
-        let _ = table.delete().into_future().await;
+        let _ = table.delete().await;
 
         println!("Create the table");
-        table
-            .create()
-            .into_future()
-            .await
-            .expect("the table should be created");
+        table.create().await.expect("the table should be created");
 
         let entity = TestEntity {
             city: "Milan".to_owned(),
@@ -239,14 +228,12 @@ mod integration_tests {
         entity_client
             .merge(&entity2, IfMatchCondition::Any)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect_err("the merge should fail if the entity doesn't exist");
 
         table
             .insert::<&TestEntity, TestEntity>(&entity)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the entity should be inserted");
 
@@ -255,7 +242,6 @@ mod integration_tests {
         entity_client
             .merge(&entity2, IfMatchCondition::Any)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the merge operation should complete");
 
@@ -269,14 +255,10 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientInsertOrReplace");
 
         println!("Delete the table (if it exists)");
-        let _ = table.delete().into_future().await;
+        let _ = table.delete().await;
 
         println!("Create the table");
-        table
-            .create()
-            .into_future()
-            .await
-            .expect("the table should be created");
+        table.create().await.expect("the table should be created");
 
         let mut entity = TestEntity {
             city: "Milan".to_owned(),
@@ -291,7 +273,6 @@ mod integration_tests {
         entity_client
             .insert_or_replace(&entity)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -301,7 +282,6 @@ mod integration_tests {
         entity_client
             .insert_or_replace(&entity)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -315,14 +295,10 @@ mod integration_tests {
         let table = table_client.table_client("EntityClientInsertOrMerge");
 
         println!("Delete the table (if it exists)");
-        let _ = table.delete().into_future().await;
+        let _ = table.delete().await;
 
         println!("Create the table");
-        table
-            .create()
-            .into_future()
-            .await
-            .expect("the table should be created");
+        table.create().await.expect("the table should be created");
 
         let mut entity = TestEntity {
             city: "Milan".to_owned(),
@@ -337,7 +313,6 @@ mod integration_tests {
         entity_client
             .insert_or_merge(&entity)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -347,7 +322,6 @@ mod integration_tests {
         entity_client
             .insert_or_merge(&entity)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the insert or replace operation should complete");
 
@@ -362,7 +336,6 @@ mod integration_tests {
         entity_client
             .insert_or_merge(&entity2)
             .expect("entity could not be serialized")
-            .into_future()
             .await
             .expect("the insert or merge operation should complete");
 

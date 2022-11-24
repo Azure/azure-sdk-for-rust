@@ -64,11 +64,11 @@ impl Spec {
     fn read_file(docs: &mut IndexMap<Utf8PathBuf, OpenAPI>, file_path: impl AsRef<Utf8Path>) -> Result<()> {
         let file_path = file_path.as_ref();
         if !docs.contains_key(file_path) {
-            let doc = openapi::parse(&file_path)?;
+            let doc = openapi::parse(file_path)?;
             let ref_files = openapi::get_reference_file_paths(file_path, &doc);
             docs.insert(Utf8PathBuf::from(file_path), doc);
             for ref_file in ref_files {
-                let child_path = io::join(&file_path, &ref_file)?;
+                let child_path = io::join(file_path, &ref_file)?;
                 Self::read_file(docs, &child_path)?;
             }
         }
@@ -157,7 +157,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match &reference.file {
             None => doc_file.to_owned(),
-            Some(file) => io::join(doc_file, &file)?,
+            Some(file) => io::join(doc_file, file)?,
         };
         let name = reference
             .name
@@ -266,7 +266,7 @@ impl Spec {
     fn operations_unresolved(&self) -> Result<Vec<WebOperationUnresolved>> {
         let mut operations: Vec<WebOperationUnresolved> = Vec::new();
         for (doc_file, doc) in self.docs() {
-            if self.is_input_file(&doc_file) {
+            if self.is_input_file(doc_file) {
                 let paths = self.resolve_path_map(doc_file, &doc.paths())?;
                 for (path, item) in &paths {
                     operations.extend(path_operations_unresolved(doc_file, path, item))

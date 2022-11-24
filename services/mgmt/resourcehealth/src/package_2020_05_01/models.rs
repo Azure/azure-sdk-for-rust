@@ -6,9 +6,15 @@ use std::str::FromStr;
 #[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
-    #[doc = "The error object."]
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<error_response::Error>,
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
     type Continuation = String;
@@ -19,27 +25,6 @@ impl azure_core::Continuable for ErrorResponse {
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod error_response {
-    use super::*;
-    #[doc = "The error object."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Error {
-        #[doc = "The error code."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub code: Option<String>,
-        #[doc = "The error message."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub message: Option<String>,
-        #[doc = "The error details."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub details: Option<String>,
-    }
-    impl Error {
-        pub fn new() -> Self {
-            Self::default()
-        }
     }
 }
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
@@ -123,8 +108,8 @@ pub mod availability_status {
         #[serde(rename = "resolutionETA", default, with = "azure_core::date::rfc3339::option")]
         pub resolution_eta: Option<time::OffsetDateTime>,
         #[doc = "Timestamp for when last change in health status occurred."]
-        #[serde(rename = "occurredTime", default, with = "azure_core::date::rfc3339::option")]
-        pub occurred_time: Option<time::OffsetDateTime>,
+        #[serde(rename = "occuredTime", default, with = "azure_core::date::rfc3339::option")]
+        pub occured_time: Option<time::OffsetDateTime>,
         #[doc = "Chronicity of the availability transition."]
         #[serde(rename = "reasonChronicity", default, skip_serializing_if = "Option::is_none")]
         pub reason_chronicity: Option<properties::ReasonChronicity>,
@@ -135,10 +120,20 @@ pub mod availability_status {
         #[serde(rename = "recentlyResolved", default, skip_serializing_if = "Option::is_none")]
         pub recently_resolved: Option<properties::RecentlyResolved>,
         #[doc = "Lists actions the user can take based on the current availabilityState of the resource."]
-        #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "recommendedActions",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub recommended_actions: Vec<RecommendedAction>,
         #[doc = "Lists the service impacting events that may be affecting the health of the resource."]
-        #[serde(rename = "serviceImpactingEvents", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "serviceImpactingEvents",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
     }
     impl Properties {
@@ -230,14 +225,14 @@ pub mod availability_status {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct RecentlyResolved {
             #[doc = "Timestamp for when the availabilityState changed to Unavailable"]
-            #[serde(rename = "unavailableOccurredTime", default, with = "azure_core::date::rfc3339::option")]
-            pub unavailable_occurred_time: Option<time::OffsetDateTime>,
+            #[serde(rename = "unavailableOccuredTime", default, with = "azure_core::date::rfc3339::option")]
+            pub unavailable_occured_time: Option<time::OffsetDateTime>,
             #[doc = "Timestamp when the availabilityState changes to Available."]
             #[serde(rename = "resolvedTime", default, with = "azure_core::date::rfc3339::option")]
             pub resolved_time: Option<time::OffsetDateTime>,
             #[doc = "Brief description of cause of the resource becoming unavailable."]
-            #[serde(rename = "unavailabilitySummary", default, skip_serializing_if = "Option::is_none")]
-            pub unavailability_summary: Option<String>,
+            #[serde(rename = "unavailableSummary", default, skip_serializing_if = "Option::is_none")]
+            pub unavailable_summary: Option<String>,
         }
         impl RecentlyResolved {
             pub fn new() -> Self {

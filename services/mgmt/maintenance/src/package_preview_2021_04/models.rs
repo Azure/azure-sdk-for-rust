@@ -132,13 +132,28 @@ impl ErrorDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputLinuxParameters {
     #[doc = "Package names to be excluded for patching."]
-    #[serde(rename = "packageNameMasksToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageNameMasksToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_name_masks_to_exclude: Vec<String>,
     #[doc = "Package names to be included for patching."]
-    #[serde(rename = "packageNameMasksToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packageNameMasksToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub package_name_masks_to_include: Vec<String>,
     #[doc = "Classification category of patches to be patched"]
-    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "classificationsToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub classifications_to_include: Vec<String>,
 }
 impl InputLinuxParameters {
@@ -213,13 +228,28 @@ pub mod input_patch_configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputWindowsParameters {
     #[doc = "Windows KBID to be excluded for patching."]
-    #[serde(rename = "kbNumbersToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "kbNumbersToExclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub kb_numbers_to_exclude: Vec<String>,
     #[doc = "Windows KBID to be included for patching."]
-    #[serde(rename = "kbNumbersToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "kbNumbersToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub kb_numbers_to_include: Vec<String>,
     #[doc = "Classification category of patches to be patched"]
-    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "classificationsToInclude",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub classifications_to_include: Vec<String>,
     #[doc = "Exclude patches which need reboot"]
     #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]
@@ -234,7 +264,11 @@ impl InputWindowsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplyUpdate {
     #[doc = "The list of apply updates"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplyUpdate>,
 }
 impl azure_core::Continuable for ListApplyUpdate {
@@ -252,7 +286,11 @@ impl ListApplyUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConfigurationAssignmentsResult {
     #[doc = "The list of configuration Assignments"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfigurationAssignment>,
 }
 impl azure_core::Continuable for ListConfigurationAssignmentsResult {
@@ -270,7 +308,11 @@ impl ListConfigurationAssignmentsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListMaintenanceConfigurationsResult {
     #[doc = "The list of maintenance Configurations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MaintenanceConfiguration>,
 }
 impl azure_core::Continuable for ListMaintenanceConfigurationsResult {
@@ -288,7 +330,11 @@ impl ListMaintenanceConfigurationsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListUpdatesResult {
     #[doc = "The pending updates"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Update>,
 }
 impl azure_core::Continuable for ListUpdatesResult {
@@ -528,7 +574,11 @@ impl OperationInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[doc = "A collection of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsListResult {
@@ -741,10 +791,20 @@ impl UpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoftwareUpdateConfigurationTasks {
     #[doc = "List of pre tasks. e.g. [{'source' :'runbook', 'taskScope': 'Global', 'parameters': { 'arg1': 'value1'}}]"]
-    #[serde(rename = "preTasks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "preTasks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pre_tasks: Vec<TaskProperties>,
     #[doc = "List of post tasks. e.g. [{'source' :'runbook', 'taskScope': 'Resource', 'parameters': { 'arg1': 'value1'}}]"]
-    #[serde(rename = "postTasks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "postTasks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub post_tasks: Vec<TaskProperties>,
 }
 impl SoftwareUpdateConfigurationTasks {

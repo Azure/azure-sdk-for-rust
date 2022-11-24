@@ -77,7 +77,11 @@ pub struct JobDataPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub command: Option<String>,
     #[doc = "the list of paths to all of the job data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<String>,
 }
 impl JobDataPath {
@@ -150,7 +154,11 @@ pub mod job_error_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInfoListResult {
     #[doc = "the list of jobInfo items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobInformation>,
     #[doc = "the link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -185,7 +193,12 @@ pub struct JobInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub submitter: Option<String>,
     #[doc = "the error message details for the job, if the job failed."]
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "errorMessage",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub error_message: Vec<JobErrorDetails>,
     #[doc = "the degree of parallelism used for this job. This must be greater than 0."]
     #[serde(rename = "degreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
@@ -215,10 +228,20 @@ pub struct JobInformation {
     #[serde(rename = "logFolder", default, skip_serializing_if = "Option::is_none")]
     pub log_folder: Option<String>,
     #[doc = "the list of log file name patterns to find in the logFolder. '*' is the only matching character allowed. Example format: jobExecution*.log or *mylog*.txt"]
-    #[serde(rename = "logFilePatterns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logFilePatterns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_file_patterns: Vec<String>,
     #[doc = "the job state audit records, indicating when various operations have been performed on this job."]
-    #[serde(rename = "stateAuditRecords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "stateAuditRecords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub state_audit_records: Vec<JobStateAuditRecord>,
     #[doc = "the name of hierarchy queue node this job is assigned to, null if job has not been assigned yet or the account doesn't have hierarchy queue."]
     #[serde(rename = "hierarchyQueueNode", default, skip_serializing_if = "Option::is_none")]
@@ -416,7 +439,11 @@ pub struct JobStatistics {
     #[serde(rename = "finalizingTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub finalizing_time_utc: Option<time::OffsetDateTime>,
     #[doc = "the list of stages for the job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub stages: Vec<JobStatisticsVertexStage>,
 }
 impl JobStatistics {
@@ -498,7 +525,11 @@ pub struct USqlJobProperties {
     #[serde(flatten)]
     pub job_properties: JobProperties,
     #[doc = "the list of resources that are required by the job"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<JobResource>,
     #[doc = "The Data Lake Analytics job execution statistics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -507,7 +538,11 @@ pub struct USqlJobProperties {
     #[serde(rename = "debugData", default, skip_serializing_if = "Option::is_none")]
     pub debug_data: Option<JobDataPath>,
     #[doc = "the diagnostics for the job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub diagnostics: Vec<Diagnostics>,
     #[doc = "the algebra file path after the job has completed"]
     #[serde(rename = "algebraFilePath", default, skip_serializing_if = "Option::is_none")]

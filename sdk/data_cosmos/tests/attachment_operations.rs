@@ -36,11 +36,7 @@ async fn attachment_operations() -> azure_core::Result<()> {
     let client = setup::initialize().unwrap();
 
     // create a temp database
-    let _create_database_response = client
-        .create_database(DATABASE_NAME)
-        .into_future()
-        .await
-        .unwrap();
+    let _create_database_response = client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
@@ -68,7 +64,6 @@ async fn attachment_operations() -> azure_core::Result<()> {
             .create_collection(COLLECTION_NAME, "/id")
             .offer(Offer::Throughput(400))
             .indexing_policy(ip)
-            .into_future()
             .await
             .unwrap()
     };
@@ -85,11 +80,7 @@ async fn attachment_operations() -> azure_core::Result<()> {
     };
 
     // let's add an entity.
-    let session_token: ConsistencyLevel = collection
-        .create_document(doc.clone())
-        .into_future()
-        .await?
-        .into();
+    let session_token: ConsistencyLevel = collection.create_document(doc.clone()).await?.into();
 
     let document = collection.document_client(id.clone(), &doc.id)?;
 
@@ -108,14 +99,12 @@ async fn attachment_operations() -> azure_core::Result<()> {
     let resp = attachment
         .create_attachment("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
-        .into_future()
         .await?;
 
     // replace reference attachment
     let resp = attachment
         .replace_attachment("https://www.microsoft.com", "image/jpeg")
         .consistency_level(&resp)
-        .into_future()
         .await?;
 
     // create slug attachment
@@ -124,7 +113,6 @@ async fn attachment_operations() -> azure_core::Result<()> {
         .create_slug("something cool here".into())
         .consistency_level(&resp)
         .content_type("text/plain")
-        .into_future()
         .await?;
 
     // list attachments, there must be two.
@@ -142,7 +130,6 @@ async fn attachment_operations() -> azure_core::Result<()> {
         .attachment_client("reference")
         .get()
         .consistency_level(&ret)
-        .into_future()
         .await?;
     assert_eq!(
         "https://www.microsoft.com",
@@ -155,7 +142,6 @@ async fn attachment_operations() -> azure_core::Result<()> {
         .attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
-        .into_future()
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
@@ -164,7 +150,6 @@ async fn attachment_operations() -> azure_core::Result<()> {
     let resp_delete = attachment
         .delete()
         .consistency_level(&slug_attachment)
-        .into_future()
         .await?;
 
     // list attachments, there must be one.
@@ -178,7 +163,7 @@ async fn attachment_operations() -> azure_core::Result<()> {
     assert_eq!(1, ret.attachments.len());
 
     // delete the database
-    database.delete_database().into_future().await?;
+    database.delete_database().await?;
 
     Ok(())
 }

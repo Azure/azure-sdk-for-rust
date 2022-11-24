@@ -16,10 +16,20 @@ pub struct AcknowledgeOfferNotificationDetails {
     #[serde(rename = "removeOffer", default, skip_serializing_if = "Option::is_none")]
     pub remove_offer: Option<bool>,
     #[doc = "Gets or sets added plans"]
-    #[serde(rename = "addPlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addPlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub add_plans: Vec<String>,
     #[doc = "Gets or sets remove plans"]
-    #[serde(rename = "removePlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "removePlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub remove_plans: Vec<String>,
 }
 impl AcknowledgeOfferNotificationDetails {
@@ -55,7 +65,12 @@ pub struct AdminRequestApprovalProperties {
     #[serde(rename = "adminAction", default, skip_serializing_if = "Option::is_none")]
     pub admin_action: Option<admin_request_approval_properties::AdminAction>,
     #[doc = "Gets or sets Approved plans ids, empty in case of rejected"]
-    #[serde(rename = "approvedPlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "approvedPlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub approved_plans: Vec<String>,
     #[doc = "Gets or sets admin comment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -64,10 +79,19 @@ pub struct AdminRequestApprovalProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub administrator: Option<String>,
     #[doc = "Gets list of plans with requesters details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans: Vec<PlanRequesterDetails>,
     #[doc = "Gets or sets list of associated collection ids"]
-    #[serde(rename = "collectionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "collectionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub collection_ids: Vec<String>,
 }
 impl AdminRequestApprovalProperties {
@@ -118,7 +142,11 @@ pub mod admin_request_approval_properties {
 #[doc = "List of admin request approval resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdminRequestApprovalsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AdminRequestApprovalsResource>,
     #[doc = "URL to get the next set of notifications list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -147,7 +175,12 @@ impl AdminRequestApprovalsResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingAccountsResponse {
     #[doc = "Billing accounts list"]
-    #[serde(rename = "billingAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "billingAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub billing_accounts: Vec<String>,
 }
 impl BillingAccountsResponse {
@@ -159,7 +192,12 @@ impl BillingAccountsResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BulkCollectionsDetails {
     #[doc = "collection ids list that the action is performed on"]
-    #[serde(rename = "collectionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "collectionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub collection_ids: Vec<String>,
     #[doc = "Action to perform (For example: EnableCollections, DisableCollections)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -186,10 +224,18 @@ impl BulkCollectionsPayload {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BulkCollectionsResponse {
     #[doc = "Succeeded collections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub succeeded: Vec<CollectionsDetails>,
     #[doc = "Failed collections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub failed: Vec<CollectionsDetails>,
 }
 impl BulkCollectionsResponse {
@@ -227,7 +273,12 @@ pub struct CollectionProperties {
     #[serde(rename = "allSubscriptions", default, skip_serializing_if = "Option::is_none")]
     pub all_subscriptions: Option<bool>,
     #[doc = "Gets or sets subscription ids list. Empty list indicates all subscriptions are selected, null indicates no update is done, explicit list indicates the explicit selected subscriptions. On insert, null is considered as bad request"]
-    #[serde(rename = "subscriptionsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subscriptionsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions_list: Vec<String>,
     #[doc = "Indicating whether the collection is enabled or disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -258,7 +309,11 @@ impl CollectionsDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectionsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Collection>,
     #[doc = "URL to get the next set of offer list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -285,7 +340,12 @@ impl CollectionsToSubscriptionsMappingPayload {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectionsToSubscriptionsMappingProperties {
     #[doc = "Subscriptions ids list"]
-    #[serde(rename = "subscriptionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subscriptionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscription_ids: Vec<String>,
 }
 impl CollectionsToSubscriptionsMappingProperties {
@@ -409,7 +469,11 @@ pub struct NewNotifications {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
     #[doc = "Gets or sets removed plans notifications"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans: Vec<PlanNotificationDetails>,
 }
 impl NewNotifications {
@@ -421,7 +485,11 @@ impl NewNotifications {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationsSettingsProperties {
     #[doc = "Gets or sets list of notified recipients for new requests"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recipients: Vec<Recipient>,
     #[doc = "Gets or sets whether to send email to all marketplace admins for new requests"]
     #[serde(rename = "sendToAllMarketplaceAdmins", default, skip_serializing_if = "Option::is_none")]
@@ -447,7 +515,11 @@ impl Offer {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfferListResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Offer>,
     #[doc = "URL to get the next set of offer list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -488,7 +560,12 @@ pub struct OfferProperties {
     #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub modified_at: Option<String>,
     #[doc = "Plan ids limitation for this offer"]
-    #[serde(rename = "specificPlanIdsLimitation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "specificPlanIdsLimitation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub specific_plan_ids_limitation: Vec<String>,
     #[doc = "Indicating whether the offer was not updated to db (true = not updated). If the allow list is identical to the existed one in db, the offer would not be updated."]
     #[serde(rename = "updateSuppressedDueIdempotence", default, skip_serializing_if = "Option::is_none")]
@@ -497,7 +574,11 @@ pub struct OfferProperties {
     #[serde(rename = "iconFileUris", default, skip_serializing_if = "Option::is_none")]
     pub icon_file_uris: Option<serde_json::Value>,
     #[doc = "Offer plans"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans: Vec<Plan>,
 }
 impl OfferProperties {
@@ -509,7 +590,11 @@ impl OfferProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Microsoft.Marketplace operations supported by the Microsoft.Marketplace resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SingleOperation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -623,7 +708,11 @@ pub struct PlanRequesterDetails {
     #[serde(rename = "planDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub plan_display_name: Option<String>,
     #[doc = "Gets requesters details list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub requesters: Vec<UserRequestDetails>,
 }
 impl PlanRequesterDetails {
@@ -648,7 +737,11 @@ impl PrivateStore {
 #[doc = "Describes the json payload for the list of available private stores (between zero and one, inclusive)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateStoreList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateStore>,
     #[doc = "URL to get the next set of PrivateStore list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -668,11 +761,26 @@ impl PrivateStoreList {
 #[doc = "Get private store notifications state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateStoreNotificationsState {
-    #[serde(rename = "stopSellNotifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "stopSellNotifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub stop_sell_notifications: Vec<StopSellNotifications>,
-    #[serde(rename = "newNotifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "newNotifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub new_notifications: Vec<NewNotifications>,
-    #[serde(rename = "approvalRequests", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "approvalRequests",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub approval_requests: Vec<RequestApprovalsDetails>,
 }
 impl PrivateStoreNotificationsState {
@@ -747,7 +855,12 @@ pub struct PrivateStoreProperties {
     #[serde(rename = "isGov", default, skip_serializing_if = "Option::is_none")]
     pub is_gov: Option<bool>,
     #[doc = "Gets list of associated collection ids"]
-    #[serde(rename = "collectionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "collectionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub collection_ids: Vec<String>,
     #[doc = "Gets or sets list of branding characteristics"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -810,7 +923,12 @@ pub struct QueryApprovedPlans {
     #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
     pub offer_id: Option<String>,
     #[doc = "Offer plan ids"]
-    #[serde(rename = "planIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "planIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plan_ids: Vec<String>,
 }
 impl QueryApprovedPlans {
@@ -825,7 +943,12 @@ pub struct QueryApprovedPlansDetails {
     #[serde(rename = "planId", default, skip_serializing_if = "Option::is_none")]
     pub plan_id: Option<String>,
     #[doc = "Approved subscription ids list. In case all subscriptions are approved for a plan, allSubscriptions flag is true and list is empty ( else flag is set to false). In case both subscriptions list is empty and allSubscriptions flag is false, the plan is not approved for any subscription."]
-    #[serde(rename = "subscriptionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subscriptionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscription_ids: Vec<String>,
     #[doc = "Indicates whether all subscriptions are approved for this plan"]
     #[serde(rename = "allSubscriptions", default, skip_serializing_if = "Option::is_none")]
@@ -864,7 +987,11 @@ pub type QueryApprovedPlansResponseDetails = Vec<QueryApprovedPlansDetails>;
 #[doc = "List of offers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryOffers {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OfferProperties>,
     #[doc = "URL to get the next set of PrivateStore list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -939,7 +1066,12 @@ pub struct RequestApprovalProperties {
     #[serde(rename = "publisherId", default, skip_serializing_if = "Option::is_none")]
     pub publisher_id: Option<String>,
     #[doc = "Gets or sets the plans details"]
-    #[serde(rename = "plansDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "plansDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans_details: Vec<PlanDetails>,
     #[doc = "Gets a value indicating whether the request is closed"]
     #[serde(rename = "isClosed", default, skip_serializing_if = "Option::is_none")]
@@ -986,7 +1118,11 @@ pub struct RequestApprovalsDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
     #[doc = "Gets or sets removed plans notifications"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans: Vec<PlanNotificationDetails>,
 }
 impl RequestApprovalsDetails {
@@ -997,7 +1133,11 @@ impl RequestApprovalsDetails {
 #[doc = "List of admin request approval resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestApprovalsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RequestApprovalResource>,
     #[doc = "URL to get the next set of notifications list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1015,7 +1155,12 @@ pub struct RequestDetails {
     #[serde(rename = "publisherId", default, skip_serializing_if = "Option::is_none")]
     pub publisher_id: Option<String>,
     #[doc = "Current plans list"]
-    #[serde(rename = "planIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "planIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plan_ids: Vec<String>,
     #[doc = "Gets or sets the subscription id"]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -1114,7 +1259,11 @@ pub struct StopSellNotifications {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
     #[doc = "Gets or sets removed plans notifications"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub plans: Vec<PlanNotificationDetails>,
 }
 impl StopSellNotifications {
@@ -1153,13 +1302,23 @@ impl SystemData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransferOffersDetails {
     #[doc = "Target collections ids"]
-    #[serde(rename = "targetCollections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetCollections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_collections: Vec<String>,
     #[doc = "Operation to perform (For example: Copy or Move)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
     #[doc = "Offers ids list to transfer from source collection to target collection(s)"]
-    #[serde(rename = "offerIdsList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "offerIdsList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub offer_ids_list: Vec<String>,
 }
 impl TransferOffersDetails {
@@ -1183,10 +1342,18 @@ impl TransferOffersProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransferOffersResponse {
     #[doc = "Succeeded collections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub succeeded: Vec<CollectionsDetails>,
     #[doc = "Failed collections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub failed: Vec<CollectionsDetails>,
 }
 impl TransferOffersResponse {
@@ -1252,7 +1419,11 @@ pub struct CollectionsSubscriptionsMappingDetails {
     #[serde(rename = "collectionName", default, skip_serializing_if = "Option::is_none")]
     pub collection_name: Option<String>,
     #[doc = "Subscriptions ids list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions: Vec<String>,
 }
 impl CollectionsSubscriptionsMappingDetails {

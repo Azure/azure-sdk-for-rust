@@ -12,9 +12,5 @@ async fn get_account_information() {
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let blob_service = BlobServiceClient::new(account, storage_credentials);
 
-    blob_service
-        .get_account_information()
-        .into_future()
-        .await
-        .unwrap();
+    blob_service.get_account_information().await.unwrap();
 }

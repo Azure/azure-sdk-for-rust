@@ -37,7 +37,6 @@ async fn stream_list_blobs() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await
         .unwrap();
 
@@ -47,7 +46,6 @@ async fn stream_list_blobs() {
             .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await
             .unwrap();
     }
@@ -69,5 +67,5 @@ async fn stream_list_blobs() {
         cnt += 1;
     }
 
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
 }

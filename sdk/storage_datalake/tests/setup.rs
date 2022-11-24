@@ -5,12 +5,12 @@ pub async fn create_data_lake_client(transaction_name: &str) -> azure_core::Resu
     let account_name = (std::env::var(mock_transport::TESTING_MODE_KEY).as_deref()
         == Ok(mock_transport::TESTING_MODE_RECORD))
     .then(get_account)
-    .unwrap_or_else(String::new);
+    .unwrap_or_default();
 
     let account_key = (std::env::var(mock_transport::TESTING_MODE_KEY).as_deref()
         == Ok(mock_transport::TESTING_MODE_RECORD))
     .then(get_key)
-    .unwrap_or_else(String::new);
+    .unwrap_or_default();
 
     let transport_options = azure_core::TransportOptions::new_custom_policy(
         mock_transport::new_mock_transport(transaction_name.into()),

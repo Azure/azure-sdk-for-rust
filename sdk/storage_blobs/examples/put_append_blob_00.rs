@@ -47,13 +47,12 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .content_language("en/us")
         .metadata(metadata)
-        .into_future()
         .await?;
 
     println!("{:?}", res);
 
     // let get back the metadata
-    let res = blob_client.get_metadata().into_future().await?;
+    let res = blob_client.get_metadata().await?;
     println!("{:?}", res);
 
     Ok(())

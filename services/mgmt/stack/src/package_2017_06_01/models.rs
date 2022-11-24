@@ -90,7 +90,11 @@ pub struct Compatibility {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of all issues found"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub issues: Vec<CompatibilityIssue>,
 }
 impl Compatibility {
@@ -227,7 +231,11 @@ pub struct CustomerSubscriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of customer subscriptions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomerSubscription>,
 }
 impl azure_core::Continuable for CustomerSubscriptionList {
@@ -519,7 +527,11 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "Array of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URI to the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -587,7 +599,11 @@ pub struct ProductList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of products."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Product>,
 }
 impl azure_core::Continuable for ProductList {
@@ -680,7 +696,11 @@ pub struct ProductNestedProperties {
     #[serde(rename = "iconUris", default, skip_serializing_if = "Option::is_none")]
     pub icon_uris: Option<IconUris>,
     #[doc = "Additional links available for this product."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub links: Vec<ProductLink>,
     #[doc = "The legal terms."]
     #[serde(rename = "legalTerms", default, skip_serializing_if = "Option::is_none")]
@@ -750,7 +770,11 @@ pub struct RegistrationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of Registrations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Registration>,
 }
 impl azure_core::Continuable for RegistrationList {
@@ -991,7 +1015,12 @@ pub struct VirtualMachineProductProperties {
     #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_image: Option<OsDiskImage>,
     #[doc = "List of attached data disks."]
-    #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataDiskImages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_disk_images: Vec<DataDiskImage>,
 }
 impl VirtualMachineProductProperties {

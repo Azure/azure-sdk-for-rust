@@ -82,7 +82,11 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of HANA operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationList {
@@ -114,7 +118,11 @@ impl ProviderInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderInstanceListResult {
     #[doc = "The list of provider instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProviderInstance>,
     #[doc = "The URL to get the next set of provider instances."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -252,7 +260,11 @@ impl SapMonitor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapMonitorListResult {
     #[doc = "The list of SAP monitors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SapMonitor>,
     #[doc = "The URL to get the next set of SAP monitors."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -14,5 +14,5 @@ pub fn sign(data: &str, key: &str) -> azure_core::Result<String> {
     })?;
     hmac.update(data.as_bytes());
     let signature = hmac.finalize().into_bytes();
-    Ok(encode(&signature))
+    Ok(encode(signature))
 }

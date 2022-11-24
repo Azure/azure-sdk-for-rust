@@ -82,7 +82,6 @@ async fn main() -> azure_core::Result<()> {
             collection
                 .create_document(document_to_insert)
                 .is_upsert(true)
-                .into_future()
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
         );
@@ -139,7 +138,6 @@ async fn main() -> azure_core::Result<()> {
             .delete_document()
             .consistency_level(session_token.clone())
             .if_match_condition(&document_attributes.unwrap())
-            .into_future()
             .await?;
     }
 

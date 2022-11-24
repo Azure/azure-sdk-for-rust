@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let client = SecretClient::new(&keyvault_url, creds)?;
-    client.delete(secret_name).into_future().await?;
+    client.delete(secret_name).await?;
 
     Ok(())
 }

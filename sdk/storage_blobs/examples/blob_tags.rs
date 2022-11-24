@@ -18,29 +18,25 @@ async fn main() -> azure_core::Result<()> {
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let container_client =
         BlobServiceClient::new(account, storage_credentials).container_client(container_name);
-    container_client.create().into_future().await?;
+    container_client.create().await?;
 
     let blob_client = container_client.blob_client(&blob_name);
 
     let mut tags = Tags::new();
     tags.insert("tag1", "value1");
 
-    blob_client
-        .put_block_blob("hello world")
-        .tags(tags)
-        .into_future()
-        .await?;
+    blob_client.put_block_blob("hello world").tags(tags).await?;
 
-    let result = blob_client.get_tags().into_future().await?;
+    let result = blob_client.get_tags().await?;
     println!("get tags result: {:?}", result);
 
     let mut new_tags = HashMap::new();
     new_tags.insert("tag2", "value2");
     new_tags.insert("tag3", "value3");
-    let result = blob_client.set_tags(new_tags).into_future().await?;
+    let result = blob_client.set_tags(new_tags).await?;
     println!("set tags result: {:?}", result);
 
-    let result = blob_client.get_tags().into_future().await?;
+    let result = blob_client.get_tags().await?;
     println!("get tags result: {:?}", result);
 
     for (key, value) in result.tags.into_iter() {
@@ -48,14 +44,11 @@ async fn main() -> azure_core::Result<()> {
     }
 
     let blob_client = container_client.blob_client(&blob_notags_name);
-    blob_client
-        .put_block_blob("hello world")
-        .into_future()
-        .await?;
-    let result = blob_client.get_tags().into_future().await?;
+    blob_client.put_block_blob("hello world").await?;
+    let result = blob_client.get_tags().await?;
     println!("get tags without tags result: {:?}", result);
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
 
     Ok(())
 }

@@ -110,11 +110,11 @@ impl<'a> PackageConfig {
         }
         if !self.tags.allow.is_empty() {
             let allow: HashSet<&str> = self.tags.allow.iter().map(String::as_str).collect();
-            tags = tags.into_iter().filter(|tag| allow.contains(tag.name())).collect();
+            tags.retain(|tag| allow.contains(tag.name()));
         }
         if !self.tags.deny.is_empty() {
             let deny: HashSet<&str> = self.tags.deny.iter().map(String::as_str).collect();
-            tags = tags.into_iter().filter(|tag| !deny.contains(tag.name())).collect();
+            tags.retain(|tag| !deny.contains(tag.name()));
         }
         let mut deny_contains: Vec<&str> = self.tags.deny_contains.iter().map(String::as_str).collect();
         if self.tags.deny_contains_preview.unwrap_or_default() {
@@ -124,10 +124,7 @@ impl<'a> PackageConfig {
             deny_contains.push("only");
         }
         if !deny_contains.is_empty() {
-            tags = tags
-                .into_iter()
-                .filter(|tag| !deny_contains.iter().any(|deny| tag.name().contains(deny)))
-                .collect();
+            tags.retain(|tag| !deny_contains.iter().any(|deny| tag.name().contains(deny)));
         }
         if let Some(limit) = self.tags.limit {
             if limit > NO_LIMIT {

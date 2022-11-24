@@ -67,7 +67,6 @@ where
 
 azure_core::future!(InsertEntity<T>);
 
-#[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for InsertEntityBuilder<T> {
     type IntoFuture = InsertEntity<T>;
     type Output = <InsertEntity<T> as std::future::Future>::Output;

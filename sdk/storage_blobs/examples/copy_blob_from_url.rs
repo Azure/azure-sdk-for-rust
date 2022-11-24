@@ -36,7 +36,6 @@ async fn main() -> azure_core::Result<()> {
     let response = blob_client
         .copy_from_url(source_url)
         .is_synchronous(true)
-        .into_future()
         .await?;
 
     println!("response == {:?}", response);

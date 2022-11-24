@@ -145,8 +145,8 @@ pub struct BlobProperties {
     pub access_tier: Option<AccessTier>,
     #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub access_tier_change_time: Option<OffsetDateTime>,
-    pub lease_status: LeaseStatus,
-    pub lease_state: LeaseState,
+    pub lease_status: Option<LeaseStatus>,
+    pub lease_state: Option<LeaseState>,
     pub lease_duration: Option<LeaseDuration>,
     pub copy_id: Option<CopyId>,
     pub copy_status: Option<CopyStatus>,
@@ -205,8 +205,8 @@ impl Blob {
         let content_crc64 = h.get_optional_as(&azure_storage::headers::CONTENT_CRC64)?;
         let cache_control = h.get_optional_string(&headers::CACHE_CONTROL);
         let content_disposition = h.get_optional_string(&headers::CONTENT_DISPOSITION);
-        let lease_status = h.get_as(&headers::LEASE_STATUS)?;
-        let lease_state = h.get_as(&headers::LEASE_STATE)?;
+        let lease_status = h.get_optional_as(&headers::LEASE_STATUS)?;
+        let lease_state = h.get_optional_as(&headers::LEASE_STATE)?;
         let lease_duration = h.get_optional_as(&headers::LEASE_DURATION)?;
         let copy_id = h.get_optional_as(&azure_storage::headers::COPY_ID)?;
         let copy_status = h.get_optional_as(&headers::COPY_STATUS)?;

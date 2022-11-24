@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let client = SecretClient::new(&keyvault_url, creds)?;
-    let backup_response = client.backup(secret_name).into_future().await?;
+    let backup_response = client.backup(secret_name).await?;
     dbg!(&backup_response);
 
     Ok(())

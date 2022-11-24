@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{:?}", version?);
     }
 
-    let secret = client.get(secret_name).into_future().await?;
+    let secret = client.get(secret_name).await?;
     dbg!(secret.value);
 
     Ok(())

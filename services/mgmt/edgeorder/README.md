@@ -6,7 +6,7 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/edgeorder/
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2022-05-preview`.
+The default tag is `package-2021-12`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 

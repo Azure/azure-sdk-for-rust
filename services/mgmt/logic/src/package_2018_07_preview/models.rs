@@ -442,7 +442,11 @@ impl ArtifactProperties {
 #[doc = "A collection of assembly definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssemblyCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AssemblyDefinition>,
 }
 impl azure_core::Continuable for AssemblyCollection {
@@ -509,7 +513,11 @@ pub struct AzureResourceErrorInfo {
     #[doc = "The error message."]
     pub message: String,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<AzureResourceErrorInfo>,
 }
 impl AzureResourceErrorInfo {
@@ -525,7 +533,12 @@ impl AzureResourceErrorInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct B2bPartnerContent {
     #[doc = "The list of partner business identities."]
-    #[serde(rename = "businessIdentities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "businessIdentities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub business_identities: Vec<BusinessIdentity>,
 }
 impl B2bPartnerContent {
@@ -552,7 +565,11 @@ impl BatchConfiguration {
 #[doc = "A collection of batch configurations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchConfigurationCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BatchConfiguration>,
 }
 impl azure_core::Continuable for BatchConfigurationCollection {
@@ -1337,19 +1354,39 @@ pub struct EdifactProtocolSettings {
     #[serde(rename = "processingSettings")]
     pub processing_settings: EdifactProcessingSettings,
     #[doc = "The EDIFACT envelope override settings."]
-    #[serde(rename = "envelopeOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "envelopeOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub envelope_overrides: Vec<EdifactEnvelopeOverride>,
     #[doc = "The EDIFACT message filter list."]
-    #[serde(rename = "messageFilterList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "messageFilterList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub message_filter_list: Vec<EdifactMessageIdentifier>,
     #[doc = "The EDIFACT schema references."]
     #[serde(rename = "schemaReferences")]
     pub schema_references: Vec<EdifactSchemaReference>,
     #[doc = "The EDIFACT validation override settings."]
-    #[serde(rename = "validationOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "validationOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub validation_overrides: Vec<EdifactValidationOverride>,
     #[doc = "The EDIFACT delimiter override settings."]
-    #[serde(rename = "edifactDelimiterOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "edifactDelimiterOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub edifact_delimiter_overrides: Vec<EdifactDelimiterOverride>,
 }
 impl EdifactProtocolSettings {
@@ -1631,7 +1668,11 @@ pub struct Expression {
     pub text: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subexpressions: Vec<Expression>,
     #[doc = "The azure resource error info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1657,7 +1698,11 @@ impl ExpressionRoot {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressionTraces {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<ExpressionRoot>,
 }
 impl azure_core::Continuable for ExpressionTraces {
@@ -1795,7 +1840,11 @@ impl IntegrationAccountAgreementFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountAgreementListResult {
     #[doc = "The list of integration account agreements."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccountAgreement>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1883,7 +1932,11 @@ impl IntegrationAccountCertificate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountCertificateListResult {
     #[doc = "The list of integration account certificates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccountCertificate>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1928,7 +1981,11 @@ impl IntegrationAccountCertificateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountListResult {
     #[doc = "The list of integration accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccount>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1976,7 +2033,11 @@ impl IntegrationAccountMapFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountMapListResult {
     #[doc = "The list of integration account maps."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccountMap>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2080,7 +2141,11 @@ impl IntegrationAccountPartnerFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountPartnerListResult {
     #[doc = "The list of integration account partners."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccountPartner>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2163,7 +2228,11 @@ impl IntegrationAccountSchemaFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountSchemaListResult {
     #[doc = "The list of integration account schemas."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccountSchema>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2261,7 +2330,11 @@ impl IntegrationAccountSessionFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountSessionListResult {
     #[doc = "The list of integration account sessions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationAccountSession>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2438,7 +2511,11 @@ pub mod key_vault_key {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultKeyCollection {
     #[doc = "The key vault keys."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<KeyVaultKey>,
     #[doc = "The skip token."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
@@ -2657,7 +2734,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Logic operations supported by the Logic resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2695,7 +2776,12 @@ pub struct OperationResult {
     #[serde(rename = "trackedProperties", default, skip_serializing_if = "Option::is_none")]
     pub tracked_properties: Option<Object>,
     #[doc = "Gets the retry histories."]
-    #[serde(rename = "retryHistory", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "retryHistory",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub retry_history: Vec<RetryHistory>,
     #[serde(rename = "iterationCount", default, skip_serializing_if = "Option::is_none")]
     pub iteration_count: Option<i32>,
@@ -2881,19 +2967,42 @@ impl Serialize for RecurrenceFrequency {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecurrenceSchedule {
     #[doc = "The minutes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub minutes: Vec<i32>,
     #[doc = "The hours."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hours: Vec<i32>,
     #[doc = "The days of the week."]
-    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "weekDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub week_days: Vec<String>,
     #[doc = "The month days."]
-    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monthDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub month_days: Vec<i32>,
     #[doc = "The monthly occurrences."]
-    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monthlyOccurrences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
 }
 impl RecurrenceSchedule {
@@ -2979,7 +3088,11 @@ impl RequestHistory {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHistoryListResult {
     #[doc = "A list of workflow request histories."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RequestHistory>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3124,7 +3237,12 @@ pub struct RunCorrelation {
     #[serde(rename = "clientTrackingId", default, skip_serializing_if = "Option::is_none")]
     pub client_tracking_id: Option<String>,
     #[doc = "The client keywords."]
-    #[serde(rename = "clientKeywords", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clientKeywords",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub client_keywords: Vec<String>,
 }
 impl RunCorrelation {
@@ -3588,7 +3706,11 @@ impl WorkflowFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowListResult {
     #[doc = "The list of workflows."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workflow>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3795,7 +3917,11 @@ impl WorkflowRunActionFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionListResult {
     #[doc = "A list of workflow run actions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkflowRunAction>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3843,7 +3969,12 @@ pub struct WorkflowRunActionProperties {
     #[serde(rename = "trackedProperties", default, skip_serializing_if = "Option::is_none")]
     pub tracked_properties: Option<Object>,
     #[doc = "Gets the retry histories."]
-    #[serde(rename = "retryHistory", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "retryHistory",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub retry_history: Vec<RetryHistory>,
 }
 impl WorkflowRunActionProperties {
@@ -3870,7 +4001,11 @@ impl WorkflowRunActionRepetitionDefinition {
 #[doc = "A collection of workflow run action repetitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionRepetitionDefinitionCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkflowRunActionRepetitionDefinition>,
 }
 impl azure_core::Continuable for WorkflowRunActionRepetitionDefinitionCollection {
@@ -3890,7 +4025,12 @@ pub struct WorkflowRunActionRepetitionProperties {
     #[serde(flatten)]
     pub operation_result: OperationResult,
     #[doc = "The repetition indexes."]
-    #[serde(rename = "repetitionIndexes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "repetitionIndexes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub repetition_indexes: Vec<RepetitionIndex>,
 }
 impl WorkflowRunActionRepetitionProperties {
@@ -3913,7 +4053,11 @@ impl WorkflowRunFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunListResult {
     #[doc = "A list of workflow runs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkflowRun>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4157,7 +4301,12 @@ pub struct WorkflowTriggerCallbackUrl {
     #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
     pub relative_path: Option<String>,
     #[doc = "Gets the workflow trigger callback URL relative path parameters."]
-    #[serde(rename = "relativePathParameters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "relativePathParameters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub relative_path_parameters: Vec<String>,
     #[doc = "Gets the workflow trigger callback URL query parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4214,7 +4363,11 @@ impl WorkflowTriggerHistoryFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistoryListResult {
     #[doc = "A list of workflow trigger histories."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkflowTriggerHistory>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4299,7 +4452,11 @@ impl WorkflowTriggerListCallbackUrlQueries {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerListResult {
     #[doc = "A list of workflow triggers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkflowTrigger>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4461,7 +4618,11 @@ impl WorkflowVersion {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowVersionListResult {
     #[doc = "A list of workflow versions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkflowVersion>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5087,19 +5248,39 @@ pub struct X12ProtocolSettings {
     #[serde(rename = "processingSettings")]
     pub processing_settings: X12ProcessingSettings,
     #[doc = "The X12 envelope override settings."]
-    #[serde(rename = "envelopeOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "envelopeOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub envelope_overrides: Vec<X12EnvelopeOverride>,
     #[doc = "The X12 validation override settings."]
-    #[serde(rename = "validationOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "validationOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub validation_overrides: Vec<X12ValidationOverride>,
     #[doc = "The X12 message filter list."]
-    #[serde(rename = "messageFilterList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "messageFilterList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub message_filter_list: Vec<X12MessageIdentifier>,
     #[doc = "The X12 schema references."]
     #[serde(rename = "schemaReferences")]
     pub schema_references: Vec<X12SchemaReference>,
     #[doc = "The X12 delimiter override settings."]
-    #[serde(rename = "x12DelimiterOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "x12DelimiterOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub x12_delimiter_overrides: Vec<X12DelimiterOverrides>,
 }
 impl X12ProtocolSettings {

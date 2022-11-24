@@ -19,7 +19,12 @@ impl AclFailedEntry {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobHierarchyListSegment {
-    #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "BlobPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blob_prefixes: Vec<BlobPrefix>,
     #[serde(rename = "BlobItems")]
     pub blob_items: Vec<BlobItemInternal>,
@@ -192,7 +197,11 @@ impl FileSystem {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileSystemList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filesystems: Vec<FileSystem>,
 }
 impl azure_core::Continuable for FileSystemList {
@@ -276,7 +285,11 @@ impl Path {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PathList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<Path>,
 }
 impl azure_core::Continuable for PathList {
@@ -298,7 +311,12 @@ pub struct SetAccessControlRecursiveResponse {
     pub files_successful: Option<i32>,
     #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
     pub failure_count: Option<i32>,
-    #[serde(rename = "failedEntries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "failedEntries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub failed_entries: Vec<AclFailedEntry>,
 }
 impl SetAccessControlRecursiveResponse {

@@ -184,7 +184,11 @@ pub mod communication_details_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommunicationsListResult {
     #[doc = "List of Communication resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CommunicationDetails>,
     #[doc = "The URI to fetch the next page of Communication resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -217,7 +221,12 @@ pub struct ContactProfile {
     #[serde(rename = "primaryEmailAddress")]
     pub primary_email_address: String,
     #[doc = "Additional email addresses listed will be copied on any correspondence about the support ticket."]
-    #[serde(rename = "additionalEmailAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalEmailAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_email_addresses: Vec<String>,
     #[doc = "Phone number. This is required if preferred contact method is phone."]
     #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]
@@ -357,7 +366,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[doc = "The list of operations supported by Microsoft Support resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsListResult {
@@ -408,7 +421,11 @@ impl ProblemClassificationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProblemClassificationsListResult {
     #[doc = "List of ProblemClassification resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProblemClassification>,
 }
 impl azure_core::Continuable for ProblemClassificationsListResult {
@@ -447,7 +464,12 @@ pub struct QuotaTicketDetails {
     #[serde(rename = "quotaChangeRequestVersion", default, skip_serializing_if = "Option::is_none")]
     pub quota_change_request_version: Option<String>,
     #[doc = "This property is required for providing the region and new quota limits."]
-    #[serde(rename = "quotaChangeRequests", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "quotaChangeRequests",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub quota_change_requests: Vec<QuotaChangeRequest>,
 }
 impl QuotaTicketDetails {
@@ -489,7 +511,11 @@ pub struct ServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The list of error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ServiceErrorDetail>,
 }
 impl ServiceError {
@@ -549,7 +575,11 @@ impl ServiceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicesListResult {
     #[doc = "List of Service resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Service>,
 }
 impl azure_core::Continuable for ServicesListResult {
@@ -743,7 +773,11 @@ pub mod support_ticket_details_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportTicketsListResult {
     #[doc = "List of SupportTicket resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SupportTicketDetails>,
     #[doc = "The URI to fetch the next page of SupportTicket resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -788,7 +822,12 @@ pub struct UpdateContactProfile {
     #[serde(rename = "primaryEmailAddress", default, skip_serializing_if = "Option::is_none")]
     pub primary_email_address: Option<String>,
     #[doc = "Email addresses listed will be copied on any correspondence about the support ticket"]
-    #[serde(rename = "additionalEmailAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalEmailAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_email_addresses: Vec<String>,
     #[doc = "Phone number. This is required if preferred contact method is phone."]
     #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]

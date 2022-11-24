@@ -152,7 +152,7 @@ fn string_to_sign(
 fn canonicalize_header(headers: &Headers) -> String {
     let mut names = headers
         .iter()
-        .filter_map(|(k, _)| (k.as_str().starts_with("x-ms")).then(|| k))
+        .filter_map(|(k, _)| (k.as_str().starts_with("x-ms")).then_some(k))
         .collect::<Vec<_>>();
     names.sort_unstable();
 

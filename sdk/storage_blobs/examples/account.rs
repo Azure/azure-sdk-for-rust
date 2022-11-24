@@ -13,10 +13,7 @@ async fn main() -> azure_core::Result<()> {
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let service_client = BlobServiceClient::new(account, storage_credentials);
 
-    let account = service_client
-        .get_account_information()
-        .into_future()
-        .await?;
+    let account = service_client.get_account_information().await?;
     println!("Account info:");
     println!("\tKind: {}", account.account_kind);
     println!("\tSku: {}", account.sku_name);

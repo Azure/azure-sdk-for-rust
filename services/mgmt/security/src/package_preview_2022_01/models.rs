@@ -34,10 +34,19 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl CloudErrorBody {
@@ -213,7 +222,11 @@ impl GovernanceAssignmentProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceAssignmentsList {
     #[doc = "Collection of governance assignments in this page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GovernanceAssignment>,
     #[doc = "The URI to fetch the next page"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -286,7 +299,11 @@ impl GovernanceRuleEmailNotification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceRuleList {
     #[doc = "Collection of governanceRules in this page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GovernanceRule>,
     #[doc = "The URI to fetch the next page"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

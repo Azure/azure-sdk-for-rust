@@ -97,7 +97,11 @@ impl CachedServerNameRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
     #[doc = "A list of supported capabilities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CapabilityProperties>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -121,7 +125,12 @@ pub struct CapabilityProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zone: Option<String>,
     #[doc = "Supported high availability mode"]
-    #[serde(rename = "supportedHAMode", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedHAMode",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_ha_mode: Vec<String>,
     #[doc = "A value indicating whether a new server in this region can have geo-backups to paired region."]
     #[serde(rename = "geoBackupSupported", default, skip_serializing_if = "Option::is_none")]
@@ -132,9 +141,19 @@ pub struct CapabilityProperties {
     #[doc = "A value indicating whether a new server in this region can have geo-backups to paired region."]
     #[serde(rename = "zoneRedundantHaAndGeoBackupSupported", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant_ha_and_geo_backup_supported: Option<bool>,
-    #[serde(rename = "supportedFlexibleServerEditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedFlexibleServerEditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_flexible_server_editions: Vec<FlexibleServerEditionCapability>,
-    #[serde(rename = "supportedHyperscaleNodeEditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedHyperscaleNodeEditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_hyperscale_node_editions: Vec<HyperscaleNodeEditionCapability>,
     #[doc = "The status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -184,7 +203,11 @@ impl Configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationListResult {
     #[doc = "The list of server configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Configuration>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -308,7 +331,11 @@ impl Database {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseListResult {
     #[doc = "The list of databases housed in a server"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Database>,
     #[doc = "The link used to get the next page of databases."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -383,10 +410,19 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponse>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorResponse {
@@ -418,7 +454,11 @@ impl FirewallRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
     #[doc = "The list of firewall rules in a server."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallRule>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -460,10 +500,20 @@ pub struct FlexibleServerEditionCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The list of editions supported by this server edition."]
-    #[serde(rename = "supportedStorageEditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedStorageEditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_storage_editions: Vec<StorageEditionCapability>,
     #[doc = "The list of server versions supported by this server edition."]
-    #[serde(rename = "supportedServerVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedServerVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_server_versions: Vec<ServerVersionCapability>,
     #[doc = "The status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -591,13 +641,28 @@ pub struct HyperscaleNodeEditionCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The list of editions supported by this server edition."]
-    #[serde(rename = "supportedStorageEditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedStorageEditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_storage_editions: Vec<StorageEditionCapability>,
     #[doc = "The list of server versions supported by this server edition."]
-    #[serde(rename = "supportedServerVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedServerVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_server_versions: Vec<ServerVersionCapability>,
     #[doc = "The list of Node Types supported by this server edition."]
-    #[serde(rename = "supportedNodeTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedNodeTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_node_types: Vec<NodeTypeCapability>,
     #[doc = "The status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -876,7 +941,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "Collection of available operation details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1022,7 +1091,11 @@ impl ServerBackup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBackupListResult {
     #[doc = "The list of backups of a server."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerBackup>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1081,7 +1154,11 @@ impl ServerForUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerListResult {
     #[doc = "The list of flexible servers"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Server>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1360,7 +1437,12 @@ pub struct ServerVersionCapability {
     #[doc = "server version"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "supportedVcores", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedVcores",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_vcores: Vec<VcoreCapability>,
     #[doc = "The status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1444,7 +1526,12 @@ pub struct StorageEditionCapability {
     #[doc = "storage edition name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "supportedStorageMB", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedStorageMB",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_storage_mb: Vec<StorageMbCapability>,
     #[doc = "The status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1535,7 +1622,12 @@ impl VirtualNetworkSubnetUsageParameter {
 #[doc = "Virtual network subnet usage data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkSubnetUsageResult {
-    #[serde(rename = "delegatedSubnetsUsage", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "delegatedSubnetsUsage",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delegated_subnets_usage: Vec<DelegatedSubnetUsage>,
     #[doc = "location of the delegated subnet usage"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

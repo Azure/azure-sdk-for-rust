@@ -1,13 +1,13 @@
 [package]
-authors = ["Microsoft Corp."]
-description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
-documentation = "https://docs.rs/azure_messaging_servicebus"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
-license = "MIT"
 name = "azure_messaging_servicebus"
+version = "0.6.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
 readme = "README.md"
+authors = ["Microsoft Corp."]
+license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-version = "0.4.0"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_servicebus"
 
 categories = ["api-bindings"]
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]

@@ -21,7 +21,6 @@ async fn main() -> azure_core::Result<()> {
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-        .into_future()
         .await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
@@ -35,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     println!(
         "get file system properties response == {:?}\n",
         get_fs_props_response
@@ -43,24 +42,21 @@ async fn main() -> azure_core::Result<()> {
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
-    let set_fs_props_response = file_system_client
-        .set_properties(fs_properties)
-        .into_future()
-        .await?;
+    let set_fs_props_response = file_system_client.set_properties(fs_properties).await?;
     println!(
         "set file system properties response == {:?}\n",
         set_fs_props_response
     );
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     println!(
         "get file system properties response == {:?}\n",
         get_fs_props_response
     );
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().into_future().await?;
+    let delete_fs_response = file_system_client.delete().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())

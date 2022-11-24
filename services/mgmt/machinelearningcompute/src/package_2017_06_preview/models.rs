@@ -16,7 +16,12 @@ pub struct AcsClusterProperties {
     #[serde(rename = "orchestratorProperties")]
     pub orchestrator_properties: KubernetesClusterProperties,
     #[doc = "The system services deployed to the cluster"]
-    #[serde(rename = "systemServices", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "systemServices",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub system_services: Vec<SystemServices>,
     #[doc = "The number of agent nodes in the Container Service. This can be changed to scale the cluster."]
     #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
@@ -282,7 +287,11 @@ pub struct AsyncOperationErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "An array containing error information."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<AsyncOperationErrorInfo>,
 }
 impl AsyncOperationErrorInfo {
@@ -439,7 +448,11 @@ pub mod auto_scale_configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperations {
     #[doc = "An array of available operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceOperation>,
 }
 impl AvailableOperations {
@@ -568,7 +581,11 @@ pub struct ErrorResponse {
     #[doc = "Error message"]
     pub message: String,
     #[doc = "An array of error detail objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
 }
 impl ErrorResponse {
@@ -805,7 +822,11 @@ impl OperationalizationClusterUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedOperationalizationClustersList {
     #[doc = "An array of cluster objects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationalizationCluster>,
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

@@ -29,18 +29,12 @@ async fn main() -> azure_core::Result<()> {
 
     trace!("Requesting blob properties");
 
-    let properties = blob_client
-        .get_properties()
-        .into_future()
-        .await?
-        .blob
-        .properties;
+    let properties = blob_client.get_properties().await?.blob.properties;
 
     blob_client
         .set_properties()
         .set_from_blob_properties(properties)
         .content_md5(md5::compute("howdy"))
-        .into_future()
         .await?;
 
     Ok(())

@@ -18,9 +18,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = SecretClient::new(&keyvault_url, creds)?;
 
-    client.set(&secret_name, secret_value).into_future().await?;
+    client.set(&secret_name, secret_value).await?;
 
-    let secret = client.get(secret_name).into_future().await?;
+    let secret = client.get(secret_name).await?;
     assert_eq!(secret.value, "whatup");
 
     Ok(())

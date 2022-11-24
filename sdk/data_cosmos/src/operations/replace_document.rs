@@ -98,7 +98,7 @@ impl ReplaceDocumentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
         let body = body.collect().await?;
-        let document_attributes = serde_json::from_slice(&*body)?;
+        let document_attributes = serde_json::from_slice(&body)?;
 
         Ok(Self {
             content_location: content_location_from_headers(&headers)?,

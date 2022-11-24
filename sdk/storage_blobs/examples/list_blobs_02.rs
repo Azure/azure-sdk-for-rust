@@ -18,7 +18,7 @@ async fn main() -> azure_core::Result<()> {
     let blob_service = BlobServiceClient::new(account, storage_credentials);
     let container_client = blob_service.container_client(&container_name);
 
-    container_client.create().into_future().await?;
+    container_client.create().await?;
 
     // list empty container
     let page = container_client
@@ -34,7 +34,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
         println!("\tAdded blob {}", i);
     }
@@ -48,7 +47,7 @@ async fn main() -> azure_core::Result<()> {
         .expect("stream failed")?;
     println!("List blob returned {} blobs.", page.blobs.blobs().count());
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

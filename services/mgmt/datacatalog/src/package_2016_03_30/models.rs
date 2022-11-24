@@ -27,10 +27,18 @@ pub struct AdcCatalogProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub units: Option<i64>,
     #[doc = "Azure data catalog admin list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub admins: Vec<Principals>,
     #[doc = "Azure data catalog user list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub users: Vec<Principals>,
     #[doc = "Azure data catalog provision status."]
     #[serde(rename = "successfullyProvisioned", default, skip_serializing_if = "Option::is_none")]
@@ -88,7 +96,11 @@ pub mod adc_catalog_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdcCatalogsListResult {
     #[doc = "the list of Azure Data Catalogs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AdcCatalog>,
 }
 impl AdcCatalogsListResult {
@@ -136,7 +148,11 @@ impl OperationEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationEntity>,
 }
 impl OperationEntityListResult {

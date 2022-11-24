@@ -1,5 +1,10 @@
 use crate::clients::QueueClient;
-use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response as AzureResponse};
+use azure_core::{
+    error::Error,
+    headers::{HeaderName, Headers},
+    prelude::*,
+    Method, Response as AzureResponse,
+};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -29,6 +34,7 @@ impl GetQueueMetadataBuilder {
 #[derive(Debug, Clone)]
 pub struct GetQueueMetadataResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
+    pub approximate_messages_count: usize,
     pub metadata: Metadata,
 }
 
@@ -40,7 +46,11 @@ impl std::convert::TryFrom<AzureResponse> for GetQueueMetadataResponse {
 
         Ok(GetQueueMetadataResponse {
             common_storage_response_headers: headers.try_into()?,
+            approximate_messages_count: headers.get_as(&APPROXIMATE_MESSAGES_COUNT)?,
             metadata: headers.into(),
         })
     }
 }
+
+const APPROXIMATE_MESSAGES_COUNT: HeaderName =
+    HeaderName::from_static("x-ms-approximate-messages-count");

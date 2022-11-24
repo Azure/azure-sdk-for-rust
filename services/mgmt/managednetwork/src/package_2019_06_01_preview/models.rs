@@ -7,10 +7,18 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityCollection {
     #[doc = "The collection of connectivity related Managed Network Groups within the Managed Network"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub groups: Vec<ManagedNetworkGroup>,
     #[doc = "The collection of Managed Network Peering Policies within the Managed Network"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peerings: Vec<ManagedNetworkPeeringPolicy>,
 }
 impl ConnectivityCollection {
@@ -48,7 +56,11 @@ pub struct HubAndSpokePeeringPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hub: Option<ResourceId>,
     #[doc = "Gets or sets the spokes group IDs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub spokes: Vec<ResourceId>,
 }
 impl HubAndSpokePeeringPolicyProperties {
@@ -136,7 +148,11 @@ pub mod managed_network_group {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedNetworkGroupListResult {
     #[doc = "Gets a page of ManagedNetworkGroup"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedNetworkGroup>,
     #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -159,16 +175,34 @@ pub struct ManagedNetworkGroupProperties {
     #[serde(flatten)]
     pub resource_properties: ResourceProperties,
     #[doc = "The collection of management groups covered by the Managed Network"]
-    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managementGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub management_groups: Vec<ResourceId>,
     #[doc = "The collection of subscriptions covered by the Managed Network"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions: Vec<ResourceId>,
     #[doc = "The collection of virtual nets covered by the Managed Network"]
-    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_networks: Vec<ResourceId>,
     #[doc = "The collection of  subnets covered by the Managed Network"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<ResourceId>,
 }
 impl ManagedNetworkGroupProperties {
@@ -180,7 +214,11 @@ impl ManagedNetworkGroupProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedNetworkListResult {
     #[doc = "Gets a page of ManagedNetworks"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedNetwork>,
     #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -215,7 +253,11 @@ impl ManagedNetworkPeeringPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedNetworkPeeringPolicyListResult {
     #[doc = "Gets a page of Peering Policies"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedNetworkPeeringPolicy>,
     #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -244,10 +286,18 @@ pub struct ManagedNetworkPeeringPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hub: Option<ResourceId>,
     #[doc = "Gets or sets the spokes group IDs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub spokes: Vec<ResourceId>,
     #[doc = "Gets or sets the mesh group IDs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mesh: Vec<ResourceId>,
 }
 impl ManagedNetworkPeeringPolicyProperties {
@@ -336,7 +386,11 @@ pub struct MeshPeeringPolicyProperties {
     #[serde(flatten)]
     pub managed_network_peering_policy_properties: ManagedNetworkPeeringPolicyProperties,
     #[doc = "Gets or sets the mesh group IDs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub mesh: Vec<ResourceId>,
 }
 impl MeshPeeringPolicyProperties {
@@ -387,7 +441,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Resource Provider operations supported by the Managed Network resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -511,16 +569,34 @@ pub mod resource_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Scope {
     #[doc = "The collection of management groups covered by the Managed Network"]
-    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managementGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub management_groups: Vec<ResourceId>,
     #[doc = "The collection of subscriptions covered by the Managed Network"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions: Vec<ResourceId>,
     #[doc = "The collection of virtual nets covered by the Managed Network"]
-    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_networks: Vec<ResourceId>,
     #[doc = "The collection of  subnets covered by the Managed Network"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<ResourceId>,
 }
 impl Scope {
@@ -546,7 +622,11 @@ impl ScopeAssignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeAssignmentListResult {
     #[doc = "Gets a page of ScopeAssignment"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScopeAssignment>,
     #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

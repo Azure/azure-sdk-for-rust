@@ -395,10 +395,20 @@ pub struct ApplicationHealth {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ApplicationName>,
     #[doc = "Service health states as found in the health store."]
-    #[serde(rename = "ServiceHealthStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ServiceHealthStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_health_states: Vec<ServiceHealthState>,
     #[doc = "Deployed application health states as found in the health store."]
-    #[serde(rename = "DeployedApplicationHealthStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "DeployedApplicationHealthStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub deployed_application_health_states: Vec<DeployedApplicationHealthState>,
 }
 impl ApplicationHealth {
@@ -595,7 +605,12 @@ pub struct ApplicationHealthStateChunkList {
     #[serde(flatten)]
     pub entity_health_state_chunk_list: EntityHealthStateChunkList,
     #[doc = "The list of application health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ApplicationHealthStateChunk>,
 }
 impl ApplicationHealthStateChunkList {
@@ -616,10 +631,20 @@ pub struct ApplicationHealthStateFilter {
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
     #[doc = "Defines a list of filters that specify which services to be included in the returned cluster health chunk as children of the application. The services are returned only if the parent application matches a filter.\nIf the list is empty, no services are returned. All the services are used to evaluate the parent application aggregated health state, regardless of the input filters.\nThe application filter may specify multiple service filters.\nFor example, it can specify a filter to return all services with health state Error and another filter to always include a service identified by its service name."]
-    #[serde(rename = "ServiceFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ServiceFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_filters: Vec<ServiceHealthStateFilter>,
     #[doc = "Defines a list of filters that specify which deployed applications to be included in the returned cluster health chunk as children of the application. The deployed applications are returned only if the parent application matches a filter.\nIf the list is empty, no deployed applications are returned. All the deployed applications are used to evaluate the parent application aggregated health state, regardless of the input filters.\nThe application filter may specify multiple deployed application filters.\nFor example, it can specify a filter to return all deployed applications with health state Error and another filter to always include a deployed application on a specified node."]
-    #[serde(rename = "DeployedApplicationFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "DeployedApplicationFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub deployed_application_filters: Vec<DeployedApplicationHealthStateFilter>,
 }
 impl ApplicationHealthStateFilter {
@@ -947,7 +972,11 @@ pub struct ApplicationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Describes the services in the application. This property is used to create or modify services of the application. On get only the name of the service is returned. The service description can be obtained by querying for the service resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub services: Vec<ServiceResourceDescription>,
     #[doc = "Describes the diagnostics options available"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -956,7 +985,12 @@ pub struct ApplicationProperties {
     #[serde(rename = "debugParams", default, skip_serializing_if = "Option::is_none")]
     pub debug_params: Option<String>,
     #[doc = "Names of the services in the application."]
-    #[serde(rename = "serviceNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_names: Vec<String>,
     #[doc = "Status of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3199,10 +3233,20 @@ pub struct ChaosSchedule {
     #[serde(rename = "ExpiryDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_date: Option<time::OffsetDateTime>,
     #[doc = "A mapping of string names to Chaos Parameters to be referenced by Chaos Schedule Jobs."]
-    #[serde(rename = "ChaosParametersDictionary", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ChaosParametersDictionary",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub chaos_parameters_dictionary: Vec<ChaosParametersDictionaryItem>,
     #[doc = "A list of all Chaos Schedule Jobs that will be automated by the schedule."]
-    #[serde(rename = "Jobs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Jobs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub jobs: Vec<ChaosScheduleJob>,
 }
 impl ChaosSchedule {
@@ -3235,7 +3279,12 @@ pub struct ChaosScheduleJob {
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<ChaosScheduleJobActiveDaysOfWeek>,
     #[doc = "A list of Time Ranges that specify when during active days that this job will run. The times are interpreted as UTC."]
-    #[serde(rename = "Times", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Times",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub times: Vec<TimeRange>,
 }
 impl ChaosScheduleJob {
@@ -3438,10 +3487,20 @@ impl ChaosStoppedEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosTargetFilter {
     #[doc = "A list of node types to include in Chaos faults.\nAll types of faults (restart node, restart code package, remove replica, restart replica, move primary, and move secondary) are enabled for the nodes of these node types.\nIf a node type (say NodeTypeX) does not appear in the NodeTypeInclusionList, then node level faults (like NodeRestart) will never be enabled for the nodes of\nNodeTypeX, but code package and replica faults can still be enabled for NodeTypeX if an application in the ApplicationInclusionList.\nhappens to reside on a node of NodeTypeX.\nAt most 100 node type names can be included in this list, to increase this number, a config upgrade is required for MaxNumberOfNodeTypesInChaosEntityFilter configuration."]
-    #[serde(rename = "NodeTypeInclusionList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "NodeTypeInclusionList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_type_inclusion_list: Vec<NodeType>,
     #[doc = "A list of application URIs to include in Chaos faults.\nAll replicas belonging to services of these applications are amenable to replica faults (restart replica, remove replica, move primary, and move secondary) by Chaos.\nChaos may restart a code package only if the code package hosts replicas of these applications only.\nIf an application does not appear in this list, it can still be faulted in some Chaos iteration if the application ends up on a node of a node type that is included in NodeTypeInclusionList.\nHowever, if applicationX is tied to nodeTypeY through placement constraints and applicationX is absent from ApplicationInclusionList and nodeTypeY is absent from NodeTypeInclusionList, then applicationX will never be faulted.\nAt most 1000 application names can be included in this list, to increase this number, a config upgrade is required for MaxNumberOfApplicationsInChaosEntityFilter configuration."]
-    #[serde(rename = "ApplicationInclusionList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ApplicationInclusionList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_inclusion_list: Vec<ApplicationName>,
 }
 impl ChaosTargetFilter {
@@ -3611,10 +3670,20 @@ pub struct ClusterHealth {
     #[serde(flatten)]
     pub entity_health: EntityHealth,
     #[doc = "Cluster node health states as found in the health store."]
-    #[serde(rename = "NodeHealthStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "NodeHealthStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_health_states: Vec<NodeHealthState>,
     #[doc = "Cluster application health states as found in the health store."]
-    #[serde(rename = "ApplicationHealthStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ApplicationHealthStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_health_states: Vec<ApplicationHealthState>,
 }
 impl ClusterHealth {
@@ -3644,10 +3713,20 @@ impl ClusterHealthChunk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterHealthChunkQueryDescription {
     #[doc = "Defines a list of filters that specify which nodes to be included in the returned cluster health chunk.\nIf no filters are specified, no nodes are returned. All the nodes are used to evaluate the cluster's aggregated health state, regardless of the input filters.\nThe cluster health chunk query may specify multiple node filters.\nFor example, it can specify a filter to return all nodes with health state Error and another filter to always include a node identified by its NodeName."]
-    #[serde(rename = "NodeFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "NodeFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_filters: Vec<NodeHealthStateFilter>,
     #[doc = "Defines a list of filters that specify which applications to be included in the returned cluster health chunk.\nIf no filters are specified, no applications are returned. All the applications are used to evaluate the cluster's aggregated health state, regardless of the input filters.\nThe cluster health chunk query may specify multiple application filters.\nFor example, it can specify a filter to return all applications with health state Error and another filter to always include applications of a specified application type."]
-    #[serde(rename = "ApplicationFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ApplicationFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_filters: Vec<ApplicationHealthStateFilter>,
     #[doc = "Defines a health policy used to evaluate the health of the cluster or of a cluster node."]
     #[serde(rename = "ClusterHealthPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -3765,7 +3844,12 @@ pub struct ClusterLoadInfo {
     #[serde(rename = "LastBalancingEndTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_balancing_end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "List that contains metrics and their load information in this cluster."]
-    #[serde(rename = "LoadMetricInformation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "LoadMetricInformation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_metric_information: Vec<LoadMetricInformation>,
 }
 impl ClusterLoadInfo {
@@ -4569,42 +4653,87 @@ pub struct ContainerCodePackageProperties {
     #[serde(rename = "entryPoint", default, skip_serializing_if = "Option::is_none")]
     pub entry_point: Option<String>,
     #[doc = "Command array to execute within the container in exec form."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub commands: Vec<String>,
     #[doc = "The environment variables to set in this container"]
-    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentVariables",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_variables: Vec<EnvironmentVariable>,
     #[doc = "The settings to set in this container. The setting file path can be fetched from environment variable \"Fabric_SettingPath\". The path for Windows container is \"C:\\\\secrets\". The path for Linux container is \"/var/secrets\"."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub settings: Vec<Setting>,
     #[doc = "The labels to set in this container."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<ContainerLabel>,
     #[doc = "The endpoints exposed by this container."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<EndpointProperties>,
     #[doc = "This type describes the resource requirements for a container or a service."]
     pub resources: ResourceRequirements,
     #[doc = "Volumes to be attached to the container. The lifetime of these volumes is independent of the application's lifetime."]
-    #[serde(rename = "volumeRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "volumeRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub volume_refs: Vec<VolumeReference>,
     #[doc = "Volumes to be attached to the container. The lifetime of these volumes is scoped to the application's lifetime."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub volumes: Vec<ApplicationScopedVolume>,
     #[doc = "Reference to sinks in DiagnosticsDescription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<DiagnosticsRef>,
     #[doc = "A list of ReliableCollection resources used by this particular code package. Please refer to ReliableCollectionsRef for more details."]
-    #[serde(rename = "reliableCollectionsRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reliableCollectionsRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reliable_collections_refs: Vec<ReliableCollectionsRef>,
     #[doc = "Runtime information of a container instance."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<ContainerInstanceView>,
     #[doc = "An array of liveness probes for a code package. It determines when to restart a code package."]
-    #[serde(rename = "livenessProbe", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "livenessProbe",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub liveness_probe: Vec<Probe>,
     #[doc = "An array of readiness probes for a code package. It determines when to unpublish an endpoint."]
-    #[serde(rename = "readinessProbe", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "readinessProbe",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub readiness_probe: Vec<Probe>,
 }
 impl ContainerCodePackageProperties {
@@ -4682,7 +4811,11 @@ pub struct ContainerInstanceView {
     #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
     pub previous_state: Option<ContainerState>,
     #[doc = "The events of this container instance."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<ContainerEvent>,
 }
 impl ContainerInstanceView {
@@ -5124,7 +5257,12 @@ impl DeployedApplicationHealthStateChunk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationHealthStateChunkList {
     #[doc = "The list of deployed application health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<DeployedApplicationHealthStateChunk>,
 }
 impl DeployedApplicationHealthStateChunkList {
@@ -5142,7 +5280,12 @@ pub struct DeployedApplicationHealthStateFilter {
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
     #[doc = "Defines a list of filters that specify which deployed service packages to be included in the returned cluster health chunk as children of the parent deployed application. The deployed service packages are returned only if the parent deployed application matches a filter.\nIf the list is empty, no deployed service packages are returned. All the deployed service packages are used to evaluate the parent deployed application aggregated health state, regardless of the input filters.\nThe deployed application filter may specify multiple deployed service package filters.\nFor example, it can specify a filter to return all deployed service packages with health state Error and another filter to always include a deployed service package on a node."]
-    #[serde(rename = "DeployedServicePackageFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "DeployedServicePackageFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub deployed_service_package_filters: Vec<DeployedServicePackageHealthStateFilter>,
 }
 impl DeployedApplicationHealthStateFilter {
@@ -5531,7 +5674,12 @@ impl DeployedServicePackageHealthStateChunk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServicePackageHealthStateChunkList {
     #[doc = "The list of deployed service package health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<DeployedServicePackageHealthStateChunk>,
 }
 impl DeployedServicePackageHealthStateChunkList {
@@ -5948,13 +6096,22 @@ impl Serialize for DeploymentStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticsDescription {
     #[doc = "List of supported sinks that can be referenced."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sinks: Vec<DiagnosticsSinkProperties>,
     #[doc = "Status of whether or not sinks are enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "The sinks to be used if diagnostics is enabled. Sink choices can be overridden at the service and code package level."]
-    #[serde(rename = "defaultSinkRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultSinkRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_sink_refs: Vec<String>,
 }
 impl DiagnosticsDescription {
@@ -5969,7 +6126,12 @@ pub struct DiagnosticsRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "List of sinks to be used if enabled. References the list of sinks in DiagnosticsDescription."]
-    #[serde(rename = "sinkRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sinkRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sink_refs: Vec<String>,
 }
 impl DiagnosticsRef {
@@ -6170,7 +6332,12 @@ pub struct EntityHealth {
     #[serde(rename = "AggregatedHealthState", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_health_state: Option<HealthState>,
     #[doc = "The list of health events reported on the entity."]
-    #[serde(rename = "HealthEvents", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "HealthEvents",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub health_events: Vec<HealthEvent>,
     #[doc = "List of health evaluations that resulted in the current aggregated health state."]
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
@@ -6436,7 +6603,12 @@ pub struct ExecutingFaultsChaosEvent {
     #[serde(flatten)]
     pub chaos_event: ChaosEvent,
     #[doc = "List of string description of the faults that Chaos decided to execute in an iteration."]
-    #[serde(rename = "Faults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Faults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub faults: Vec<String>,
 }
 impl ExecutingFaultsChaosEvent {
@@ -7528,10 +7700,18 @@ pub struct GatewayProperties {
     #[serde(rename = "destinationNetwork")]
     pub destination_network: NetworkRef,
     #[doc = "Configuration for tcp connectivity for this gateway."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tcp: Vec<TcpConfig>,
     #[doc = "Configuration for http connectivity for this gateway."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub http: Vec<HttpConfig>,
     #[doc = "Status of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7898,7 +8078,12 @@ impl HealthStateCount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthStatistics {
     #[doc = "List of health state counts per entity kind, which keeps track of how many children of the queried entity are in Ok, Warning and Error state."]
-    #[serde(rename = "HealthStateCountList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "HealthStateCountList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub health_state_count_list: Vec<EntityKindHealthStateCount>,
 }
 impl HealthStatistics {
@@ -8154,7 +8339,11 @@ pub struct HttpRouteMatchRule {
     #[doc = "Path to match for routing."]
     pub path: HttpRouteMatchPath,
     #[doc = "headers and their values to match in request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub headers: Vec<HttpRouteMatchHeader>,
 }
 impl HttpRouteMatchRule {
@@ -8279,10 +8468,20 @@ impl Default for ImageRegistryPasswordType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageStoreContent {
     #[doc = "The list of image store file info objects represents files found under the given image store relative path."]
-    #[serde(rename = "StoreFiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "StoreFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub store_files: Vec<FileInfo>,
     #[doc = "The list of image store folder info objects represents subfolders found under the given image store relative path."]
-    #[serde(rename = "StoreFolders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "StoreFolders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub store_folders: Vec<FolderInfo>,
 }
 impl ImageStoreContent {
@@ -8300,7 +8499,12 @@ pub struct ImageStoreCopyDescription {
     #[serde(rename = "RemoteDestination")]
     pub remote_destination: String,
     #[doc = "The list of the file names to be skipped for copying."]
-    #[serde(rename = "SkipFiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "SkipFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub skip_files: Vec<String>,
     #[doc = "Indicates whether to check mark file during copying. The property is true if checking mark file is required, false otherwise. The mark file is used to check whether the folder is well constructed. If the property is true and mark file does not exist, the copy is skipped."]
     #[serde(rename = "CheckMarkFile", default, skip_serializing_if = "Option::is_none")]
@@ -8651,7 +8855,12 @@ pub struct LoadedPartitionInformationResultList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of application information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<LoadedPartitionInformationResult>,
 }
 impl LoadedPartitionInformationResultList {
@@ -8964,7 +9173,12 @@ pub struct NetworkRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "A list of endpoints that are exposed on this network."]
-    #[serde(rename = "endpointRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "endpointRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoint_refs: Vec<EndpointRef>,
 }
 impl NetworkRef {
@@ -9553,7 +9767,12 @@ pub struct NodeHealthStateChunkList {
     #[serde(flatten)]
     pub entity_health_state_chunk_list: EntityHealthStateChunkList,
     #[doc = "The list of node health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<NodeHealthStateChunk>,
 }
 impl NodeHealthStateChunkList {
@@ -9726,7 +9945,12 @@ pub struct NodeLoadInfo {
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<NodeName>,
     #[doc = "List that contains metrics and their load information on this node."]
-    #[serde(rename = "NodeLoadMetricInformation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "NodeLoadMetricInformation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_load_metric_information: Vec<NodeLoadMetricInformation>,
 }
 impl NodeLoadInfo {
@@ -10003,7 +10227,12 @@ pub struct NodeRepairImpactDescription {
     #[serde(flatten)]
     pub repair_impact_description_base: RepairImpactDescriptionBase,
     #[doc = "The list of nodes impacted by a repair action and their respective expected impact."]
-    #[serde(rename = "NodeImpactList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "NodeImpactList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_impact_list: Vec<NodeImpact>,
 }
 impl NodeRepairImpactDescription {
@@ -10020,7 +10249,12 @@ pub struct NodeRepairTargetDescription {
     #[serde(flatten)]
     pub repair_target_description_base: RepairTargetDescriptionBase,
     #[doc = "The list of nodes targeted by a repair action."]
-    #[serde(rename = "NodeNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "NodeNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_names: Vec<String>,
 }
 impl NodeRepairTargetDescription {
@@ -10549,7 +10783,12 @@ pub struct PagedApplicationInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of application information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ApplicationInfo>,
 }
 impl PagedApplicationInfoList {
@@ -10564,7 +10803,12 @@ pub struct PagedApplicationResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ApplicationResourceDescription>,
 }
 impl PagedApplicationResourceDescriptionList {
@@ -10579,7 +10823,12 @@ pub struct PagedApplicationTypeInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of application type information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ApplicationTypeInfo>,
 }
 impl PagedApplicationTypeInfoList {
@@ -10594,7 +10843,12 @@ pub struct PagedBackupConfigurationInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of backup configuration information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<BackupConfigurationInfo>,
 }
 impl PagedBackupConfigurationInfoList {
@@ -10609,7 +10863,12 @@ pub struct PagedBackupEntityList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of backup entity information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<BackupEntity>,
 }
 impl PagedBackupEntityList {
@@ -10624,7 +10883,12 @@ pub struct PagedBackupInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of backup information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<BackupInfo>,
 }
 impl PagedBackupInfoList {
@@ -10639,7 +10903,12 @@ pub struct PagedBackupPolicyDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "The list of backup policies information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<BackupPolicyDescription>,
 }
 impl PagedBackupPolicyDescriptionList {
@@ -10654,7 +10923,12 @@ pub struct PagedComposeDeploymentStatusInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of compose deployment status information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ComposeDeploymentStatusInfo>,
 }
 impl PagedComposeDeploymentStatusInfoList {
@@ -10669,7 +10943,12 @@ pub struct PagedDeployedApplicationInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of deployed application information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<DeployedApplicationInfo>,
 }
 impl PagedDeployedApplicationInfoList {
@@ -10684,7 +10963,12 @@ pub struct PagedGatewayResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<GatewayResourceDescription>,
 }
 impl PagedGatewayResourceDescriptionList {
@@ -10699,7 +10983,12 @@ pub struct PagedNetworkResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<NetworkResourceDescription>,
 }
 impl PagedNetworkResourceDescriptionList {
@@ -10714,7 +11003,12 @@ pub struct PagedNodeInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of node information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<NodeInfo>,
 }
 impl PagedNodeInfoList {
@@ -10732,7 +11026,12 @@ pub struct PagedPropertyInfoList {
     #[serde(rename = "IsConsistent", default, skip_serializing_if = "Option::is_none")]
     pub is_consistent: Option<bool>,
     #[doc = "List of property information."]
-    #[serde(rename = "Properties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Properties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub properties: Vec<PropertyInfo>,
 }
 impl PagedPropertyInfoList {
@@ -10747,7 +11046,12 @@ pub struct PagedReplicaInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of replica information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ReplicaInfo>,
 }
 impl PagedReplicaInfoList {
@@ -10762,7 +11066,12 @@ pub struct PagedSecretResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<SecretResourceDescription>,
 }
 impl PagedSecretResourceDescriptionList {
@@ -10777,7 +11086,12 @@ pub struct PagedSecretValueResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<SecretValueResourceDescription>,
 }
 impl PagedSecretValueResourceDescriptionList {
@@ -10792,7 +11106,12 @@ pub struct PagedServiceInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of service information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ServiceInfo>,
 }
 impl PagedServiceInfoList {
@@ -10807,7 +11126,12 @@ pub struct PagedServicePartitionInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of service partition information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ServicePartitionInfo>,
 }
 impl PagedServicePartitionInfoList {
@@ -10822,7 +11146,12 @@ pub struct PagedServiceReplicaDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of service resource replica description."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ServiceReplicaDescription>,
 }
 impl PagedServiceReplicaDescriptionList {
@@ -10837,7 +11166,12 @@ pub struct PagedServiceResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ServiceResourceDescription>,
 }
 impl PagedServiceResourceDescriptionList {
@@ -10855,7 +11189,12 @@ pub struct PagedSubNameInfoList {
     #[serde(rename = "IsConsistent", default, skip_serializing_if = "Option::is_none")]
     pub is_consistent: Option<bool>,
     #[doc = "List of the child names."]
-    #[serde(rename = "SubNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "SubNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sub_names: Vec<FabricName>,
 }
 impl PagedSubNameInfoList {
@@ -10870,7 +11209,12 @@ pub struct PagedUpdatePartitionLoadResultList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "List of partition load update information."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<UpdatePartitionLoadResult>,
 }
 impl PagedUpdatePartitionLoadResultList {
@@ -10885,7 +11229,12 @@ pub struct PagedVolumeResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[doc = "One page of the list."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<VolumeResourceDescription>,
 }
 impl PagedVolumeResourceDescriptionList {
@@ -11034,7 +11383,12 @@ pub struct PartitionHealth {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
     #[doc = "The list of replica health states associated with the partition."]
-    #[serde(rename = "ReplicaHealthStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ReplicaHealthStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub replica_health_states: Vec<ReplicaHealthState>,
 }
 impl PartitionHealth {
@@ -11153,7 +11507,12 @@ impl PartitionHealthStateChunk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionHealthStateChunkList {
     #[doc = "The list of partition health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<PartitionHealthStateChunk>,
 }
 impl PartitionHealthStateChunkList {
@@ -11171,7 +11530,12 @@ pub struct PartitionHealthStateFilter {
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
     #[doc = "Defines a list of filters that specify which replicas to be included in the returned cluster health chunk as children of the parent partition. The replicas are returned only if the parent partition matches a filter.\nIf the list is empty, no replicas are returned. All the replicas are used to evaluate the parent partition aggregated health state, regardless of the input filters.\nThe partition filter may specify multiple replica filters.\nFor example, it can specify a filter to return all replicas with health state Error and another filter to always include a replica identified by its replica id."]
-    #[serde(rename = "ReplicaFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ReplicaFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub replica_filters: Vec<ReplicaHealthStateFilter>,
 }
 impl PartitionHealthStateFilter {
@@ -11235,13 +11599,28 @@ pub struct PartitionLoadInformation {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
     #[doc = "Array of load reports from the primary replica for this partition."]
-    #[serde(rename = "PrimaryLoadMetricReports", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "PrimaryLoadMetricReports",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub primary_load_metric_reports: Vec<LoadMetricReport>,
     #[doc = "Array of aggregated load reports from all secondary replicas for this partition.\nArray only contains the latest reported load for each metric."]
-    #[serde(rename = "SecondaryLoadMetricReports", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "SecondaryLoadMetricReports",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub secondary_load_metric_reports: Vec<LoadMetricReport>,
     #[doc = "Array of aggregated load reports from all auxiliary replicas for this partition.\nArray only contains the latest reported load for each metric."]
-    #[serde(rename = "AuxiliaryLoadMetricReports", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "AuxiliaryLoadMetricReports",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub auxiliary_load_metric_reports: Vec<LoadMetricReport>,
 }
 impl PartitionLoadInformation {
@@ -11256,23 +11635,44 @@ pub struct PartitionMetricLoadDescription {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
     #[doc = "Partition's load information for primary replica, in case partition is from a stateful service."]
-    #[serde(rename = "PrimaryReplicaLoadEntries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "PrimaryReplicaLoadEntries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub primary_replica_load_entries: Vec<MetricLoadDescription>,
     #[doc = "Partition's load information for all secondary replicas or instances."]
-    #[serde(rename = "SecondaryReplicasOrInstancesLoadEntries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "SecondaryReplicasOrInstancesLoadEntries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub secondary_replicas_or_instances_load_entries: Vec<MetricLoadDescription>,
     #[doc = "Partition's load information for a specific secondary replica or instance located on a specific node."]
     #[serde(
         rename = "SecondaryReplicaOrInstanceLoadEntriesPerNode",
         default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub secondary_replica_or_instance_load_entries_per_node: Vec<ReplicaMetricLoadDescription>,
     #[doc = "Partition's load information for all auxiliary replicas."]
-    #[serde(rename = "AuxiliaryReplicasLoadEntries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "AuxiliaryReplicasLoadEntries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub auxiliary_replicas_load_entries: Vec<MetricLoadDescription>,
     #[doc = "Partition's load information for a specific auxiliary replica located on a specific node."]
-    #[serde(rename = "AuxiliaryReplicaLoadEntriesPerNode", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "AuxiliaryReplicaLoadEntriesPerNode",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub auxiliary_replica_load_entries_per_node: Vec<ReplicaMetricLoadDescription>,
 }
 impl PartitionMetricLoadDescription {
@@ -11662,7 +12062,12 @@ pub struct ProbeHttpGet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub host: Option<String>,
     #[doc = "Headers to set in the request."]
-    #[serde(rename = "httpHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "httpHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub http_headers: Vec<ProbeHttpGetHeaders>,
     #[doc = "Scheme for the http probe. Can be Http or Https."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11749,7 +12154,12 @@ impl ProbeTcpSocket {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropertyBatchDescriptionList {
     #[doc = "A list of the property batch operations to be executed."]
-    #[serde(rename = "Operations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Operations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<PropertyBatchOperation>,
 }
 impl PropertyBatchDescriptionList {
@@ -12914,7 +13324,12 @@ impl ReplicaHealthStateChunk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicaHealthStateChunkList {
     #[doc = "The list of replica health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ReplicaHealthStateChunk>,
 }
 impl ReplicaHealthStateChunkList {
@@ -13036,7 +13451,12 @@ pub struct ReplicaMetricLoadDescription {
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
     #[doc = "Loads of a different metrics for a partition's secondary replica or instance."]
-    #[serde(rename = "ReplicaOrInstanceLoadEntries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ReplicaOrInstanceLoadEntries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub replica_or_instance_load_entries: Vec<MetricLoadDescription>,
 }
 impl ReplicaMetricLoadDescription {
@@ -14657,7 +15077,12 @@ pub struct ServiceHealth {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ServiceName>,
     #[doc = "The list of partition health states associated with the service."]
-    #[serde(rename = "PartitionHealthStates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "PartitionHealthStates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub partition_health_states: Vec<PartitionHealthState>,
 }
 impl ServiceHealth {
@@ -14781,7 +15206,12 @@ impl ServiceHealthStateChunk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceHealthStateChunkList {
     #[doc = "The list of service health state chunks that respect the input filters in the chunk query."]
-    #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "Items",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ServiceHealthStateChunk>,
 }
 impl ServiceHealthStateChunkList {
@@ -14799,7 +15229,12 @@ pub struct ServiceHealthStateFilter {
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
     #[doc = "Defines a list of filters that specify which partitions to be included in the returned cluster health chunk as children of the service. The partitions are returned only if the parent service matches a filter.\nIf the list is empty, no partitions are returned. All the partitions are used to evaluate the parent service aggregated health state, regardless of the input filters.\nThe service filter may specify multiple partition filters.\nFor example, it can specify a filter to return all partitions with health state Error and another filter to always include a partition identified by its partition ID."]
-    #[serde(rename = "PartitionFilters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "PartitionFilters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub partition_filters: Vec<PartitionHealthStateFilter>,
 }
 impl ServiceHealthStateFilter {
@@ -15430,7 +15865,12 @@ pub struct ServiceProperties {
     #[serde(rename = "executionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub execution_policy: Option<ExecutionPolicy>,
     #[doc = "Auto scaling policies"]
-    #[serde(rename = "autoScalingPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "autoScalingPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub auto_scaling_policies: Vec<AutoScalingPolicy>,
     #[doc = "Status of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15445,7 +15885,12 @@ pub struct ServiceProperties {
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluation: Option<String>,
     #[doc = "The service identity list."]
-    #[serde(rename = "identityRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "identityRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub identity_refs: Vec<ServiceIdentity>,
     #[doc = "Dns name of the service."]
     #[serde(rename = "dnsName", default, skip_serializing_if = "Option::is_none")]
@@ -15483,7 +15928,12 @@ pub struct ServiceReplicaProperties {
     #[serde(rename = "codePackages")]
     pub code_packages: Vec<ContainerCodePackageProperties>,
     #[doc = "The names of the private networks that this service needs to be part of."]
-    #[serde(rename = "networkRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_refs: Vec<NetworkRef>,
     #[doc = "Reference to sinks in DiagnosticsDescription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16838,7 +17288,12 @@ pub struct UnplacedReplicaInformation {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
     #[doc = "List of reasons due to which a replica cannot be placed."]
-    #[serde(rename = "UnplacedReplicaDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "UnplacedReplicaDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub unplaced_replica_details: Vec<String>,
 }
 impl UnplacedReplicaInformation {
@@ -17371,7 +17826,12 @@ impl UploadChunkRange {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadSession {
     #[doc = "When querying upload session by upload session ID, the result contains only one upload session. When querying upload session by image store relative path, the result might contain multiple upload sessions."]
-    #[serde(rename = "UploadSessions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "UploadSessions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub upload_sessions: Vec<UploadSessionInfo>,
 }
 impl UploadSession {
@@ -17395,7 +17855,12 @@ pub struct UploadSessionInfo {
     #[serde(rename = "FileSize", default, skip_serializing_if = "Option::is_none")]
     pub file_size: Option<String>,
     #[doc = "List of chunk ranges that image store has not received yet."]
-    #[serde(rename = "ExpectedRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ExpectedRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub expected_ranges: Vec<UploadChunkRange>,
 }
 impl UploadSessionInfo {
