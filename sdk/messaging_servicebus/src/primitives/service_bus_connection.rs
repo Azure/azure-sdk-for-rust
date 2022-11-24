@@ -194,23 +194,6 @@ where
     }
 }
 
-// impl<C, RP1, RP2> MapRetryPolicy<RP2> for ServiceBusConnection<C, RP1>
-// where
-//     C: MapRetryPolicy<RP2>,
-// {
-//     type Output = ServiceBusConnection<C::Output, RP2>;
-
-//     fn map_retry_policy(self) -> Self::Output {
-//         ServiceBusConnection {
-//             fully_qualified_namespace: self.fully_qualified_namespace,
-//             entity_path: self.entity_path,
-//             retry_options: self.retry_options,
-//             inner_client: self.inner_client.map_retry_policy(),
-//             retry_policy_marker: PhantomData,
-//         }
-//     }
-// }
-
 impl<C> ServiceBusConnection<C>
 where
     C: TransportClient,
