@@ -32,8 +32,6 @@ impl From<CorrelationFilter> for RuleFilter {
     }
 }
 
-type RuleDescription = OrderedMap<String, OrderedMap<String, String>>;
-
 type AddRuleRequestBody = OrderedMap<String, Value>;
 
 pub(crate) struct AddRuleRequest<'a> {
