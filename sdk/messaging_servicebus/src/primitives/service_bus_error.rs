@@ -6,6 +6,8 @@ use super::service_bus_failure_reason::ServiceBusFailureReason;
 
 /// Serves as a basis for exceptions produced within the Service Bus
 /// context.
+///
+/// TODO: Is this needed?
 #[derive(Debug)]
 pub struct ServiceBusError {
     is_transient: bool,

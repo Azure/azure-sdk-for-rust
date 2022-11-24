@@ -50,6 +50,8 @@ pub(crate) enum ReceivedMessageLockToken {
 pub struct ServiceBusReceivedMessage {
     /// Indicates whether the user has settled the message as part of their callback.
     /// If they have done so, we will not autocomplete.
+    ///
+    /// TODO: This seems reserved for the Processor API
     pub(crate) is_settled: bool,
 
     /// Gets the raw Amqp message data that was transmitted over the wire.
