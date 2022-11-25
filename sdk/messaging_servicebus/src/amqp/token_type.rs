@@ -1,7 +1,7 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 use tokio::sync::Semaphore;
 
-use crate::authorization::service_bus_token_credential::ServiceBusTokenCredential;
+use crate::{authorization::service_bus_token_credential::ServiceBusTokenCredential, constants::{SAS_TOKEN_TYPE, JSON_WEB_TOKEN_TYPE}};
 
 #[derive(Debug)]
 pub(crate) enum TokenType<TC: TokenCredential> {
@@ -25,8 +25,8 @@ pub(crate) enum TokenType<TC: TokenCredential> {
 impl<TC: TokenCredential> TokenType<TC> {
     pub(crate) fn entity_type(&self) -> &str {
         match self {
-            TokenType::SharedAccessToken { .. } => "servicebus.windows.net:sastoken",
-            TokenType::JsonWebToken { .. } => "jwt",
+            TokenType::SharedAccessToken { .. } => SAS_TOKEN_TYPE,
+            TokenType::JsonWebToken { .. } => JSON_WEB_TOKEN_TYPE,
         }
     }
 }
@@ -34,8 +34,8 @@ impl<TC: TokenCredential> TokenType<TC> {
 impl<TC: TokenCredential> ToString for TokenType<TC> {
     fn to_string(&self) -> String {
         match self {
-            TokenType::SharedAccessToken { .. } => "servicebus.windows.net:sastoken".to_string(),
-            TokenType::JsonWebToken { .. } => "jwt".to_string(),
+            TokenType::SharedAccessToken { .. } => SAS_TOKEN_TYPE.to_string(),
+            TokenType::JsonWebToken { .. } => JSON_WEB_TOKEN_TYPE.to_string(),
         }
     }
 }
