@@ -6,14 +6,6 @@ use crate::ServiceBusMessage;
 
 use super::amqp_constants;
 
-/// <summary>
-/// The size, in bytes, to use for extracting the delivery tag bytes into <see cref="Guid"/>.
-/// </summary>
-const GUID_SIZE_IN_BYTES: usize = 16;
-
-/// <summary>The size, in bytes, to use as a buffer for stream operations.</summary>
-const STREAM_BUFFER_SIZE_IN_BYTES: usize = 512;
-
 pub(crate) const LOCK_TOKEN_DELIVERY_ANNOTATION: &str = "x-opt-lock-token";
 
 #[derive(Debug, Clone)]

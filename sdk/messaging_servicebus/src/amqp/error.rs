@@ -218,8 +218,11 @@ pub enum TryAddMessageError {
     #[error("Message is too large to fit in a batch")]
     BatchFull(ServiceBusMessage),
 
-    #[error(transparent)]
-    Codec(#[from] serde_amqp::Error),
+    #[error("Cannot serialize message")]
+    Codec {
+        source: serde_amqp::Error,
+        message: ServiceBusMessage,
+    },
 }
 
 #[derive(Debug)]
