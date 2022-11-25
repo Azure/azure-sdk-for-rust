@@ -154,20 +154,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    // TODO: add tests
-
     use fe2o3_amqp_cbs::AsyncCbsTokenProvider;
-    use mockall::{mock, Sequence};
     use time::Duration as TimeSpan;
-
-    mock! {
-        pub TokenCredential {}
-
-        #[async_trait::async_trait]
-        impl azure_core::auth::TokenCredential for TokenCredential {
-            async fn get_token(&self, resource: &str) -> azure_core::Result<azure_core::auth::TokenResponse>;
-        }
-    }
 
     use azure_core::auth::{AccessToken, TokenResponse};
     use time::{macros::datetime, OffsetDateTime};
@@ -175,7 +163,7 @@ mod tests {
     use crate::{
         authorization::{
             service_bus_token_credential::ServiceBusTokenCredential,
-            shared_access_signature::SharedAccessSignature,
+            tests::MockTokenCredential,
         },
         constants::JSON_WEB_TOKEN_TYPE,
     };

@@ -7,6 +7,13 @@ use super::shared_access_credential::SharedAccessCredential;
 /// </summary>
 ///
 /// <seealso cref="Azure.Core.TokenCredential" />
+///
+/// This requires the user to choose the type of token credential because specialization
+/// is not supported in stable yet, and thus this may see a revamp in the future once
+/// specialization becomes stablized.
+///
+/// TODO: A temporary work around that could be applied is to only implement the `TokenCredential`
+/// trait on `SharedAccessCredential` when it is placed inside a private wrapper type.
 #[derive(Debug)]
 pub enum ServiceBusTokenCredential<TC>
 where
@@ -56,5 +63,34 @@ where
             }
             ServiceBusTokenCredential::Other(credential) => credential.get_token(resource).await,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use azure_core::auth::{AccessToken, TokenCredential};
+    use time::macros::datetime;
+
+    use crate::authorization::tests::MockTokenCredential;
+
+    use super::ServiceBusTokenCredential;
+
+    #[tokio::test]
+    async fn get_token_delegates_to_the_source_credential() {
+        let token_value = "token";
+        let mut mock_credentials = MockTokenCredential::new();
+        let resource = "the resource value";
+        let token_response = azure_core::auth::TokenResponse {
+            token: AccessToken::new(token_value),
+            expires_on: datetime!(2015-10-27 00:00:00).assume_utc(),
+        };
+        mock_credentials
+            .expect_get_token()
+            .times(1)
+            .returning(move |_resource| Ok(token_response.clone()));
+
+        let credential = ServiceBusTokenCredential::Other(mock_credentials);
+        let token_result = credential.get_token(resource).await;
+        assert_eq!(token_result.unwrap().token.secret(), token_value);
     }
 }
