@@ -88,9 +88,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
 ///
 /// See also [`TransportClient`]
 #[derive(Debug)]
-pub struct AmqpClient<TC, RP>
-where
-    TC: TokenCredential,
+pub struct AmqpClient<RP>
 {
     /// <summary>
     ///   The buffer to apply when considering refreshing; credentials that expire less than this duration will be refreshed.
@@ -116,7 +114,7 @@ where
     /// </summary>
     ///
     // private AmqpConnectionScope ConnectionScope { get; }
-    connection_scope: AmqpConnectionScope<TC>,
+    connection_scope: AmqpConnectionScope,
 
     transport_type: ServiceBusTransportType,
 
@@ -124,12 +122,11 @@ where
     retry_policy: PhantomData<RP>,
 }
 
-impl<C, RP> AmqpClient<C, RP>
+impl<RP> AmqpClient<RP>
 where
-    C: TokenCredential + 'static,
     RP: ServiceBusRetryPolicy,
 {
-    pub(crate) fn set_retry_policy<RP2>(self) -> AmqpClient<C, RP2> {
+    pub(crate) fn set_retry_policy<RP2>(self) -> AmqpClient<RP2> {
         AmqpClient {
             credential_refresh_buffer: self.credential_refresh_buffer,
             closed: self.closed,
@@ -141,9 +138,8 @@ where
     }
 }
 
-impl<C, RP> TransportClient for AmqpClient<C, RP>
+impl<RP> TransportClient for AmqpClient<RP>
 where
-    C: TokenCredential + 'static,
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
     type CreateClientError = AmqpClientError;
@@ -156,11 +152,10 @@ where
     type Receiver = AmqpReceiver<RP>;
     type SessionReceiver = AmqpSessionReceiver<RP>;
     type RuleManager = AmqpRuleManager;
-    type TokenCredential = C;
 
     fn create_transport_client<'a>(
         host: &'a str,
-        credential: ServiceBusTokenCredential<Self::TokenCredential>,
+        credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
         custom_endpoint: Option<Url>,
         retry_timeout: Duration,

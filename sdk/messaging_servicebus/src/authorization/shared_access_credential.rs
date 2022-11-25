@@ -1,9 +1,9 @@
 use std::{sync::Mutex, time::Duration};
 
-use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, TokenResponse};
 use time::OffsetDateTime;
 
-use super::shared_access_signature::{SasSignatureError, SharedAccessSignature};
+use super::{shared_access_signature::{SasSignatureError, SharedAccessSignature}};
 
 /// TODO: visibility?
 #[derive(Debug)]
@@ -132,9 +132,7 @@ impl SharedAccessCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for SharedAccessCredential {
+impl SharedAccessCredential {
     /// <summary>
     ///   Retrieves the token that represents the shared access signature credential, for
     ///   use in authorization against a Service Bus entity.
@@ -145,7 +143,8 @@ impl TokenCredential for SharedAccessCredential {
     ///
     /// <returns>The token representing the shared access signature for this credential.</returns>
     ///
-    async fn get_token(&self, _resource: &str) -> azure_core::Result<TokenResponse> {
+    /// FIXME: this is a temporary workaround until specialization is stablized.
+    pub(crate) async fn get_token(&self, _resource: &str) -> azure_core::Result<TokenResponse> {
         let mut signature = self.shared_access_signature.lock().map_err(|error| {
             azure_core::Error::new(azure_core::error::ErrorKind::Other, error.to_string())
         })?;

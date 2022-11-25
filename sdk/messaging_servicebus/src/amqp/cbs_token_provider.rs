@@ -11,11 +11,11 @@ use crate::authorization::service_bus_token_credential::ServiceBusTokenCredentia
 use super::token_type::TokenType;
 
 #[derive(Debug)]
-pub(crate) struct CbsTokenProvider<TC: TokenCredential> {
+pub(crate) struct CbsTokenProvider {
     /// The type to consider a token generated from the associated <see cref="Credential" />
     ///
     /// TODO: Is this too many layers?
-    token_type: TokenType<TC>,
+    token_type: TokenType,
 
     // /// The credential used to generate access tokens.
     // credential: ServiceBusTokenCredential<TC>,
@@ -24,9 +24,7 @@ pub(crate) struct CbsTokenProvider<TC: TokenCredential> {
     token_expiration_buffer: TimeSpan,
 }
 
-impl<TC> CbsTokenProvider<TC>
-where
-    TC: TokenCredential,
+impl CbsTokenProvider
 {
     /// Initializes a new instance of the <see cref="CbsTokenProvider"/> class.
     ///
@@ -36,7 +34,7 @@ where
     /// `token_expiration_buffer` - The amount of time to buffer expiration
     /// `cancellation_token` - The cancellation token to consider when making requests.
     pub fn new(
-        credential: ServiceBusTokenCredential<TC>,
+        credential: ServiceBusTokenCredential,
         token_expiration_buffer: TimeSpan,
     ) -> Self {
         let token_type = if credential.is_shared_access_credential() {
@@ -63,16 +61,12 @@ fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpa
     token.expires_on - token_expiration_buffer <= OffsetDateTime::now_utc()
 }
 
-pub struct CbsTokenFut<'a, TC>
-where
-    TC: TokenCredential,
+pub struct CbsTokenFut<'a>
 {
-    provider: &'a mut CbsTokenProvider<TC>,
+    provider: &'a mut CbsTokenProvider,
 }
 
-impl<'a, TC> Future for CbsTokenFut<'a, TC>
-where
-    TC: TokenCredential,
+impl<'a> Future for CbsTokenFut<'a>
 {
     type Output = Result<CbsToken<'a>, azure_core::error::Error>;
 
@@ -135,11 +129,9 @@ where
     }
 }
 
-impl<TC> AsyncCbsTokenProvider for CbsTokenProvider<TC>
-where
-    TC: TokenCredential + 'static,
+impl AsyncCbsTokenProvider for CbsTokenProvider
 {
-    type Fut<'a> = CbsTokenFut<'a, TC>;
+    type Fut<'a> = CbsTokenFut<'a>;
     type Error = azure_core::error::Error;
 
     fn get_token_async(
@@ -183,7 +175,7 @@ mod tests {
                 })
             });
 
-        let credential = ServiceBusTokenCredential::Other(mock_credential);
+        let credential = ServiceBusTokenCredential::from(mock_credential);
         let mut provider = super::CbsTokenProvider::new(credential, TimeSpan::seconds(0));
 
         let token = provider
@@ -215,7 +207,7 @@ mod tests {
                 })
             });
 
-        let credential = ServiceBusTokenCredential::Other(mock_credential);
+        let credential = ServiceBusTokenCredential::from(mock_credential);
         let mut provider = super::CbsTokenProvider::new(credential, TimeSpan::seconds(0));
 
         let (first_token_value, first_token_type, first_token_expires_at) = {
@@ -262,7 +254,7 @@ mod tests {
                 })
             });
 
-        let credential = ServiceBusTokenCredential::Other(mock_credential);
+        let credential = ServiceBusTokenCredential::from(mock_credential);
         let mut provider = super::CbsTokenProvider::new(credential, buffer);
 
         let (first_token_value, first_token_type, first_token_expires_at) = {

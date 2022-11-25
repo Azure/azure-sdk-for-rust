@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use azure_core::{auth::TokenCredential, Url};
+use azure_core::{Url};
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 use tokio::time::error::Elapsed;
 use tokio_util::sync::CancellationToken;
@@ -314,7 +314,7 @@ where
 
         let shared_access_credential =
             SharedAccessCredential::from_signature(shared_access_signature);
-        let token_credential: ServiceBusTokenCredential<_> =
+        let token_credential: ServiceBusTokenCredential =
             ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 
         let host = fully_qualified_namespace.unwrap_or("");
@@ -337,17 +337,16 @@ where
 }
 
 impl ServiceBusConnection<()> {
-    pub(crate) async fn new_with_credential<TC, C>(
+    pub(crate) async fn new_with_credential<C>(
         fully_qualified_namespace: String,
-        credential: impl Into<ServiceBusTokenCredential<TC>>,
+        credential: impl Into<ServiceBusTokenCredential>,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusConnection<C>, Error>
     where
-        TC: TokenCredential,
-        C: TransportClient<TokenCredential = TC>,
+        C: TransportClient,
         Error: From<C::CreateClientError>,
     {
-        let token_credential: ServiceBusTokenCredential<_> = credential.into();
+        let token_credential: ServiceBusTokenCredential = credential.into();
         let inner_client = C::create_transport_client(
             &fully_qualified_namespace,
             token_credential,

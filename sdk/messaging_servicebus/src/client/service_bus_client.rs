@@ -52,7 +52,7 @@ pub struct ServiceBusClient<C> {
     connection: ServiceBusConnection<C>, // TODO: use trait objects?
 }
 
-impl ServiceBusClient<AmqpClient<SharedAccessCredential, BasicRetryPolicy>> {
+impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
     pub async fn new<'a>(connection_string: impl Into<Cow<'a, str>>) -> Result<Self, super::Error> {
         Self::new_with_options(connection_string, ServiceBusClientOptions::default()).await
     }
@@ -120,15 +120,13 @@ where
 }
 
 impl ServiceBusClient<()> {
-    pub async fn new_with_credential_and_options<TC, C>(
+    pub async fn new_with_credential_and_options<C>(
         fully_qualified_namespace: impl Into<String>,
-        credential: TC,
+        credential: impl Into<ServiceBusTokenCredential>,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<C>, Error>
     where
-        TC: TokenCredential,
-        ServiceBusTokenCredential<TC>: From<TC>,
-        C: TransportClient<TokenCredential = TC>,
+        C: TransportClient,
         Error: From<C::CreateClientError>,
     {
         let fully_qualified_namespace = fully_qualified_namespace.into();
@@ -139,7 +137,7 @@ impl ServiceBusClient<()> {
                 .unwrap_or(diagnostics::utilities::generate_identifier(
                     &fully_qualified_namespace,
                 ));
-        let connection = ServiceBusConnection::new_with_credential::<TC, C>(
+        let connection = ServiceBusConnection::new_with_credential::<C>(
             fully_qualified_namespace,
             credential,
             options,

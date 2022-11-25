@@ -1,6 +1,6 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 
-use super::shared_access_credential::SharedAccessCredential;
+use super::{shared_access_credential::SharedAccessCredential};
 
 /// <summary>
 ///   Provides a generic token-based credential for a given Service Bus entity instance.
@@ -14,24 +14,35 @@ use super::shared_access_credential::SharedAccessCredential;
 ///
 /// TODO: A temporary work around that could be applied is to only implement the `TokenCredential`
 /// trait on `SharedAccessCredential` when it is placed inside a private wrapper type.
-#[derive(Debug)]
-pub enum ServiceBusTokenCredential<TC>
-where
-    TC: TokenCredential,
-{
+pub enum ServiceBusTokenCredential {
     SharedAccessCredential(SharedAccessCredential),
-    Other(TC),
+
+    // TODO: Is the use of trait object here justified?
+    Other(Box<dyn TokenCredential>),
 }
 
-impl From<SharedAccessCredential> for ServiceBusTokenCredential<SharedAccessCredential> {
+impl std::fmt::Debug for ServiceBusTokenCredential {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SharedAccessCredential(arg0) => f.debug_tuple("SharedAccessCredential").finish(),
+            Self::Other(arg0) => f.debug_tuple("Other").finish(),
+        }
+    }
+}
+
+impl From<SharedAccessCredential> for ServiceBusTokenCredential {
     fn from(source: SharedAccessCredential) -> Self {
         Self::SharedAccessCredential(source)
     }
 }
 
-impl<TC> ServiceBusTokenCredential<TC>
-where
-    TC: TokenCredential,
+impl<TC> From<TC> for ServiceBusTokenCredential where TC: TokenCredential + 'static {
+    fn from(source: TC) -> Self {
+        Self::Other(Box::new(source) as Box<dyn TokenCredential>)
+    }
+}
+
+impl ServiceBusTokenCredential
 {
     /// <summary>
     ///   Indicates whether the credential is based on an Service Bus
@@ -49,14 +60,9 @@ where
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl<TC> TokenCredential for ServiceBusTokenCredential<TC>
-where
-    TC: TokenCredential,
-{
+impl ServiceBusTokenCredential {
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    pub(crate) async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         match self {
             ServiceBusTokenCredential::SharedAccessCredential(credential) => {
                 credential.get_token(resource).await
@@ -68,7 +74,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use azure_core::auth::{AccessToken, TokenCredential};
+    use azure_core::auth::{AccessToken};
     use time::macros::datetime;
 
     use crate::authorization::tests::MockTokenCredential;
@@ -89,7 +95,7 @@ mod tests {
             .times(1)
             .returning(move |_resource| Ok(token_response.clone()));
 
-        let credential = ServiceBusTokenCredential::Other(mock_credentials);
+        let credential = ServiceBusTokenCredential::from(mock_credentials);
         let token_result = credential.get_token(resource).await;
         assert_eq!(token_result.unwrap().token.secret(), token_value);
     }

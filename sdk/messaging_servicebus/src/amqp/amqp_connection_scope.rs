@@ -69,7 +69,7 @@ pub(crate) enum AmqpConnectionScopeError {
     Rng(#[from] rand::Error),
 }
 
-pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
+pub(crate) struct AmqpConnectionScope {
     /// <summary>The seed to use for initializing random number generated for a given thread-specific instance.</summary>
     // private static int s_randomSeed = Environment.TickCount;
 
@@ -100,7 +100,7 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
     connection_endpoint: Url,
 
     /// The provider to use for obtaining a token for authorization with the Service Bus service.
-    cbs_token_provider: CbsTokenProvider<TC>,
+    cbs_token_provider: CbsTokenProvider,
 
     /// The type of transport to use for communication.
     transport_type: ServiceBusTransportType,
@@ -126,7 +126,7 @@ pub(crate) struct AmqpConnectionScope<TC: TokenCredential> {
     cbs_client: CbsClient,
 }
 
-impl<TC: TokenCredential + std::fmt::Debug> std::fmt::Debug for AmqpConnectionScope<TC> {
+impl std::fmt::Debug for AmqpConnectionScope {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AmqpConnectionScope")
             // .field("random_number_generator", &self.random_number_generator)
@@ -149,7 +149,7 @@ impl<TC: TokenCredential + std::fmt::Debug> std::fmt::Debug for AmqpConnectionSc
     }
 }
 
-impl<TC: TokenCredential> AmqpConnectionScope<TC> {
+impl AmqpConnectionScope {
     /// The name to assign to the SASL handler to specify that CBS tokens are in use.
     const CBS_SASL_HANDLER_NAME: &'static str = "MSSBCBS";
 
@@ -206,9 +206,7 @@ impl<TC: TokenCredential> AmqpConnectionScope<TC> {
     }
 }
 
-impl<TC> AmqpConnectionScope<TC>
-where
-    TC: TokenCredential + 'static,
+impl AmqpConnectionScope
 {
     pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
         &self.transport_type
@@ -238,7 +236,7 @@ where
     pub async fn new(
         service_endpoint: Url,
         connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
-        credential: ServiceBusTokenCredential<TC>,
+        credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
         // use_single_session: bool,
         operation_timeout: StdDuration,
@@ -541,7 +539,7 @@ fn service_bus_receive_mode_to_amqp(
 }
 
 #[async_trait]
-impl<TC: TokenCredential> TransportConnectionScope for AmqpConnectionScope<TC> {
+impl TransportConnectionScope for AmqpConnectionScope {
     type Error = DisposeError;
 
     fn is_disposed(&self) -> bool {

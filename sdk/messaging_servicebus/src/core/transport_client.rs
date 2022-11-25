@@ -51,11 +51,10 @@ pub trait TransportClient: Sized {
     type Receiver: TransportReceiver;
     type SessionReceiver: TransportSessionReceiver;
     type RuleManager: TransportRuleManager;
-    type TokenCredential: TokenCredential;
 
     fn create_transport_client<'a>(
         host: &'a str,
-        credential: ServiceBusTokenCredential<Self::TokenCredential>,
+        credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
         custom_endpoint: Option<Url>,
         retry_timeout: StdDuration,
