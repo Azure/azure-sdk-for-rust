@@ -35,7 +35,7 @@ impl From<SasSignatureError> for azure_core::Error {
 }
 
 /// TODO: visibility?
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SharedAccessSignature {
     shared_access_key_name: String,
     shared_access_key: String,
@@ -44,7 +44,7 @@ pub struct SharedAccessSignature {
     value: String,
 }
 
-struct SignatureParts<'a> {
+pub(crate) struct SignatureParts<'a> {
     pub key_name: Cow<'a, str>,
     pub resource: Cow<'a, str>,
     pub expiration_time: OffsetDateTime,
@@ -302,7 +302,7 @@ impl SharedAccessSignature {
     ///
     /// <returns>The set of composite properties parsed from the signature.</returns>
     ///
-    fn parse_signature(shared_access_signature: &str) -> Result<SignatureParts, SasSignatureError> {
+    pub(crate) fn parse_signature(shared_access_signature: &str) -> Result<SignatureParts, SasSignatureError> {
         let mut key_name = None;
         let mut resource = None;
         let mut expiration_time = DEFAULT_OFFSET_DATE_TIME;

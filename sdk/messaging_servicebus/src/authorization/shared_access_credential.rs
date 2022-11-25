@@ -48,10 +48,6 @@ impl AzureSasCredential {
         &self.0
     }
 
-    fn signature_mut(&mut self) -> &mut String {
-        &mut self.0
-    }
-
     pub fn update(&mut self, signature: impl Into<String>) {
         self.0 = signature.into();
     }
@@ -193,4 +189,118 @@ impl SharedAccessCredential {
             expires_on: signature.signature_expiration().clone(),
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use time::{Duration as TimeSpan, OffsetDateTime};
+
+    use crate::authorization::shared_access_signature::SharedAccessSignature;
+
+    use super::{AzureNamedKeyCredential, SharedAccessCredential};
+
+    #[tokio::test]
+    async fn get_token_returns_signature_value_with_key_constsructor_initializes_properties() {
+        let signature =
+            SharedAccessSignature::try_from_parts("hub-name", "keyName", "key", None).unwrap();
+        let source_credential = AzureNamedKeyCredential::new(
+            signature.shared_access_key_name(),
+            signature.shared_access_key(),
+        );
+        let credential = SharedAccessCredential::try_from_named_key_credential(
+            source_credential,
+            signature.resource(),
+        ).unwrap();
+
+        let token = credential.get_token("").await.unwrap();
+        assert_eq!(token.token.secret(), signature.value());
+    }
+
+    #[tokio::test]
+    async fn get_token_returns_signature_value() {
+        let signature =
+            SharedAccessSignature::try_from_parts("hub-name", "keyName", "key", None).unwrap();
+        let credential = SharedAccessCredential::from_signature(signature.clone());
+
+        let token = credential.get_token("").await.unwrap();
+        assert_eq!(token.token.secret(), signature.value());
+    }
+
+    #[tokio::test]
+    async fn get_token_extends_an_expired_token_when_created_with_shared_key() {
+        let expires_on = OffsetDateTime::now_utc() - TimeSpan::hours(2);
+        let signature =
+            SharedAccessSignature::try_new("hub-name", "keyName", "key", expires_on).unwrap();
+        let credential = SharedAccessCredential::from_signature(signature);
+
+        let expected_expiration = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_EXTENSION_DURATION;
+        let token = credential.get_token("").await.unwrap();
+
+        // There will be a small time difference between the two calls to `now_utc()`
+        assert!(token.expires_on - expected_expiration < TimeSpan::seconds(1));
+    }
+
+    #[tokio::test]
+    async fn get_token_extends_a_token_close_to_expiring_when_created_with_shared_key() {
+        let expires_on = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_REFRESH_BUFFER / 2;
+        let signature = SharedAccessSignature::try_new("hub-name", "keyName", "key", expires_on).unwrap();
+        let credential = SharedAccessCredential::from_signature(signature);
+
+        let expected_expiration = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_EXTENSION_DURATION;
+        let token = credential.get_token("").await.unwrap();
+        assert!(token.expires_on - expected_expiration < TimeSpan::seconds(1));
+    }
+
+    #[tokio::test]
+    async fn get_token_does_not_extend_an_expired_token_when_created_without_the_key() {
+        let expires_on = OffsetDateTime::now_utc() - TimeSpan::hours(2);
+        let value = format!("SharedAccessSignature sr=https%3A%2F%2Ffake-test.servicebus.windows.net%2F&sig=nNBNavJfBiHuXUzWOLhSvI3bVgqbQUzA7Po8%2F4wQQng%3D&se={}&skn=fakeKey", expires_on.unix_timestamp());
+        let source_signature = SharedAccessSignature::try_from_signature(&value).unwrap();
+        let signature = SharedAccessSignature::try_from_signature(source_signature.value()).unwrap();
+        let credential = SharedAccessCredential::from_signature(signature);
+
+        let expected_expiration = expires_on;
+        let token = credential.get_token("").await.unwrap();
+        assert!(token.expires_on - expected_expiration < TimeSpan::seconds(1));
+    }
+
+    #[tokio::test]
+    async fn get_token_does_not_extend_a_token_close_to_expiring_when_created_without_the_key() {
+        let expires_on = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_REFRESH_BUFFER / 2;
+        let value = format!("SharedAccessSignature sr=https%3A%2F%2Ffake-test.servicebus.windows.net%2F&sig=nNBNavJfBiHuXUzWOLhSvI3bVgqbQUzA7Po8%2F4wQQng%3D&se={}&skn=fakeKey", expires_on.unix_timestamp());
+        let source_signature = SharedAccessSignature::try_from_signature(&value).unwrap();
+        let signature = SharedAccessSignature::try_from_signature(source_signature.value()).unwrap();
+        let credential = SharedAccessCredential::from_signature(signature);
+
+        let expected_expiration = expires_on;
+        let token = credential.get_token("").await.unwrap();
+        assert!(token.expires_on - expected_expiration < TimeSpan::seconds(1));
+    }
+
+    // // TODO: This test won't work in rust because source_credential is moved into the credential
+    // #[test]
+    // fn named_key_credential_updates_are_respected() {
+    //     let updated_key_name = "updated-name";
+    //     let updated_key = "updated-key";
+    //     let signature =
+    //         SharedAccessSignature::try_from_parts("hub-name", "keyName", "key", None).unwrap();
+    //     let source_credential = AzureNamedKeyCredential::new(
+    //         signature.shared_access_key_name(),
+    //         signature.shared_access_key(),
+    //     );
+    //     let mut credential = SharedAccessCredential::try_from_named_key_credential(
+    //         source_credential,
+    //         signature.resource(),
+    //     ).unwrap();
+
+    //     source_credential.update(updated_key_name, updated_key);
+    //     todo!("")
+    // }
+
+    // // TODO: Similar to the one above, this wouldn't work in rust because the source_credential
+    // // is moved into the SharedAccessCredential
+    // #[test]
+    // fn sas_credential_updates_are_respected() {
+    //     todo!()
+    // }
 }

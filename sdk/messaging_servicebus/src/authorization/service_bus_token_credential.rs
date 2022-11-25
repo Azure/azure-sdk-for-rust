@@ -7,17 +7,15 @@ use super::shared_access_credential::SharedAccessCredential;
 /// </summary>
 ///
 /// <seealso cref="Azure.Core.TokenCredential" />
-///
-/// This requires the user to choose the type of token credential because specialization
-/// is not supported in stable yet, and thus this may see a revamp in the future once
-/// specialization becomes stablized.
-///
-/// TODO: A temporary work around that could be applied is to only implement the `TokenCredential`
-/// trait on `SharedAccessCredential` when it is placed inside a private wrapper type.
 pub enum ServiceBusTokenCredential {
+    /// Shared Access Signature credential.
+    ///
+    /// FIXME: This is a temporary workaround until specialization is stablized.
     SharedAccessCredential(SharedAccessCredential),
 
-    // TODO: Is the use of trait object here justified?
+    /// Other credential types.
+    ///
+    /// TODO: Is the use of trait object here justified?
     Other(Box<dyn TokenCredential>),
 }
 
