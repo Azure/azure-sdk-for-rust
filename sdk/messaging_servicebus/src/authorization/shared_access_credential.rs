@@ -210,7 +210,8 @@ mod tests {
         let credential = SharedAccessCredential::try_from_named_key_credential(
             source_credential,
             signature.resource(),
-        ).unwrap();
+        )
+        .unwrap();
 
         let token = credential.get_token("").await.unwrap();
         assert_eq!(token.token.secret(), signature.value());
@@ -233,7 +234,8 @@ mod tests {
             SharedAccessSignature::try_new("hub-name", "keyName", "key", expires_on).unwrap();
         let credential = SharedAccessCredential::from_signature(signature);
 
-        let expected_expiration = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_EXTENSION_DURATION;
+        let expected_expiration =
+            OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_EXTENSION_DURATION;
         let token = credential.get_token("").await.unwrap();
 
         // There will be a small time difference between the two calls to `now_utc()`
@@ -242,11 +244,14 @@ mod tests {
 
     #[tokio::test]
     async fn get_token_extends_a_token_close_to_expiring_when_created_with_shared_key() {
-        let expires_on = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_REFRESH_BUFFER / 2;
-        let signature = SharedAccessSignature::try_new("hub-name", "keyName", "key", expires_on).unwrap();
+        let expires_on =
+            OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_REFRESH_BUFFER / 2;
+        let signature =
+            SharedAccessSignature::try_new("hub-name", "keyName", "key", expires_on).unwrap();
         let credential = SharedAccessCredential::from_signature(signature);
 
-        let expected_expiration = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_EXTENSION_DURATION;
+        let expected_expiration =
+            OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_EXTENSION_DURATION;
         let token = credential.get_token("").await.unwrap();
         assert!(token.expires_on - expected_expiration < TimeSpan::seconds(1));
     }
@@ -256,7 +261,8 @@ mod tests {
         let expires_on = OffsetDateTime::now_utc() - TimeSpan::hours(2);
         let value = format!("SharedAccessSignature sr=https%3A%2F%2Ffake-test.servicebus.windows.net%2F&sig=nNBNavJfBiHuXUzWOLhSvI3bVgqbQUzA7Po8%2F4wQQng%3D&se={}&skn=fakeKey", expires_on.unix_timestamp());
         let source_signature = SharedAccessSignature::try_from_signature(&value).unwrap();
-        let signature = SharedAccessSignature::try_from_signature(source_signature.value()).unwrap();
+        let signature =
+            SharedAccessSignature::try_from_signature(source_signature.value()).unwrap();
         let credential = SharedAccessCredential::from_signature(signature);
 
         let expected_expiration = expires_on;
@@ -266,10 +272,12 @@ mod tests {
 
     #[tokio::test]
     async fn get_token_does_not_extend_a_token_close_to_expiring_when_created_without_the_key() {
-        let expires_on = OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_REFRESH_BUFFER / 2;
+        let expires_on =
+            OffsetDateTime::now_utc() + SharedAccessCredential::SIGNATURE_REFRESH_BUFFER / 2;
         let value = format!("SharedAccessSignature sr=https%3A%2F%2Ffake-test.servicebus.windows.net%2F&sig=nNBNavJfBiHuXUzWOLhSvI3bVgqbQUzA7Po8%2F4wQQng%3D&se={}&skn=fakeKey", expires_on.unix_timestamp());
         let source_signature = SharedAccessSignature::try_from_signature(&value).unwrap();
-        let signature = SharedAccessSignature::try_from_signature(source_signature.value()).unwrap();
+        let signature =
+            SharedAccessSignature::try_from_signature(source_signature.value()).unwrap();
         let credential = SharedAccessCredential::from_signature(signature);
 
         let expected_expiration = expires_on;

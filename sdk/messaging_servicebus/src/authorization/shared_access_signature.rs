@@ -302,7 +302,9 @@ impl SharedAccessSignature {
     ///
     /// <returns>The set of composite properties parsed from the signature.</returns>
     ///
-    pub(crate) fn parse_signature(shared_access_signature: &str) -> Result<SignatureParts, SasSignatureError> {
+    pub(crate) fn parse_signature(
+        shared_access_signature: &str,
+    ) -> Result<SignatureParts, SasSignatureError> {
         let mut key_name = None;
         let mut resource = None;
         let mut expiration_time = DEFAULT_OFFSET_DATE_TIME;

@@ -82,7 +82,8 @@ mod tests {
     use time::macros::datetime;
 
     use crate::authorization::{
-        shared_access_credential::SharedAccessCredential, tests::MockTokenCredential, shared_access_signature::SharedAccessSignature,
+        shared_access_credential::SharedAccessCredential,
+        shared_access_signature::SharedAccessSignature, tests::MockTokenCredential,
     };
 
     use super::ServiceBusTokenCredential;
