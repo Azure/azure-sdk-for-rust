@@ -46,6 +46,10 @@ where
 }
 
 impl ServiceBusTokenCredential {
+    pub fn new(source: impl Into<Self>) -> Self {
+        source.into()
+    }
+
     /// <summary>
     ///   Indicates whether the credential is based on an Service Bus
     ///   shared access policy.
@@ -79,7 +83,9 @@ mod tests {
     use azure_core::auth::AccessToken;
     use time::macros::datetime;
 
-    use crate::authorization::tests::MockTokenCredential;
+    use crate::authorization::{
+        shared_access_credential::SharedAccessCredential, tests::MockTokenCredential, shared_access_signature::SharedAccessSignature,
+    };
 
     use super::ServiceBusTokenCredential;
 
@@ -100,5 +106,19 @@ mod tests {
         let credential = ServiceBusTokenCredential::from(mock_credentials);
         let token_result = credential.get_token(resource).await;
         assert_eq!(token_result.unwrap().token.secret(), token_value);
+    }
+
+    #[tokio::test]
+    async fn is_shared_access_credential_recognized_as_sas_credentials() {
+        let signature = SharedAccessSignature::try_from_parts(
+            "sb-name",
+            "keyName",
+            "key",
+            Some(std::time::Duration::from_secs(4 * 60 * 60)),
+        )
+        .unwrap();
+        let sas_credential = SharedAccessCredential::from(signature);
+        let credential = ServiceBusTokenCredential::new(sas_credential);
+        assert!(credential.is_shared_access_credential());
     }
 }
