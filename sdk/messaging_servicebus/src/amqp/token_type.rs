@@ -1,7 +1,10 @@
-use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::auth::TokenResponse;
 use tokio::sync::Semaphore;
 
-use crate::{authorization::service_bus_token_credential::ServiceBusTokenCredential, constants::{SAS_TOKEN_TYPE, JSON_WEB_TOKEN_TYPE}};
+use crate::{
+    authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    constants::{JSON_WEB_TOKEN_TYPE, SAS_TOKEN_TYPE},
+};
 
 #[derive(Debug)]
 pub(crate) enum TokenType {

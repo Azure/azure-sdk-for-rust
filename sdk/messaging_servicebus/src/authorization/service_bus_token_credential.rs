@@ -1,6 +1,6 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 
-use super::{shared_access_credential::SharedAccessCredential};
+use super::shared_access_credential::SharedAccessCredential;
 
 /// <summary>
 ///   Provides a generic token-based credential for a given Service Bus entity instance.
@@ -24,8 +24,8 @@ pub enum ServiceBusTokenCredential {
 impl std::fmt::Debug for ServiceBusTokenCredential {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::SharedAccessCredential(arg0) => f.debug_tuple("SharedAccessCredential").finish(),
-            Self::Other(arg0) => f.debug_tuple("Other").finish(),
+            Self::SharedAccessCredential(_arg0) => f.debug_tuple("SharedAccessCredential").finish(),
+            Self::Other(_arg0) => f.debug_tuple("Other").finish(),
         }
     }
 }
@@ -36,14 +36,16 @@ impl From<SharedAccessCredential> for ServiceBusTokenCredential {
     }
 }
 
-impl<TC> From<TC> for ServiceBusTokenCredential where TC: TokenCredential + 'static {
+impl<TC> From<TC> for ServiceBusTokenCredential
+where
+    TC: TokenCredential + 'static,
+{
     fn from(source: TC) -> Self {
         Self::Other(Box::new(source) as Box<dyn TokenCredential>)
     }
 }
 
-impl ServiceBusTokenCredential
-{
+impl ServiceBusTokenCredential {
     /// <summary>
     ///   Indicates whether the credential is based on an Service Bus
     ///   shared access policy.
@@ -74,7 +76,7 @@ impl ServiceBusTokenCredential {
 
 #[cfg(test)]
 mod tests {
-    use azure_core::auth::{AccessToken};
+    use azure_core::auth::AccessToken;
     use time::macros::datetime;
 
     use crate::authorization::tests::MockTokenCredential;

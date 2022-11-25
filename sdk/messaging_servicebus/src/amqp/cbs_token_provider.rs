@@ -24,8 +24,7 @@ pub(crate) struct CbsTokenProvider {
     token_expiration_buffer: TimeSpan,
 }
 
-impl CbsTokenProvider
-{
+impl CbsTokenProvider {
     /// Initializes a new instance of the <see cref="CbsTokenProvider"/> class.
     ///
     /// # Arguments
@@ -33,10 +32,7 @@ impl CbsTokenProvider
     /// `credential` - The credential to use for access token generation.
     /// `token_expiration_buffer` - The amount of time to buffer expiration
     /// `cancellation_token` - The cancellation token to consider when making requests.
-    pub fn new(
-        credential: ServiceBusTokenCredential,
-        token_expiration_buffer: TimeSpan,
-    ) -> Self {
+    pub fn new(credential: ServiceBusTokenCredential, token_expiration_buffer: TimeSpan) -> Self {
         let token_type = if credential.is_shared_access_credential() {
             TokenType::SharedAccessToken { credential }
         } else {
@@ -61,13 +57,11 @@ fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpa
     token.expires_on - token_expiration_buffer <= OffsetDateTime::now_utc()
 }
 
-pub struct CbsTokenFut<'a>
-{
+pub struct CbsTokenFut<'a> {
     provider: &'a mut CbsTokenProvider,
 }
 
-impl<'a> Future for CbsTokenFut<'a>
-{
+impl<'a> Future for CbsTokenFut<'a> {
     type Output = Result<CbsToken<'a>, azure_core::error::Error>;
 
     fn poll(
@@ -129,8 +123,7 @@ impl<'a> Future for CbsTokenFut<'a>
     }
 }
 
-impl AsyncCbsTokenProvider for CbsTokenProvider
-{
+impl AsyncCbsTokenProvider for CbsTokenProvider {
     type Fut<'a> = CbsTokenFut<'a>;
     type Error = azure_core::error::Error;
 
@@ -154,8 +147,7 @@ mod tests {
 
     use crate::{
         authorization::{
-            service_bus_token_credential::ServiceBusTokenCredential,
-            tests::MockTokenCredential,
+            service_bus_token_credential::ServiceBusTokenCredential, tests::MockTokenCredential,
         },
         constants::JSON_WEB_TOKEN_TYPE,
     };

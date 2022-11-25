@@ -1,7 +1,7 @@
 use fe2o3_amqp_types::messaging::{message::__private::Serializable, Data, Message};
 use serde_amqp::serialized_size;
 
-use crate::{core::TransportMessageBatch, ServiceBusMessage};
+use crate::core::TransportMessageBatch;
 
 use super::error::TryAddMessageError;
 
@@ -53,10 +53,12 @@ impl TransportMessageBatch for AmqpMessageBatch {
         let serializable_message = Serializable(&message.amqp_message);
         let ssize = match serialized_size(&serializable_message) {
             Ok(size) => size,
-            Err(err) => return Err(Self::TryAddError::Codec {
-                source: err,
-                message
-            }),
+            Err(err) => {
+                return Err(Self::TryAddError::Codec {
+                    source: err,
+                    message,
+                })
+            }
         };
 
         let new_size = self.size_in_bytes + ssize as u64;
@@ -158,7 +160,9 @@ mod tests {
     fn iter_returns_iterator_over_added_messages() {
         let mut batch = AmqpMessageBatch::new(1024);
 
-        let messages: Vec<_> = (0..5).map(|i| ServiceBusMessage::new(format!("message {}", i))).collect();
+        let messages: Vec<_> = (0..5)
+            .map(|i| ServiceBusMessage::new(format!("message {}", i)))
+            .collect();
         for message in messages.iter() {
             assert!(batch.try_add_message(message.clone()).is_ok());
         }

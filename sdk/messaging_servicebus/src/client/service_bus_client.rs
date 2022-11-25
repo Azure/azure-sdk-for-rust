@@ -1,16 +1,11 @@
 use std::borrow::Cow;
 
-use azure_core::auth::TokenCredential;
-
 use crate::{
     amqp::{
         amqp_client::AmqpClient,
         error::{OpenReceiverError, OpenSenderError},
     },
-    authorization::{
-        service_bus_token_credential::ServiceBusTokenCredential,
-        shared_access_credential::SharedAccessCredential,
-    },
+    authorization::service_bus_token_credential::ServiceBusTokenCredential,
     core::{BasicRetryPolicy, TransportClient},
     diagnostics,
     entity_name_formatter::{self, format_entity_path},

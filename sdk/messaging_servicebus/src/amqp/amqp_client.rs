@@ -1,9 +1,6 @@
 use std::{future::Future, marker::PhantomData, pin::Pin, time::Duration};
 
-use azure_core::{
-    auth::{AccessToken, TokenCredential},
-    Url,
-};
+use azure_core::{auth::AccessToken, Url};
 use fe2o3_amqp::{
     connection::OpenError,
     link::{ReceiverAttachError, SenderAttachError},
@@ -88,8 +85,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
 ///
 /// See also [`TransportClient`]
 #[derive(Debug)]
-pub struct AmqpClient<RP>
-{
+pub struct AmqpClient<RP> {
     /// <summary>
     ///   The buffer to apply when considering refreshing; credentials that expire less than this duration will be refreshed.
     /// </summary>
@@ -393,6 +389,4 @@ where
 }
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

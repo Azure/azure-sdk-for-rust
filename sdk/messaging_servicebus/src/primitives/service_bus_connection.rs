@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use azure_core::{Url};
+use azure_core::Url;
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 use tokio::time::error::Elapsed;
 use tokio_util::sync::CancellationToken;

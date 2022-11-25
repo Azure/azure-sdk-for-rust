@@ -2,7 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration as StdDuration;
 
-use azure_core::{auth::TokenCredential, Url};
+use azure_core::Url;
 use tokio_util::sync::CancellationToken;
 
 use crate::{

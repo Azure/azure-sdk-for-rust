@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::atomic::Ordering, time::Duration as StdDuration};
 
 use async_trait::async_trait;
-use azure_core::{auth::TokenCredential, Url};
+use azure_core::Url;
 use fe2o3_amqp::{
     connection::{ConnectionHandle, OpenError},
     link::{receiver::CreditMode, ReceiverAttachError, SenderAttachError},
@@ -206,8 +206,7 @@ impl AmqpConnectionScope {
     }
 }
 
-impl AmqpConnectionScope
-{
+impl AmqpConnectionScope {
     pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
         &self.transport_type
     }
