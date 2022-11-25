@@ -9,9 +9,9 @@ use azure_messaging_servicebus::{
     ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSenderOptions,
 };
 
-fn setup_dotenv() {
-    dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
-}
+mod common;
+
+use common::setup_dotenv;
 
 async fn client_send_single_message(options: ServiceBusSenderOptions) {
     setup_dotenv();
