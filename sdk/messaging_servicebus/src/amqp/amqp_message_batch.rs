@@ -83,6 +83,8 @@ impl TransportMessageBatch for AmqpMessageBatch {
 
 #[cfg(test)]
 mod tests {
+    use crate::ServiceBusMessage;
+
     use super::*;
 
     #[test]
