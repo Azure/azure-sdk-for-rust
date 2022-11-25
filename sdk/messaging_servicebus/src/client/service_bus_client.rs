@@ -132,7 +132,7 @@ impl ServiceBusClient<()> {
                 .unwrap_or(diagnostics::utilities::generate_identifier(
                     &fully_qualified_namespace,
                 ));
-        let connection = ServiceBusConnection::new_with_credential::<C>(
+        let connection = ServiceBusConnection::new_with_credential(
             fully_qualified_namespace,
             credential,
             options,

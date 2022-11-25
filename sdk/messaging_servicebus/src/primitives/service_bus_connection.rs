@@ -279,6 +279,7 @@ where
     ) -> Result<Self, Error> {
         let connection_string_properties =
             ServiceBusConnectionStringProperties::parse(connection_string.as_ref())?;
+        validate_connection_string_properties(&connection_string_properties, "connection_string")?;
 
         let fully_qualified_namespace = connection_string_properties
             .endpoint()
@@ -336,8 +337,8 @@ where
     }
 }
 
-impl ServiceBusConnection<()> {
-    pub(crate) async fn new_with_credential<C>(
+impl<C> ServiceBusConnection<C> {
+    pub(crate) async fn new_with_credential(
         fully_qualified_namespace: String,
         credential: impl Into<ServiceBusTokenCredential>,
         options: ServiceBusClientOptions,
@@ -380,4 +381,42 @@ where
     pub async fn dispose(&mut self) -> Result<(), Error> {
         self.inner_client.dispose().await.map_err(Into::into)
     }
+}
+
+fn is_none_or_empty(s: Option<&str>) -> bool {
+    match s {
+        Some(s) => s.is_empty(),
+        None => true,
+    }
+}
+
+fn validate_connection_string_properties(
+    connection_string_properties: &ServiceBusConnectionStringProperties,
+    connection_string_argument_name: &str,
+) -> Result<(), Error> {
+    let has_shared_key = !is_none_or_empty(connection_string_properties.shared_access_key_name())
+        && !is_none_or_empty(connection_string_properties.shared_access_key());
+    let has_shared_access_signature =
+        !is_none_or_empty(connection_string_properties.shared_access_signature());
+
+    // Ensure that each of the needed components are present for connecting
+    if is_none_or_empty(
+        connection_string_properties
+            .endpoint()
+            .and_then(|e| e.host_str()),
+    ) || (!has_shared_key && !has_shared_access_signature)
+    {
+        return Err(Error::ArgumentError(format!(
+            "Missing connection information {}",
+            connection_string_argument_name
+        )));
+    }
+
+    // The connection string may contain a precomputed shared access signture OR a shared key name and value
+    // but not both.
+    if has_shared_key && has_shared_access_signature {
+        return Err(Error::ArgumentError(format!("Connection string contains both a shared access signature and a shared key. Only one of these should be present {}", connection_string_argument_name)));
+    }
+
+    Ok(())
 }
