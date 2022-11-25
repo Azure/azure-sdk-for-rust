@@ -164,13 +164,6 @@ where
         fully_qualified_namespace: Option<&str>,
         entity_name: Option<&str>,
     ) -> Result<String, Error> {
-        // TODO:
-        //
-        // if (builder.Path.EndsWith("/", StringComparison.Ordinal))
-        // {
-        //     builder.Path = builder.Path.TrimEnd('/');
-        // }
-
         match fully_qualified_namespace {
             Some(fqn) => {
                 let mut builder =
@@ -186,6 +179,13 @@ where
                 builder.set_username("").map_err(|_| {
                     Error::ArgumentError("Unable to set username to empty string".to_string())
                 })?;
+
+                // Removes the trailing slash if and only if there is one and it is not the first
+                // character
+                builder
+                    .path_segments_mut()
+                    .map_err(|_| url::ParseError::RelativeUrlWithCannotBeABaseBase)?
+                    .pop_if_empty();
 
                 Ok(builder.to_string().to_lowercase())
             }
