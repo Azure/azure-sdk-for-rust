@@ -1,12 +1,24 @@
 use azure_core::Url;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum FormatError {
     #[error("Connection string cannot be empty")]
     ConnectionStringIsEmpty,
 
     #[error("Connection string is malformed")]
     InvalidConnectionString,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ToConnectionStringError {
+    #[error("Missing connection information")]
+    MissingConnectionInformation,
+
+    #[error("Invalid endpoint address")]
+    InvalidEndpointAddress,
+
+    #[error("Only one shared access authorization can be used")]
+    OnlyOneSharedAccessAuthorizationMayBeUsed,
 }
 
 /// The set of properties that comprise a Service Bus connection string.
@@ -102,16 +114,21 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     ///
     /// If field `endpoint` is `None`
     ///
-    pub fn to_connection_string(&self) -> Option<String> {
+    pub fn to_connection_string(&self) -> Result<String, ToConnectionStringError> {
         let mut s = String::new();
 
         if let Some(endpoint) = self.endpoint() {
+            if endpoint.scheme() != Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME {
+                // TODO: checking host name is unnecessary? `url::Url` cannot be built with invalid host name?.
+                return Err(ToConnectionStringError::InvalidEndpointAddress);
+            }
+
             s.push_str(Self::ENDPOINT_TOKEN);
             s.push(Self::TOKEN_VALUE_SEPARATOR);
             s.push_str(endpoint.as_str());
             s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
         } else {
-            return None;
+            return Err(ToConnectionStringError::MissingConnectionInformation);
         }
 
         if let Some(entity_path) = self.entity_path.and_then(|s| match !s.is_empty() {
@@ -124,34 +141,36 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
             s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
         }
 
-        if let Some(shared_access_signature) =
-            self.shared_access_signature
-                .and_then(|s| match !s.is_empty() {
-                    true => Some(s),
-                    false => None,
-                })
-        {
-            s.push_str(Self::SHARED_ACCESS_SIGNATURE_TOKEN);
-            s.push(Self::TOKEN_VALUE_SEPARATOR);
-            s.push_str(shared_access_signature);
-            s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
-        } else {
-            match (self.shared_access_key_name, self.shared_access_key) {
-                (Some(key_name), Some(key)) if !key_name.is_empty() && !key.is_empty() => {
+        // The connection string may contain a precomputed shared access signature OR a shared key name and value,
+        // but not both.
+        match (self.shared_access_signature, self.shared_access_key_name, self.shared_access_key) {
+            (Some(signature), None, None) => {
+                if !signature.is_empty() {
+                    s.push_str(Self::SHARED_ACCESS_SIGNATURE_TOKEN);
+                    s.push(Self::TOKEN_VALUE_SEPARATOR);
+                    s.push_str(signature);
+                    s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+                }
+            }
+            (None, Some(key_name), Some(key)) => {
+                if (!key_name.is_empty()) && (!key.is_empty()) {
                     s.push_str(Self::SHARED_ACCESS_KEY_NAME_TOKEN);
                     s.push(Self::TOKEN_VALUE_SEPARATOR);
                     s.push_str(key_name);
                     s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
+
                     s.push_str(Self::SHARED_ACCESS_KEY_VALUE_TOKEN);
                     s.push(Self::TOKEN_VALUE_SEPARATOR);
                     s.push_str(key);
                     s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
                 }
-                _ => {}
+            }
+            _ => {
+                return Err(ToConnectionStringError::OnlyOneSharedAccessAuthorizationMayBeUsed);
             }
         }
 
-        Some(s)
+        Ok(s)
     }
 
     /// Parses the specified Service Bus connection string into its component properties.
@@ -236,6 +255,8 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::primitives::service_bus_connection_string_properties::FormatError;
+
     use super::ServiceBusConnectionStringProperties;
 
     const ENDPOINT: &str = "test.endpoint.com";
@@ -470,6 +491,107 @@ mod tests {
         ]
     }
 
+    /// <summary>
+    ///   Provides the invalid properties argument cases for the <see cref="ServiceBusConnectionStringProperties.Create" /> tests.
+    /// </summary>
+    ///
+    fn to_connection_string_validates_properties_cases() -> Vec<ServiceBusConnectionStringProperties<'static>> {
+        let mut cases = Vec::new();
+        // "missing endpoint"
+        let case = ServiceBusConnectionStringProperties
+        {
+            endpoint: None,
+            entity_path: Some("fake"),
+            shared_access_signature: Some("fake"),
+            shared_access_key_name: None,
+            shared_access_key: None,
+        };
+        cases.push(case);
+
+        // yield return new object[] { new ServiceBusConnectionStringProperties
+        // {
+        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
+        //     EntityPath = "fake"
+        // },
+        // "missing authorization" };
+        let case = ServiceBusConnectionStringProperties {
+            endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
+            entity_path: Some("fake"),
+            shared_access_signature: None,
+            shared_access_key_name: None,
+            shared_access_key: None,
+        };
+        cases.push(case);
+
+        // yield return new object[] { new ServiceBusConnectionStringProperties
+        // {
+        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
+        //     EntityPath = "fake",
+        //     SharedAccessSignature = "fake",
+        //     SharedAccessKey = "fake"
+        // },
+        // "SAS and key specified" };
+        let case = ServiceBusConnectionStringProperties {
+            endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
+            entity_path: Some("fake"),
+            shared_access_signature: Some("fake"),
+            shared_access_key: Some("fake"),
+            shared_access_key_name: None,
+        };
+        cases.push(case);
+
+        // yield return new object[] { new ServiceBusConnectionStringProperties
+        // {
+        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
+        //     EntityPath = "fake",
+        //     SharedAccessSignature = "fake",
+        //     SharedAccessKeyName = "fake"
+        // },
+        // "SAS and shared key name specified" };
+        let case = ServiceBusConnectionStringProperties {
+            endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
+            entity_path: Some("fake"),
+            shared_access_signature: Some("fake"),
+            shared_access_key_name: Some("fake"),
+            shared_access_key: None,
+        };
+        cases.push(case);
+
+        // yield return new object[] { new ServiceBusConnectionStringProperties
+        // {
+        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
+        //     EntityPath = "fake",
+        //     SharedAccessKeyName = "fake"
+        // },
+        // "only shared key name specified" };
+        let case = ServiceBusConnectionStringProperties {
+            endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
+            entity_path: Some("fake"),
+            shared_access_signature: None,
+            shared_access_key_name: Some("fake"),
+            shared_access_key: None,
+        };
+        cases.push(case);
+
+        // yield return new object[] { new ServiceBusConnectionStringProperties
+        // {
+        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
+        //     EntityPath = "fake",
+        //     SharedAccessKey = "fake"
+        // },
+        // "only shared key specified" };
+        let case = ServiceBusConnectionStringProperties {
+            endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
+            entity_path: Some("fake"),
+            shared_access_signature: None,
+            shared_access_key_name: None,
+            shared_access_key: Some("fake"),
+        };
+        cases.push(case);
+
+        cases
+    }
+
     /// Verifies functionality of the [`ServiceBusConnectionStringProperties::parse`]
     /// method.
     #[test]
@@ -658,4 +780,141 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn parse_does_not_allow_an_invalid_endpoint_format() {
+        let endpoint = "test.endpoint.com";
+        let connection_string = format!("Endpoint={}", endpoint);
+        let result = ServiceBusConnectionStringProperties::parse(&connection_string);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_considers_missing_values_as_malformed() {
+        let test_cases = &[
+            "Endpoint;SharedAccessKeyName=[value];SharedAccessKey=[value];EntityPath=[value]",
+            "Endpoint=value.com;SharedAccessKeyName=;SharedAccessKey=[value];EntityPath=[value]",
+            "Endpoint=value.com;SharedAccessKeyName=[value];SharedAccessKey;EntityPath=[value]",
+            "Endpoint=value.com;SharedAccessKeyName=[value];SharedAccessKey=[value];EntityPath",
+            "Endpoint;SharedAccessKeyName=;SharedAccessKey;EntityPath=",
+            "Endpoint=;SharedAccessKeyName;SharedAccessKey;EntityPath=",
+        ];
+
+        for test_case in test_cases {
+            let result = ServiceBusConnectionStringProperties::parse(test_case);
+            assert_eq!(result, Err(FormatError::InvalidConnectionString));
+        }
+    }
+
+    #[test]
+    fn to_string_validates_properties() {
+        let cases = to_connection_string_validates_properties_cases();
+
+        for case in cases {
+            let result = case.to_connection_string();
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn to_connection_string_produces_the_connection_string_for_shared_access_signatures() {
+        let properties = ServiceBusConnectionStringProperties {
+            endpoint: Some("sb://place.endpoint.ext".parse().unwrap()),
+            entity_path: Some("HubName"),
+            shared_access_signature: Some("FaKe#$1324@@"),
+            shared_access_key_name: None,
+            shared_access_key: None,
+        };
+
+        let connection_string = properties.to_connection_string();
+        assert!(connection_string.is_ok());
+        let connection_string = connection_string.unwrap();
+        assert!(!connection_string.is_empty());
+
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string);
+        assert!(parsed.is_ok());
+        assert_eq!(properties, parsed.unwrap());
+    }
+
+    #[test]
+    fn to_connection_string_produces_the_connection_string_for_shared_keys() {
+        let properties = ServiceBusConnectionStringProperties {
+            endpoint: Some("sb://place.endpoint.ext".parse().unwrap()),
+            entity_path: Some("HubName"),
+            shared_access_signature: None,
+            shared_access_key_name: Some("RootSharedAccessManagementKey"),
+            shared_access_key: Some("FaKe#$1324@@"),
+        };
+
+        let connection_string = properties.to_connection_string();
+        assert!(connection_string.is_ok());
+        let connection_string = connection_string.unwrap();
+        assert!(!connection_string.is_empty());
+
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string);
+        assert!(parsed.is_ok());
+        assert_eq!(properties, parsed.unwrap());
+    }
+
+    #[test]
+    fn to_connection_string_returns_err_with_non_servicebus_endpoint_scheme() {
+        let schemes = vec![
+            "amqps://",
+            "amqp://",
+            "http://", // TODO: `url::Url` does not allow changing the scheme away from `http` or `https`
+            "https://",
+            "fake://",
+        ];
+
+        for scheme in schemes {
+            let endpoint = format!("{}myhub.servicebus.windows.net", scheme);
+            let properties = ServiceBusConnectionStringProperties {
+                endpoint: Some(url::Url::parse(&endpoint).unwrap()),
+                entity_path: Some("HubName"),
+                shared_access_signature: None,
+                shared_access_key_name: Some("RootSharedAccessManagementKey"),
+                shared_access_key: Some("FaKe#$1324@@"),
+            };
+
+            let connection_string = properties.to_connection_string();
+            assert!(connection_string.is_err());
+        }
+    }
+
+    #[test]
+    fn to_connection_string_returns_ok_with_servicebus_endpoint_scheme() {
+        let endpoint = "sb://myhub.servicebus.windows.net";
+        let properties = ServiceBusConnectionStringProperties {
+            endpoint: Some(url::Url::parse(&endpoint).unwrap()),
+            entity_path: Some("HubName"),
+            shared_access_signature: None,
+            shared_access_key_name: Some("RootSharedAccessManagementKey"),
+            shared_access_key: Some("FaKe#$1324@@"),
+        };
+
+        let connection_string = properties.to_connection_string();
+        assert!(connection_string.is_ok());
+        let connection_string = connection_string.unwrap();
+
+        let parsed = ServiceBusConnectionStringProperties::parse(&connection_string);
+        assert!(parsed.is_ok());
+        assert_eq!(properties, parsed.unwrap());
+    }
+
+    #[test]
+    fn to_connection_string_allows_shared_access_key_authorization() {
+        let fake_connection = "Endpoint=sb://not-real.servicebus.windows.net/;SharedAccessKeyName=DummyKey;SharedAccessKey=[not_real]";
+        let properties = ServiceBusConnectionStringProperties::parse(fake_connection).unwrap();
+
+        assert!(properties.to_connection_string().is_ok());
+    }
+
+    #[test]
+    fn to_connection_string_allows_shared_access_signature_authorization() {
+        let fake_connection = "Endpoint=sb://not-real.servicebus.windows.net/;SharedAccessSignature=[not_real]";
+        let properties = ServiceBusConnectionStringProperties::parse(fake_connection).unwrap();
+
+        assert!(properties.to_connection_string().is_ok());
+    }
+
 }
