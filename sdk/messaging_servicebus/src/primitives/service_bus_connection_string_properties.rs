@@ -211,11 +211,9 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
             match token {
                 Self::ENDPOINT_TOKEN => {
                     // TODO: What about the port?
-                    let url =
-                        Url::parse(value).map_err(|_| FormatError::InvalidConnectionString)?;
-                    if url.scheme() != Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME {
-                        return Err(FormatError::InvalidConnectionString);
-                    }
+                    let mut url =
+                    Url::parse(value).map_err(|_| FormatError::InvalidConnectionString)?;
+                    url.set_scheme(Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME).map_err(|_| FormatError::InvalidConnectionString)?;
                     endpoint = Some(url);
                 }
                 Self::ENTITY_PATH_TOKEN => entity_path = Some(value),
@@ -639,6 +637,25 @@ mod tests {
         assert_eq!(parsed.entity_path(), Some(event_hub));
     }
 
-    // Stopped at `ParseDoesAcceptsHostNamesAndUrisForTheEndpoint` because not all dotnet tests are
-    // applicable
+    #[test]
+    fn parse_does_accept_host_names_and_urls_for_the_endpoint() {
+        let endpoint_values = &[
+            // "test.endpoint.com", // TODO: this is not a valid url and cannot be parsed by url::Url
+            "sb://test.endpoint.com",
+            "sb://test.endpoint.com:80",
+            "amqp://test.endpoint.com",
+            // "http://test.endpoint.com", // TODO: `url::Url` doesn't allow changing from http to other schemes
+            // "https://test.endpoint.com:8443",
+        ];
+
+        for endpoint_value in endpoint_values {
+            let connection_string = format!("Endpoint={};EntityPath=dummy", endpoint_value);
+            let parsed = ServiceBusConnectionStringProperties::parse(&connection_string).unwrap();
+
+            assert_eq!(
+                parsed.endpoint().and_then(|url| url.host_str()),
+                Some("test.endpoint.com")
+            );
+        }
+    }
 }
