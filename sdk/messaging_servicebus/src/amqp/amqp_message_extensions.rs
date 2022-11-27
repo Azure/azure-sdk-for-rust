@@ -250,7 +250,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
     #[inline]
     fn set_message_id(&mut self, message_id: impl Into<String>) {
         let message_id = message_id.into();
-        assert!(message_id.len() < MAX_MESSAGE_ID_LENGTH);
+        // assert!(message_id.len() < MAX_MESSAGE_ID_LENGTH); // TODO: why is there a length limit?
         self.properties
             .get_or_insert(Properties::default())
             .message_id = Some(MessageId::String(message_id));
@@ -273,7 +273,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
     #[inline]
     fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), Error> {
         let key = key.into();
-        assert!(key.len() < MAX_PARTITION_KEY_LENGTH);
+        // assert!(key.len() < MAX_PARTITION_KEY_LENGTH); // TODO: why is there a length limit?
 
         if key
             != self
@@ -349,7 +349,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
     fn set_via_partition_key(&mut self, key: impl Into<String>) {
         let key = key.into();
 
-        assert!(key.len() < MAX_PARTITION_KEY_LENGTH);
+        // assert!(key.len() < MAX_PARTITION_KEY_LENGTH); // TODO: why is there a length limit?
 
         self.message_annotations
             .get_or_insert(MessageAnnotations::default())
@@ -365,7 +365,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
     #[inline]
     fn set_session_id(&mut self, session_id: impl Into<String>) {
         let session_id = session_id.into();
-        assert!(session_id.len() < MAX_SESSION_ID_LENGTH);
+        // assert!(session_id.len() < MAX_SESSION_ID_LENGTH); // TODO: why is there a length limit?
 
         // If the PartitionKey was already set to a different value, override it with the SessionId,
         if let Some(partition_key) = self.partition_key_mut() {
@@ -383,7 +383,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
     #[inline]
     fn set_reply_to_session_id(&mut self, session_id: Option<impl Into<String>>) {
         let session_id = session_id.map(Into::into).map(|s| {
-            assert!(s.len() < MAX_SESSION_ID_LENGTH);
+            // assert!(s.len() < MAX_SESSION_ID_LENGTH); // TODO: why is there a length limit?
             s
         });
         self.properties
