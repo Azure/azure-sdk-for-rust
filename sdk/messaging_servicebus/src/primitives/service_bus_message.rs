@@ -458,4 +458,6 @@ mod tests {
             assert_eq!(message.to_string(), format!("{{MessageId:{}}}", case));
         }
     }
+
+    // TODO: should there be length limits for some message fields?
 }

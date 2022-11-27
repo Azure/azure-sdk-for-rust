@@ -10,10 +10,7 @@ use fe2o3_amqp_types::{
 };
 use time::OffsetDateTime;
 
-use crate::constants::{
-    DEFAULT_OFFSET_DATE_TIME, MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH,
-    MAX_SESSION_ID_LENGTH,
-};
+use crate::constants::DEFAULT_OFFSET_DATE_TIME;
 
 use super::{
     amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
@@ -21,8 +18,6 @@ use super::{
 };
 
 pub(crate) trait AmqpMessageExt {
-    // fn body(&self) -> Result<&[u8], Error>;
-
     fn message_id(&self) -> Option<Cow<'_, str>>;
 
     fn partition_key(&self) -> Option<&str>;
@@ -49,10 +44,6 @@ pub(crate) trait AmqpMessageExt {
 }
 
 pub(crate) trait AmqpMessageMutExt {
-    // fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error>;
-
-    // fn set_body(&mut self, body: impl Into<Vec<u8>>);
-
     fn message_id_mut(&mut self) -> Option<&mut MessageId>;
 
     fn set_message_id(&mut self, message_id: impl Into<String>);
@@ -97,11 +88,6 @@ pub(crate) trait AmqpMessageMutExt {
 }
 
 impl<B> AmqpMessageExt for Message<B> {
-    // #[inline]
-    // fn body(&self) -> Result<&[u8], Error> {
-    //     self.body()
-    // }
-
     #[inline]
     fn message_id(&self) -> Option<Cow<'_, str>> {
         match self.properties.as_ref()?.message_id.as_ref()? {
@@ -229,16 +215,6 @@ impl<B> AmqpMessageExt for Message<B> {
 }
 
 impl<B> AmqpMessageMutExt for Message<B> {
-    // #[inline]
-    // fn body_mut(&mut self) -> Result<&mut Vec<u8>, Error> {
-    //     Ok(&mut self.body.0)
-    // }
-
-    // #[inline]
-    // fn set_body(&mut self, body: impl Into<Vec<u8>>) {
-    //     self.body = Data(Binary::from(body))
-    // }
-
     #[inline]
     fn message_id_mut(&mut self) -> Option<&mut MessageId> {
         self.properties.as_mut()?.message_id.as_mut()
