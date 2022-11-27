@@ -609,17 +609,11 @@ impl ServiceBusReceivedMessage {
     // }
 }
 
-/// Returns a string that represents the current message.
-impl ToString for ServiceBusReceivedMessage {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for ServiceBusReceivedMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.message_id() {
-            Some(id) => {
-                let mut s = String::from(r#"{MessageId:"#);
-                s.push_str(&id);
-                s.push('}');
-                s
-            }
-            None => String::from(r#"{MessageId:None"#),
+            Some(id) => write!(f, "{{MessageId:{}}}", id),
+            None => write!(f, "{{MessageId:None"),
         }
     }
 }

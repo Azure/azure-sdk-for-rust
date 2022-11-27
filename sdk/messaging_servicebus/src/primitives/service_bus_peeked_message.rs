@@ -485,3 +485,12 @@ impl ServiceBusPeekedMessage {
             .unwrap_or_default()
     }
 }
+
+impl std::fmt::Display for ServiceBusPeekedMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.message_id() {
+            Some(id) => write!(f, "{{MessageId:{}}}", id),
+            None => write!(f, "{{MessageId:None"),
+        }
+    }
+}
