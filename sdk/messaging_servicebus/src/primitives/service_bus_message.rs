@@ -189,6 +189,8 @@ impl ServiceBusMessage {
     }
 
     /// Sets the MessageId
+    ///
+    /// TODO: check if message_id is empty?
     pub fn set_message_id(&mut self, message_id: impl Into<String>) {
         self.amqp_message.set_message_id(message_id)
     }
@@ -433,16 +435,11 @@ impl ServiceBusMessage {
     }
 }
 
-impl ToString for ServiceBusMessage {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for ServiceBusMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.message_id() {
-            Some(id) => {
-                let mut s = String::from(r#"{MessageId:"#);
-                s.push_str(&id);
-                s.push('}');
-                s
-            }
-            None => String::from(r#"{MessageId:None"#),
+            Some(id) => write!(f, "{{MessageId:{}}}", id),
+            None => write!(f, "{{MessageId:None}}"),
         }
     }
 }
@@ -452,9 +449,13 @@ mod tests {
     use crate::ServiceBusMessage;
 
     #[test]
-    fn convert_to_service_bus_message() {
-        let src = "hello world";
-        let mesasge = ServiceBusMessage::from(src);
-        assert_eq!(mesasge.body(), src.as_bytes());
+    fn message_to_string() {
+        let cases = ["123", "jøbber-nå"];
+
+        for case in cases {
+            let mut message = ServiceBusMessage::default();
+            message.set_message_id(case);
+            assert_eq!(message.to_string(), format!("{{MessageId:{}}}", case));
+        }
     }
 }
