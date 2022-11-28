@@ -32,7 +32,7 @@ fix-hidden-lifetime-bug = "0.2"
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-env_logger = "0.9"
+env_logger = "0.10"
 serde_test = "1"
 azure_security_keyvault = { path = "../security_keyvault", default_features = false }
 

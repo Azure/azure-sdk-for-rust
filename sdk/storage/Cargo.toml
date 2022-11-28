@@ -34,7 +34,7 @@ sha2 = "0.10"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-env_logger = "0.9"
+env_logger = "0.10"
 reqwest = "0.11"
 mock_transport = { path = "../../eng/test/mock_transport" }
 azure_identity = { path = "../identity", default-features = false }
